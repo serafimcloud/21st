@@ -19,6 +19,9 @@ const nextConfig = {
       resolveExtensions: [".tsx", ".ts", ".jsx", ".js", ".json"],
       moduleIdStrategy: "deterministic",
     },
+    serverActions: {
+      bodySizeLimit: "50mb",
+    },
   },
   trailingSlash: false,
   async redirects() {

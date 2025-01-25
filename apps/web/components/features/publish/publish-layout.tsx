@@ -569,10 +569,16 @@ export default function PublishComponentForm({
                     file: {
                       name: "video.mp4",
                       type: "video/mp4",
-                      encodedContent: demo.preview_video_data_url.replace(
-                        /^data:video\/mp4;base64,/,
-                        "",
-                      ),
+                      encodedContent: await new Promise((resolve) => {
+                        const reader = new FileReader()
+                        reader.onloadend = () => {
+                          const base64 = reader.result as string
+                          resolve(
+                            base64.replace(/^data:video\/mp4;base64,/, ""),
+                          )
+                        }
+                        reader.readAsDataURL(demo.preview_video_file as File)
+                      }),
                     },
                     fileKey: `${baseFolder}/${demo.demo_slug}/video.mp4`,
                     bucketName: "components-code",
@@ -766,15 +772,21 @@ export default function PublishComponentForm({
                 : Promise.resolve(null),
               demo.preview_video_file &&
               demo.preview_video_file.size > 0 &&
-              demo.preview_video_data_url
+              demo.preview_video_file
                 ? uploadToR2({
                     file: {
                       name: "video.mp4",
                       type: "video/mp4",
-                      encodedContent: demo.preview_video_data_url.replace(
-                        /^data:video\/mp4;base64,/,
-                        "",
-                      ),
+                      encodedContent: await new Promise((resolve) => {
+                        const reader = new FileReader()
+                        reader.onloadend = () => {
+                          const base64 = reader.result as string
+                          resolve(
+                            base64.replace(/^data:video\/mp4;base64,/, ""),
+                          )
+                        }
+                        reader.readAsDataURL(demo.preview_video_file as File)
+                      }),
                     },
                     fileKey: `${demoFolder}/video.mp4`,
                     bucketName: "components-code",
