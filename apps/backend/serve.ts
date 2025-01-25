@@ -293,6 +293,7 @@ const server = serve({
         const file = formData.get("video") as File
 
         if (!file) {
+          console.log("No video file found in request")
           return Response.json(
             { error: "No video file provided" },
             { status: 400, headers },
@@ -308,7 +309,7 @@ const server = serve({
         const tempInputPath = path.join(tempDir, sanitizedFilename)
         const tempOutputPath = path.join(
           tempDir,
-          sanitizedFilename.replace(/\.[^/.]+$/, "") + ".mp4",
+          sanitizedFilename.replace(/\.[^/.]+$/, "") + `_converted_${Date.now()}.mp4`,
         )
 
         const bytes = await file.arrayBuffer()
@@ -322,6 +323,8 @@ const server = serve({
 
         // Encode the filename for the Content-Disposition header
         const encodedFilename = encodeURIComponent(path.basename(tempOutputPath))
+
+        console.log("successfuly converted video")
         
         return new Response(processedVideo, {
           headers: {
