@@ -63,6 +63,7 @@ import {
 } from "./components/alerts"
 import { generateDemoSlug } from "./hooks/use-is-check-slug-available"
 import { useIsAdmin } from "./hooks/use-is-admin"
+import { useR2Upload } from "./hooks/use-r2-upload"
 export interface ParsedCodeData {
   dependencies: Record<string, string>
   demoDependencies: Record<string, string>
@@ -497,6 +498,8 @@ export default function PublishComponentForm({
 
   const [createdDemoSlug, setCreatedDemoSlug] = useState<string>()
 
+  const { upload: uploadToR2ClientSide, isUploading, error } = useR2Upload()
+
   const onSubmit = async (data: FormData) => {
     setPublishAttemptCount((count) => count + 1)
     setIsSubmitting(true)
@@ -565,21 +568,8 @@ export default function PublishComponentForm({
               demo?.preview_video_file &&
               demo?.preview_video_file.size > 0 &&
               demo?.preview_video_data_url
-                ? uploadToR2({
-                    file: {
-                      name: "video.mp4",
-                      type: "video/mp4",
-                      encodedContent: await new Promise((resolve) => {
-                        const reader = new FileReader()
-                        reader.onloadend = () => {
-                          const base64 = reader.result as string
-                          resolve(
-                            base64.replace(/^data:video\/mp4;base64,/, ""),
-                          )
-                        }
-                        reader.readAsDataURL(demo.preview_video_file as File)
-                      }),
-                    },
+                ? uploadToR2ClientSide({
+                    file: demo.preview_video_file,
                     fileKey: `${baseFolder}/${demo.demo_slug}/video.mp4`,
                     bucketName: "components-code",
                     contentType: "video/mp4",
@@ -773,21 +763,8 @@ export default function PublishComponentForm({
               demo.preview_video_file &&
               demo.preview_video_file.size > 0 &&
               demo?.preview_video_data_url
-                ? uploadToR2({
-                    file: {
-                      name: "video.mp4",
-                      type: "video/mp4",
-                      encodedContent: await new Promise((resolve) => {
-                        const reader = new FileReader()
-                        reader.onloadend = () => {
-                          const base64 = reader.result as string
-                          resolve(
-                            base64.replace(/^data:video\/mp4;base64,/, ""),
-                          )
-                        }
-                        reader.readAsDataURL(demo.preview_video_file as File)
-                      }),
-                    },
+                ? uploadToR2ClientSide({
+                    file: demo.preview_video_file,
                     fileKey: `${demoFolder}/video.mp4`,
                     bucketName: "components-code",
                     contentType: "video/mp4",
@@ -795,8 +772,7 @@ export default function PublishComponentForm({
                 : Promise.resolve(null),
             ])
 
-
-          if (!videoR2Url) {
+          if (demo.preview_video_file && !videoR2Url) {
             throw new Error("No video URL found for demo")
           }
 

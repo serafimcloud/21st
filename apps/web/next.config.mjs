@@ -31,6 +31,7 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "50mb",
     },
+    serverComponentsExternalPackages: ["@smithy", "util-stream"],
   },
   async headers() {
     return [
