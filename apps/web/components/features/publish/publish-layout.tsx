@@ -772,7 +772,7 @@ export default function PublishComponentForm({
                 : Promise.resolve(null),
               demo.preview_video_file &&
               demo.preview_video_file.size > 0 &&
-              demo.preview_video_file
+              demo?.preview_video_data_url
                 ? uploadToR2({
                     file: {
                       name: "video.mp4",
@@ -794,6 +794,11 @@ export default function PublishComponentForm({
                   })
                 : Promise.resolve(null),
             ])
+
+
+          if (!videoR2Url) {
+            throw new Error("No video URL found for demo")
+          }
 
           const { error: updateDemoError } = await client
             .from("demos")
