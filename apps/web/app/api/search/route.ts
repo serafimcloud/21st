@@ -38,11 +38,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get search query
+    // Get search query and pagination params
     const body = await request.json()
-    console.log("Request body:", body)
+    const { search, page = 1, per_page = 20 } = body
 
-    const { search } = body
     if (!search) {
       return NextResponse.json(
         { error: "Search query is required" },
@@ -79,11 +78,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Filter and transform data
-    const results = data.map((item: any) => {
-      // Для отладки
-      console.log("Raw item:", JSON.stringify(item, null, 2))
-
-      return {
+    const transformedResults = data
+      .map((item: any) => ({
         name: item.name || "",
         preview_url: item.preview_url || "",
         video_url: item.video_url,
@@ -91,17 +87,22 @@ export async function POST(request: NextRequest) {
           name: item.component_data?.name || "",
           description: item.component_data?.description || "",
           code: item.component_data?.code || "",
-          install_command:
-            item.component_data?.install_command ||
-            `pnpm dlx shadcn@latest add "https://21st.dev/r/${item.user_data?.username}/${item.component_data?.component_slug}"`,
+          install_command: item.component_data?.install_command || "",
         },
         component_user_data: {
           name: item.user_data?.name || "",
           username: item.user_data?.username || "",
           image_url: item.user_data?.image_url || null,
         },
-      }
-    })
+        usage_count: item.usage_data?.total_usages || 0,
+      }))
+      .sort((a, b) => b.usage_count - a.usage_count)
+
+    const total = transformedResults.length
+    const total_pages = Math.ceil(total / per_page)
+    const start = (page - 1) * per_page
+    const end = start + per_page
+    const results = transformedResults.slice(start, end)
 
     // Return filtered results with metadata
     return NextResponse.json<SearchResponse>({
@@ -109,6 +110,12 @@ export async function POST(request: NextRequest) {
       metadata: {
         plan: keyCheck.plan,
         requests_remaining: keyCheck.requests_remaining,
+        pagination: {
+          total,
+          page,
+          per_page,
+          total_pages,
+        },
       },
     })
   } catch (error) {

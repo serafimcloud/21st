@@ -376,7 +376,7 @@ export async function getFilteredDemos(
   limit: number = 24,
 ) {
   const { data, error } = await supabase
-    .rpc("get_filtered_demos_with_views", {
+    .rpc("get_filtered_demos_with_views_and_usage", {
       p_quick_filter: quickFilter,
       p_sort_by: sortBy,
       p_offset: offset,
@@ -502,7 +502,7 @@ export async function getUserDemos(
   loggedInUserId?: string,
 ) {
   const { data: filteredData, error } = await supabase.rpc(
-    "get_filtered_demos_with_views",
+    "get_filtered_demos_with_views_and_usage",
     {
       p_quick_filter: "all",
       p_sort_by: "newest",

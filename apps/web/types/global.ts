@@ -94,6 +94,7 @@ export interface ComponentSearchResult {
     username: string
     image_url: string | null
   }
+  usage_count: number
 }
 
 export interface SearchResponse {
@@ -101,6 +102,12 @@ export interface SearchResponse {
   metadata?: {
     plan: string
     requests_remaining: number
+    pagination: {
+      total: number
+      page: number
+      per_page: number
+      total_pages: number
+    }
   }
 }
 

@@ -395,7 +395,7 @@ export function EditComponentDialog({
       console.log("Versioned URL:", versionedUrl)
 
       if (codeUrl) {
-        // Обновляем компонент
+
         const { error: updateComponentError } = await supabase
           .from("components")
           .update({
@@ -409,7 +409,6 @@ export function EditComponentDialog({
           throw updateComponentError
         }
 
-        // Обновляем все демо этого компонента
         const { error: updateDemosError } = await supabase
           .from("demos")
           .update({
@@ -456,7 +455,7 @@ export function EditComponentDialog({
       console.log("Versioned Demo URL:", versionedDemoUrl)
 
       if (demoCodeUrl) {
-        // Обновляем демо напрямую через Supabase
+
         const { error: updateDemoError } = await supabase
           .from("demos")
           .update({
@@ -471,7 +470,6 @@ export function EditComponentDialog({
           throw updateDemoError
         }
 
-        // Обновляем компонент для сброса compiled_css
         const { error: updateComponentError } = await supabase
           .from("components")
           .update({
@@ -535,7 +533,7 @@ export function EditComponentDialog({
         const versionedGlobalCssUrl = addVersionToUrl(globalCssUrl)
 
         if (tailwindConfigUrl && globalCssUrl) {
-          // Обновляем компонент напрямую через Supabase
+
           const { error: updateError } = await supabase
             .from("components")
             .update({

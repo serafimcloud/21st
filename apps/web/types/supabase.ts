@@ -1026,6 +1026,38 @@ export type Database = {
           debug_info: Json
         }[]
       }
+      get_filtered_demos_with_views_and_usage: {
+        Args: {
+          p_quick_filter: string
+          p_sort_by: string
+          p_offset: number
+          p_limit: number
+          p_tag_slug?: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          demo_code: string
+          preview_url: string
+          video_url: string
+          compiled_css: string
+          demo_dependencies: Json
+          demo_direct_registry_dependencies: Json
+          pro_preview_image_url: string
+          created_at: string
+          updated_at: string
+          component_id: number
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          tags: Json
+          total_count: number
+          fts: unknown
+          demo_slug: string
+          debug_info: Json
+        }[]
+      }
       get_hunted_components: {
         Args: {
           p_hunter_username: string
@@ -1192,36 +1224,22 @@ export type Database = {
           demo_slug: string
         }[]
       }
-      search_demos_ai:
-        | {
-            Args: {
-              match_threshold?: number
-              query_embedding?: string
-              search_query?: string
-            }
-            Returns: {
-              id: number
-              name: string
-              preview_url: string
-              video_url: string
-              component_data: Json
-              user_data: Json
-            }[]
-          }
-        | {
-            Args: {
-              search_query: string
-              match_threshold?: number
-            }
-            Returns: {
-              id: number
-              name: string
-              preview_url: string
-              video_url: string
-              component_data: Json
-              user_data: Json
-            }[]
-          }
+      search_demos_ai: {
+        Args: {
+          match_threshold?: number
+          query_embedding?: string
+          search_query?: string
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          component_data: Json
+          user_data: Json
+          usage_data: Json
+        }[]
+      }
       update_component_dependencies_closure:
         | {
             Args: {
