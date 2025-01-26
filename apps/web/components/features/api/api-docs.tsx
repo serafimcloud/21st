@@ -177,6 +177,20 @@ app.post('/api/components', async (req, res) => {
       </div>
 
       <div className="space-y-4">
+        <h2 className="text-sm font-medium">Request Format</h2>
+        <Code
+          code={`{
+  "search": "hero section",  // Required: search query
+  "page": 1,                // Optional: page number (default: 1)
+  "per_page": 20           // Optional: results per page (default: 20)
+}`}
+          language="json"
+          display="block"
+          fontSize="sm"
+        />
+      </div>
+
+      <div className="space-y-4">
         <h2 className="text-sm font-medium">Response Format</h2>
         <Code
           code={`{
@@ -199,7 +213,13 @@ app.post('/api/components', async (req, res) => {
   }],
   "metadata": {
     "plan": "free",
-    "requests_remaining": 80
+    "requests_remaining": 80,
+    "pagination": {
+      "total": 45,          // Total number of results
+      "page": 1,            // Current page
+      "per_page": 20,       // Results per page
+      "total_pages": 3      // Total number of pages
+    }
   }
 }`}
           language="json"

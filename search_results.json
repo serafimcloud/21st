@@ -1,0 +1,354 @@
+{
+  "results": [
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_2nElBLvklOKlAURm6W1PTu6yYFh/animated-hero/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_2nElBLvklOKlAURm6W1PTu6yYFh/animated-hero/default/video.mp4",
+      "component_data": {
+        "name": "Animated hero",
+        "description": "Animated hero with text and two shadcn/ui buttons",
+        "code": "https://cdn.21st.dev/user_2nElBLvklOKlAURm6W1PTu6yYFh/animated-hero.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/serafimcloud/animated-hero\""
+      },
+      "component_user_data": {
+        "name": "serafim",
+        "username": "serafimcloud",
+        "image_url": "https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ2l0aHViL2ltZ18ybkVsQk9lMnU2VHVQTmZWaDNZWTZ0UG05OXQifQ"
+      },
+      "usage_count": 1622
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_mikolajdobrucki/hero-section/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_mikolajdobrucki/hero-section/default/video.mp4",
+      "component_data": {
+        "name": "Hero Section",
+        "description": "A powerful hero section component built with shadcn/ui.\n\nCreate stunning hero sections with multiple variants including illustration-based layouts, glowing effects, and mobile app showcases. Each variant is designed to make a strong first impression while maintaining shadcn's signature aesthetic.\n\nBuilt with Tailwind CSS, this component delivers pixel-perfect, responsive hero sections that adapt beautifully across all devices. The clean, modern design principles ensure your hero section effectively communicates your message while maintaining visual harmony with other shadcn components.",
+        "code": "https://cdn.21st.dev/user_mikolajdobrucki/hero-section.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/mikolajdobrucki/hero-section\""
+      },
+      "component_user_data": {
+        "name": "Mikolaj Dobrucki",
+        "username": "mikolajdobrucki",
+        "image_url": "https://avatars.githubusercontent.com/u/5467602?v=4"
+      },
+      "usage_count": 1128
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_aceternity/container-scroll-animation/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_aceternity/container-scroll-animation/default/video.mp4",
+      "component_data": {
+        "name": "Container Scroll Animation",
+        "description": "A scroll animation that rotates in 3d on scroll. Perfect for hero or marketing sections.",
+        "code": "https://cdn.21st.dev/user_aceternity/container-scroll-animation.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/aceternity/container-scroll-animation\""
+      },
+      "component_user_data": {
+        "name": "Aceternity UI",
+        "username": "aceternity",
+        "image_url": "https://avatars.githubusercontent.com/u/127729578?s=200&v=4"
+      },
+      "usage_count": 665
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_ohmfordev/hero/829/preview.png",
+      "video_url": "https://cdn.21st.dev/user_ohmfordev/hero/829/video.mp4",
+      "component_data": {
+        "name": "Hero",
+        "description": "A hero section component with animated gradient background and customizable content.\n\nFeatures\n\n- Animated gradient background\n- Customizable title and subtitle\n- Configurable action buttons\n- Responsive design\n- Motion animations\n- Optional blur effect",
+        "code": "https://cdn.21st.dev/user_ohmfordev/hero.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/ohmfordev/hero\""
+      },
+      "component_user_data": {
+        "name": "",
+        "username": "ohmfordev",
+        "image_url": "https://avatars.githubusercontent.com/u/139752639?v=4"
+      },
+      "usage_count": 662
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_2rgfvfP6KhEePYzaDzrZPKcn1JO/hero-section-dark/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_2rgfvfP6KhEePYzaDzrZPKcn1JO/hero-section-dark/default/video.mp4",
+      "component_data": {
+        "name": "Hero Section Dark",
+        "description": "Hero",
+        "code": "https://cdn.21st.dev/user_2rgfvfP6KhEePYzaDzrZPKcn1JO/hero-section-dark/code.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/kinfe123/hero-section-dark\""
+      },
+      "component_user_data": {
+        "name": "KinfeMichael Tariku",
+        "username": "kinfe123",
+        "image_url": "https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ2l0aHViL2ltZ18ycmdmdmQ2OVpMeWRHMkxaY2Q4bzBKa1VoWGwifQ"
+      },
+      "usage_count": 651
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_aceternity/animated-testimonials/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_aceternity/animated-testimonials/default/video.mp4",
+      "component_data": {
+        "name": "Animated Testimonials",
+        "description": "Minimal testimonials sections with image and quote.\n\nFeatures:\n-  Image Carousel: Enjoy smooth animated image transitions with cool 3D rotation effects.  \n-  Word Animation: Watch text pop up with a fun word-by-word animation.  \n-  Navigation Controls: Easily navigate with Previous/Next buttons that have hover animations.  \n-  Autoplay Support: Choose to have an automatic slideshow if you want.  \n-  Shadcn/ui Integration: Get built-in theme support for a consistent look.  \n-  Responsive Layout: It adjusts from a two-column layout on desktop to a single-column view on mobile.  \n-  Customizable Styles: Style it your way with easy customization through className props.  \n\nExample Use Cases:\n-  Customer Reviews: Show off customer feedback along with their photos.  \n-  Team Showcase: Highlight team members with their profiles.  \n-  Client Testimonials: Present client feedback in a visually appealing way.  \n-  Portfolio Reviews: Feature project feedback from clients.  ",
+        "code": "https://cdn.21st.dev/user_aceternity/animated-testimonials.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/aceternity/animated-testimonials\""
+      },
+      "component_user_data": {
+        "name": "Aceternity UI",
+        "username": "aceternity",
+        "image_url": "https://avatars.githubusercontent.com/u/127729578?s=200&v=4"
+      },
+      "usage_count": 504
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_ayushmxxn/feature-section/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_ayushmxxn/feature-section/default/video.mp4",
+      "component_data": {
+        "name": "Feature Section",
+        "description": "A sleek, animated feature section showcasing steps with engaging visuals and smooth transitions.\n\nFeatures\n- Auto-advancing steps with progress\n- Smooth animations and transitions\n- Responsive design\n- Image carousel with transitions\n- Customizable timing and appearance\n- shadcn/ui theme integration\n- Progress indicators\n- Checkmark for completed steps",
+        "code": "https://cdn.21st.dev/user_ayushmxxn/feature-section.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/ayushmxxn/feature-section\""
+      },
+      "component_user_data": {
+        "name": "Serenity UI",
+        "username": "ayushmxxn",
+        "image_url": "https://avatars.githubusercontent.com/u/146022901?v=4"
+      },
+      "usage_count": 464
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_2nElBLvklOKlAURm6W1PTu6yYFh/hero-with-mockup/default/preview.png",
+      "video_url": null,
+      "component_data": {
+        "name": "Hero with Mockup",
+        "description": "A modern, animated hero section with mockup display and gradient effects inspired by Launch UI. It features a large headline, description, dual CTAs, and a floating mockup image.\n\n\nFeatures:\n\t•\tResponsive design with a mobile-first approach\n\t•\tStaggered fade-in animations\n\t•\tGradient text and button effects\n\t•\tFloating glow background\n\t•\tDark mode support\n\t•\tCustomizable CTAs\n\t•\tOptimized image loading",
+        "code": "https://cdn.21st.dev/user_2nElBLvklOKlAURm6W1PTu6yYFh/hero-with-mockup.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/serafimcloud/hero-with-mockup\""
+      },
+      "component_user_data": {
+        "name": "serafim",
+        "username": "serafimcloud",
+        "image_url": "https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ2l0aHViL2ltZ18ybkVsQk9lMnU2VHVQTmZWaDNZWTZ0UG05OXQifQ"
+      },
+      "usage_count": 395
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_aceternity/hero-highlight/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_aceternity/hero-highlight/default/video.mp4",
+      "component_data": {
+        "name": "Hero Highlight",
+        "description": "A background effect with a text highlight component, perfect for hero sections.",
+        "code": "https://cdn.21st.dev/user_aceternity/hero-highlight.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/aceternity/hero-highlight\""
+      },
+      "component_user_data": {
+        "name": "Aceternity UI",
+        "username": "aceternity",
+        "image_url": "https://avatars.githubusercontent.com/u/127729578?s=200&v=4"
+      },
+      "usage_count": 276
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_magicui/hero-video-dialog/default/preview.png",
+      "video_url": null,
+      "component_data": {
+        "name": "Hero Video Dialog",
+        "description": "A hero video dialog component.",
+        "code": "https://cdn.21st.dev/user_magicui/hero-video-dialog.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/magicui/hero-video-dialog\""
+      },
+      "component_user_data": {
+        "name": "Magic UI",
+        "username": "magicui",
+        "image_url": "https://avatars.githubusercontent.com/u/166878038?s=200&v=4"
+      },
+      "usage_count": 237
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_2rQ1QHrJyxpmWMHhqhANzWMc64n/shape-landing-hero/default/preview.png?v=1",
+      "video_url": "https://cdn.21st.dev/user_2rQ1QHrJyxpmWMHhqhANzWMc64n/shape-landing-hero/default/video.mp4?v=1",
+      "component_data": {
+        "name": "Shape Landing Hero",
+        "description": "A nicely landing with shapes and color. ",
+        "code": "https://cdn.21st.dev/user_2rQ1QHrJyxpmWMHhqhANzWMc64n/shape-landing-hero/code.tsx?v=1",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/kokonutd/shape-landing-hero\""
+      },
+      "component_user_data": {
+        "name": "Kokonut",
+        "username": "kokonutd",
+        "image_url": "https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ2l0aHViL2ltZ18yclExUUdpdExVWTZkTGY4dk5LcjV2RFNTS3oifQ"
+      },
+      "usage_count": 206
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_Codehagen/hero-pill/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_Codehagen/hero-pill/default/video.mp4",
+      "component_data": {
+        "name": "Hero Pill",
+        "description": "A stunning and interactive announcement banner featuring smooth animations and customizable content.\n\nFeatures:\n\t•\tFluid entrance animations\n\t•\tCustomizable content and styling options\n\t•\tMobile-responsive design for optimal viewing on all devices\n\t•\tSupport for icons and links\n\t•\tAccessible design with ARIA attributes\n\t•\tTypeScript support for enhanced development experience\n\t•\tServer-Side Rendering (SSR) compatibility\n\nNotes:\n\t•\tPowered by Framer Motion for seamless animations\n\t•\tFully typed using TypeScript for improved code quality and maintainability\n\t•\tImplemented as a Server Component with client-side hydration for optimal performance\n\t•\tDesigned with a mobile-first approach to ensure responsiveness across devices\n\t•\tCustomizable through props for easy integration and reusability\n\t•\tOptimized bundle size for efficient loading and performance\n\t•\tReusable across various contexts and projects\n\n",
+        "code": "https://cdn.21st.dev/user_Codehagen/hero-pill.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/Codehagen/hero-pill\""
+      },
+      "component_user_data": {
+        "name": "Prism UI",
+        "username": "Codehagen",
+        "image_url": "https://avatars.githubusercontent.com/u/24507211?v=4"
+      },
+      "usage_count": 188
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_Codehagen/expandable-card/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_Codehagen/expandable-card/default/video.mp4",
+      "component_data": {
+        "name": "Expandable Card",
+        "description": "An interactive, expandable card component for displaying project status and details with smooth animations.\n\nNotes:\n\t•\tBuilt with Framer Motion for smooth animations\n\t•\tUses Lucide React for consistent iconography\n\t•\tResponsive design with a mobile-first approach\n\t•\tInteractive expand/collapse functionality\n\t•\tTypeScript support with proper types\n\t•\tIntegrates with Shadcn UI components\n\t•\tSupports custom styling and theming\n\t•\tOptimised performance with proper hooks usage\n\nFeatures:\n\t•\tSmooth expand/collapse animations\n\t•\tProgress tracking\n\t•\tContributor avatars with tooltips\n\t•\tTask completion status\n\t•\tGitHub integration display\n\t•\tInteractive buttons and badges\n\t•\tResponsive layout\n\t•\tAccessibility features\n\n",
+        "code": "https://cdn.21st.dev/user_Codehagen/expandable-card.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/Codehagen/expandable-card\""
+      },
+      "component_user_data": {
+        "name": "Prism UI",
+        "username": "Codehagen",
+        "image_url": "https://avatars.githubusercontent.com/u/24507211?v=4"
+      },
+      "usage_count": 178
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_Codehagen/hero/935/preview.png",
+      "video_url": "https://cdn.21st.dev/user_Codehagen/hero/935/video.mp4",
+      "component_data": {
+        "name": "Hero",
+        "description": "Hero Section with Appear Animation and Hero Badge",
+        "code": "https://cdn.21st.dev/user_Codehagen/hero.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/Codehagen/hero\""
+      },
+      "component_user_data": {
+        "name": "Prism UI",
+        "username": "Codehagen",
+        "image_url": "https://avatars.githubusercontent.com/u/24507211?v=4"
+      },
+      "usage_count": 177
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_tommyjepsen/hero-with-group-of-images-text-and-two-buttons/default/preview.png",
+      "video_url": null,
+      "component_data": {
+        "name": "Hero with group of images, text and two buttons",
+        "description": "Hero with group of images, text and two shadcn/ui buttons",
+        "code": "https://cdn.21st.dev/user_tommyjepsen/hero-with-group-of-images-text-and-two-buttons.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/tommyjepsen/hero-with-group-of-images-text-and-two-buttons\""
+      },
+      "component_user_data": {
+        "name": "Tommy Jepsen",
+        "username": "tommyjepsen",
+        "image_url": "https://avatars.githubusercontent.com/u/5646646?v=4"
+      },
+      "usage_count": 170
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_aceternity/hero-parallax/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_aceternity/hero-parallax/default/video.mp4",
+      "component_data": {
+        "name": "Hero Parallax",
+        "description": "A scroll effect with rotation, translation and opacity animations.",
+        "code": "https://cdn.21st.dev/user_aceternity/hero-parallax.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/aceternity/hero-parallax\""
+      },
+      "component_user_data": {
+        "name": "Aceternity UI",
+        "username": "aceternity",
+        "image_url": "https://avatars.githubusercontent.com/u/127729578?s=200&v=4"
+      },
+      "usage_count": 166
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_tommyjepsen/hero-with-image-text-and-two-buttons/default/preview.png",
+      "video_url": null,
+      "component_data": {
+        "name": "Hero with image, text and two buttons",
+        "description": "Hero with image, text and two shadcn/ui buttons",
+        "code": "https://cdn.21st.dev/user_tommyjepsen/hero-with-image-text-and-two-buttons.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/tommyjepsen/hero-with-image-text-and-two-buttons\""
+      },
+      "component_user_data": {
+        "name": "Tommy Jepsen",
+        "username": "tommyjepsen",
+        "image_url": "https://avatars.githubusercontent.com/u/5646646?v=4"
+      },
+      "usage_count": 152
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_tommyjepsen/hero-with-text-and-two-button/default/preview.png",
+      "video_url": null,
+      "component_data": {
+        "name": "Hero with text and two button",
+        "description": "Hero section with text and two button",
+        "code": "https://cdn.21st.dev/user_tommyjepsen/hero-with-text-and-two-button.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/tommyjepsen/hero-with-text-and-two-button\""
+      },
+      "component_user_data": {
+        "name": "Tommy Jepsen",
+        "username": "tommyjepsen",
+        "image_url": "https://avatars.githubusercontent.com/u/5646646?v=4"
+      },
+      "usage_count": 137
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_originui/hero-pill/983/preview.png",
+      "video_url": "https://cdn.21st.dev/user_originui/hero-pill/983/video.mp4",
+      "component_data": {
+        "name": "Hero Pill",
+        "description": "A pill-shaped component for highlighting key features or messages with optional icons and animations.\n\nFeatures\n- Optional leading icon\n- Smooth entrance animation\n- Dark mode support\n- Customizable styles and animations\n- Hover effects",
+        "code": "https://cdn.21st.dev/user_originui/hero-pill.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/originui/hero-pill\""
+      },
+      "component_user_data": {
+        "name": "Origin UI",
+        "username": "originui",
+        "image_url": "https://avatars.githubusercontent.com/u/185059885?s=200&v=4"
+      },
+      "usage_count": 107
+    },
+    {
+      "name": "Default",
+      "preview_url": "https://cdn.21st.dev/user_Codehagen/hero-badge/default/preview.png",
+      "video_url": "https://cdn.21st.dev/user_Codehagen/hero-badge/default/video.mp4",
+      "component_data": {
+        "name": "Hero Badge",
+        "description": "A versatile, animated badge component for highlighting new features, announcements, or important links.\n\nFeatures:\n\t•\tSmooth entrance animations\n\t•\tIcon rotation on hover\n\t•\tMultiple size variants\n\t•\tMultiple style variants\n\t•\tLink and button functionality\n\t•\tCustomizable icons\n\t•\tResponsive design\n\t•\tAccessibility features\nNotes:\n\t•\tBuilt with Framer Motion for smooth animations\n\t•\tUses React Server Components (RSC) with the \"use client\" directive\n\t•\tEmploys a responsive design with a mobile-first approach\n\t•\tIncludes interactive hover animations\n\t•\tSupports TypeScript with proper types\n\t•\tAllows for custom styling and theming\n\t•\tOptimized performance through proper usage of hooks\n\n",
+        "code": "https://cdn.21st.dev/user_Codehagen/hero-badge.tsx",
+        "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/Codehagen/hero-badge\""
+      },
+      "component_user_data": {
+        "name": "Prism UI",
+        "username": "Codehagen",
+        "image_url": "https://avatars.githubusercontent.com/u/24507211?v=4"
+      },
+      "usage_count": 104
+    }
+  ],
+  "metadata": {
+    "plan": "free",
+    "requests_remaining": 79,
+    "pagination": {
+      "total": 28,
+      "page": 1,
+      "per_page": 20,
+      "total_pages": 2
+    }
+  }
+}
