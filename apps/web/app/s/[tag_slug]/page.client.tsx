@@ -58,7 +58,7 @@ export function TagPageContent({
       }
 
       const { data: filteredData, error } = await supabase.rpc(
-        "get_filtered_demos_with_views",
+        "get_filtered_demos_with_views_and_usage",
         {
           p_quick_filter: quickFilter,
           p_sort_by: sortBy,
