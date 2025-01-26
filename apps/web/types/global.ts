@@ -94,6 +94,7 @@ export interface ComponentSearchResult {
     username: string
     image_url: string | null
   }
+  usage_count: number
 }
 
 export interface SearchResponse {

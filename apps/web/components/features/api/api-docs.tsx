@@ -181,17 +181,25 @@ app.post('/api/components', async (req, res) => {
         <Code
           code={`{
   "results": [{
-    "name": "Animated Dropdown",
-    "preview_url": "https://...",
+    "name": "Default",
+    "preview_url": "https://cdn.21st.dev/...",
+    "video_url": "https://cdn.21st.dev/...",
     "component_data": {
-      "name": "Dropdown Menu",
-      "description": "Enhanced dropdown with animations",
-      "code": "https://...",
-      "install_command": "pnpm dlx shadcn@latest add \\"https://21st.dev/r/dropdown\\""
-    }
+      "name": "Animated hero",
+      "description": "Animated hero with text and two shadcn/ui buttons",
+      "code": "https://cdn.21st.dev/...",
+      "install_command": "pnpm dlx shadcn@latest add \"https://21st.dev/r/...\""
+    },
+    "component_user_data": {
+      "name": "serafim",
+      "username": "serafimcloud", 
+      "image_url": "https://img.clerk.com/..."
+    },
+    "usage_count": 1621
   }],
   "metadata": {
-    "requests_remaining": 999
+    "plan": "free",
+    "requests_remaining": 80
   }
 }`}
           language="json"

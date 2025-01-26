@@ -1192,36 +1192,22 @@ export type Database = {
           demo_slug: string
         }[]
       }
-      search_demos_ai:
-        | {
-            Args: {
-              match_threshold?: number
-              query_embedding?: string
-              search_query?: string
-            }
-            Returns: {
-              id: number
-              name: string
-              preview_url: string
-              video_url: string
-              component_data: Json
-              user_data: Json
-            }[]
-          }
-        | {
-            Args: {
-              search_query: string
-              match_threshold?: number
-            }
-            Returns: {
-              id: number
-              name: string
-              preview_url: string
-              video_url: string
-              component_data: Json
-              user_data: Json
-            }[]
-          }
+      search_demos_ai: {
+        Args: {
+          match_threshold?: number
+          query_embedding?: string
+          search_query?: string
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          component_data: Json
+          user_data: Json
+          usage_data: Json
+        }[]
+      }
       update_component_dependencies_closure:
         | {
             Args: {
