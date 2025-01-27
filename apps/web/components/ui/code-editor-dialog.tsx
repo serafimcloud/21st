@@ -188,15 +188,12 @@ export function CodeEditorDialog({
                 <Button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className={cn(
-                    "relative transition-[width] duration-200",
-                    isSaving ? "w-[120px]" : "w-[105px]",
-                  )}
+                  className="relative transition-all duration-200"
                 >
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center gap-2">
                     {isSaving && (
                       <LoaderCircle
-                        className="mr-2 animate-spin"
+                        className="animate-spin"
                         size={16}
                         strokeWidth={2}
                         aria-hidden="true"
