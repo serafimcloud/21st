@@ -32,13 +32,12 @@ import { Button } from "@/components/ui/button"
 import { LoaderCircle } from "lucide-react"
 import { EditCodeFileCard } from "../features/publish/components/edit-code-file-card"
 import { useTheme } from "next-themes"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { CodeEditorDialog } from "./code-editor-dialog"
 import { addVersionToUrl } from "@/lib/utils/url"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { atom, useAtom } from "jotai"
 import { useR2Upload } from "../features/publish/hooks/use-r2-upload"
-import { cn } from "@/lib/utils"
 
 const cleanInitialUrl = (url: string | null) => {
   if (!url) return ""
@@ -668,6 +667,52 @@ export function EditComponentDialog({
     </>
   )
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        isOpen &&
+        (e.metaKey || e.ctrlKey) &&
+        e.key === "Enter" &&
+        e.target instanceof Element &&
+        !e.target.matches("textarea, input")
+      ) {
+        e.preventDefault()
+        handleSubmit(e as unknown as React.FormEvent)
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen, handleSubmit])
+
+  const saveButton = (
+    <Button
+      onClick={handleSubmit}
+      disabled={
+        uploadToR2Mutation.isPending ||
+        updateMutation.isPending ||
+        isVideoUploading ||
+        isUploading
+      }
+      className="relative transition-all duration-200"
+    >
+      <div className="flex items-center justify-center gap-2">
+        {(uploadToR2Mutation.isPending ||
+          updateMutation.isPending ||
+          isVideoUploading ||
+          isUploading) && (
+          <LoaderCircle
+            className="animate-spin"
+            size={16}
+            strokeWidth={2}
+            aria-hidden="true"
+          />
+        )}
+        Save
+      </div>
+    </Button>
+  )
+
   if (isMobile) {
     return (
       <Drawer
@@ -683,31 +728,7 @@ export function EditComponentDialog({
           <DrawerHeader className="mb-2 px-6">
             <div className="flex justify-between items-center">
               <DrawerTitle>Edit component</DrawerTitle>
-              <Button
-                onClick={handleSubmit}
-                disabled={
-                  uploadToR2Mutation.isPending ||
-                  updateMutation.isPending ||
-                  isVideoUploading ||
-                  isUploading
-                }
-                className="relative transition-all duration-200"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  {(uploadToR2Mutation.isPending ||
-                    updateMutation.isPending ||
-                    isVideoUploading ||
-                    isUploading) && (
-                    <LoaderCircle
-                      className="animate-spin"
-                      size={16}
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                  )}
-                  Save
-                </div>
-              </Button>
+              {saveButton}
             </div>
           </DrawerHeader>
           <div className="px-6 pb-6 overflow-y-auto max-h-[calc(100dvh-6rem)]">
@@ -781,33 +802,7 @@ export function EditComponentDialog({
               <div className="flex-1">
                 <SheetTitle className="text-md">Edit component</SheetTitle>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleSubmit}
-                  disabled={
-                    uploadToR2Mutation.isPending ||
-                    updateMutation.isPending ||
-                    isVideoUploading ||
-                    isUploading
-                  }
-                  className="relative transition-all duration-200"
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    {(uploadToR2Mutation.isPending ||
-                      updateMutation.isPending ||
-                      isVideoUploading ||
-                      isUploading) && (
-                      <LoaderCircle
-                        className="animate-spin"
-                        size={16}
-                        strokeWidth={2}
-                        aria-hidden="true"
-                      />
-                    )}
-                    Save
-                  </div>
-                </Button>
-              </div>
+              <div className="flex items-center gap-2">{saveButton}</div>
             </div>
           </SheetHeader>
           <div className="overflow-y-auto h-[calc(100vh-5rem)] px-6">

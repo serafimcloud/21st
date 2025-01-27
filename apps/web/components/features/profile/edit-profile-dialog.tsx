@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -190,6 +189,18 @@ export function EditProfileDialog({
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isOpen && (e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault()
+        form.handleSubmit(onSubmit)()
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [isOpen, form, onSubmit])
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
