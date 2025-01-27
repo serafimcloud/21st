@@ -53,6 +53,289 @@ export const defaultGlobalCss = `
 @tailwind components;
 @tailwind utilities;
 
+@keyframes ripple {
+  0% {
+    opacity: 0;
+    background-size: 0 0;
+    transform: scale(0.1);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      black 0%,
+      black 0%,
+      transparent 2%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      black 0%,
+      black 0%,
+      transparent 2%,
+      transparent 100%
+    );
+  }
+  
+  10% {
+    opacity: 1;
+    background-size: 16px 16px;
+    transform: scale(0.2);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      black 0%,
+      black 8%,
+      transparent 12%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      black 0%,
+      black 8%,
+      transparent 12%,
+      transparent 100%
+    );
+  }
+  
+  20% {
+    transform: scale(0.3);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      black 0%,
+      black 18%,
+      transparent 22%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      black 0%,
+      black 18%,
+      transparent 22%,
+      transparent 100%
+    );
+  }
+  
+  30% {
+    transform: scale(0.4);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      black 0%,
+      black 28%,
+      transparent 32%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      black 0%,
+      black 28%,
+      transparent 32%,
+      transparent 100%
+    );
+  }
+  
+  40% {
+    transform: scale(0.5);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 38%,
+      transparent 42%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 38%,
+      transparent 42%,
+      transparent 100%
+    );
+  }
+  
+  50% {
+    transform: scale(0.6);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 48%,
+      transparent 52%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 48%,
+      transparent 52%,
+      transparent 100%
+    );
+  }
+  
+  60% {
+    transform: scale(0.7);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 58%,
+      transparent 62%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 58%,
+      transparent 62%,
+      transparent 100%
+    );
+  }
+  
+  70% {
+    transform: scale(0.8);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 68%,
+      transparent 72%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 68%,
+      transparent 72%,
+      transparent 100%
+    );
+  }
+  
+  80% {
+    transform: scale(0.9);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 78%,
+      transparent 82%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 78%,
+      transparent 82%,
+      transparent 100%
+    );
+  }
+  
+  90% {
+    transform: scale(0.95);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 88%,
+      transparent 92%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      black 88%,
+      transparent 92%,
+      transparent 100%
+    );
+  }
+
+  100% {
+    opacity: 0;
+    background-size: 0 0;
+    transform: scale(1);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      transparent 100%
+    );
+  }
+}
+
+@keyframes ripple-dark {
+  0% {
+    background-image: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.13) 0%,
+      rgba(255, 255, 255, 0) 5%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+  
+  25% {
+    background-image: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.13) 0%,
+      rgba(255, 255, 255, 0.13) 15%,
+      rgba(255, 255, 255, 0) 25%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+  
+  50% {
+    background-image: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.13) 35%,
+      rgba(255, 255, 255, 0.13) 45%,
+      rgba(255, 255, 255, 0) 55%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+  
+  75% {
+    background-image: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0) 45%,
+      rgba(255, 255, 255, 0.13) 75%,
+      rgba(255, 255, 255, 0.13) 85%,
+      rgba(255, 255, 255, 0) 95%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+
+  100% {
+    background-image: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+}
+
+.lab-bg {
+  --mask-offset: 100px;
+  -webkit-mask: linear-gradient(to bottom,transparent,#fff var(--mask-offset) calc(100% - var(--mask-offset)),transparent),linear-gradient(to right,transparent,#fff var(--mask-offset) calc(100% - var(--mask-offset)),transparent);
+  mask: linear-gradient(to bottom,transparent,#fff var(--mask-offset) calc(100% - var(--mask-offset)),transparent),linear-gradient(to right,transparent,#fff var(--mask-offset) calc(100% - var(--mask-offset)),transparent);
+  -webkit-mask-composite: source-in,xor;
+  mask-composite: intersect;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+}
+
+.lab-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#00000021 1px, transparent 1px);
+  -webkit-mask-image: radial-gradient(circle at center, transparent 0%, transparent 100%);
+  mask-image: radial-gradient(circle at center, transparent 0%, transparent 100%);
+  animation: ripple 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  will-change: transform, mask-image, -webkit-mask-image, background-size, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+}
+
+.dark .lab-bg::before {
+  background-image: radial-gradient(#ffffff22 1px, transparent 1px);
+}
+
 html,
 body {
   max-width: 100vw;
@@ -285,7 +568,9 @@ export default function App() {
     <ThemeProvider attribute="class" defaultTheme="${theme}" enableSystem={false}>
       <RouterProvider>
           <div className="relative flex items-center justify-center h-screen w-full m-auto p-16 bg-background text-foreground">
-            <div className="absolute lab-bg inset-0 size-full bg-[radial-gradient(#00000021_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff22_1px,transparent_1px)] [background-size:16px_16px]"></div>
+            <div className="absolute lab-bg inset-0 size-full">
+              <div className="absolute inset-0 bg-[radial-gradient(#00000021_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff22_1px,transparent_1px)]"></div>
+            </div>
             {showSelect && (
               <div className="absolute z-10 top-4 right-14 flex flex-col items-end gap-1">
                 <Select onValueChange={handleSelect} value={demoComponentNames[currentIndex]} className="shadow">
