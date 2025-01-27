@@ -794,7 +794,7 @@ export function EditComponentDialog({
       >
         <SheetContent
           side="right"
-          className="px-0 pb-0 sm:max-w-lg [&_button[aria-label='Close']]:hidden"
+          className="px-0 pb-0 sm:max-w-lg [&_button[aria-label='Close']]:hidden pt-4"
           hideCloseButton
         >
           <SheetHeader className="min-h-12 border-b bg-background z-50 pointer-events-auto px-4 sticky top-0">
