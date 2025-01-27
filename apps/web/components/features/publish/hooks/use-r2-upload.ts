@@ -19,6 +19,15 @@ export const useR2Upload = () => {
     contentType?: string
   }) => {
     try {
+      console.log("🚀 R2 Upload Starting:", {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        fileKey,
+        bucketName,
+        contentType,
+      })
+
       setIsUploading(true)
       setError(null)
 
@@ -28,6 +37,8 @@ export const useR2Upload = () => {
         contentType: contentType,
       })
 
+      console.log("📝 Got presigned URL:", presignedUrl)
+
       const response = await fetch(presignedUrl, {
         method: "PUT",
         body: file,
@@ -36,12 +47,24 @@ export const useR2Upload = () => {
         },
       })
 
+      console.log("📤 Upload response:", {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText,
+      })
+
       if (!response.ok) {
-        throw new Error("Upload failed")
+        throw new Error(`Upload failed: ${response.statusText}`)
       }
-      return `${process.env.NEXT_PUBLIC_CDN_URL}/${fileKey}`
+
+      const finalUrl = `${process.env.NEXT_PUBLIC_CDN_URL}/${fileKey}`
+      console.log("✅ Upload successful, final URL:", finalUrl)
+
+      return finalUrl
     } catch (err) {
+      console.error("❌ R2 Upload Error:", err)
       setError(err instanceof Error ? err : new Error("Upload failed"))
+      throw err
     } finally {
       setIsUploading(false)
     }

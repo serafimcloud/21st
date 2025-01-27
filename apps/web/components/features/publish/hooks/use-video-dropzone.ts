@@ -51,9 +51,22 @@ export function useVideoDropzone({
     try {
       setIsProcessingVideo(true)
       const previewUrl = URL.createObjectURL(file)
+
+      console.log("🎥 Before setting video file:", {
+        file,
+        previewUrl,
+      })
+
       form.setValue(`demos.${demoIndex}.preview_video_data_url`, previewUrl)
+      form.setValue(`demos.${demoIndex}.preview_video_file`, file)
 
       const processedFile = await convertVideoToMP4(file)
+      console.log("🎥 After processing video:", {
+        processedFile,
+        size: processedFile.size,
+        type: processedFile.type,
+      })
+
       form.setValue(`demos.${demoIndex}.preview_video_file`, processedFile)
     } catch (error) {
       console.error("Error processing video:", error)

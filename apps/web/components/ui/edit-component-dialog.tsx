@@ -36,7 +36,6 @@ import { useState } from "react"
 import { CodeEditorDialog } from "./code-editor-dialog"
 import { addVersionToUrl } from "@/lib/utils/url"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { atom, useAtom } from "jotai"
 import { useR2Upload } from "../features/publish/hooks/use-r2-upload"
 
@@ -99,6 +98,8 @@ export function EditComponentDialog({
   const [globalCss, setGlobalCss] = useState<string>()
   const [activeStyleTab, setActiveStyleTab] = useState<string>("tailwind")
   const [activeCodeTab, setActiveCodeTab] = useState<string>("component")
+  const [isVideoUploading, setIsVideoUploading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -160,11 +161,8 @@ export function EditComponentDialog({
   >({
     mutationFn: async ({ componentId, updatedData, demoUpdates }) => {
       await onUpdate(updatedData, {
-        id: demo.id,
-        preview_url: demoUpdates.preview_url,
-        video_url: demoUpdates.video_url,
-        updated_at: new Date().toISOString(),
-        ...demoUpdates,
+        id: demo?.id,
+        ...(demo?.id ? demoUpdates : {}),
       })
     },
     onSuccess: () => {
@@ -179,7 +177,26 @@ export function EditComponentDialog({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     const formData = form.getValues()
-    const demo = formData.demos[0]
+    const formDemo = formData.demos[0]
+
+    console.log("🎥 Video Debug:", {
+      formDemoRaw: formDemo,
+      videoFile: formDemo?.preview_video_file,
+      videoDataUrl: formDemo?.preview_video_data_url,
+      hasVideoFile: !!(
+        formDemo?.preview_video_file &&
+        formDemo.preview_video_file instanceof File &&
+        formDemo.preview_video_file.size > 0
+      ),
+      videoFileType:
+        formDemo?.preview_video_file instanceof File
+          ? formDemo.preview_video_file.type
+          : null,
+      videoFileSize:
+        formDemo?.preview_video_file instanceof File
+          ? formDemo.preview_video_file.size
+          : null,
+    })
 
     const componentUpdates: Partial<Component> = {}
     const demoUpdates: Partial<Demo & { demo_tags?: Tag[] }> = {}
@@ -198,19 +215,20 @@ export function EditComponentDialog({
     }
 
     if (
-      demo?.preview_image_file instanceof File &&
-      demo.preview_image_file.size > 0
+      formDemo?.preview_image_file instanceof File &&
+      formDemo.preview_image_file.size > 0
     ) {
-      const fileExtension = demo.preview_image_file.name.split(".").pop()
+      const fileExtension = formDemo.preview_image_file.name.split(".").pop()
       const baseFolder = `${componentData.user.id}/${componentData.component_slug}`
       const demoSlug =
         "component" in component ? component.demo_slug : "default"
       const demoFolder = `${baseFolder}/${demoSlug}`
-      const fileKey = `${demoFolder}/preview.${fileExtension}`
+      const timestamp = Date.now()
+      const fileKey = `${demoFolder}/preview.${timestamp}.${fileExtension}`
 
       try {
         const previewImageUrl = await uploadToR2Mutation.mutateAsync({
-          file: demo.preview_image_file,
+          file: formDemo.preview_image_file,
           fileKey,
         })
         demoUpdates.preview_url = previewImageUrl
@@ -222,41 +240,37 @@ export function EditComponentDialog({
     }
 
     if (
-      demo?.preview_video_file instanceof File &&
-      demo.preview_video_file.size > 0
+      formDemo?.preview_video_file &&
+      formDemo.preview_video_file instanceof File &&
+      formDemo.preview_video_file.size > 0
     ) {
+      setIsUploading(true)
+      toast.info("Processing video file...")
+
       const baseFolder = `${componentData.user.id}/${componentData.component_slug}`
       const demoSlug =
         "component" in component ? component.demo_slug : "default"
       const demoFolder = `${baseFolder}/${demoSlug}`
-      const fileKey = `${demoFolder}/video.mp4`
+      const timestamp = Date.now()
+      const fileKey = `${demoFolder}/video.${timestamp}.mp4`
 
       try {
-        if (process.env.NODE_ENV === "development") {
-          console.log("🎥 Uploading video with params:", {
-            file: demo.preview_video_file,
-            fileKey,
-            bucketName: "components-code",
-            contentType: "video/mp4",
-          })
-        }
-
         const videoUrl = await uploadToR2ClientSide({
-          file: demo.preview_video_file,
+          file: formDemo.preview_video_file,
           fileKey,
           bucketName: "components-code",
           contentType: "video/mp4",
         })
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("✅ Video upload successful:", videoUrl)
-        }
-
+        console.log("✅ Video upload response:", videoUrl)
+        toast.success("Video uploaded successfully!")
         demoUpdates.video_url = videoUrl
       } catch (error) {
         console.error("❌ Failed to upload video:", error)
         toast.error("Failed to upload video. Please try again.")
         return
+      } finally {
+        setIsUploading(false)
       }
     }
 
@@ -280,14 +294,26 @@ export function EditComponentDialog({
       Object.keys(componentUpdates).length > 0 ||
       Object.keys(demoUpdates).length > 0
     ) {
-      updateMutation.mutate({
-        componentId: componentData.id,
-        updatedData: componentUpdates,
-        demoUpdates: {
-          ...demoUpdates,
-          demo_tags: demoUpdates.demo_tags,
-        },
-      })
+      try {
+        if (process.env.NODE_ENV === "development") {
+          console.log("💾 Saving updates:", {
+            componentUpdates,
+            demoUpdates,
+          })
+        }
+
+        await updateMutation.mutateAsync({
+          componentId: componentData.id,
+          updatedData: componentUpdates,
+          demoUpdates: {
+            id: demo.id,
+            ...demoUpdates,
+          },
+        })
+      } catch (error) {
+        console.error("❌ Failed to save updates:", error)
+        toast.error("Failed to save changes. Please try again.")
+      }
     } else {
       setIsOpen(false)
       toast.info("No changes were made")
@@ -660,10 +686,16 @@ export function EditComponentDialog({
               <Button
                 onClick={handleSubmit}
                 disabled={
-                  uploadToR2Mutation.isPending || updateMutation.isPending
+                  uploadToR2Mutation.isPending ||
+                  updateMutation.isPending ||
+                  isVideoUploading ||
+                  isUploading
                 }
               >
-                {(uploadToR2Mutation.isPending || updateMutation.isPending) && (
+                {(uploadToR2Mutation.isPending ||
+                  updateMutation.isPending ||
+                  isVideoUploading ||
+                  isUploading) && (
                   <LoaderCircle
                     className="-ms-1 me-2 animate-spin"
                     size={16}
@@ -671,7 +703,10 @@ export function EditComponentDialog({
                     aria-hidden="true"
                   />
                 )}
-                {uploadToR2Mutation.isPending || updateMutation.isPending
+                {uploadToR2Mutation.isPending ||
+                updateMutation.isPending ||
+                isVideoUploading ||
+                isUploading
                   ? "Saving..."
                   : "Save"}
               </Button>
@@ -752,11 +787,16 @@ export function EditComponentDialog({
                 <Button
                   onClick={handleSubmit}
                   disabled={
-                    uploadToR2Mutation.isPending || updateMutation.isPending
+                    uploadToR2Mutation.isPending ||
+                    updateMutation.isPending ||
+                    isVideoUploading ||
+                    isUploading
                   }
                 >
                   {(uploadToR2Mutation.isPending ||
-                    updateMutation.isPending) && (
+                    updateMutation.isPending ||
+                    isVideoUploading ||
+                    isUploading) && (
                     <LoaderCircle
                       className="-ms-1 me-2 animate-spin"
                       size={16}
@@ -764,7 +804,10 @@ export function EditComponentDialog({
                       aria-hidden="true"
                     />
                   )}
-                  {uploadToR2Mutation.isPending || updateMutation.isPending
+                  {uploadToR2Mutation.isPending ||
+                  updateMutation.isPending ||
+                  isVideoUploading ||
+                  isUploading
                     ? "Saving..."
                     : "Save"}
                 </Button>

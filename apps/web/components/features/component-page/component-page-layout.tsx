@@ -408,128 +408,135 @@ export default function ComponentPage({
     demoUpdates: Partial<Demo> & { demo_tags?: Tag[] },
   ) => {
     if (process.env.NODE_ENV === "development") {
-      console.log("🔄 Component Page - Update initiated:", {
-        updatedData,
+      console.log("🔄 Starting update process:", {
+        componentUpdates: updatedData,
         demoUpdates,
+        demoId: demoUpdates.id,
       })
     }
 
-    let currentUrls: { preview_url: string | null; video_url: string | null } =
-      {
-        preview_url: null,
-        video_url: null,
-      }
+    try {
+      // Сначала обновляем демо, если есть что обновлять
+      if (Object.keys(demoUpdates).length > 0 && demoUpdates.id) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("📝 Processing demo updates for ID:", demoUpdates.id)
+        }
 
-    if (demoUpdates.id) {
-      const { data: currentDemo } = await supabase
-        .from("demos")
-        .select("preview_url, video_url")
-        .eq("id", demoUpdates.id)
-        .single()
+        // Получаем текущие URL
+        const { data: currentDemo } = await supabase
+          .from("demos")
+          .select("preview_url, video_url")
+          .eq("id", demoUpdates.id)
+          .single()
 
-      if (process.env.NODE_ENV === "development") {
-        console.log("📊 Current demo URLs:", currentDemo)
-      }
+        if (process.env.NODE_ENV === "development") {
+          console.log("📊 Current demo data:", currentDemo)
+        }
 
-      if (currentDemo) {
-        currentUrls = currentDemo
-      }
-    }
-
-    if (demoUpdates.preview_url) {
-      const baseUrl = currentUrls.preview_url || demoUpdates.preview_url
-      demoUpdates.preview_url = addVersionToUrl(baseUrl)
-
-      if (process.env.NODE_ENV === "development") {
-        console.log("🖼️ Updated preview URL:", demoUpdates.preview_url)
-      }
-    }
-
-    if (demoUpdates.video_url) {
-      const baseUrl = currentUrls.video_url || demoUpdates.video_url
-      demoUpdates.video_url = addVersionToUrl(baseUrl)
-
-      if (process.env.NODE_ENV === "development") {
-        console.log("🎥 Updated video URL:", demoUpdates.video_url)
-      }
-    }
-
-    if (demoUpdates.preview_url || demoUpdates.video_url) {
-      await purgeCacheForDemo(
-        addNoCacheParam(demoUpdates.preview_url),
-        addNoCacheParam(demoUpdates.video_url),
-      )
-    }
-
-    updateComponent(
-      { componentId: component.id, updatedData },
-      {
-        onSuccess: async () => {
-          if (process.env.NODE_ENV === "development") {
-            console.log("✅ Component update successful")
+        // Обновляем версии URL
+        if (demoUpdates.preview_url) {
+          // Проверяем, содержит ли URL timestamp
+          if (!demoUpdates.preview_url.includes("/preview.")) {
+            const baseUrl = currentDemo?.preview_url || demoUpdates.preview_url
+            demoUpdates.preview_url = addVersionToUrl(baseUrl)
           }
-          try {
-            if (Object.keys(demoUpdates).length > 0 && demoUpdates.id) {
-              // Sync demo tags if present
-              if (demoUpdates.demo_tags?.length !== undefined) {
-                // First, remove all existing tags for this demo
-                const { error: deleteError } = await supabase
-                  .from("demo_tags")
-                  .delete()
-                  .eq("demo_id", demoUpdates.id)
 
-                if (deleteError) {
-                  console.error("Error deleting existing tags:", deleteError)
-                  return
-                }
+          if (process.env.NODE_ENV === "development") {
+            console.log("🖼️ Processing preview URL:", {
+              currentUrl: currentDemo?.preview_url,
+              newUrl: demoUpdates.preview_url,
+            })
+          }
+        }
 
-                // Then add new tags if there are any
-                if (demoUpdates.demo_tags.length > 0) {
-                  const tagsToAdd = demoUpdates.demo_tags.filter(
-                    (tag) => !!tag.slug,
-                  ) as Tag[]
+        if (demoUpdates.video_url) {
+          // Проверяем, содержит ли URL timestamp
+          if (!demoUpdates.video_url.includes("/video.")) {
+            const baseUrl = currentDemo?.video_url || demoUpdates.video_url
+            demoUpdates.video_url = addVersionToUrl(baseUrl)
+          }
 
-                  if (tagsToAdd.length > 0) {
-                    await addTagsToDemo(supabase, demoUpdates.id, tagsToAdd)
-                  }
-                }
-              }
+          if (process.env.NODE_ENV === "development") {
+            console.log("🎥 Processing video URL:", {
+              currentUrl: currentDemo?.video_url,
+              newUrl: demoUpdates.video_url,
+            })
+          }
+        }
 
-              const demoUpdatePayload = {
-                preview_url: demoUpdates.preview_url,
-                video_url: demoUpdates.video_url,
-                updated_at: new Date().toISOString(),
-              }
+        // Очищаем кэш если нужно
+        if (demoUpdates.preview_url || demoUpdates.video_url) {
+          await purgeCacheForDemo(
+            addNoCacheParam(demoUpdates.preview_url),
+            addNoCacheParam(demoUpdates.video_url),
+          )
+        }
 
-              const { error: demoError } = await supabase
-                .from("demos")
-                .update(demoUpdatePayload)
-                .eq("id", demoUpdates.id)
+        // Обновляем теги если есть
+        if (demoUpdates.demo_tags?.length !== undefined) {
+          await supabase
+            .from("demo_tags")
+            .delete()
+            .eq("demo_id", demoUpdates.id)
 
-              if (demoError) {
-                console.error("Error updating demo:", demoError)
-                return
-              }
+          const tagsToAdd = demoUpdates.demo_tags.filter(
+            (tag) => !!tag.slug,
+          ) as Tag[]
+          if (tagsToAdd.length > 0) {
+            await addTagsToDemo(supabase, demoUpdates.id, tagsToAdd)
+          }
+        }
+
+        // Обновляем демо
+        const demoUpdatePayload = {
+          preview_url: demoUpdates.preview_url,
+          video_url: demoUpdates.video_url,
+          updated_at: new Date().toISOString(),
+        }
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("💾 Updating demo with payload:", demoUpdatePayload)
+        }
+
+        const { error: demoError } = await supabase
+          .from("demos")
+          .update(demoUpdatePayload)
+          .eq("id", demoUpdates.id)
+
+        if (demoError) {
+          throw new Error(`Failed to update demo: ${demoError.message}`)
+        }
+      }
+
+      // Затем обновляем компонент
+      await updateComponent(
+        { componentId: component.id, updatedData },
+        {
+          onSuccess: async () => {
+            if (process.env.NODE_ENV === "development") {
+              console.log("✅ Component update successful")
             }
 
+            // Получаем обновленный компонент
             const { data: updatedComponent, error } = await supabase
               .from("components")
               .select(
                 `
                 *,
                 user:users!components_user_id_fkey(*),
-                tags:component_tags(
-                  tag:tag_id(*)
-                )
+                tags:component_tags(tag:tag_id(*))
               `,
               )
               .eq("id", component.id)
               .single()
 
             if (error) {
-              console.error("Error fetching updated component:", error)
-              return
-            } else if (updatedComponent) {
+              throw new Error(
+                `Failed to fetch updated component: ${error.message}`,
+              )
+            }
+
+            if (updatedComponent) {
               const transformedComponent = {
                 ...updatedComponent,
                 tags: updatedComponent.tags.map(
@@ -543,18 +550,21 @@ export default function ComponentPage({
                 },
               )
               setIsEditDialogOpen(false)
+              toast.success("Component updated successfully")
             }
-          } catch (err) {
-            console.error("Error in onSuccess:", err)
-            return
-          }
+          },
+          onError: (error) => {
+            console.error("❌ Error updating component:", error)
+            toast.error("Failed to update component")
+            throw error
+          },
         },
-        onError: (error) => {
-          console.error("❌ Error updating component:", error)
-          return
-        },
-      },
-    )
+      )
+    } catch (err) {
+      console.error("❌ Update process failed:", err)
+      toast.error("Failed to update component")
+      throw err
+    }
   }
 
   const handleEditClick = () => {
