@@ -779,7 +779,7 @@ export function EditComponentDialog({
           <SheetHeader className="min-h-12 border-b bg-background z-50 pointer-events-auto px-4 sticky top-0">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <SheetTitle>Edit component</SheetTitle>
+                <SheetTitle className="text-md">Edit component</SheetTitle>
               </div>
               <div className="flex items-center gap-2">
                 <Button
