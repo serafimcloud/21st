@@ -42,16 +42,17 @@ export function ComponentCard({
     return <ComponentCardSkeleton />
   }
 
-  const isDemo = "component" in component
+  const isDemo = "demo_slug" in component
   const userData = component.user
+  const componentOwner = isDemo ? component.component.user : component.user
 
   if (!userData) {
     return <ComponentCardSkeleton />
   }
 
   const componentUrl = isDemo
-    ? `/${userData.display_username || userData.username}/${component.component.component_slug}/${component.demo_slug}`
-    : `/${userData.display_username || userData.username}/${component.component_slug}`
+    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug}`
+    : `/${componentOwner.display_username || componentOwner.username}/${component.component_slug}`
 
   const videoUrl = isDemo ? component.video_url : component.video_url
 
