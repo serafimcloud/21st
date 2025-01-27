@@ -794,18 +794,18 @@ export function EditComponentDialog({
       >
         <SheetContent
           side="right"
-          className="px-0 pb-0 sm:max-w-lg [&_button[aria-label='Close']]:hidden pt-4"
+          className="px-0 pb-0 sm:max-w-lg [&_button[aria-label='Close']]:hidden pt-2"
           hideCloseButton
         >
-          <SheetHeader className="min-h-12 border-b bg-background z-50 pointer-events-auto px-4 sticky top-0">
+          <SheetHeader className="min-h-10 border-b bg-background z-50 pointer-events-auto px-4 sticky top-0">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <SheetTitle className="text-md">Edit component</SheetTitle>
+                <SheetTitle className="text-sm">Edit component</SheetTitle>
               </div>
               <div className="flex items-center gap-2">{saveButton}</div>
             </div>
           </SheetHeader>
-          <div className="overflow-y-auto h-[calc(100vh-5rem)] px-6">
+          <div className="overflow-y-auto h-[calc(100vh-5rem)] px-4">
             {content}
           </div>
         </SheetContent>
