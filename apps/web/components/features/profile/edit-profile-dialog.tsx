@@ -470,15 +470,20 @@ export function EditProfileDialog({
                 <Button
                   onClick={form.handleSubmit(onSubmit)}
                   disabled={isLoading}
-                  className="relative"
-                >
-                  {isLoading && (
-                    <LoaderCircle
-                      className="-ms-1 me-2 h-4 w-4 animate-spin"
-                      aria-hidden="true"
-                    />
+                  className={cn(
+                    "relative transition-[width] duration-200",
+                    isLoading ? "w-[120px]" : "w-[105px]",
                   )}
-                  {isLoading ? "Saving..." : "Save changes"}
+                >
+                  <div className="flex items-center justify-center">
+                    {isLoading && (
+                      <LoaderCircle
+                        className="mr-2 h-4 w-4 animate-spin"
+                        aria-hidden="true"
+                      />
+                    )}
+                    Save
+                  </div>
                 </Button>
               </div>
             </div>

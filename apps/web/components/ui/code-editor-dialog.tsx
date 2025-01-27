@@ -185,16 +185,25 @@ export function CodeEditorDialog({
                 <Button variant="outline" onClick={() => setIsOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving && (
-                    <LoaderCircle
-                      className="-ms-1 me-2 animate-spin"
-                      size={16}
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={cn(
+                    "relative transition-[width] duration-200",
+                    isSaving ? "w-[120px]" : "w-[105px]",
                   )}
-                  {isSaving ? "Saving..." : "Save"}
+                >
+                  <div className="flex items-center justify-center">
+                    {isSaving && (
+                      <LoaderCircle
+                        className="mr-2 animate-spin"
+                        size={16}
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
+                    )}
+                    Save
+                  </div>
                 </Button>
               </div>
             </div>

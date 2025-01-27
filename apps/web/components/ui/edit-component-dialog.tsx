@@ -38,6 +38,7 @@ import { addVersionToUrl } from "@/lib/utils/url"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { atom, useAtom } from "jotai"
 import { useR2Upload } from "../features/publish/hooks/use-r2-upload"
+import { cn } from "@/lib/utils"
 
 const cleanInitialUrl = (url: string | null) => {
   if (!url) return ""
@@ -691,24 +692,22 @@ export function EditComponentDialog({
                   isVideoUploading ||
                   isUploading
                 }
+                className="relative transition-all duration-200"
               >
-                {(uploadToR2Mutation.isPending ||
-                  updateMutation.isPending ||
-                  isVideoUploading ||
-                  isUploading) && (
-                  <LoaderCircle
-                    className="-ms-1 me-2 animate-spin"
-                    size={16}
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  />
-                )}
-                {uploadToR2Mutation.isPending ||
-                updateMutation.isPending ||
-                isVideoUploading ||
-                isUploading
-                  ? "Saving..."
-                  : "Save"}
+                <div className="flex items-center justify-center gap-2">
+                  {(uploadToR2Mutation.isPending ||
+                    updateMutation.isPending ||
+                    isVideoUploading ||
+                    isUploading) && (
+                    <LoaderCircle
+                      className="animate-spin"
+                      size={16}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    />
+                  )}
+                  Save
+                </div>
               </Button>
             </div>
           </DrawerHeader>
@@ -792,24 +791,22 @@ export function EditComponentDialog({
                     isVideoUploading ||
                     isUploading
                   }
+                  className="relative transition-all duration-200"
                 >
-                  {(uploadToR2Mutation.isPending ||
-                    updateMutation.isPending ||
-                    isVideoUploading ||
-                    isUploading) && (
-                    <LoaderCircle
-                      className="-ms-1 me-2 animate-spin"
-                      size={16}
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                  )}
-                  {uploadToR2Mutation.isPending ||
-                  updateMutation.isPending ||
-                  isVideoUploading ||
-                  isUploading
-                    ? "Saving..."
-                    : "Save"}
+                  <div className="flex items-center justify-center gap-2">
+                    {(uploadToR2Mutation.isPending ||
+                      updateMutation.isPending ||
+                      isVideoUploading ||
+                      isUploading) && (
+                      <LoaderCircle
+                        className="animate-spin"
+                        size={16}
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
+                    )}
+                    Save
+                  </div>
                 </Button>
               </div>
             </div>
