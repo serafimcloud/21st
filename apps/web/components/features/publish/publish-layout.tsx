@@ -346,7 +346,6 @@ export default function PublishComponentForm({
           preview_image_data_url: "",
           preview_image_file: new File([], "placeholder"),
           preview_video_data_url: "",
-          preview_video_file: new File([], "placeholder"),
           demo_direct_registry_dependencies: [],
           demo_dependencies: {},
           tailwind_config: customTailwindConfig,
@@ -890,7 +889,6 @@ export default function PublishComponentForm({
         preview_image_data_url: "",
         preview_image_file: new File([], "placeholder"),
         preview_video_data_url: "",
-        preview_video_file: new File([], "placeholder"),
         demo_direct_registry_dependencies: [],
         demo_dependencies: currentDemo?.demo_dependencies || {},
       },
@@ -938,7 +936,6 @@ export default function PublishComponentForm({
         demo_direct_registry_dependencies:
           firstDemo.demo_direct_registry_dependencies,
         preview_video_data_url: firstDemo.preview_video_data_url,
-        preview_video_file: firstDemo.preview_video_file,
         demo_dependencies: firstDemo.demo_dependencies || {},
       }
     }
