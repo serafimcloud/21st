@@ -106,7 +106,11 @@ export const generateMetadata = async ({
   }
 }
 
-const fetchFileTextContent = async (url: string) => {
+const fetchFileTextContent = async (url: string | null | undefined) => {
+  if (!url) {
+    console.error("Empty URL provided to fetchFileTextContent")
+    return { data: null, error: new Error("Empty URL provided") }
+  }
   const filename = url.split("/").slice(-1)[0]
   try {
     const response = await fetch(url)
