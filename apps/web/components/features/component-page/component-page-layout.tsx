@@ -416,13 +416,11 @@ export default function ComponentPage({
     }
 
     try {
-      // Сначала обновляем демо, если есть что обновлять
       if (Object.keys(demoUpdates).length > 0 && demoUpdates.id) {
         if (process.env.NODE_ENV === "development") {
           console.log("📝 Processing demo updates for ID:", demoUpdates.id)
         }
 
-        // Получаем текущие URL
         const { data: currentDemo } = await supabase
           .from("demos")
           .select("preview_url, video_url")
@@ -433,9 +431,7 @@ export default function ComponentPage({
           console.log("📊 Current demo data:", currentDemo)
         }
 
-        // Обновляем версии URL
         if (demoUpdates.preview_url) {
-          // Проверяем, содержит ли URL timestamp
           if (!demoUpdates.preview_url.includes("/preview.")) {
             const baseUrl = currentDemo?.preview_url || demoUpdates.preview_url
             demoUpdates.preview_url = addVersionToUrl(baseUrl)
@@ -450,7 +446,6 @@ export default function ComponentPage({
         }
 
         if (demoUpdates.video_url) {
-          // Проверяем, содержит ли URL timestamp
           if (!demoUpdates.video_url.includes("/video.")) {
             const baseUrl = currentDemo?.video_url || demoUpdates.video_url
             demoUpdates.video_url = addVersionToUrl(baseUrl)
@@ -464,7 +459,6 @@ export default function ComponentPage({
           }
         }
 
-        // Очищаем кэш если нужно
         if (demoUpdates.preview_url || demoUpdates.video_url) {
           await purgeCacheForDemo(
             addNoCacheParam(demoUpdates.preview_url),
@@ -472,7 +466,6 @@ export default function ComponentPage({
           )
         }
 
-        // Обновляем теги если есть
         if (demoUpdates.demo_tags?.length !== undefined) {
           await supabase
             .from("demo_tags")
@@ -487,7 +480,6 @@ export default function ComponentPage({
           }
         }
 
-        // Обновляем демо
         const demoUpdatePayload = {
           preview_url: demoUpdates.preview_url,
           video_url: demoUpdates.video_url,
@@ -508,7 +500,6 @@ export default function ComponentPage({
         }
       }
 
-      // Затем обновляем компонент
       await updateComponent(
         { componentId: component.id, updatedData },
         {
@@ -517,7 +508,6 @@ export default function ComponentPage({
               console.log("✅ Component update successful")
             }
 
-            // Получаем обновленный компонент
             const { data: updatedComponent, error } = await supabase
               .from("components")
               .select(

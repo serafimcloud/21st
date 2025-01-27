@@ -1,7 +1,10 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback } from "react"
 import { Component, User, DemoWithComponent } from "../../../types/global"
+
+const videoLoadingCache = new Map<string, boolean>()
+const videoLoadPromises = new Map<string, Promise<void>>()
 
 interface ComponentVideoPreviewProps {
   component: DemoWithComponent | (Component & { user: User })
@@ -16,52 +19,87 @@ export function ComponentVideoPreview({
   const [isVideoLoaded, setIsVideoLoaded] = useState(false)
 
   const isDemo = "component" in component
-
   const id = isDemo ? component.id : component.id
   const videoUrl = isDemo
     ? component.video_url
     : (component as Component & { user: User }).video_url
 
-  const toggleVideoIcon = (hide: boolean) => {
-    const videoIcon = document.querySelector(
-      `[data-video-icon="${id}"]`,
-    ) as HTMLElement
-    if (videoIcon) {
-      videoIcon.style.opacity = hide ? "0" : "1"
-      videoIcon.style.visibility = hide ? "hidden" : "visible"
-    }
-  }
+  const toggleVideoIcon = useCallback(
+    (hide: boolean) => {
+      const videoIcon = document.querySelector(
+        `[data-video-icon="${id}"]`,
+      ) as HTMLElement
+      if (videoIcon) {
+        videoIcon.style.opacity = hide ? "0" : "1"
+        videoIcon.style.visibility = hide ? "hidden" : "visible"
+      }
+    },
+    [id],
+  )
 
-  const playVideo = () => {
-    toggleVideoIcon(true)
+  const loadVideo = useCallback(async () => {
     const videoElement = videoRef.current
+    if (!videoElement || !videoUrl) return
 
-    if (!videoElement || !videoUrl) {
+    if (videoLoadPromises.has(videoUrl)) {
+      try {
+        await videoLoadPromises.get(videoUrl)
+        if (videoLoadingCache.get(videoUrl)) {
+          videoElement.currentTime = 0
+          videoElement.play().catch(() => {})
+        }
+      } catch (error) {
+        console.error("Error loading video:", error)
+      }
       return
     }
 
-    if (!isVideoLoaded) {
-      videoElement.src = videoUrl
-      videoElement.load()
-      videoElement
-        .play()
-        .then(() => {
-          setIsVideoLoaded(true)
-        })
-        .catch(() => {})
-    } else {
+    if (!isVideoLoaded && !videoLoadingCache.get(videoUrl)) {
+      const loadPromise = new Promise<void>((resolve, reject) => {
+        const handleLoad = () => {
+          videoElement
+            .play()
+            .then(() => {
+              setIsVideoLoaded(true)
+              videoLoadingCache.set(videoUrl, true)
+              resolve()
+            })
+            .catch(reject)
+        }
+
+        videoElement.addEventListener("loadeddata", handleLoad, { once: true })
+        videoElement.src = videoUrl
+        videoElement.load()
+      })
+
+      videoLoadPromises.set(videoUrl, loadPromise)
+
+      try {
+        await loadPromise
+      } catch (error) {
+        console.error("Error loading video:", error)
+        videoLoadingCache.set(videoUrl, false)
+      } finally {
+        videoLoadPromises.delete(videoUrl)
+      }
+    } else if (isVideoLoaded) {
       videoElement.currentTime = 0
       videoElement.play().catch(() => {})
     }
-  }
+  }, [videoUrl, isVideoLoaded])
 
-  const stopVideo = () => {
+  const playVideo = useCallback(() => {
+    toggleVideoIcon(true)
+    loadVideo()
+  }, [toggleVideoIcon, loadVideo])
+
+  const stopVideo = useCallback(() => {
     toggleVideoIcon(false)
     const videoElement = videoRef.current
     if (videoElement) {
       videoElement.pause()
     }
-  }
+  }, [toggleVideoIcon])
 
   return (
     <div
