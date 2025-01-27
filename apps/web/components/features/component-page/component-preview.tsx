@@ -336,7 +336,7 @@ export function ComponentPagePreview({
                                   <TabsTrigger
                                     key={file}
                                     value={file}
-                                    className="overflow-hidden data-[state=active]:rounded-b-none dark:data-[state=active]:bg-muted data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
+                                    className="overflow-hidden data-[state=active]:rounded-b-none data-[state=active]:bg-white dark:data-[state=active]:bg-[#151515] data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
                                   >
                                     {file.split("/").pop()}
                                   </TabsTrigger>
