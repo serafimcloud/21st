@@ -38,6 +38,7 @@ import { addVersionToUrl } from "@/lib/utils/url"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { atom, useAtom } from "jotai"
+import { useR2Upload } from "../features/publish/hooks/use-r2-upload"
 
 const cleanInitialUrl = (url: string | null) => {
   if (!url) return ""
@@ -146,6 +147,8 @@ export function EditComponentDialog({
     },
   })
 
+  const { upload: uploadToR2ClientSide } = useR2Upload()
+
   const updateMutation = useMutation<
     void,
     Error,
@@ -227,10 +230,13 @@ export function EditComponentDialog({
         "component" in component ? component.demo_slug : "default"
       const demoFolder = `${baseFolder}/${demoSlug}`
       const fileKey = `${demoFolder}/video.mp4`
+
       try {
-        const videoUrl = await uploadToR2Mutation.mutateAsync({
+        const videoUrl = await uploadToR2ClientSide({
           file: demo.preview_video_file,
           fileKey,
+          bucketName: "components-code",
+          contentType: "video/mp4",
         })
         demoUpdates.video_url = videoUrl
       } catch (error) {
@@ -395,7 +401,6 @@ export function EditComponentDialog({
       console.log("Versioned URL:", versionedUrl)
 
       if (codeUrl) {
-
         const { error: updateComponentError } = await supabase
           .from("components")
           .update({
@@ -455,7 +460,6 @@ export function EditComponentDialog({
       console.log("Versioned Demo URL:", versionedDemoUrl)
 
       if (demoCodeUrl) {
-
         const { error: updateDemoError } = await supabase
           .from("demos")
           .update({
@@ -533,7 +537,6 @@ export function EditComponentDialog({
         const versionedGlobalCssUrl = addVersionToUrl(globalCssUrl)
 
         if (tailwindConfigUrl && globalCssUrl) {
-
           const { error: updateError } = await supabase
             .from("components")
             .update({
