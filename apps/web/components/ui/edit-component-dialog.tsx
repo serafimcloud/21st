@@ -168,7 +168,6 @@ export function EditComponentDialog({
     },
     onSuccess: () => {
       setIsOpen(false)
-      toast.success("Component updated successfully")
     },
     onError: (error) => {
       toast.error("Failed to update component. Please try again.")
