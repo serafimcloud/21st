@@ -407,6 +407,13 @@ export default function ComponentPage({
     updatedData: Partial<Component>,
     demoUpdates: Partial<Demo> & { demo_tags?: Tag[] },
   ) => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("🔄 Component Page - Update initiated:", {
+        updatedData,
+        demoUpdates,
+      })
+    }
+
     let currentUrls: { preview_url: string | null; video_url: string | null } =
       {
         preview_url: null,
@@ -420,6 +427,10 @@ export default function ComponentPage({
         .eq("id", demoUpdates.id)
         .single()
 
+      if (process.env.NODE_ENV === "development") {
+        console.log("📊 Current demo URLs:", currentDemo)
+      }
+
       if (currentDemo) {
         currentUrls = currentDemo
       }
@@ -428,10 +439,19 @@ export default function ComponentPage({
     if (demoUpdates.preview_url) {
       const baseUrl = currentUrls.preview_url || demoUpdates.preview_url
       demoUpdates.preview_url = addVersionToUrl(baseUrl)
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("🖼️ Updated preview URL:", demoUpdates.preview_url)
+      }
     }
+
     if (demoUpdates.video_url) {
       const baseUrl = currentUrls.video_url || demoUpdates.video_url
       demoUpdates.video_url = addVersionToUrl(baseUrl)
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("🎥 Updated video URL:", demoUpdates.video_url)
+      }
     }
 
     if (demoUpdates.preview_url || demoUpdates.video_url) {
@@ -445,6 +465,9 @@ export default function ComponentPage({
       { componentId: component.id, updatedData },
       {
         onSuccess: async () => {
+          if (process.env.NODE_ENV === "development") {
+            console.log("✅ Component update successful")
+          }
           try {
             if (Object.keys(demoUpdates).length > 0 && demoUpdates.id) {
               // Sync demo tags if present
@@ -527,7 +550,7 @@ export default function ComponentPage({
           }
         },
         onError: (error) => {
-          console.error("Error updating component:", error)
+          console.error("❌ Error updating component:", error)
           return
         },
       },

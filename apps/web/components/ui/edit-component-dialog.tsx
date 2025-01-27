@@ -232,15 +232,29 @@ export function EditComponentDialog({
       const fileKey = `${demoFolder}/video.mp4`
 
       try {
+        if (process.env.NODE_ENV === "development") {
+          console.log("🎥 Uploading video with params:", {
+            file: demo.preview_video_file,
+            fileKey,
+            bucketName: "components-code",
+            contentType: "video/mp4",
+          })
+        }
+
         const videoUrl = await uploadToR2ClientSide({
           file: demo.preview_video_file,
           fileKey,
           bucketName: "components-code",
           contentType: "video/mp4",
         })
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("✅ Video upload successful:", videoUrl)
+        }
+
         demoUpdates.video_url = videoUrl
       } catch (error) {
-        console.error("Failed to upload video:", error)
+        console.error("❌ Failed to upload video:", error)
         toast.error("Failed to upload video. Please try again.")
         return
       }
