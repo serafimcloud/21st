@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback } from "react"
 import { Component, User, DemoWithComponent } from "../../../types/global"
+import { cn } from "../../../lib/utils"
 
 const videoLoadingCache = new Map<string, boolean>()
 const videoLoadPromises = new Map<string, Promise<void>>()
@@ -17,6 +18,7 @@ export function ComponentVideoPreview({
 }: ComponentVideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVideoLoaded, setIsVideoLoaded] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const isDemo = "component" in component
   const id = isDemo ? component.id : component.id
@@ -43,6 +45,7 @@ export function ComponentVideoPreview({
 
     if (videoLoadPromises.has(videoUrl)) {
       try {
+        setIsLoading(true)
         await videoLoadPromises.get(videoUrl)
         if (videoLoadingCache.get(videoUrl)) {
           videoElement.currentTime = 0
@@ -50,11 +53,15 @@ export function ComponentVideoPreview({
         }
       } catch (error) {
         console.error("Error loading video:", error)
+      } finally {
+        setIsLoading(false)
       }
       return
     }
 
     if (!isVideoLoaded && !videoLoadingCache.get(videoUrl)) {
+      setIsLoading(true)
+
       const loadPromise = new Promise<void>((resolve, reject) => {
         const handleLoad = () => {
           videoElement
@@ -81,6 +88,7 @@ export function ComponentVideoPreview({
         videoLoadingCache.set(videoUrl, false)
       } finally {
         videoLoadPromises.delete(videoUrl)
+        setIsLoading(false)
       }
     } else if (isVideoLoaded) {
       videoElement.currentTime = 0
@@ -107,8 +115,9 @@ export function ComponentVideoPreview({
       onMouseLeave={stopVideo}
       onTouchStart={playVideo}
       onTouchEnd={stopVideo}
-      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 overflow-hidden"
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
     >
+      {isLoading && <div className="loading-border" />}
       <video
         ref={videoRef}
         data-video={`${id}`}
@@ -117,15 +126,11 @@ export function ComponentVideoPreview({
         loop
         playsInline
         preload="none"
-        className="absolute"
-        style={{
-          objectFit: "cover",
-          display: "block",
-          width: "calc(100% + 2px)",
-          height: "calc(100% + 2px)",
-          left: "-1px",
-          top: "-1px",
-        }}
+        className={cn(
+          "absolute inset-0",
+          "w-full h-full",
+          "object-cover rounded-lg",
+        )}
       />
     </div>
   )

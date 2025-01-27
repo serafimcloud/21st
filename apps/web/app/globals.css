@@ -173,6 +173,32 @@ iframe {
   border-radius: 50%;
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.loading-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+  padding: 1px;
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255),
+      rgba(0, 0, 0, 0.5),
+      rgba(255, 255, 255));
+  background-size: 200% 100%;
+  animation: shimmer 4.5s ease-in-out infinite;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -208,6 +234,9 @@ iframe {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --border-gradient-start: rgba(255, 255, 255, 0.01);
+    --border-gradient-mid: rgba(0, 0, 0, 0.5);
+    --border-gradient-end: rgba(255, 255, 255, 0.01);
   }
 
   .dark {
@@ -243,6 +272,7 @@ iframe {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --border-gradient-mid: rgba(255, 255, 255, 0.8);
   }
 }
 
