@@ -839,32 +839,36 @@ export default function ComponentPage({
                       submission.status === "on_review" &&
                         "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
                       submission.status === "featured" &&
-                        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+                        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", 
                       submission.status === "posted" &&
-                        "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+                        "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
                     )}
                   >
-                    {submission.status
-                      .replace("_", " ")
-                      .charAt(0)
-                      .toUpperCase() +
-                      submission.status.replace("_", " ").slice(1)}
-                    {submission.status === "posted" && (
+                    {submission.status === "posted" 
+                      ? "Not featured"
+                      : submission.status
+                          .replace("_", " ")
+                          .charAt(0)
+                          .toUpperCase() +
+                        submission.status.replace("_", " ").slice(1)}
+                    {submission.status === "featured" && (
                       <Check size={12} className="inline-block" />
                     )}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="py-3">
-                  <div className="space-y-1">
-                    <p className="text-[13px] font-medium">
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium leading-none tracking-tight">
                       Submission Status:{" "}
-                      {submission.status
-                        .replace("_", " ")
-                        .charAt(0)
-                        .toUpperCase() +
-                        submission.status.replace("_", " ").slice(1)}
+                      {submission.status === "posted"
+                        ? "Not featured"
+                        : submission.status
+                            .replace("_", " ")
+                            .charAt(0)
+                            .toUpperCase() +
+                          submission.status.replace("_", " ").slice(1)}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {submission.status === "on_review" &&
                         "Your component is being reviewed by our moderators before being made public."}
                       {submission.status === "featured" &&
@@ -873,16 +877,15 @@ export default function ComponentPage({
                         "Your component has been approved but is not shown on the homepage."}
                     </p>
                     {submission.moderators_feedback &&
-                      ["on_review", "featured"].includes(submission.status) && (
+                      ["posted", "featured"].includes(submission.status) && (
                         <>
-                          <div className="h-px bg-border my-1" />
-                          <p className="text-xs text-muted-foreground">
-                            <span className="text-[13px] font-medium">
-                              Moderator Feedback:
-                            </span>
-                            <br />
-                            {submission.moderators_feedback}
-                          </p>
+                          <div className="h-px bg-border" />
+                          <div className="rounded-lg border bg-muted/50 p-3">
+                            <p className="text-sm font-medium mb-1">Moderator Feedback</p>
+                            <p className="text-sm text-muted-foreground">
+                              {submission.moderators_feedback}
+                            </p>
+                          </div>
                         </>
                       )}
                   </div>
