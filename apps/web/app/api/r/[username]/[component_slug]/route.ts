@@ -25,22 +25,59 @@ export async function GET(
   { params }: { params: { username: string; component_slug: string } },
 ) {
   const { username, component_slug } = params
+  console.log("🔍 Fetching component:", { username, component_slug })
 
   try {
+    console.log("📊 Executing Supabase query...")
+    const { data: user, error: userError } = await supabaseWithAdminAccess
+      .from("users")
+      .select("*")
+      .or(`username.eq.${username},display_username.eq.${username}`)
+      .single()
+
+    if (userError) {
+      console.error("❌ User error:", userError)
+      throw new Error(`Error fetching user: ${userError.message}`)
+    }
+
+    if (!user) {
+      console.log("⚠️ User not found")
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
     const { data: component, error } = await supabaseWithAdminAccess
       .from("components")
       .select("*, user:users!user_id(*)")
       .eq("component_slug", component_slug)
-      .eq("user.username", username)
+      .eq("user_id", user.id)
       .not("user", "is", null)
       .returns<(Tables<"components"> & { user: Tables<"users"> })[]>()
       .single()
 
+    console.log("📋 Query result:", {
+      hasData: !!component,
+      error: error
+        ? {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+          }
+        : null,
+    })
+
     if (error) {
+      console.error("❌ Error details:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
       throw new Error(`Error fetching component: ${error.message}`)
     }
 
     if (!component) {
+      console.log("⚠️ Component not found")
       return NextResponse.json(
         { error: "Component not found" },
         { status: 404 },
