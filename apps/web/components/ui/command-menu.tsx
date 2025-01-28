@@ -435,7 +435,7 @@ export function CommandMenu() {
                     <CommandGroup heading="Components">
                       {components?.map((component, index) => (
                         <CommandItem
-                          key={`${component?.id}-${index}`}
+                          key={`${component?.component?.name}-${index}-${component?.name}`}
                           value={`component-${component?.user_id}/${component?.component?.component_slug}`}
                           onSelect={handleOpen}
                           className="flex items-center gap-2"
