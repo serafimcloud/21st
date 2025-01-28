@@ -116,11 +116,17 @@ export function HomePageClient({
             total_count: filteredData?.[0]?.total_count ?? 0,
           }
         }
+        
 
-        const { data: searchResults, error } = await supabase.rpc(
-          "search_demos",
+        console.log("Searching for ai", debouncedSearchQuery)
+
+        const { data: searchResults, error } = await supabase.functions.invoke(
+          "ai-search-oai",
           {
-            search_query: replaceSpacesWithPlus(debouncedSearchQuery),
+            body: {
+              search: debouncedSearchQuery,
+              match_threshold: 0.33,
+            },
           },
         )
 

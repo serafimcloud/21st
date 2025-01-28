@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-const SUPABASE_SEARCH_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-search`
+const SUPABASE_SEARCH_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-search-oai`
 
 export async function POST(request: NextRequest) {
   const apiKey = request.headers.get("x-api-key")

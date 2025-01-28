@@ -11,7 +11,7 @@ async function getAllDemoIds() {
     .from("demos")
     .select("id")
     .order("id", { ascending: true })
-    .is("embedding", null)
+    .is("embedding_oai", null)
 
   if (error) {
     console.error("Error fetching demo IDs:", error)
@@ -33,7 +33,7 @@ async function embedDemo(demoId) {
 
     try {
       const response = await fetch(
-        "https://vucvdpamtrjkzmubwlts.supabase.co/functions/v1/embed",
+        "https://vucvdpamtrjkzmubwlts.supabase.co/functions/v1/embed-oai",
         {
           method: "POST",
           headers: {
