@@ -1,3 +1,4 @@
+/* eslint-disable turbo/no-undeclared-env-vars */
 "use client"
 
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react"

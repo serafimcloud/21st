@@ -18,7 +18,6 @@ import { SupabaseClient } from "@supabase/supabase-js"
 import { useClerkSupabaseClient } from "./clerk"
 import { Database } from "@/types/supabase"
 import { transformDemoResult } from "@/lib/utils/transformData"
-import { replaceSpacesWithPlus } from "./utils"
 
 export const componentReadableDbFields = `
   *,

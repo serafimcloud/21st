@@ -454,6 +454,7 @@ export type Database = {
           demo_direct_registry_dependencies: Json | null
           demo_slug: string
           embedding?: string | null
+          embedding_oai?: string | null
           fts: unknown | null
           id: number
           name: string | null
@@ -472,6 +473,7 @@ export type Database = {
           demo_direct_registry_dependencies?: Json | null
           demo_slug?: string
           embedding?: string | null
+          embedding_oai?: string | null
           fts?: unknown | null
           id?: number
           name?: string | null
@@ -490,6 +492,7 @@ export type Database = {
           demo_direct_registry_dependencies?: Json | null
           demo_slug?: string
           embedding?: string | null
+          embedding_oai?: string | null
           fts?: unknown | null
           id?: number
           name?: string | null
@@ -1291,6 +1294,13 @@ export type Database = {
             }
             Returns: undefined
           }
+      update_demo_tags: {
+        Args: {
+          p_demo_id: number
+          p_tags: Json
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       api_plan: "free" | "pro" | "enterprise"

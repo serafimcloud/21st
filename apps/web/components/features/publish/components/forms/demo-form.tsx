@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useId } from "react"
 import { UseFormReturn } from "react-hook-form"
 import { Label } from "@/components/ui/label"

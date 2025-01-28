@@ -96,10 +96,10 @@ export function EditComponentDialog({
   const [demoCode, setDemoCode] = useState("")
   const [tailwindConfig, setTailwindConfig] = useState<string>()
   const [globalCss, setGlobalCss] = useState<string>()
-  const [activeStyleTab, setActiveStyleTab] = useState<string>("tailwind")
-  const [activeCodeTab, setActiveCodeTab] = useState<string>("component")
-  const [isVideoUploading, setIsVideoUploading] = useState(false)
+  const [activeStyleTab] = useState<string>("tailwind")
+  const [isVideoUploading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isTagsUpdating, setIsTagsUpdating] = useState(false)
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -169,7 +169,9 @@ export function EditComponentDialog({
       setIsOpen(false)
     },
     onError: (error) => {
-      toast.error("Failed to update component. Please try again.")
+      toast.error("Failed to update component. Please try again.", {
+        description: error.message,
+      })
     },
   })
 
@@ -177,25 +179,6 @@ export function EditComponentDialog({
     event.preventDefault()
     const formData = form.getValues()
     const formDemo = formData.demos[0]
-
-    console.log("🎥 Video Debug:", {
-      formDemoRaw: formDemo,
-      videoFile: formDemo?.preview_video_file,
-      videoDataUrl: formDemo?.preview_video_data_url,
-      hasVideoFile: !!(
-        formDemo?.preview_video_file &&
-        formDemo.preview_video_file instanceof File &&
-        formDemo.preview_video_file.size > 0
-      ),
-      videoFileType:
-        formDemo?.preview_video_file instanceof File
-          ? formDemo.preview_video_file.type
-          : null,
-      videoFileSize:
-        formDemo?.preview_video_file instanceof File
-          ? formDemo.preview_video_file.size
-          : null,
-    })
 
     const componentUpdates: Partial<Component> = {}
     const demoUpdates: Partial<Demo & { demo_tags?: Tag[] }> = {}
@@ -232,7 +215,7 @@ export function EditComponentDialog({
         })
         demoUpdates.preview_url = previewImageUrl
       } catch (error) {
-        console.error("❌ Failed to upload image:", error)
+        console.error("Failed to upload image:", error)
         toast.error("Failed to upload image. Please try again.")
         return
       }
@@ -261,11 +244,10 @@ export function EditComponentDialog({
           contentType: "video/mp4",
         })
 
-        console.log("✅ Video upload response:", videoUrl)
         toast.success("Video uploaded successfully!")
         demoUpdates.video_url = videoUrl
       } catch (error) {
-        console.error("❌ Failed to upload video:", error)
+        console.error("Failed to upload video:", error)
         toast.error("Failed to upload video. Please try again.")
         return
       } finally {
@@ -273,20 +255,33 @@ export function EditComponentDialog({
       }
     }
 
-    const currentTags =
-      "component" in component && "tags" in component.component
-        ? component.component.tags
-        : "tags" in component
-          ? component.tags
-          : []
-    const newTags = demo?.tags || []
+    const currentDemoTags = demo.tags || []
+    const newDemoTags = formDemo?.tags || []
 
-    if (JSON.stringify(currentTags) !== JSON.stringify(newTags)) {
-      demoUpdates.demo_tags = newTags.map((tag) => ({
-        id: tag.id!,
-        name: tag.name,
-        slug: tag.slug,
-      }))
+    if (
+      JSON.stringify(currentDemoTags.map((t) => t.id).sort()) !==
+      JSON.stringify(newDemoTags.map((t) => t.id).sort())
+    ) {
+      setIsTagsUpdating(true)
+      toast.loading("Updating tags...")
+
+      try {
+        const { error } = await supabase.rpc("update_demo_tags", {
+          p_demo_id: demo.id,
+          p_tags: newDemoTags,
+        })
+
+        if (error) throw error
+
+        toast.success("Tags updated successfully")
+        return
+      } catch (error) {
+        console.error("Error updating tags:", error)
+        toast.error("Failed to update tags")
+      } finally {
+        setIsTagsUpdating(false)
+      }
+      return
     }
 
     if (
@@ -294,13 +289,6 @@ export function EditComponentDialog({
       Object.keys(demoUpdates).length > 0
     ) {
       try {
-        if (process.env.NODE_ENV === "development") {
-          console.log("💾 Saving updates:", {
-            componentUpdates,
-            demoUpdates,
-          })
-        }
-
         await updateMutation.mutateAsync({
           componentId: componentData.id,
           updatedData: componentUpdates,
@@ -310,7 +298,7 @@ export function EditComponentDialog({
           },
         })
       } catch (error) {
-        console.error("❌ Failed to save updates:", error)
+        console.error("Failed to save updates:", error)
         toast.error("Failed to save changes. Please try again.")
       }
     } else {
@@ -422,7 +410,6 @@ export function EditComponentDialog({
 
   const handleSaveComponentCode = async (newCode: string) => {
     try {
-      console.log("Saving new component code:", newCode)
       const baseFolder = `${componentData.user_id}/${componentData.component_slug}`
       const timestamp = Date.now()
       const codeUrl = await uploadToR2({
@@ -435,9 +422,7 @@ export function EditComponentDialog({
         bucketName: "components-code",
       })
 
-      console.log("Original URL:", codeUrl)
       const versionedUrl = addVersionToUrl(codeUrl)
-      console.log("Versioned URL:", versionedUrl)
 
       if (codeUrl) {
         const { error: updateComponentError } = await supabase
@@ -449,7 +434,6 @@ export function EditComponentDialog({
           .eq("id", componentData.id)
 
         if (updateComponentError) {
-          console.error("Error updating component:", updateComponentError)
           throw updateComponentError
         }
 
@@ -462,7 +446,6 @@ export function EditComponentDialog({
           .eq("component_id", componentData.id)
 
         if (updateDemosError) {
-          console.error("Error updating demos:", updateDemosError)
           throw updateDemosError
         }
 
@@ -481,7 +464,6 @@ export function EditComponentDialog({
 
   const handleSaveDemoCode = async (newCode: string) => {
     try {
-      console.log("Saving new demo code:", newCode)
       const baseFolder = `${componentData.user_id}/${componentData.component_slug}`
       const timestamp = Date.now()
       const demoCodeUrl = await uploadToR2({
@@ -494,9 +476,7 @@ export function EditComponentDialog({
         bucketName: "components-code",
       })
 
-      console.log("Original Demo URL:", demoCodeUrl)
       const versionedDemoUrl = addVersionToUrl(demoCodeUrl)
-      console.log("Versioned Demo URL:", versionedDemoUrl)
 
       if (demoCodeUrl) {
         const { error: updateDemoError } = await supabase
@@ -509,7 +489,6 @@ export function EditComponentDialog({
           .eq("id", demo.id)
 
         if (updateDemoError) {
-          console.error("Error updating demo:", updateDemoError)
           throw updateDemoError
         }
 
@@ -522,7 +501,6 @@ export function EditComponentDialog({
           .eq("id", componentData.id)
 
         if (updateComponentError) {
-          console.error("Error updating component:", updateComponentError)
           throw updateComponentError
         }
 
@@ -539,12 +517,6 @@ export function EditComponentDialog({
 
   const handleSaveStyles = async (newCode: string) => {
     try {
-      console.log(
-        "Saving new styles:",
-        newCode,
-        "activeStyleTab:",
-        activeStyleTab,
-      )
       const baseFolder = `${componentData.user_id}/${componentData.component_slug}`
       const timestamp = Date.now()
 
@@ -587,7 +559,6 @@ export function EditComponentDialog({
             .eq("id", componentData.id)
 
           if (updateError) {
-            console.error("Error updating component:", updateError)
             throw updateError
           }
 
@@ -692,7 +663,8 @@ export function EditComponentDialog({
         uploadToR2Mutation.isPending ||
         updateMutation.isPending ||
         isVideoUploading ||
-        isUploading
+        isUploading ||
+        isTagsUpdating
       }
       className="relative transition-all duration-200"
     >
