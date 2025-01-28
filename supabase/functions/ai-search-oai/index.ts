@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
   const { data: searchResults, error } = await supabase.rpc("search_demos_ai_oai", {
     search_query: search,
     query_embedding: JSON.stringify(output),
-    match_threshold: match_threshold ?? 0.85,
+    match_threshold: match_threshold ?? 0.33,
   })
 
   if (error) {
