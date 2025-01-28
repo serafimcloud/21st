@@ -119,12 +119,17 @@ export function CommandMenu() {
     queryFn: async () => {
       if (!searchQuery) return []
 
-      const { data: searchResults, error } = await supabase.rpc(
-        "search_demos",
+      const { data: searchResults, error } = await supabase.functions.invoke(
+        "ai-search",
         {
-          search_query: replaceSpacesWithPlus(searchQuery),
+          body: {
+            search: searchQuery,
+            match_threshold: 0.8,
+          },
         },
       )
+
+      console.log("Search results:", searchResults)
 
       if (error) throw new Error(error.message)
 
