@@ -41,7 +41,7 @@ export const generateMetadata = async ({
     }
   }
 
-  const ogImageUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${user.username}/${component.component_slug}/opengraph-image`
+  const ogImageUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${user.display_username || user.username}/${component.component_slug}/opengraph-image`
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -54,7 +54,7 @@ export const generateMetadata = async ({
     },
     author: {
       "@type": "Person",
-      name: user.username,
+      name: user.display_name || user.name || user.username,
     },
     dateCreated: component.created_at,
     license: component.license,
@@ -65,7 +65,7 @@ export const generateMetadata = async ({
     title: `${component.name} | 21st.dev - The NPM for Design Engineers`,
     description:
       component.description ||
-      `A React component by ${user.username}. Ship polished UIs faster with ready-to-use Tailwind components inspired by shadcn/ui.`,
+      `A React component by ${user.display_name || user.name || user.username}. Ship polished UIs faster with ready-to-use Tailwind components inspired by shadcn/ui.`,
     keywords: [
       "react components",
       "design engineers",
@@ -76,12 +76,13 @@ export const generateMetadata = async ({
       `${component.name.toLowerCase()} component`,
       `${component.name.toLowerCase()} shadcn/ui`,
       ...(component.tags?.map((tag) => tag.name.toLowerCase()) || []),
+      `${user.display_username || user.username} components`,
     ],
     openGraph: {
       title: `${component.name} | 21st.dev - The NPM for Design Engineers`,
       description:
         component.description ||
-        `A React component by ${user.username}. Ship polished UIs faster with ready-to-use Tailwind components inspired by shadcn/ui.`,
+        `A React component by ${user.display_name || user.name || user.username}. Ship polished UIs faster with ready-to-use Tailwind components inspired by shadcn/ui.`,
       images: [
         {
           url: ogImageUrl,
@@ -96,7 +97,7 @@ export const generateMetadata = async ({
       title: `${component.name} | 21st.dev - The NPM for Design Engineers`,
       description:
         component.description ||
-        `A React component by ${user.username}. Ship polished UIs faster with ready-to-use Tailwind components inspired by shadcn/ui.`,
+        `A React component by ${user.display_name || user.name || user.username}. Ship polished UIs faster with ready-to-use Tailwind components inspired by shadcn/ui.`,
       images: [ogImageUrl],
     },
     other: {
@@ -105,7 +106,11 @@ export const generateMetadata = async ({
   }
 }
 
-const fetchFileTextContent = async (url: string) => {
+const fetchFileTextContent = async (url: string | null | undefined) => {
+  if (!url) {
+    console.error("Empty URL provided to fetchFileTextContent")
+    return { data: null, error: new Error("Empty URL provided") }
+  }
   const filename = url.split("/").slice(-1)[0]
   try {
     const response = await fetch(url)
@@ -198,7 +203,7 @@ export default async function ComponentPageServer({
       resolveRegistryDependencyTree({
         supabase: supabaseWithAdminAccess,
         sourceDependencySlugs: [
-          `${params.username}/${params.component_slug}`,
+          `${component.user.display_username || component.user.username}/${params.component_slug}`,
           ...demoRegistryDeps,
         ],
         withDemoDependencies: false,

@@ -23,7 +23,7 @@ export async function resolveRegistryDependencyTree({
     .map((slug) => {
       const [username, componentSlug] = slug.split("/")
       const baseAndCondition = (extra: string) =>
-        `and(source_author_username.eq."${username}",source_component_slug.eq."${componentSlug}"${extra})`
+        `or(and(source_author_username.eq."${username}",source_component_slug.eq."${componentSlug}"${extra}),and(source_author_display_username.eq."${username}",source_component_slug.eq."${componentSlug}"${extra}))`
       return withDemoDependencies
         ? baseAndCondition("")
         : baseAndCondition(",or(is_demo_dependency.is.false,depth.eq.0)")
@@ -88,11 +88,34 @@ export async function resolveRegistryDependencyTree({
       }
     }
 
-    const filePath = `/components/${registry}/${component_slug}.tsx`
+    // Determine the file path based on registry
+    let fileWithRegistry = {}
+    if (registry === "lib") {
+      fileWithRegistry = {
+        [`/lib/${component_slug}.tsx`]: { code, registry: registry! },
+      }
+    } else if (registry === "hooks") {
+      // For hooks, add files in both locations
+      fileWithRegistry = {
+        [`/components/hooks/${component_slug}.tsx`]: {
+          code,
+          registry: registry!,
+        },
+        [`/hooks/${component_slug}.tsx`]: { code, registry: registry! },
+      }
+    } else {
+      fileWithRegistry = {
+        [`/components/${registry}/${component_slug}.tsx`]: {
+          code,
+          registry: registry!,
+        },
+      }
+    }
+
     return {
       error: null,
       npmDependencies: npmDependencies,
-      fileWithRegistry: { [filePath]: { code, registry: registry! } },
+      fileWithRegistry,
     }
   })
 

@@ -148,8 +148,17 @@ export default async function ProPage() {
               </Link>
               <div className="flex items-center space-x-3">
                 <UserAvatar
-                  src={publisher.image_url || "/placeholder.svg"}
-                  alt={publisher.name}
+                  src={
+                    publisher.display_image_url ||
+                    publisher.image_url ||
+                    "/placeholder.svg"
+                  }
+                  alt={
+                    publisher.display_name ||
+                    publisher.name ||
+                    publisher.username ||
+                    ""
+                  }
                   size={24}
                   user={publisher}
                   isClickable
@@ -160,7 +169,9 @@ export default async function ProPage() {
                     className="block cursor-pointer min-w-0 flex-1 mr-3"
                   >
                     <h2 className="text-sm font-medium text-foreground truncate">
-                      {publisher.name || publisher.username}
+                      {publisher.display_name ||
+                        publisher.name ||
+                        publisher.username}
                     </h2>
                   </Link>
                   <Link

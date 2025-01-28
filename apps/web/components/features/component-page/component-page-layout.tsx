@@ -17,7 +17,7 @@ import {
 } from "@/types/global"
 import { PromptType, PROMPT_TYPES } from "@/types/global"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { addTagsToComponent, useUpdateComponentWithTags } from "@/lib/queries"
+import { addTagsToDemo, useUpdateComponentWithTags } from "@/lib/queries"
 import {
   identifyUser,
   trackPageProperties,
@@ -84,6 +84,7 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { addVersionToUrl } from "@/lib/utils/url"
+import { isEditingCodeAtom } from "@/components/ui/edit-component-dialog"
 
 export const isShowCodeAtom = atom(true)
 const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
@@ -168,29 +169,32 @@ const useKeyboardShortcuts = ({
     }
   }
 
+  const [isEditingCode] = useAtom(isEditingCodeAtom)
+
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
-      if (e.code === "BracketRight") {
+      if (e.code === "BracketRight" || e.code === "BracketLeft") {
+        if (isEditingCode) return
         e.preventDefault()
-        setIsShowCode(false)
-        trackEvent(AMPLITUDE_EVENTS.TOGGLE_CODE_VIEW, {
-          componentId: component.id,
-          view: "info",
-        })
-      }
-      if (e.code === "BracketLeft") {
-        e.preventDefault()
-        setIsShowCode(true)
-        trackEvent(AMPLITUDE_EVENTS.TOGGLE_CODE_VIEW, {
-          componentId: component.id,
-          view: "code",
-        })
+        if (e.code === "BracketRight") {
+          setIsShowCode(false)
+          trackEvent(AMPLITUDE_EVENTS.TOGGLE_CODE_VIEW, {
+            componentId: component.id,
+            view: "info",
+          })
+        } else {
+          setIsShowCode(true)
+          trackEvent(AMPLITUDE_EVENTS.TOGGLE_CODE_VIEW, {
+            componentId: component.id,
+            view: "code",
+          })
+        }
       }
     }
 
     window.addEventListener("keydown", keyDownHandler)
     return () => window.removeEventListener("keydown", keyDownHandler)
-  }, [])
+  }, [isEditingCode, component.id, setIsShowCode])
 
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
@@ -403,90 +407,105 @@ export default function ComponentPage({
     updatedData: Partial<Component>,
     demoUpdates: Partial<Demo> & { demo_tags?: Tag[] },
   ) => {
-    let currentUrls: { preview_url: string | null; video_url: string | null } =
-      {
-        preview_url: null,
-        video_url: null,
+    if (process.env.NODE_ENV === "development") {
+      console.log("🔄 Starting update process:", {
+        componentUpdates: updatedData,
+        demoUpdates,
+        demoId: demoUpdates.id,
+      })
+    }
+
+    try {
+      if (Object.keys(demoUpdates).length > 0 && demoUpdates.id) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("📝 Processing demo updates for ID:", demoUpdates.id)
+        }
+
+        const { data: currentDemo } = await supabase
+          .from("demos")
+          .select("preview_url, video_url")
+          .eq("id", demoUpdates.id)
+          .single()
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("📊 Current demo data:", currentDemo)
+        }
+
+        if (demoUpdates.preview_url) {
+          if (!demoUpdates.preview_url.includes("/preview.")) {
+            const baseUrl = currentDemo?.preview_url || demoUpdates.preview_url
+            demoUpdates.preview_url = addVersionToUrl(baseUrl)
+          }
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("🖼️ Processing preview URL:", {
+              currentUrl: currentDemo?.preview_url,
+              newUrl: demoUpdates.preview_url,
+            })
+          }
+        }
+
+        if (demoUpdates.video_url) {
+          if (!demoUpdates.video_url.includes("/video.")) {
+            const baseUrl = currentDemo?.video_url || demoUpdates.video_url
+            demoUpdates.video_url = addVersionToUrl(baseUrl)
+          }
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("🎥 Processing video URL:", {
+              currentUrl: currentDemo?.video_url,
+              newUrl: demoUpdates.video_url,
+            })
+          }
+        }
+
+        if (demoUpdates.preview_url || demoUpdates.video_url) {
+          await purgeCacheForDemo(
+            addNoCacheParam(demoUpdates.preview_url),
+            addNoCacheParam(demoUpdates.video_url),
+          )
+        }
+
+        if (demoUpdates.demo_tags?.length !== undefined) {
+          await supabase
+            .from("demo_tags")
+            .delete()
+            .eq("demo_id", demoUpdates.id)
+
+          const tagsToAdd = demoUpdates.demo_tags.filter(
+            (tag) => !!tag.slug,
+          ) as Tag[]
+          if (tagsToAdd.length > 0) {
+            await addTagsToDemo(supabase, demoUpdates.id, tagsToAdd)
+          }
+        }
+
+        const demoUpdatePayload = {
+          preview_url: demoUpdates.preview_url,
+          video_url: demoUpdates.video_url,
+          updated_at: new Date().toISOString(),
+        }
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("💾 Updating demo with payload:", demoUpdatePayload)
+        }
+
+        const { error: demoError } = await supabase
+          .from("demos")
+          .update(demoUpdatePayload)
+          .eq("id", demoUpdates.id)
+
+        if (demoError) {
+          throw new Error(`Failed to update demo: ${demoError.message}`)
+        }
       }
 
-    if (demoUpdates.id) {
-      const { data: currentDemo } = await supabase
-        .from("demos")
-        .select("preview_url, video_url")
-        .eq("id", demoUpdates.id)
-        .single()
-
-      if (currentDemo) {
-        currentUrls = currentDemo
-      }
-    }
-
-    if (demoUpdates.preview_url) {
-      const baseUrl = currentUrls.preview_url || demoUpdates.preview_url
-      demoUpdates.preview_url = addVersionToUrl(baseUrl)
-    }
-    if (demoUpdates.video_url) {
-      const baseUrl = currentUrls.video_url || demoUpdates.video_url
-      demoUpdates.video_url = addVersionToUrl(baseUrl)
-    }
-
-    if (demoUpdates.preview_url || demoUpdates.video_url) {
-      await purgeCacheForDemo(
-        addNoCacheParam(demoUpdates.preview_url),
-        addNoCacheParam(demoUpdates.video_url),
-      )
-    }
-
-    updateComponent(
-      { componentId: component.id, updatedData },
-      {
-        onSuccess: async () => {
-          try {
-            if (Object.keys(demoUpdates).length > 0 && demoUpdates.id) {
-              // Sync demo tags if present
-              if (demoUpdates.demo_tags?.length !== undefined) {
-                // First, remove all existing tags for this demo
-                const { error: deleteError } = await supabase
-                  .from("demo_tags")
-                  .delete()
-                  .eq("demo_id", demoUpdates.id)
-
-                if (deleteError) {
-                  console.error("Error deleting existing tags:", deleteError)
-                  return
-                }
-
-                // Then add new tags if there are any
-                if (demoUpdates.demo_tags.length > 0) {
-                  const tagsToAdd = demoUpdates.demo_tags.filter(
-                    (tag) => !!tag.slug,
-                  ) as Tag[]
-
-                  if (tagsToAdd.length > 0) {
-                    await addTagsToComponent(
-                      supabase,
-                      demoUpdates.id,
-                      tagsToAdd,
-                    )
-                  }
-                }
-              }
-
-              const demoUpdatePayload = {
-                preview_url: demoUpdates.preview_url,
-                video_url: demoUpdates.video_url,
-                updated_at: new Date().toISOString(),
-              }
-
-              const { error: demoError } = await supabase
-                .from("demos")
-                .update(demoUpdatePayload)
-                .eq("id", demoUpdates.id)
-
-              if (demoError) {
-                console.error("Error updating demo:", demoError)
-                return
-              }
+      await updateComponent(
+        { componentId: component.id, updatedData },
+        {
+          onSuccess: async () => {
+            if (process.env.NODE_ENV === "development") {
+              console.log("✅ Component update successful")
             }
 
             const { data: updatedComponent, error } = await supabase
@@ -495,18 +514,19 @@ export default function ComponentPage({
                 `
                 *,
                 user:users!components_user_id_fkey(*),
-                tags:component_tags(
-                  tag:tag_id(*)
-                )
+                tags:component_tags(tag:tag_id(*))
               `,
               )
               .eq("id", component.id)
               .single()
 
             if (error) {
-              console.error("Error fetching updated component:", error)
-              return
-            } else if (updatedComponent) {
+              throw new Error(
+                `Failed to fetch updated component: ${error.message}`,
+              )
+            }
+
+            if (updatedComponent) {
               const transformedComponent = {
                 ...updatedComponent,
                 tags: updatedComponent.tags.map(
@@ -520,18 +540,21 @@ export default function ComponentPage({
                 },
               )
               setIsEditDialogOpen(false)
+              toast.success("Component updated successfully")
             }
-          } catch (err) {
-            console.error("Error in onSuccess:", err)
-            return
-          }
+          },
+          onError: (error) => {
+            console.error("❌ Error updating component:", error)
+            toast.error("Failed to update component")
+            throw error
+          },
         },
-        onError: (error) => {
-          console.error("Error updating component:", error)
-          return
-        },
-      },
-    )
+      )
+    } catch (err) {
+      console.error("❌ Update process failed:", err)
+      toast.error("Failed to update component")
+      throw err
+    }
   }
 
   const handleEditClick = () => {
@@ -661,12 +684,21 @@ export default function ComponentPage({
             <Icons.slash className="text-border w-[22px] h-[22px]" />
             <div className="flex items-center gap-2 min-w-0">
               <Link
-                href={`/${component.user.username}`}
+                href={`/${component.user.display_username || component.user.username}`}
                 className="cursor-pointer"
               >
                 <UserAvatar
-                  src={component.user.image_url || "/placeholder.svg"}
-                  alt={component.user.name}
+                  src={
+                    component.user.display_image_url ||
+                    component.user.image_url ||
+                    "/placeholder.svg"
+                  }
+                  alt={
+                    component.user.display_name ||
+                    component.user.name ||
+                    component.user.username ||
+                    ""
+                  }
                   size={22}
                   isClickable={true}
                   user={component.user}
@@ -681,18 +713,25 @@ export default function ComponentPage({
           {demo && (
             <div className="hidden md:flex items-center gap-2">
               <Icons.slash className="text-border w-[22px] h-[22px]" />
+              <UserAvatar
+                src={
+                  demo.user.display_image_url ||
+                  demo.user.image_url ||
+                  "/placeholder.svg"
+                }
+                alt={
+                  demo.user.display_name ||
+                  demo.user.name ||
+                  demo.user.username ||
+                  ""
+                }
+                size={22}
+                isClickable={true}
+                user={demo.user}
+              />
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" className="gap-2">
-                    <Link href={`/${demo.user.username}`}>
-                      <UserAvatar
-                        src={demo.user.image_url || "/placeholder.svg"}
-                        alt={demo.user.name}
-                        size={22}
-                        isClickable={true}
-                        user={demo.user}
-                      />
-                    </Link>
+                  <div className="flex items-center gap-1 cursor-pointer group px-2 py-1 rounded-md hover:bg-accent">
                     <p className="text-[14px] font-medium whitespace-nowrap">
                       {demo.name}
                     </p>
@@ -700,7 +739,7 @@ export default function ComponentPage({
                       size={16}
                       className="text-muted-foreground group-hover:text-foreground transition-colors"
                     />
-                  </Button>
+                  </div>
                 </PopoverTrigger>
                 <PopoverContent
                   side="bottom"
@@ -719,7 +758,7 @@ export default function ComponentPage({
                               data-demo-id={d.id}
                               onSelect={() =>
                                 router.push(
-                                  `/${component.user.username}/${component.component_slug}/${d.demo_slug}`,
+                                  `/${component.user.display_username || component.user.username}/${component.component_slug}/${d.demo_slug}`,
                                 )
                               }
                               className="flex items-center gap-2"
@@ -738,14 +777,23 @@ export default function ComponentPage({
                                 </p>
                                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                   <UserAvatar
-                                    src={d.user.image_url || "/placeholder.svg"}
-                                    alt={d.user.name}
+                                    src={
+                                      d.user.display_image_url ||
+                                      d.user.image_url ||
+                                      "/placeholder.svg"
+                                    }
+                                    alt={
+                                      d.user.display_name ||
+                                      d.user.name ||
+                                      d.user.username ||
+                                      ""
+                                    }
                                     size={16}
                                     isClickable={false}
                                     user={d.user}
                                   />
                                   <span className="truncate">
-                                    {d.user.username}
+                                    {d.user.display_username || d.user.username}
                                   </span>
                                 </div>
                               </div>
@@ -791,32 +839,36 @@ export default function ComponentPage({
                       submission.status === "on_review" &&
                         "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
                       submission.status === "featured" &&
-                        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+                        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", 
                       submission.status === "posted" &&
-                        "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+                        "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
                     )}
                   >
-                    {submission.status
-                      .replace("_", " ")
-                      .charAt(0)
-                      .toUpperCase() +
-                      submission.status.replace("_", " ").slice(1)}
-                    {submission.status === "posted" && (
+                    {submission.status === "posted" 
+                      ? "Not featured"
+                      : submission.status
+                          .replace("_", " ")
+                          .charAt(0)
+                          .toUpperCase() +
+                        submission.status.replace("_", " ").slice(1)}
+                    {submission.status === "featured" && (
                       <Check size={12} className="inline-block" />
                     )}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="py-3">
-                  <div className="space-y-1">
-                    <p className="text-[13px] font-medium">
+                  <div className="space-y-2.5">
+                    <p className="text-sm font-medium leading-none tracking-tight">
                       Submission Status:{" "}
-                      {submission.status
-                        .replace("_", " ")
-                        .charAt(0)
-                        .toUpperCase() +
-                        submission.status.replace("_", " ").slice(1)}
+                      {submission.status === "posted"
+                        ? "Not featured"
+                        : submission.status
+                            .replace("_", " ")
+                            .charAt(0)
+                            .toUpperCase() +
+                          submission.status.replace("_", " ").slice(1)}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {submission.status === "on_review" &&
                         "Your component is being reviewed by our moderators before being made public."}
                       {submission.status === "featured" &&
@@ -825,16 +877,15 @@ export default function ComponentPage({
                         "Your component has been approved but is not shown on the homepage."}
                     </p>
                     {submission.moderators_feedback &&
-                      ["on_review", "featured"].includes(submission.status) && (
+                      ["posted", "featured"].includes(submission.status) && (
                         <>
-                          <div className="h-px bg-border my-1" />
-                          <p className="text-xs text-muted-foreground">
-                            <span className="text-[13px] font-medium">
-                              Moderator Feedback:
-                            </span>
-                            <br />
-                            {submission.moderators_feedback}
-                          </p>
+                          <div className="h-px bg-border" />
+                          <div className="rounded-lg border bg-muted/50 p-3">
+                            <p className="text-sm font-medium mb-1">Moderator Feedback</p>
+                            <p className="text-sm text-muted-foreground">
+                              {submission.moderators_feedback}
+                            </p>
+                          </div>
                         </>
                       )}
                   </div>

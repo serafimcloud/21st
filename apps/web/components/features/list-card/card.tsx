@@ -33,28 +33,32 @@ export function ComponentCard({
   component,
   isLoading,
 }: {
-  component?: DemoWithComponent | (Component & { user: User } & { view_count?: number })
+  component?:
+    | DemoWithComponent
+    | (Component & { user: User } & { view_count?: number })
   isLoading?: boolean
 }) {
   if (isLoading || !component) {
     return <ComponentCardSkeleton />
   }
 
-  const isDemo = "component" in component
+  const isDemo = "demo_slug" in component
   const userData = component.user
-  const componentData = isDemo ? component.component : component
+  const componentOwner = isDemo ? component.component.user : component.user
 
   if (!userData) {
     return <ComponentCardSkeleton />
   }
-  
+
   const componentUrl = isDemo
-    ? `/${componentData.user.username}/${component.component.component_slug}/${component.demo_slug || `demo-${component.id}`}`
-    : `/${userData.username}/${component.component_slug}`
+    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug}`
+    : `/${componentOwner.display_username || componentOwner.username}/${component.component_slug}`
 
   const videoUrl = isDemo ? component.video_url : component.video_url
 
-  const codeUrl = isDemo ? component.component.code : component.code
+  const codeUrl = isDemo
+    ? `/${userData.display_username || userData.username}/${component.component.component_slug}/${component.demo_slug}/code`
+    : `/${userData.display_username || userData.username}/${component.component_slug}/code`
 
   const likesCount = isDemo
     ? component.component.likes_count
@@ -97,8 +101,12 @@ export function ComponentCard({
       </Link>
       <div className="flex space-x-3 items-center">
         <UserAvatar
-          src={userData.image_url || "/placeholder.svg"}
-          alt={userData.name}
+          src={
+            userData.display_image_url ||
+            userData.image_url ||
+            "/placeholder.svg"
+          }
+          alt={userData.display_name || userData.name || ""}
           size={32}
           user={userData}
           isClickable
@@ -120,10 +128,10 @@ export function ComponentCard({
             </div>
           </Link>
           <div className="flex items-center gap-3">
-              <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
-                <Eye size={14} />
-                <span>{component.view_count || 0}</span>
-              </div>
+            <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
+              <Eye size={14} />
+              <span>{component.view_count || 0}</span>
+            </div>
             <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
               <Heart size={14} className="text-muted-foreground" />
               <span>{likesCount || 0}</span>

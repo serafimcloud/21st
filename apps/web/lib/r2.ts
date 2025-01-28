@@ -1,5 +1,6 @@
 "use server"
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import path from "path"
 import dotenv from "dotenv"
 
@@ -61,6 +62,32 @@ export const uploadToR2 = async ({
     return `${process.env.NEXT_PUBLIC_CDN_URL}/${fileKey}`
   } catch (error) {
     console.error("Error uploading to R2:", error)
+    throw error
+  }
+}
+
+export const generatePresignedUrl = async ({
+  fileKey,
+  bucketName,
+  contentType = "text/plain",
+  expiresIn = 3600, // URL expires in 1 hour by default
+}: {
+  fileKey: string
+  bucketName: string
+  contentType?: string
+  expiresIn?: number
+}): Promise<string> => {
+  try {
+    const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: fileKey,
+      ContentType: contentType,
+    })
+
+    const presignedUrl = await getSignedUrl(r2Client, command, { expiresIn })
+    return presignedUrl
+  } catch (error) {
+    console.error("Error generating presigned URL:", error)
     throw error
   }
 }

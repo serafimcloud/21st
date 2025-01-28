@@ -29,7 +29,7 @@ import { useCodeInputsAutoFocus } from "./hooks/use-code-inputs-auto-focus"
 
 import { cn } from "@/lib/utils"
 import { uploadToR2 } from "@/lib/r2"
-import { addTagsToComponent } from "@/lib/queries"
+import { addTagsToDemo } from "@/lib/queries"
 import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
 import { addVersionToUrl } from "@/lib/utils/url"
 import {
@@ -63,6 +63,7 @@ import {
 } from "./components/alerts"
 import { generateDemoSlug } from "./hooks/use-is-check-slug-available"
 import { useIsAdmin } from "./hooks/use-is-admin"
+import { useR2Upload } from "./hooks/use-r2-upload"
 export interface ParsedCodeData {
   dependencies: Record<string, string>
   demoDependencies: Record<string, string>
@@ -213,8 +214,8 @@ export default function PublishComponentForm({
           unknown_dependencies: [],
           direct_registry_dependencies:
             existingComponent.direct_registry_dependencies || [],
-          tailwind_config: initialTailwindConfig || "",
-          globals_css: initialGlobalCss || "",
+          tailwind_config: existingComponent.tailwind_config_extension || "",
+          globals_css: existingComponent.global_css_extension || "",
           demos: [
             {
               name: "",
@@ -328,7 +329,6 @@ export default function PublishComponentForm({
     if (newStep === "demoCode") {
       const demos = form?.getValues("demos") || []
       const currentDemo = demos[currentDemoIndex]
-
       if (!currentDemo?.demo_code) {
         const demoSlug = await generateDemoSlug(
           client,
@@ -339,15 +339,17 @@ export default function PublishComponentForm({
 
         form?.setValue(`demos.${currentDemoIndex}`, {
           name: "",
-          demo_slug: demoSlug,
+          demo_slug:
+            mode === "full" && currentDemoIndex === 0 ? "default" : demoSlug,
           demo_code: "",
           tags: [],
           preview_image_data_url: "",
           preview_image_file: new File([], "placeholder"),
           preview_video_data_url: "",
-          preview_video_file: new File([], "placeholder"),
           demo_direct_registry_dependencies: [],
           demo_dependencies: {},
+          tailwind_config: customTailwindConfig,
+          global_css: customGlobalCss,
         })
 
         form?.setValue("unknown_dependencies", [])
@@ -495,6 +497,8 @@ export default function PublishComponentForm({
 
   const [createdDemoSlug, setCreatedDemoSlug] = useState<string>()
 
+  const { upload: uploadToR2ClientSide, isUploading, error } = useR2Upload()
+
   const onSubmit = async (data: FormData) => {
     setPublishAttemptCount((count) => count + 1)
     setIsSubmitting(true)
@@ -563,15 +567,8 @@ export default function PublishComponentForm({
               demo?.preview_video_file &&
               demo?.preview_video_file.size > 0 &&
               demo?.preview_video_data_url
-                ? uploadToR2({
-                    file: {
-                      name: "video.mp4",
-                      type: "video/mp4",
-                      encodedContent: demo.preview_video_data_url.replace(
-                        /^data:video\/mp4;base64,/,
-                        "",
-                      ),
-                    },
+                ? uploadToR2ClientSide({
+                    file: demo.preview_video_file,
                     fileKey: `${baseFolder}/${demo.demo_slug}/video.mp4`,
                     bucketName: "components-code",
                     contentType: "video/mp4",
@@ -593,7 +590,7 @@ export default function PublishComponentForm({
             if (insertError) throw insertError
 
             if (demo.tags?.length) {
-              await addTagsToComponent(
+              await addTagsToDemo(
                 client,
                 insertedDemo.id,
                 demo.tags.filter((tag) => !!tag.slug) as Tag[],
@@ -764,22 +761,19 @@ export default function PublishComponentForm({
                 : Promise.resolve(null),
               demo.preview_video_file &&
               demo.preview_video_file.size > 0 &&
-              demo.preview_video_data_url
-                ? uploadToR2({
-                    file: {
-                      name: "video.mp4",
-                      type: "video/mp4",
-                      encodedContent: demo.preview_video_data_url.replace(
-                        /^data:video\/mp4;base64,/,
-                        "",
-                      ),
-                    },
+              demo?.preview_video_data_url
+                ? uploadToR2ClientSide({
+                    file: demo.preview_video_file,
                     fileKey: `${demoFolder}/video.mp4`,
                     bucketName: "components-code",
                     contentType: "video/mp4",
                   })
                 : Promise.resolve(null),
             ])
+
+          if (demo.preview_video_file && !videoR2Url) {
+            throw new Error("No video URL found for demo")
+          }
 
           const { error: updateDemoError } = await client
             .from("demos")
@@ -794,7 +788,7 @@ export default function PublishComponentForm({
           if (updateDemoError) throw updateDemoError
 
           if (demo.tags?.length) {
-            await addTagsToComponent(
+            await addTagsToDemo(
               client,
               insertedDemo.id,
               demo.tags.filter((tag) => !!tag.slug) as Tag[],
@@ -895,7 +889,6 @@ export default function PublishComponentForm({
         preview_image_data_url: "",
         preview_image_file: new File([], "placeholder"),
         preview_video_data_url: "",
-        preview_video_file: new File([], "placeholder"),
         demo_direct_registry_dependencies: [],
         demo_dependencies: currentDemo?.demo_dependencies || {},
       },
@@ -935,7 +928,7 @@ export default function PublishComponentForm({
       const firstDemo = newDemos[0]!
       newDemos[0] = {
         name: firstDemo.name || "Default",
-        demo_slug: "default",
+        demo_slug: firstDemo.demo_slug,
         demo_code: firstDemo.demo_code,
         preview_image_data_url: firstDemo.preview_image_data_url,
         preview_image_file: firstDemo.preview_image_file,
@@ -943,7 +936,6 @@ export default function PublishComponentForm({
         demo_direct_registry_dependencies:
           firstDemo.demo_direct_registry_dependencies,
         preview_video_data_url: firstDemo.preview_video_data_url,
-        preview_video_file: firstDemo.preview_video_file,
         demo_dependencies: firstDemo.demo_dependencies || {},
       }
     }
@@ -1201,6 +1193,7 @@ export default function PublishComponentForm({
                         <DemoDetailsForm
                           form={form}
                           demoIndex={currentDemoIndex}
+                          mode={mode}
                         />
                       </div>
                     )}
@@ -1346,6 +1339,7 @@ export default function PublishComponentForm({
                                     <DemoDetailsForm
                                       form={form}
                                       demoIndex={index}
+                                      mode={mode}
                                     />
                                     <EditCodeFileCard
                                       iconSrc={

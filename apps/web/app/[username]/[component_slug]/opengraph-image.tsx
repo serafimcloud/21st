@@ -1,11 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { ImageResponse } from "next/og"
-import { getComponent, getUserData } from "@/lib/queries"
+import { getComponentWithDemoForOG } from "@/lib/queries"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { backgroundImageBase64 } from "@/lib/constants"
 
 export const runtime = "edge"
-export const alt = "Open Graph Image"
+export const alt = "Component"
 export const size = {
   width: 1200,
   height: 630,
@@ -20,14 +19,14 @@ export default async function Image({
 }) {
   const { username, component_slug } = params
 
-  const [componentResult, userResult] = await Promise.all([
-    getComponent(supabaseWithAdminAccess, username, component_slug),
-    getUserData(supabaseWithAdminAccess, username),
-  ])
-  const component = componentResult.data
-  const user = userResult.data
+  const result = await getComponentWithDemoForOG(
+    supabaseWithAdminAccess,
+    username,
+    component_slug,
+    "default",
+  )
 
-  if (!component || !user) {
+  if (!result.data) {
     return new ImageResponse(
       (
         <div
@@ -41,7 +40,7 @@ export default async function Image({
             color: "#000",
           }}
         >
-          Component or User not found
+          Component not found
         </div>
       ),
       {
@@ -50,116 +49,201 @@ export default async function Image({
     )
   }
 
+  const { component, demo } = result.data
+  const analytics = (component as any).mv_component_analytics || []
+  const viewCount =
+    analytics.find(
+      (a: { activity_type: string }) => a.activity_type === "component_view",
+    )?.count ?? 0
+  const promptCopyCount =
+    analytics.find(
+      (a: { activity_type: string }) =>
+        a.activity_type === "component_prompt_copy",
+    )?.count ?? 0
+  const codeCopyCount =
+    analytics.find(
+      (a: { activity_type: string }) =>
+        a.activity_type === "component_code_copy",
+    )?.count ?? 0
+  const totalUsages =
+    (component.downloads_count || 0) + promptCopyCount + codeCopyCount
+
   return new ImageResponse(
     (
       <div
         style={{
-          background: "white",
+          background: "hsl(0 0% 100%)",
           width: "100%",
           height: "100%",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          padding: "80px",
           boxSizing: "border-box",
           position: "relative",
-          backgroundImage: `url(data:image/jpeg;base64,${backgroundImageBase64})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
         }}
       >
         <div
           style={{
-            position: "absolute",
-            top: "20px",
-            right: "20px",
-            bottom: "20px",
-            width: "60%",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            width: "100%",
+            height: "100%",
+            position: "relative",
           }}
         >
-          <img
-            src={component.preview_url}
-            alt={`Preview of ${component.name}`}
-            style={{
-              maxWidth: "100%",
-              maxHeight: "100%",
-              objectFit: "contain",
-            }}
-          />
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            top: "80px",
-            left: "80px",
-            width: "200px",
-            height: "200px",
-            borderRadius: "100%",
-            overflow: "hidden",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <img
-            src={user.image_url || "https://21st.dev/placeholder.svg"}
-            alt={`${user.username}'s avatar`}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
+          {/* Preview in top right */}
           <div
             style={{
               position: "absolute",
               top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              borderRadius: "50%",
-              border: "3px solid rgba(0, 0, 0, 0.3)",
-              pointerEvents: "none",
-              boxSizing: "border-box",
-            }}
-          />
-        </div>
-        <div
-          style={{
-            position: "absolute",
-            bottom: "80px",
-            left: "80px",
-            right: "80px",
-            display: "flex",
-            color: "#0A0A0A",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            fontSize: "50px",
-            fontWeight: "bold",
-            padding: "10px",
-          }}
-        >
-          <span
-            style={{
+              right: 0,
+              width: "400px",
+              height: "300px",
               overflow: "hidden",
-              color: "#A3A3A3",
-              textOverflow: "ellipsis",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              background: "hsl(0 0% 97%)",
+              borderRadius: "12px",
             }}
           >
-            @{user.username}
-          </span>
+            <img
+              src={demo.preview_url || component.preview_url}
+              alt={`Preview of ${component.name}`}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          </div>
 
-          <span
+          {/* Name and description at top left */}
+          <div
             style={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              display: "flex",
+              flexDirection: "column",
+              gap: "24px",
+              paddingRight: "440px",
             }}
           >
-            {component.name}
-          </span>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: "72px",
+                  fontWeight: "bold",
+                  color: "hsl(240 10% 3.9%)",
+                }}
+              >
+                {component.name}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    display: "flex",
+                  }}
+                >
+                  <img
+                    src={
+                      component.user.display_image_url ||
+                      component.user.image_url ||
+                      "https://21st.dev/placeholder.svg"
+                    }
+                    alt={
+                      component.user.display_name || component.user.name || ""
+                    }
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: "32px",
+                    color: "hsl(240 3.8% 46.1%)",
+                  }}
+                >
+                  {component.user.display_name || component.user.name}
+                </div>
+              </div>
+            </div>
+            {component.description && (
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: "28px",
+                  color: "hsl(240 3.8% 46.1%)",
+                  WebkitLineClamp: 4,
+                  overflow: "hidden",
+                  lineHeight: "1.4",
+                  maxWidth: "700px",
+                }}
+              >
+                {component.description}
+              </div>
+            )}
+          </div>
+
+          {/* Stats at bottom */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                gap: "40px",
+                fontSize: "32px",
+                color: "hsl(240 3.8% 46.1%)",
+              }}
+            >
+              <div style={{ display: "flex" }}>
+                {viewCount.toLocaleString()} views
+              </div>
+              <div style={{ display: "flex" }}>
+                {totalUsages.toLocaleString()} usages
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  borderRadius: "50%",
+                  background: "hsl(240 10% 3.9%)",
+                }}
+              />
+              <div
+                style={{
+                  fontSize: "32px",
+                  color: "hsl(240 10% 3.9%)",
+                  fontWeight: "500",
+                }}
+              >
+                21st.dev
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     ),

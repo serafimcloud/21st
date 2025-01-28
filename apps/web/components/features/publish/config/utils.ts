@@ -32,6 +32,8 @@ const demoSchema = z.object({
     }),
   demo_direct_registry_dependencies: z.array(z.string()).default([]),
   demo_dependencies: z.record(z.string()).default({}),
+  tailwind_config: z.string().optional(),
+  global_css: z.string().optional(),
 })
 
 export const formSchema = z.object({
