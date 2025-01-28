@@ -378,7 +378,11 @@ export const ComponentPageInfo = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
-                    href={component.website_url}
+                    href={
+                      component.website_url.startsWith("http")
+                        ? component.website_url
+                        : `https://${component.website_url}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -386,7 +390,11 @@ export const ComponentPageInfo = ({
                     <span className="pl-1">
                       {(() => {
                         try {
-                          const url = new URL(component.website_url)
+                          const url = new URL(
+                            component.website_url.startsWith("http")
+                              ? component.website_url
+                              : `https://${component.website_url}`,
+                          )
                           const domain = url.hostname.replace("www.", "")
 
                           const cleanPath =
@@ -436,7 +444,11 @@ export const ComponentPageInfo = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <a
-                      href={component.website_url}
+                      href={
+                        component.website_url.startsWith("http")
+                          ? component.website_url
+                          : `https://${component.website_url}`
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:bg-accent-hover rounded relative overflow-hidden"
