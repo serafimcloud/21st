@@ -13,86 +13,25 @@ export const metadata: Metadata = {
 }
 
 export default async function AuthorsPage() {
-  const { data: authors, error } = await supabaseWithAdminAccess
-    .from("users")
-    .select(
-      `
-      id,
-      username,
-      name,
-      image_url,
-      display_username,
-      display_name,
-      display_image_url,
-      bio,
-      components!components_user_id_fkey(
-        id,
-        downloads_count,
-        mv_component_analytics!component_analytics_component_id_fkey(
-          activity_type,
-          count
-        )
-      )
-    `,
-    )
-    .limit(1000)
+  const { data: authors, error } =
+    await supabaseWithAdminAccess.rpc("get_active_authors")
 
+  console.log("Authors query result:", JSON.stringify(authors, null, 2))
   if (error) {
-    console.error(error)
+    console.error("Authors query error:", error)
     return <div>Error loading authors</div>
   }
 
-  const authorsWithStats =
-    authors
-      ?.map((author) => {
-        const totalDownloads =
-          author.components?.reduce(
-            (sum, comp) => sum + (comp.downloads_count || 0),
-            0,
-          ) ?? 0
-
-        const totalUsages =
-          author.components?.reduce((sum, comp) => {
-            const analytics = comp.mv_component_analytics || []
-            const promptCopyCount =
-              analytics.find((a) => a.activity_type === "component_prompt_copy")
-                ?.count ?? 0
-            const codeCopyCount =
-              analytics.find((a) => a.activity_type === "component_code_copy")
-                ?.count ?? 0
-
-            return sum + promptCopyCount + codeCopyCount
-          }, 0) || 0
-
-        const totalViews =
-          author.components?.reduce((sum, comp) => {
-            const analytics = comp.mv_component_analytics || []
-            const viewCount =
-              analytics.find((a) => a.activity_type === "component_view")
-                ?.count ?? 0
-
-            return sum + viewCount
-          }, 0) || 0
-
-        const totalEngagement = totalDownloads + totalUsages + totalViews
-
-        return {
-          ...author,
-          total_downloads: totalDownloads,
-          total_usages: totalUsages,
-          total_views: totalViews,
-          total_engagement: totalEngagement,
-        }
-      })
-      .filter((a) => a.total_engagement > 0)
-      .sort((a, b) => b.total_engagement - a.total_engagement) || []
+  if (!authors) {
+    return <div>No authors found</div>
+  }
 
   return (
     <>
       <Header text="Top authors" />
       <div className="container mx-auto mt-20 px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {authorsWithStats.map((author) => (
+          {authors.map((author) => (
             <Link
               href={`/${author.display_username || author.username}`}
               key={author.id}

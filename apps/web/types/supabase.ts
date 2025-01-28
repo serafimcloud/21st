@@ -852,6 +852,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_active_authors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          username: string
+          name: string
+          image_url: string
+          display_username: string
+          display_name: string
+          display_image_url: string
+          bio: string
+          total_downloads: number
+          total_usages: number
+          total_views: number
+          total_engagement: number
+        }[]
+      }
       get_component_by_slug: {
         Args: {
           user_username: string
