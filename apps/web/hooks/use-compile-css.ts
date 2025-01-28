@@ -56,8 +56,8 @@ export const useCompileCss = (
           if (checkError || !existingDemo || existingDemo.length === 0) {
             return
           }
-
-          const fileName = `${component.component_slug}/${demoSlug}/compiled.css`
+          const timestamp = new Date().toISOString()
+          const fileName = `${component.component_slug}/${demoSlug}/compiled.${timestamp}.css`
           const url = await uploadToR2({
             file: {
               name: fileName,
