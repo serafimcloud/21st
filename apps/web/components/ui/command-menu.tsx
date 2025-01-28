@@ -28,7 +28,7 @@ import { toast } from "sonner"
 import { sections } from "@/lib/navigation"
 import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { cn, replaceSpacesWithPlus } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { getComponentInstallPrompt } from "@/lib/prompts"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import fetchFileTextContent from "@/lib/utils/fetchFileTextContent"
@@ -36,6 +36,7 @@ import fetchFileTextContent from "@/lib/utils/fetchFileTextContent"
 import { Component, DemoWithComponent, User } from "@/types/global"
 import { PROMPT_TYPES } from "@/types/global"
 import { Icons } from "../icons"
+import { LoadingSpinner } from "./loading-spinner"
 
 const commandSearchQueryAtom = atomWithStorage("commandMenuSearch", "")
 
@@ -114,33 +115,50 @@ export function CommandMenu() {
 
   const supabase = useClerkSupabaseClient()
 
-  const { data: components } = useQuery<DemoWithComponent[]>({
+  const { data: components, isLoading: isComponentsLoading } = useQuery<
+    DemoWithComponent[]
+  >({
     queryKey: ["command-menu-components", searchQuery],
     queryFn: async () => {
       if (!searchQuery) return []
 
-      const { data: searchResults, error } = await supabase.rpc(
-        "search_demos",
-        {
-          search_query: replaceSpacesWithPlus(searchQuery),
-        },
-      )
+      try {
+        const { data: searchResults, error } = await supabase.functions.invoke(
+          "ai-search-oai",
+          {
+            body: {
+              search: searchQuery,
+              match_threshold: 0.33,
+            },
+          },
+        )
 
-      if (error) throw new Error(error.message)
+        if (error) throw new Error(error.message)
+        if (!searchResults || !Array.isArray(searchResults)) {
+          console.warn("Invalid search results format:", searchResults)
+          return []
+        }
 
-      return searchResults.map(
-        (result) =>
-          ({
-            ...result,
-            component: {
-              ...(result.component_data as Component),
-              user: result.user_data,
-            } as Component & { user: User },
-            tags: [],
-          }) as unknown as DemoWithComponent,
-      )
+        return searchResults.map(
+          (result) =>
+            ({
+              ...result,
+              component: {
+                ...(result.component_data as Component),
+                user: result.user_data,
+              } as Component & { user: User },
+              tags: [],
+            }) as unknown as DemoWithComponent,
+        )
+      } catch (err) {
+        console.error("Search error:", err)
+        return []
+      }
     },
   })
+
+
+  console.log("Components", components)
 
   const { data: users } = useQuery<User[]>({
     queryKey: ["command-menu-users", searchQuery],
@@ -321,7 +339,12 @@ export function CommandMenu() {
           Search and navigate through components and sections using keyboard
           shortcuts
         </DialogDescription>
-        <Command value={value} onValueChange={setValue} className="h-full">
+        <Command
+          value={value}
+          onValueChange={setValue}
+          className="h-full"
+          shouldFilter={false}
+        >
           <CommandInput
             value={searchQuery}
             onValueChange={setSearchQuery}
@@ -398,35 +421,47 @@ export function CommandMenu() {
                 </>
               )}
 
-              {components && components.length > 0 && (
-                <>
-                  <CommandSeparator />
-                  <CommandGroup heading="Components">
-                    {components.map((component) => (
-                      <CommandItem
-                        key={component.id}
-                        value={`component-${component.user_id}/${component.component.component_slug}`}
-                        onSelect={handleOpen}
-                        className="flex items-center gap-2"
-                      >
-                        <span className="truncate">
-                          {component.name === "Default"
-                            ? component.component.name
-                            : `${component.component.name} - ${component.name}`}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          by {component.component.user.username}
-                        </span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </>
+              {searchQuery && isComponentsLoading ? (
+                <div className="p-4 flex items-center justify-center">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <LoadingSpinner size="sm" />
+                  </div>
+                </div>
+              ) : (
+                components &&
+                components.length > 0 && (
+                  <>
+                    <CommandSeparator />
+                    <CommandGroup heading="Components">
+                      {components?.map((component, index) => (
+                        <CommandItem
+                          key={`${component?.id}-${index}`}
+                          value={`component-${component?.user_id}/${component?.component?.component_slug}`}
+                          onSelect={handleOpen}
+                          className="flex items-center gap-2"
+                        >
+                          <span>
+                            {component?.name === "Default"
+                              ? component?.component?.name
+                              : `${component?.component?.name} - ${component?.name}`}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            by {component?.component?.user?.username}
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </>
+                )
               )}
 
-              <CommandEmpty>Nothing found.</CommandEmpty>
+              {searchQuery && components && components.length === 0 && (
+                <CommandEmpty>Nothing found.</CommandEmpty>
+              )}
             </CommandList>
 
             <div className="w-1/2 p-4 overflow-y-auto flex items-center justify-center">
+
               {selectedComponent && selectedComponent.preview_url && (
                 <div className="rounded-md border p-4 w-full">
                   <h3 className="text-sm font-medium mb-2">

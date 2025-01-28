@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "backup-r2.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "embed-all-demos": "node embed-all-demos.js"
   },
   "keywords": [],
   "author": "",
@@ -11,6 +12,7 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.722.0",
+    "@supabase/supabase-js": "^2.45.4",
     "dotenv": "^16.4.7"
   }
 }
