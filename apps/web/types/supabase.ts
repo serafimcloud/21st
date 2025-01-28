@@ -670,6 +670,7 @@ export type Database = {
           demo_dependencies: Json | null
           demo_direct_registry_dependencies: Json | null
           dependencies: Json | null
+          dependency_author_display_username: string | null
           dependency_author_username: string | null
           dependency_component_id: number | null
           depth: number | null
@@ -685,6 +686,7 @@ export type Database = {
           name: string | null
           preview_url: string | null
           registry: string | null
+          source_author_display_username: string | null
           source_author_username: string | null
           source_component_slug: string | null
           updated_at: string | null
@@ -1053,6 +1055,7 @@ export type Database = {
           component_user_data: Json
           tags: Json
           total_count: number
+          view_count: number
           fts: unknown
           demo_slug: string
           debug_info: Json
@@ -1240,19 +1243,13 @@ export type Database = {
           usage_data: Json
         }[]
       }
-      update_component_dependencies_closure:
-        | {
-            Args: {
-              p_component_id: number
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_component_id: number
-            }
-            Returns: undefined
-          }
+      update_component_dependencies_closure: {
+        Args: {
+          p_component_id: number
+          p_demo_slug?: string
+        }
+        Returns: undefined
+      }
       update_component_with_tags:
         | {
             Args: {

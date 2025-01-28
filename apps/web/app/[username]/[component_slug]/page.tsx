@@ -203,7 +203,7 @@ export default async function ComponentPageServer({
       resolveRegistryDependencyTree({
         supabase: supabaseWithAdminAccess,
         sourceDependencySlugs: [
-          `${params.username}/${params.component_slug}`,
+          `${component.user.display_username || component.user.username}/${params.component_slug}`,
           ...demoRegistryDeps,
         ],
         withDemoDependencies: false,

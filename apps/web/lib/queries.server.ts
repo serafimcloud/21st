@@ -23,7 +23,7 @@ export async function resolveRegistryDependencyTree({
     .map((slug) => {
       const [username, componentSlug] = slug.split("/")
       const baseAndCondition = (extra: string) =>
-        `and(source_author_username.eq."${username}",source_component_slug.eq."${componentSlug}"${extra})`
+        `or(and(source_author_username.eq."${username}",source_component_slug.eq."${componentSlug}"${extra}),and(source_author_display_username.eq."${username}",source_component_slug.eq."${componentSlug}"${extra}))`
       return withDemoDependencies
         ? baseAndCondition("")
         : baseAndCondition(",or(is_demo_dependency.is.false,depth.eq.0)")
