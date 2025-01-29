@@ -1,9 +1,6 @@
 import {
   Component,
   Demo,
-  DemoWithComponent,
-  QuickFilterOption,
-  SortOption,
   Tag,
   User,
 } from "@/types/global"
@@ -83,26 +80,6 @@ export async function getUserData(
     console.error("Error in getUserData:", error)
     return { data: null, error }
   }
-}
-
-export async function getUserComponents(
-  supabase: SupabaseClient<Database>,
-  userId: string,
-) {
-  const { data, error } = await supabase
-    .from("components")
-    .select(componentReadableDbFields)
-    .eq("user_id", userId)
-    .eq("is_public", true)
-    .order("downloads_count", { ascending: false })
-    .returns<(Component & { user: User })[]>()
-
-  if (error) {
-    console.error("Error fetching user components:", error)
-    return null
-  }
-
-  return data
 }
 
 export async function likeComponent(
@@ -365,30 +342,6 @@ export function useHuntedComponents(username: string) {
     queryFn: () => getHuntedComponents(supabase, username),
     staleTime: Infinity,
   })
-}
-
-export async function getFilteredDemos(
-  supabase: SupabaseClient<Database>,
-  quickFilter: QuickFilterOption,
-  sortBy: SortOption,
-  offset: number,
-  limit: number = 24,
-) {
-  const { data, error } = await supabase
-    .rpc("get_filtered_demos_with_views_and_usage", {
-      p_quick_filter: quickFilter,
-      p_sort_by: sortBy,
-      p_offset: offset,
-      p_limit: limit,
-    })
-    .returns<DemoWithComponent[]>()
-
-  if (error) {
-    console.error("Error fetching demos:", error)
-    throw error
-  }
-
-  return data
 }
 
 export async function getComponentWithDemo(

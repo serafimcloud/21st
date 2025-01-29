@@ -58,6 +58,7 @@ export const PROMPT_TYPES = {
   LOVABLE: "lovable",
   BOLT: "bolt",
   EXTENDED: "extended",
+  REPLIT: "replit",
 } as const
 
 export type PromptType = (typeof PROMPT_TYPES)[keyof typeof PROMPT_TYPES]

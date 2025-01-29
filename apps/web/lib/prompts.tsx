@@ -2,7 +2,7 @@ import endent from "endent"
 import { PROMPT_TYPES } from "@/types/global"
 import { PromptType } from "@/types/global"
 import { uniq } from "lodash"
-import { Brain, Sparkles } from "lucide-react"
+import { Brain, Sparkles, Terminal } from "lucide-react"
 import { Icons } from "@/components/icons"
 
 interface PromptOptionBase {
@@ -51,6 +51,16 @@ export const promptOptions: PromptOption[] = [
   {
     id: "separator1",
     type: "separator",
+  },
+  {
+    type: "option",
+    id: PROMPT_TYPES.REPLIT,
+    label: "Replit",
+    description: "Optimized for Replit Agent",
+    action: "copy",
+    icon: (
+      <Icons.replit className="min-h-[22px] min-w-[22px] max-h-[22px] max-w-[22px]" />
+    ),
   },
   {
     type: "option",
@@ -138,20 +148,25 @@ export const getComponentInstallPrompt = ({
 
   let prompt = ""
 
+  if (promptType === PROMPT_TYPES.REPLIT) {
+    prompt += "Build this as my initial prototype\n\n"
+  }
+
   if (promptType === PROMPT_TYPES.SITEBREW) {
     prompt +=
-      "Take the following code of a react component and add it to the artifact.\n" + 
+      "Take the following code of a react component and add it to the artifact.\n" +
       endent`        
         ${componentFileName}
         ${code}
         ${componentDemoFileName}
         ${demoCode}
-      ` + "\n"
+      ` +
+      "\n"
 
     if (Object.keys(registryDependencies || {}).length > 0) {
       prompt +=
-      "\n" +
-      endent`
+        "\n" +
+        endent`
         ${Object.entries(registryDependencies)
           .map(
             ([fileName, fileContent]) => endent`
@@ -162,17 +177,17 @@ export const getComponentInstallPrompt = ({
           )
           .join("\n")}
       ` +
-      "\n"
+        "\n"
     }
     prompt +=
-      "\n" + 
+      "\n" +
       endent`
         REMEMBER TO KEEP THE DESIGN AND FUNCTIONALITY OF THE COMPONENT AS IS AND IN FULL 
-      ` + "\n"
+      ` +
+      "\n"
     return prompt
   }
 
-  
   if (promptType === PROMPT_TYPES.EXTENDED) {
     prompt +=
       endent`
@@ -227,10 +242,15 @@ export const getComponentInstallPrompt = ({
     ...Object.keys(npmDependenciesOfRegistryDependencies),
   ])
   if (allDependencies.length) {
+    const dependenciesPrompt =
+      promptType === PROMPT_TYPES.REPLIT
+        ? "Install these NPM dependencies:"
+        : "Install NPM dependencies:"
+
     prompt +=
       "\n" +
       endent`
-        Install NPM dependencies:
+        ${dependenciesPrompt}
         \`\`\`bash
         ${allDependencies.join(", ")}
         \`\`\`
@@ -292,12 +312,21 @@ export const getComponentInstallPrompt = ({
       "\n"
   }
 
-  prompt +=
-    "\n" +
-    endent`
-      Remember: Do not change the component's code unless it's required to integrate or the user asks you to.
-      IMPORTANT: Create all mentioned files in full, without abbreviations. Do not use placeholders like “insert the rest of the code here” – output every line of code exactly as it is, so it can be copied and pasted directly into the project.
-    `
+  if (promptType === PROMPT_TYPES.REPLIT) {
+    prompt +=
+      "\n" +
+      endent`
+        Remember: For the code above, not change the component's code unless it's required to integrate or the user asks you to.
+        IMPORTANT: The code above contains the initial prototype desired by the user. Create all mentioned files in full, without abbreviations. Do not use placeholders like "insert the rest of the code here" – output every line of code exactly as it is, so it can be copied and pasted directly into the project.
+      `
+  } else {
+    prompt +=
+      "\n" +
+      endent`
+        Remember: Do not change the component's code unless it's required to integrate or the user asks you to.
+        IMPORTANT: Create all mentioned files in full, without abbreviations. Do not use placeholders like "insert the rest of the code here" – output every line of code exactly as it is, so it can be copied and pasted directly into the project.
+      `
+  }
 
   return prompt
 }
@@ -305,8 +334,7 @@ export const getComponentInstallPrompt = ({
 export const formatV0Prompt = (componentName: string, code: string) => {
   const escapedCode = code.replace(/`/g, "\\`")
 
-  return endent
-    `Create a new project that uses this ${componentName} component:
+  return endent`Create a new project that uses this ${componentName} component:
 
     \`\`\`tsx
     ${escapedCode}
