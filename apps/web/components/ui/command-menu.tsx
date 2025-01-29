@@ -296,11 +296,11 @@ export function CommandMenu() {
       setIsGenerating(false)
     }
   }
-
+  console.log("Selected Component", selectedComponent)
   const handleOpen = () => {
     if (value.startsWith("component-") && selectedComponent) {
       router.push(
-        `/${selectedComponent.component.user.username}/${selectedComponent.component.component_slug}/${selectedComponent.demo_slug}`,
+        `/${selectedComponent.component.user.username}/${selectedComponent.component.component_slug}/${selectedComponent.demo_slug || 'default'}`,
       )
     } else if (value.startsWith("section-")) {
       const section = filteredSections

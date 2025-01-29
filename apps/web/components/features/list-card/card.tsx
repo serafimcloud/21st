@@ -51,7 +51,7 @@ export function ComponentCard({
   }
 
   const componentUrl = isDemo
-    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug}`
+    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || 'default'}`
     : `/${componentOwner.display_username || componentOwner.username}/${component.component_slug}`
 
   const videoUrl = isDemo ? component.video_url : component.video_url
