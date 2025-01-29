@@ -189,7 +189,9 @@ export function CommandMenu() {
 
   const selectedComponent = useMemo(() => {
     if (!value.startsWith("component-")) return null
-    const [userId, componentSlug, demoName] = value.replace("component-", "").split("/")
+    const [userId, componentSlug, demoName] = value
+      .replace("component-", "")
+      .split("/")
     return components?.find(
       (c) =>
         c.user_id === userId &&
@@ -300,7 +302,7 @@ export function CommandMenu() {
   const handleOpen = () => {
     if (value.startsWith("component-") && selectedComponent) {
       router.push(
-        `/${selectedComponent.component.user.username}/${selectedComponent.component.component_slug}/${selectedComponent.demo_slug || 'default'}`,
+        `/${selectedComponent.component.user.username}/${selectedComponent.component.component_slug}/${selectedComponent.demo_slug || "default"}`,
       )
     } else if (value.startsWith("section-")) {
       const section = filteredSections
@@ -439,14 +441,16 @@ export function CommandMenu() {
                           onSelect={handleOpen}
                           className="flex items-center gap-2"
                         >
-                          <span>
-                            {component?.name === "Default"
-                              ? component?.component?.name
-                              : `${component?.component?.name} - ${component?.name}`}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            by {component?.component?.user?.username}
-                          </span>
+                          <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <span className="truncate">
+                              {component?.name === "Default"
+                                ? component?.component?.name
+                                : `${component?.component?.name} - ${component?.name}`}
+                            </span>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              by {component?.component?.user?.username}
+                            </span>
+                          </div>
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -460,7 +464,6 @@ export function CommandMenu() {
             </CommandList>
 
             <div className="w-1/2 p-4 overflow-y-auto flex items-center justify-center">
-
               {selectedComponent && selectedComponent.preview_url && (
                 <div className="rounded-md border p-4 w-full">
                   <h3 className="text-sm font-medium mb-2">
