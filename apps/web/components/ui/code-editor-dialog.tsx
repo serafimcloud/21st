@@ -147,7 +147,8 @@ export function CodeEditorDialog({
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent
           side="center"
-          className="w-screen h-screen p-0 sm:max-w-none"
+          className="w-screen h-screen p-0 sm:max-w-none [&_button[aria-label='Close']]:hidden"
+          hideCloseButton
         >
           <div className="flex flex-col h-screen">
             <div className="flex items-center justify-between px-4 py-1 border-b">
