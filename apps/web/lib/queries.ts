@@ -500,29 +500,17 @@ export async function getUserDemos(
   userId: string,
   loggedInUserId?: string,
 ) {
-  const { data: filteredData, error } = await supabase.rpc(
-    "get_filtered_demos_with_views_and_usage",
-    {
-      p_quick_filter: "all",
-      p_sort_by: "newest",
-      p_offset: 0,
-      p_limit: 1000,
-      p_include_private: userId === loggedInUserId,
-    },
-  )
+  const { data, error } = await supabase.rpc("get_user_profile_demos", {
+    p_user_id: userId,
+    p_include_private: userId === loggedInUserId,
+  })
 
   if (error) {
     console.error("Error fetching user demos:", error)
     return null
   }
 
-  // Transform all demos first
-  const transformedDemos = (filteredData || []).map(transformDemoResult)
-
-  // Then filter by user ID
-  return transformedDemos.filter(
-    (demo: DemoWithComponent) => demo.user_id === userId,
-  )
+  return data.map(transformDemoResult)
 }
 
 export async function getComponentDemos(
