@@ -1263,6 +1263,23 @@ export type Database = {
           usage_data: Json
         }[]
       }
+      search_demos_ai_oai: {
+        Args: {
+          match_threshold?: number
+          query_embedding?: string
+          search_query?: string
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          user_id: string
+          component_data: Json
+          user_data: Json
+          usage_data: Json
+        }[]
+      }
       update_component_dependencies_closure: {
         Args: {
           p_component_id: number

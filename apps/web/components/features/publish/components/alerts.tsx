@@ -131,10 +131,14 @@ export const ResolveUnknownDependenciesAlertForm = ({
           return
         }
 
-        const [username, slug] = value
+        const cleanedValue = value
           .replace(`${appHost}/`, "")
           .replace("https://", "")
           .split("/")
+          .slice(0, 2)
+          .join("/")
+
+        const [username, slug] = cleanedValue.split("/")
 
         if (!username || !slug) {
           newErrors[slugWithUsername] = "Couldn't resolve the username"
