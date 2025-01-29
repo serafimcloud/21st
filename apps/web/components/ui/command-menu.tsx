@@ -157,9 +157,6 @@ export function CommandMenu() {
     },
   })
 
-
-  console.log("Components", components)
-
   const { data: users } = useQuery<User[]>({
     queryKey: ["command-menu-users", searchQuery],
     queryFn: async () => {
@@ -192,10 +189,12 @@ export function CommandMenu() {
 
   const selectedComponent = useMemo(() => {
     if (!value.startsWith("component-")) return null
-    const [userId, componentSlug] = value.replace("component-", "").split("/")
+    const [userId, componentSlug, demoName] = value.replace("component-", "").split("/")
     return components?.find(
       (c) =>
-        c.user_id === userId && c.component.component_slug === componentSlug,
+        c.user_id === userId &&
+        c.component.component_slug === componentSlug &&
+        c.name === demoName,
     )
   }, [components, value])
 
@@ -433,10 +432,10 @@ export function CommandMenu() {
                   <>
                     <CommandSeparator />
                     <CommandGroup heading="Components">
-                      {components?.map((component, index) => (
+                      {components?.map((component) => (
                         <CommandItem
-                          key={`${component?.component?.name}-${index}-${component?.name}`}
-                          value={`component-${component?.user_id}/${component?.component?.component_slug}`}
+                          key={`${component?.component?.name}-${component?.name}`}
+                          value={`component-${component?.user_id}/${component?.component?.component_slug}/${component?.name}`}
                           onSelect={handleOpen}
                           className="flex items-center gap-2"
                         >
