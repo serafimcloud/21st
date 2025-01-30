@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { searchQueryAtom } from "@/components/ui/header.client"
 import { DemoWithComponent, HuntedComponents } from "@/types/global"
 
-export type UserComponentsTab = "published" | "hunted" | "demos"
+export type UserComponentsTab = "published" | "hunted" | "demos" | "liked"
 
 export const userComponentsTabAtom = atomWithStorage<UserComponentsTab>(
   "user-components-tab",
@@ -56,11 +56,13 @@ export function UserComponentsHeader({
   publishedComponents = [],
   huntedComponents = [],
   userDemos = [],
+  likedComponents = [],
   username,
 }: {
   publishedComponents?: DemoWithComponent[]
   huntedComponents?: HuntedComponents
   userDemos?: DemoWithComponent[]
+  likedComponents?: any[] // Тип можно уточнить позже
   username: string
 }) {
   const [activeTab, setActiveTab] = useAtom(userComponentsTabAtom)
@@ -97,6 +99,11 @@ export function UserComponentsHeader({
       value: "demos" as const,
       label: "Demos",
       count: userDemos?.length ?? 0,
+    },
+    {
+      value: "liked" as const,
+      label: "Liked",
+      count: likedComponents?.length ?? 0,
     },
   ]
 

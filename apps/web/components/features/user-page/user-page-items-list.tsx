@@ -4,7 +4,12 @@ import { useAtom, useAtomValue } from "jotai"
 import { ComponentsList } from "@/components/ui/items-list"
 import { searchQueryAtom } from "@/components/ui/header.client"
 import { userComponentsTabAtom } from "@/components/features/user-page/user-page-header"
-import { Component, DemoWithComponent, HuntedComponents, User } from "@/types/global"
+import {
+  Component,
+  DemoWithComponent,
+  HuntedComponents,
+  User,
+} from "@/types/global"
 import { useQuery } from "@tanstack/react-query"
 
 type ComponentOrDemo = DemoWithComponent | (Component & { user: User })
@@ -14,11 +19,13 @@ export function UserComponentsList({
   publishedComponents = [],
   huntedComponents = [],
   userDemos = [],
+  likedComponents = [],
 }: {
   user: User
   publishedComponents?: DemoWithComponent[]
   huntedComponents?: HuntedComponents
   userDemos?: DemoWithComponent[]
+  likedComponents?: DemoWithComponent[]
 }) {
   const activeTab = useAtomValue(userComponentsTabAtom)
   const [searchQuery] = useAtom(searchQueryAtom)
@@ -59,6 +66,9 @@ export function UserComponentsList({
         break
       case "demos":
         result = userDemos
+        break
+      case "liked":
+        result = likedComponents
         break
       default:
         result = publishedComponents

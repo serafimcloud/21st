@@ -40,11 +40,13 @@ export function UserProfileClient({
   publishedComponents,
   huntedComponents,
   userDemos,
+  likedComponents,
 }: {
   user: User
   publishedComponents: DemoWithComponent[]
   huntedComponents: HuntedComponents
   userDemos: DemoWithComponent[]
+  likedComponents: DemoWithComponent[]
 }) {
   useProfileAnalytics({
     username: user.display_username || user.username || "",
@@ -170,6 +172,7 @@ export function UserProfileClient({
               publishedComponents={publishedComponents}
               huntedComponents={huntedComponents}
               userDemos={userDemos}
+              likedComponents={likedComponents}
               username={user.display_username || user.username || ""}
             />
             <UserComponentsList
@@ -177,6 +180,7 @@ export function UserProfileClient({
               publishedComponents={publishedComponents}
               huntedComponents={huntedComponents}
               userDemos={userDemos}
+              likedComponents={likedComponents}
             />
           </div>
         </div>

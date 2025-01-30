@@ -1177,13 +1177,42 @@ export type Database = {
           demo_slug: string
         }[]
       }
+      get_user_liked_components: {
+        Args: {
+          p_user_id: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          demo_code: string
+          preview_url: string
+          video_url: string
+          compiled_css: string
+          demo_dependencies: Json
+          demo_direct_registry_dependencies: Json
+          pro_preview_image_url: string
+          created_at: string
+          updated_at: string
+          component_id: number
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          tags: Json
+          total_count: number
+          view_count: number
+          fts: unknown
+          demo_slug: string
+          debug_info: Json
+        }[]
+      }
       get_user_profile_demos: {
         Args: {
           p_user_id: string
           p_include_private?: boolean
         }
         Returns: {
-          id: string
+          id: number
           name: string
           demo_code: string
           preview_url: string

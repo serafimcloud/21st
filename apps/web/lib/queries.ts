@@ -1,9 +1,4 @@
-import {
-  Component,
-  Demo,
-  Tag,
-  User,
-} from "@/types/global"
+import { Component, Demo, Tag, User } from "@/types/global"
 import {
   UseMutationResult,
   useMutation,
@@ -608,4 +603,22 @@ export async function getComponentWithDemoForOG(
     },
     error: null,
   }
+}
+
+export async function getUserLikedComponents(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  loggedInUserId?: string,
+) {
+  const { data, error } = await supabase.rpc("get_user_liked_components", {
+    p_user_id: userId,
+    p_include_private: userId === loggedInUserId,
+  })
+
+  if (error) {
+    console.error("Error fetching user liked components:", error)
+    return null
+  }
+
+  return data.map(transformDemoResult)
 }

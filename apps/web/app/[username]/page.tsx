@@ -1,6 +1,11 @@
 import { UserProfileClient } from "./page.client"
 
-import { getUserData, getHuntedComponents, getUserDemos } from "@/lib/queries"
+import {
+  getUserData,
+  getHuntedComponents,
+  getUserDemos,
+  getUserLikedComponents,
+} from "@/lib/queries"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { redirect } from "next/navigation"
@@ -78,9 +83,10 @@ export default async function UserProfile({
     redirect("/")
   }
 
-  const [huntedComponents, allUserDemos] = await Promise.all([
+  const [huntedComponents, allUserDemos, likedComponents] = await Promise.all([
     getHuntedComponents(supabaseWithAdminAccess, user.username),
     getUserDemos(supabaseWithAdminAccess, user.id, loggedInUser?.id),
+    getUserLikedComponents(supabaseWithAdminAccess, user.id, loggedInUser?.id),
   ])
 
   // userComponents - demos of own components (where user is both component and demo creator)
@@ -101,6 +107,7 @@ export default async function UserProfile({
       publishedComponents={userComponents}
       huntedComponents={huntedComponents || []}
       userDemos={userDemos}
+      likedComponents={likedComponents || []}
     />
   )
 }
