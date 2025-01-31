@@ -147,17 +147,17 @@ export function HeroSection() {
               transition={{ delay: 0.6, duration: 0.8 }}
               className="text-center"
             >
-              <p className="text-sm text-muted-foreground mb-8">Featured by</p>
-              <div className="flex items-center justify-center gap-12">
+              <p className="text-sm text-muted-foreground">Featured by</p>
+              <div className="flex items-center justify-center gap-12 text-foreground">
                 <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200">
                   <Icons.boltLogo className="h-6 w-auto" />
                 </div>
                 <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200">
                   <Icons.lovableLogo className="h-6 w-auto" />
-                  <span className="text-[18px] font-medium">lovable</span>
+                  <span className="text-[20px] font-bold">lovable</span>
                 </div>
                 <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200">
-                  <Icons.replitWithText className="h-12 w-auto" />
+                  <Icons.replitWithText className="h-16 w-auto" />
                 </div>
               </div>
             </motion.div>
