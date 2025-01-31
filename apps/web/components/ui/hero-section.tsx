@@ -10,6 +10,7 @@ import { setCookie } from "@/lib/cookies"
 import { AuroraBackground } from "./aurora-background"
 import { Button } from "./button"
 import { Icons } from "../icons"
+import { GitHubStars, GitHubStarsBasic } from "./github-stars-number"
 
 export function HeroSection() {
   const router = useRouter()
@@ -46,7 +47,7 @@ export function HeroSection() {
     <AuroraBackground className="fixed inset-0 z-50">
       <div className="container relative z-10 pointer-events-auto px-6 md:px-8 flex flex-col min-h-screen">
         {/* Navigation Bar */}
-        <div className="w-full flex justify-center pt-6">
+        <div className="w-full justify-center pt-6 hidden md:flex">
           <motion.nav
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -98,7 +99,7 @@ export function HeroSection() {
               duration: 0.8,
               ease: "easeInOut",
             }}
-            className="flex flex-col max-w-[800px] text-center"
+            className="flex flex-col max-w-[300px] md:max-w-[800px] sm:max-w-[450px] text-center"
           >
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 md:mb-8 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent leading-[1.2] pb-1">
               Discover, share, and craft perfect UI components with top design
@@ -109,7 +110,7 @@ export function HeroSection() {
               Built by design engineers, for design engineers.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 justify-center mb-16">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 justify-center mb-20">
               <Button onClick={onEnterWebsite}>
                 Browse components
                 {!isMobile && (
@@ -121,7 +122,7 @@ export function HeroSection() {
 
               <Button
                 variant="ghost"
-                className="gap-2 border-border hover:bg-accent hover:text-accent-foreground"
+                className="gap-2 border-border hover:bg-transparent text-foreground opacity-60 hover:opacity-90 transition-opacity duration-200"
                 asChild
               >
                 <a
@@ -130,11 +131,12 @@ export function HeroSection() {
                   rel="noreferrer"
                 >
                   <Icons.gitHub
-                    className="h-4 w-4 text-foreground opacity-60"
+                    className="h-4 w-4"
                     aria-hidden="true"
                   />
-                  <span className="text-foreground opacity-60">
-                    Star on GitHub
+                  <span className="">
+                    <GitHubStarsBasic className="mr-1" />
+                    Stars
                   </span>
                 </a>
               </Button>
@@ -147,17 +149,26 @@ export function HeroSection() {
               transition={{ delay: 0.6, duration: 0.8 }}
               className="text-center"
             >
-              <p className="text-sm text-muted-foreground">Featured by</p>
-              <div className="flex items-center justify-center gap-12 text-foreground">
-                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200">
-                  <Icons.boltLogo className="h-6 w-auto" />
+              <p className="text-muted-foreground mb-2">Optimized for</p>
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 md:gap-12 text-foreground max-w-[350px] md:max-w-[800px] mx-auto">
+                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
+                  <Icons.cursorAnimatedLogo />
+                  <Icons.cursorLogo className="h-3 sm:h-4 w-auto" />
                 </div>
-                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200">
-                  <Icons.lovableLogo className="h-6 w-auto" />
-                  <span className="text-[20px] font-bold">lovable</span>
+                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
+                  <Icons.v0Logo className="h-6 sm:h-8 w-auto" />
                 </div>
-                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200">
-                  <Icons.replitWithText className="h-16 w-auto" />
+                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
+                  <Icons.boltLogo className="h-5 sm:h-6 w-auto" />
+                </div>
+                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[45%] sm:basis-auto justify-center">
+                  <Icons.lovableLogo className="h-5 sm:h-6 w-auto" />
+                  <span className="text-[16px] sm:text-[20px] font-bold">
+                    lovable
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[45%] sm:basis-auto justify-center overflow-hidden max-w-[100px]">
+                  <Icons.replitWithText className="h-12 sm:h-16 w-auto min-w-[120px] sm:min-w-[150px]" />
                 </div>
               </div>
             </motion.div>
