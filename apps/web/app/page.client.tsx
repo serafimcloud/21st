@@ -6,11 +6,7 @@ import { useAtom } from "jotai"
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
 
-import {
-  QuickFilterOption,
-  SortOption,
-  DemoWithComponent,
-} from "@/types/global"
+import { SortOption, DemoWithComponent } from "@/types/global"
 import { Database } from "@/types/supabase"
 
 import { useClerkSupabaseClient } from "@/lib/clerk"
@@ -19,7 +15,6 @@ import { searchQueryAtom } from "@/components/ui/header.client"
 import {
   ComponentsHeader,
   sortByAtom,
-  quickFilterAtom,
 } from "@/components/features/main-page/main-page-header"
 import { Loader2 } from "lucide-react"
 import { useDebounce } from "@/hooks/use-debounce"
@@ -41,52 +36,28 @@ const useSetServerUserDataCookies = () => {
   }, [])
 }
 
-const refetchData = async (queryClient: any, quickFilter: any, sortBy: any) => {
+const refetchData = async (queryClient: any, sortBy: any) => {
   await queryClient.invalidateQueries({
-    queryKey: ["filtered-demos", quickFilter, sortBy],
+    queryKey: ["filtered-demos", sortBy],
   })
 }
 
 export function HomePageClient({
   initialComponents,
   initialSortBy,
-  initialQuickFilter,
-  initialTabsCounts,
 }: {
   initialComponents: DemoWithComponent[]
   initialSortBy: SortOption
-  initialQuickFilter: QuickFilterOption
-  initialTabsCounts: Record<QuickFilterOption, number>
 }) {
   const [searchQuery] = useAtom(searchQueryAtom)
   const supabase = useClerkSupabaseClient()
   const [sortBy, setSortBy] = useAtom(sortByAtom)
-  const [quickFilter, setQuickFilter] = useAtom(quickFilterAtom)
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
-  const [tabCounts, setTabCounts] = useState<
-    Record<QuickFilterOption, number> | undefined
-  >(initialTabsCounts)
   const queryClient = useQueryClient()
 
   useLayoutEffect(() => {
     if (sortBy === undefined) {
-      setSortBy("recommended")
-    }
-  }, [])
-
-  // Important: we don't need useEffect here
-  // https://react.dev/learn/you-might-not-need-an-effect
-  if (tabCounts === undefined) {
-    setTabCounts(initialTabsCounts)
-  }
-
-  // But we need useLayoutEffect here to avoid race conditions
-  useLayoutEffect(() => {
-    if (sortBy === undefined) {
-      setSortBy("recommended")
-    }
-    if (quickFilter === undefined) {
-      setQuickFilter(initialQuickFilter)
+      setSortBy(initialSortBy)
     }
   }, [])
 
@@ -94,11 +65,11 @@ export function HomePageClient({
 
   const { data, isLoading, isFetching, fetchNextPage, hasNextPage } =
     useInfiniteQuery<{ data: DemoWithComponent[]; total_count: number }>({
-      queryKey: ["filtered-demos", quickFilter, sortBy, debouncedSearchQuery],
+      queryKey: ["filtered-demos", sortBy, debouncedSearchQuery],
       queryFn: async ({
         pageParam = 0,
       }): Promise<{ data: DemoWithComponent[]; total_count: number }> => {
-        if (!quickFilter || !sortBy) {
+        if (!sortBy) {
           return {
             data: [],
             total_count: 0,
@@ -109,7 +80,7 @@ export function HomePageClient({
           const { data: filteredData, error } = await supabase.rpc(
             "get_demos",
             {
-              p_quick_filter: quickFilter,
+              p_quick_filter: "all",
               p_sort_by: sortBy,
               p_offset: Number(pageParam) * 24,
               p_limit: 24,
@@ -124,8 +95,6 @@ export function HomePageClient({
             total_count: (filteredData?.[0] as any)?.total_count ?? 0,
           }
         }
-
-        console.log("Searching for ai", debouncedSearchQuery)
 
         const { data: searchResults, error } = await supabase.functions.invoke(
           "ai-search-oai",
@@ -191,10 +160,10 @@ export function HomePageClient({
   }, [isLoading, hasNextPage, fetchNextPage])
 
   useEffect(() => {
-    if (sortBy !== undefined && quickFilter !== undefined) {
-      refetchData(queryClient, quickFilter, sortBy)
+    if (sortBy !== undefined) {
+      refetchData(queryClient, sortBy)
     }
-  }, [sortBy, quickFilter, queryClient])
+  }, [sortBy, queryClient])
 
   return (
     <motion.div
@@ -203,10 +172,7 @@ export function HomePageClient({
       className="container mx-auto mt-20 px-4 max-w-[1200px]"
     >
       <div className="flex flex-col">
-        <ComponentsHeader
-          filtersDisabled={!!searchQuery}
-          tabCounts={tabCounts!}
-        />
+        <ComponentsHeader filtersDisabled={!!searchQuery} />
         <ComponentsList components={allDemos} isLoading={isLoading} />
         {showSpinner && (
           <div className="col-span-full flex justify-center py-4">

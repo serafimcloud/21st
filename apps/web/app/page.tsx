@@ -3,11 +3,7 @@ import { Metadata } from "next"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import {
-  QuickFilterOption,
-  SortOption,
-  DemoWithComponent,
-} from "@/types/global"
+import { SortOption, DemoWithComponent } from "@/types/global"
 
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { transformDemoResult } from "@/lib/utils/transformData"
@@ -83,35 +79,9 @@ export default async function HomePage() {
     const savedSortBy = cookieStore.get("saved_sort_by")?.value as
       | SortOption
       | undefined
-    const savedQuickFilter = cookieStore.get("saved_quick_filter")?.value as
-      | QuickFilterOption
-      | undefined
 
-    const defaultQuickFilter = savedQuickFilter || "all"
     const defaultSortBy: SortOption = "recommended"
-
     const sortByPreference: SortOption = savedSortBy || defaultSortBy
-    const quickFilterPreference: QuickFilterOption = savedQuickFilter?.length
-      ? (savedQuickFilter as QuickFilterOption)
-      : defaultQuickFilter
-
-    const { data: initialTabsCountsData, error: initialTabsCountsError } =
-      await supabaseWithAdminAccess.rpc("get_components_counts")
-
-    const initialTabsCounts =
-      !initialTabsCountsError && Array.isArray(initialTabsCountsData)
-        ? initialTabsCountsData.reduce(
-            (acc, item) => {
-              acc[item.filter_type as QuickFilterOption] = item.count
-              return acc
-            },
-            {} as Record<QuickFilterOption, number>,
-          )
-        : {
-            all: 0,
-            last_released: 0,
-            most_downloaded: 0,
-          }
 
     const orderByFields: [string, string] = (() => {
       const sort = sortByPreference as string
@@ -143,15 +113,12 @@ export default async function HomePage() {
       return null
     }
 
-    const filteredDemos = await supabaseWithAdminAccess.rpc(
-      "get_demos",
-      {
-        p_quick_filter: quickFilterPreference,
-        p_sort_by: sortByPreference,
-        p_offset: 0,
-        p_limit: 40,
-      },
-    )
+    const filteredDemos = await supabaseWithAdminAccess.rpc("get_demos", {
+      p_quick_filter: "all",
+      p_sort_by: sortByPreference,
+      p_offset: 0,
+      p_limit: 40,
+    })
 
     if (filteredDemos.error) {
       console.error("Error fetching filtered demos:", filteredDemos.error)
@@ -161,8 +128,6 @@ export default async function HomePage() {
           <HomePageClient
             initialComponents={initialDemos || []}
             initialSortBy={sortByPreference}
-            initialQuickFilter={quickFilterPreference}
-            initialTabsCounts={initialTabsCounts}
           />
           <NewsletterDialog />
         </>
@@ -188,8 +153,6 @@ export default async function HomePage() {
         <HomePageClient
           initialComponents={initialFilteredSortedDemos}
           initialSortBy={sortByPreference}
-          initialQuickFilter={quickFilterPreference}
-          initialTabsCounts={initialTabsCounts}
         />
         <NewsletterDialog />
       </>

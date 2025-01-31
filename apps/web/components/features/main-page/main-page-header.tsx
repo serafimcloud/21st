@@ -18,14 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { searchQueryAtom } from "@/components/ui/header.client"
 
-import type { SortOption, QuickFilterOption } from "@/types/global"
-import { QUICK_FILTER_OPTIONS, SORT_OPTIONS } from "@/types/global"
+import type { SortOption } from "@/types/global"
+import { SORT_OPTIONS } from "@/types/global"
 import { setCookie } from "@/lib/cookies"
-
-export const quickFilterAtom = atom<QuickFilterOption | undefined>(undefined)
 
 export const sortByAtom = atom<SortOption | undefined>(undefined)
 
@@ -69,18 +66,14 @@ const useSearchHotkeys = (inputRef: React.RefObject<HTMLInputElement>) => {
 export function ComponentsHeader({
   filtersDisabled,
   currentSection,
-  tabCounts,
 }: {
   filtersDisabled: boolean
   currentSection?: string
-  tabCounts: Record<QuickFilterOption, number>
 }) {
-  const [quickFilter, setQuickFilter] = useAtom(quickFilterAtom)
   const [sortBy, setSortBy] = useAtom(sortByAtom)
   const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom)
   const inputRef = useRef<HTMLInputElement>(null)
   const isDesktop = useMediaQuery("(min-width: 768px)")
-  const isMobile = useMediaQuery("(max-width: 768px)")
 
   useTrackSearchQueries()
   useSearchHotkeys(inputRef)
@@ -88,13 +81,6 @@ export function ComponentsHeader({
   const handleClearInput = () => {
     setSearchQuery("")
     inputRef.current?.focus()
-  }
-
-  const getFilterLabel = (label: string) => {
-    if (isMobile && label === "All Components") {
-      return "All"
-    }
-    return label
   }
 
   const getSearchPlaceholder = () => {
@@ -113,40 +99,7 @@ export function ComponentsHeader({
   return (
     <div className="flex flex-col gap-4 mb-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <Tabs
-            value={quickFilter}
-            onValueChange={(value) => {
-              setQuickFilter(value as QuickFilterOption)
-              setCookie({
-                name: "saved_quick_filter",
-                value: value,
-                expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-                httpOnly: true,
-                sameSite: "lax",
-              })
-            }}
-            className={cn("w-full md:w-auto", filtersDisabled && "opacity-50")}
-          >
-            <TabsList className="w-full md:w-auto h-8 -space-x-px bg-background p-0 shadow-sm shadow-black/5 rtl:space-x-reverse">
-              {Object.entries(QUICK_FILTER_OPTIONS).map(([value, label]) => (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  disabled={tabCounts?.[value as QuickFilterOption] === 0}
-                  className="flex-1 md:flex-initial relative overflow-hidden rounded-none border border-border h-8 px-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 first:rounded-s last:rounded-e data-[state=active]:bg-muted data-[state=active]:after:bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">{getFilterLabel(label)}</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {tabCounts?.[value as QuickFilterOption] ?? 0}
-                    </span>
-                  </div>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
+        <div className="text-lg font-semibold">All components</div>
 
         <div className="flex items-center gap-2 md:w-auto min-w-0">
           <div className="relative flex-1 min-w-0 lg:min-w-[300px] md:min-w-[200px]">
