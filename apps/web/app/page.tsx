@@ -75,7 +75,6 @@ export default async function HomePage() {
   try {
     const cookieStore = cookies()
     const shouldShowHero = !cookieStore.has("has_visited")
-    const hasOnboarded = cookieStore.has("has_onboarded")
     const savedSortBy = cookieStore.get("saved_sort_by")?.value as
       | SortOption
       | undefined
