@@ -453,8 +453,8 @@ export type Database = {
           demo_dependencies: Json | null
           demo_direct_registry_dependencies: Json | null
           demo_slug: string
-          embedding?: string | null
-          embedding_oai?: string | null
+          embedding: string | null
+          embedding_oai: string | null
           fts: unknown | null
           id: number
           name: string | null
@@ -1146,6 +1146,24 @@ export type Database = {
           user_id: string
           video_url: string | null
           website_url: string | null
+        }[]
+      }
+      get_sections: {
+        Args: {
+          p_tag_slugs?: string[]
+        }
+        Returns: {
+          tag_id: number
+          tag_name: string
+          tag_slug: string
+          component_id: number
+          component_name: string
+          component_slug: string
+          preview_url: string
+          video_url: string
+          user_data: Json
+          downloads_count: number
+          view_count: number
         }[]
       }
       get_user_demos: {

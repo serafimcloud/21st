@@ -6,7 +6,7 @@ import { useAtom } from "jotai"
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
 
-import { SortOption, DemoWithComponent } from "@/types/global"
+import { SortOption, DemoWithComponent, Section } from "@/types/global"
 import { Database } from "@/types/supabase"
 
 import { useClerkSupabaseClient } from "@/lib/clerk"
@@ -19,6 +19,7 @@ import {
 import { Loader2 } from "lucide-react"
 import { useDebounce } from "@/hooks/use-debounce"
 import ComponentsList from "@/components/ui/items-list"
+import SectionsList from "@/components/features/section-card/sections-list"
 import { transformDemoResult } from "@/lib/utils/transformData"
 import { replaceSpacesWithPlus } from "@/lib/utils"
 
@@ -45,15 +46,20 @@ const refetchData = async (queryClient: any, sortBy: any) => {
 export function HomePageClient({
   initialComponents,
   initialSortBy,
+  initialSections,
 }: {
   initialComponents: DemoWithComponent[]
   initialSortBy: SortOption
+  initialSections: Section[]
 }) {
   const [searchQuery] = useAtom(searchQueryAtom)
   const supabase = useClerkSupabaseClient()
   const [sortBy, setSortBy] = useAtom(sortByAtom)
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
   const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState<"sections" | "components">(
+    "sections",
+  )
 
   useLayoutEffect(() => {
     if (sortBy === undefined) {
@@ -122,7 +128,7 @@ export function HomePageClient({
         ],
         pageParams: [0],
       },
-      enabled: true,
+      enabled: activeTab === "components",
       staleTime: 0,
       gcTime: 1000 * 60 * 30,
       refetchOnWindowFocus: false,
@@ -172,8 +178,16 @@ export function HomePageClient({
       className="container mx-auto mt-20 px-4 max-w-[1200px]"
     >
       <div className="flex flex-col">
-        <ComponentsHeader filtersDisabled={!!searchQuery} />
-        <ComponentsList components={allDemos} isLoading={isLoading} />
+        <ComponentsHeader
+          filtersDisabled={!!searchQuery}
+          onTabChange={setActiveTab}
+          activeTab={activeTab}
+        />
+        {activeTab === "sections" ? (
+          <SectionsList sections={initialSections} />
+        ) : (
+          <ComponentsList components={allDemos} isLoading={isLoading} />
+        )}
         {showSpinner && (
           <div className="col-span-full flex justify-center py-4">
             <Loader2 className="h-8 w-8 animate-spin text-foreground/20" />

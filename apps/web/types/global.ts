@@ -7,6 +7,9 @@ export type User = Database["public"]["Tables"]["users"]["Row"]
 export type Tag = Database["public"]["Tables"]["tags"]["Row"]
 export type Submission = Database["public"]["Tables"]["submissions"]["Row"]
 
+export type Section =
+  Database["public"]["Functions"]["get_sections"]["Returns"][0]
+
 export type HuntedComponents =
   Database["public"]["Functions"]["get_hunted_components"]["Returns"]
 

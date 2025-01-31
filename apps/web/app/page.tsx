@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { SortOption, DemoWithComponent } from "@/types/global"
+import { sections as navigationSections } from "@/lib/navigation"
 
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { transformDemoResult } from "@/lib/utils/transformData"
@@ -82,20 +83,27 @@ export default async function HomePage() {
     const defaultSortBy: SortOption = "recommended"
     const sortByPreference: SortOption = savedSortBy || defaultSortBy
 
-    const orderByFields: [string, string] = (() => {
-      const sort = sortByPreference as string
-      switch (sort) {
-        case "downloads":
-          return ["component(downloads_count)", "desc"]
-        case "likes":
-          return ["component(likes_count)", "desc"]
-        case "date":
-        case "recommended":
-        default:
-          return ["created_at", "desc"]
-      }
-    })()
+    // Собираем все слаги из навигации
+    const allSectionSlugs: string[] = navigationSections.flatMap((section) =>
+      section.items.map((item) => {
+        // Извлекаем слаг из href, убирая '/s/'
+        const slug = item.href.replace("/s/", "")
+        return slug
+      }),
+    )
 
+    // Получаем секции
+    const { data: sectionsList, error: sectionsError } =
+      await supabaseWithAdminAccess.rpc("get_sections", {
+        p_tag_slugs: allSectionSlugs,
+      })
+
+    if (sectionsError) {
+      console.error("Sections error:", sectionsError)
+      return null
+    }
+
+    // Получаем компоненты только если нужно (но пока оставим для совместимости)
     const { data: initialDemos, error: demosError } =
       await supabaseWithAdminAccess
         .from("demos")
@@ -104,38 +112,13 @@ export default async function HomePage() {
         )
         .limit(40)
         .eq("component.is_public", true)
-        .order(orderByFields[0], { ascending: orderByFields[1] === "desc" })
+        .order("created_at", { ascending: false })
         .returns<DemoWithComponent[]>()
 
     if (demosError) {
       console.error("Demos error:", demosError)
       return null
     }
-
-    const filteredDemos = await supabaseWithAdminAccess.rpc("get_demos", {
-      p_quick_filter: "all",
-      p_sort_by: sortByPreference,
-      p_offset: 0,
-      p_limit: 40,
-    })
-
-    if (filteredDemos.error) {
-      console.error("Error fetching filtered demos:", filteredDemos.error)
-      return (
-        <>
-          <Header variant="default" />
-          <HomePageClient
-            initialComponents={initialDemos || []}
-            initialSortBy={sortByPreference}
-          />
-          <NewsletterDialog />
-        </>
-      )
-    }
-
-    const initialFilteredSortedDemos = (filteredDemos.data || []).map(
-      transformDemoResult,
-    )
 
     if (shouldShowHero) {
       return (
@@ -150,8 +133,9 @@ export default async function HomePage() {
       <>
         <Header variant="default" />
         <HomePageClient
-          initialComponents={initialFilteredSortedDemos}
+          initialComponents={initialDemos || []}
           initialSortBy={sortByPreference}
+          initialSections={sectionsList || []}
         />
         <NewsletterDialog />
       </>
