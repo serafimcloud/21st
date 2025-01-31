@@ -44,7 +44,7 @@ export function HeroSection() {
 
   return (
     <AuroraBackground className="fixed inset-0 z-50">
-      <div className="container relative z-10 pointer-events-auto px-6 md:px-8">
+      <div className="container relative z-10 pointer-events-auto px-6 md:px-8 flex items-center justify-center min-h-screen">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -53,9 +53,9 @@ export function HeroSection() {
             duration: 0.8,
             ease: "easeInOut",
           }}
-          className="flex flex-col max-w-[720px]"
+          className="flex flex-col max-w-[800px] text-center"
         >
-          <div className="flex items-center gap-2 mb-10 md:mb-16 lg:mb-20">
+          <div className="flex items-center justify-center gap-2 mb-10 md:mb-16 lg:mb-20">
             <div className="h-6 w-6 rounded-full bg-foreground" />
             <span className="text-lg font-semibold text-foreground">
               21st.dev
@@ -67,7 +67,7 @@ export function HeroSection() {
             Design Engineers
           </h1>
 
-          <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-8 md:mb-12 bg-gradient-to-b from-muted-foreground to-muted-foreground/70 bg-clip-text text-transparent">
+          <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-8 md:mb-12 bg-gradient-to-b from-muted-foreground to-muted-foreground/70 bg-clip-text text-transparent max-w-[600px] mx-auto">
             Ship polished UIs faster with React Tailwind components inspired by
             shadcn/ui.
             <br />
@@ -75,7 +75,7 @@ export function HeroSection() {
             install.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 justify-center">
             <Button size="lg" variant="default" onClick={onEnterWebsite}>
               Browse components
               {!isMobile && (
@@ -107,7 +107,7 @@ export function HeroSection() {
             </Button>
           </div>
 
-          <div className="flex flex-row gap-4 mt-24">
+          <div className="flex flex-row gap-4 mt-24 justify-center">
             <ProductHuntBadge />
             <ProductOfTheDayBadge />
           </div>

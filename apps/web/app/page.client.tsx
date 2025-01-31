@@ -200,7 +200,7 @@ export function HomePageClient({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="container mx-auto mt-20 px-4"
+      className="container mx-auto mt-20 px-4 max-w-[1200px]"
     >
       <div className="flex flex-col">
         <ComponentsHeader

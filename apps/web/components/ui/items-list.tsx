@@ -22,7 +22,7 @@ export function ComponentsList({
   return (
     <div
       className={cn(
-        `grid grid-cols-[repeat(auto-fill,minmax(330px,1fr))] gap-9 list-none pb-10`,
+        `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 list-none pb-10`,
         className,
       )}
     >

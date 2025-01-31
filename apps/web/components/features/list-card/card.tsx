@@ -13,7 +13,7 @@ import { UserAvatar } from "../../ui/user-avatar"
 export function ComponentCardSkeleton() {
   return (
     <div className="overflow-hidden animate-pulse">
-      <div className="relative aspect-[4/3] mb-3">
+      <div className="relative aspect-[16/9] mb-3">
         <div className="absolute inset-0 rounded-lg overflow-hidden bg-muted" />
       </div>
       <div className="flex items-center space-x-3">
@@ -51,7 +51,7 @@ export function ComponentCard({
   }
 
   const componentUrl = isDemo
-    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || 'default'}`
+    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || "default"}`
     : `/${componentOwner.display_username || componentOwner.username}/${component.component_slug}`
 
   const videoUrl = isDemo ? component.video_url : component.video_url
@@ -65,9 +65,9 @@ export function ComponentCard({
     : component.likes_count
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden group">
       <Link href={componentUrl} className="block cursor-pointer">
-        <div className="relative aspect-[4/3] mb-3 group">
+        <div className="relative aspect-[16/9] mb-3">
           <CopyComponentButton codeUrl={codeUrl} component={component} />
           <div className="absolute inset-0 rounded-lg overflow-hidden">
             <div className="relative w-full h-full">
@@ -80,7 +80,7 @@ export function ComponentCard({
                   }
                   alt={isDemo ? component.name || "" : component.name || ""}
                   fallbackSrc="/placeholder.svg"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
               <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
