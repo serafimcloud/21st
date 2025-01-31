@@ -6,7 +6,9 @@ import {
 } from "../features/list-card/card"
 import { DemoWithComponent, User, Component } from "@/types/global"
 
-type ComponentOrDemo = DemoWithComponent | (Component & { user: User } & { view_count?: number })
+type ComponentOrDemo =
+  | DemoWithComponent
+  | (Component & { user: User } & { view_count?: number })
 
 export function ComponentsList({
   components,
@@ -22,7 +24,7 @@ export function ComponentsList({
   return (
     <div
       className={cn(
-        `grid grid-cols-[repeat(auto-fill,minmax(330px,1fr))] gap-9 list-none pb-10`,
+        "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 list-none pb-10",
         className,
       )}
     >

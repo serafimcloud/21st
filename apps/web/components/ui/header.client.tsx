@@ -90,150 +90,188 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-1">
-          {!isMobile && <HeaderServer.ThemeToggle />}
-          <HeaderServer.SocialIcons />
-          {!isMobile && (
-            <>
-              <SignedIn>
-                {variant !== "publish" && (
-                  <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse ml-2">
-                    <Button
-                      asChild
-                      className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
-                    >
-                      <Link href="/publish">Publish component</Link>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
-                          size="icon"
-                          aria-label="Component options"
-                        >
-                          <ChevronDown
-                            size={16}
-                            strokeWidth={2}
-                            aria-hidden="true"
-                          />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-64"
-                        side="bottom"
-                        sideOffset={4}
-                        align="end"
-                      >
-                        <DropdownMenuItem asChild>
-                          <Link href="/publish" className="cursor-pointer">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-sm font-medium">
-                                Publish component
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Create and publish a new component to the
-                                registry
-                              </span>
-                            </div>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/import" className="cursor-pointer">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-sm font-medium flex items-center gap-1">
-                                Import from registry
-                                <Badge
-                                  variant="secondary"
-                                  className="h-5 text-[11px] tracking-wide font-medium uppercase px-1.5 py-0 leading-none"
-                                >
-                                  beta
-                                </Badge>
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Import an existing component from shadcn
-                                registry
-                              </span>
-                            </div>
-                          </Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )}
+          <SignedIn>
+            {variant !== "publish" && (
+              <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse ml-2">
+                <Button
+                  asChild
+                  className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
+                >
+                  <Link href="/publish">Publish component</Link>
+                </Button>
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="cursor-pointer rounded-full ml-2">
-                    <UserAvatar
-                      src={
-                        dbUser?.display_image_url || user?.imageUrl || undefined
-                      }
-                      alt={dbUser?.display_name || user?.fullName || undefined}
-                      size={32}
-                    />
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
+                      size="icon"
+                      aria-label="Component options"
+                    >
+                      <ChevronDown
+                        size={16}
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
+                    </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[240px] p-0" align="end">
-                    <div className="p-3 border-b border-border">
-                      <p className="text-sm text-foreground">
-                        {user?.primaryEmailAddress?.emailAddress}
-                      </p>
-                    </div>
-
-                    <div className="p-1">
-                      <DropdownMenuItem
-                        className="text-sm px-3 py-2 cursor-pointer"
-                        onSelect={() => {
-                          if (dbUser?.display_username) {
-                            router.push(`/${dbUser.display_username}`)
-                          } else if (user?.externalAccounts?.[0]?.username) {
-                            router.push(`/${dbUser?.username}`)
-                          }
-                        }}
-                      >
-                        View Profile
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-sm px-3 py-2 cursor-pointer"
-                        onSelect={() => setShowEditProfile(true)}
-                      >
-                        Edit Profile
-                      </DropdownMenuItem>
-                    </div>
-
-                    <div className="border-t border-border p-1">
-                      <DropdownMenuItem
-                        className="text-sm px-3 py-2 cursor-pointer"
-                        onSelect={() => (window.location.href = "/api-access")}
-                      >
-                        API Docs & Keys
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-sm px-3 py-2 cursor-pointer"
-                        onSelect={() => window.open("/terms", "_blank")}
-                      >
-                        Terms of Service
-                      </DropdownMenuItem>
-                    </div>
-
-                    <div className="border-t border-border p-1">
-                      <DropdownMenuItem
-                        onSelect={() => signOut({ redirectUrl: "/" })}
-                        className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
-                        onMouseEnter={() => controls.start("hover")}
-                        onMouseLeave={() => controls.start("normal")}
-                      >
-                        <span>Log Out</span>
-                        <Icons.logout size={16} controls={controls} />
-                      </DropdownMenuItem>
-                    </div>
+                  <DropdownMenuContent
+                    className="w-64"
+                    side="bottom"
+                    sideOffset={4}
+                    align="end"
+                  >
+                    <DropdownMenuItem asChild>
+                      <Link href="/publish" className="cursor-pointer">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium">
+                            Publish component
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Create and publish a new component to the registry
+                          </span>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/import" className="cursor-pointer">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium flex items-center gap-1">
+                            Import from registry
+                            <Badge
+                              variant="secondary"
+                              className="h-5 text-[11px] tracking-wide font-medium uppercase px-1.5 py-0 leading-none"
+                            >
+                              beta
+                            </Badge>
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Import an existing component from shadcn registry
+                          </span>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </SignedIn>
+              </div>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="cursor-pointer rounded-full ml-2">
+                <UserAvatar
+                  src={dbUser?.display_image_url || user?.imageUrl || undefined}
+                  alt={dbUser?.display_name || user?.fullName || undefined}
+                  size={32}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[240px] p-0" align="end">
+                <div className="p-3 border-b border-border">
+                  <p className="text-sm text-foreground">
+                    {user?.primaryEmailAddress?.emailAddress}
+                  </p>
+                </div>
 
-              <SignedOut>
-                <SignInButton>
-                  <Button className="ml-2">Publish component</Button>
-                </SignInButton>
-              </SignedOut>
-            </>
-          )}
+                <div className="p-1">
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer"
+                    onSelect={() => {
+                      if (dbUser?.display_username) {
+                        router.push(`/${dbUser.display_username}`)
+                      } else if (user?.externalAccounts?.[0]?.username) {
+                        router.push(`/${dbUser?.username}`)
+                      }
+                    }}
+                  >
+                    View Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer"
+                    onSelect={() => setShowEditProfile(true)}
+                  >
+                    Edit Profile
+                  </DropdownMenuItem>
+                </div>
+
+                <div className="border-t border-border p-1">
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer"
+                    onSelect={() => (window.location.href = "/api-access")}
+                  >
+                    API Docs & Keys
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer"
+                    onSelect={() => window.open("/terms", "_blank")}
+                  >
+                    Terms of Service
+                  </DropdownMenuItem>
+                </div>
+
+                <div className="border-t border-border p-1">
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
+                    onSelect={() =>
+                      window.open("https://x.com/serafimcloud", "_blank")
+                    }
+                  >
+                    <span>Twitter</span>
+                    <div className="flex items-center w-4">
+                      <Icons.twitter className="h-3 w-3" />
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
+                    onSelect={() =>
+                      window.open("https://discord.gg/Qx4rFunHfm", "_blank")
+                    }
+                  >
+                    <span>Discord</span>
+                    <Icons.discord className="h-4 w-4" />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
+                    onSelect={() =>
+                      window.open(
+                        "https://github.com/serafimcloud/21st",
+                        "_blank",
+                      )
+                    }
+                  >
+                    <span>GitHub</span>
+                    <Icons.gitHub className="h-4 w-4" />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
+                    onSelect={() => {
+                      document.documentElement.classList.toggle("dark")
+                      document.documentElement.classList.toggle("light")
+                    }}
+                  >
+                    <span>Toggle Theme</span>
+                    <div className="flex items-center">
+                      <Icons.sun className="h-4 w-4 dark:hidden" />
+                      <Icons.moon className="h-4 w-4 hidden dark:block" />
+                    </div>
+                  </DropdownMenuItem>
+                </div>
+
+                <div className="border-t border-border p-1">
+                  <DropdownMenuItem
+                    onSelect={() => signOut({ redirectUrl: "/" })}
+                    className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
+                    onMouseEnter={() => controls.start("hover")}
+                    onMouseLeave={() => controls.start("normal")}
+                  >
+                    <span>Log Out</span>
+                    <Icons.logout size={16} controls={controls} />
+                  </DropdownMenuItem>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SignedIn>
+
+          <SignedOut>
+            <SignInButton>
+              <Button className="ml-2">Publish component</Button>
+            </SignInButton>
+          </SignedOut>
         </div>
       </header>
       {showEditProfile && dbUser && !isLoading && (
@@ -248,13 +286,10 @@ export function Header({
             display_username: dbUser.display_username || null,
             display_image_url: dbUser.display_image_url || null,
             bio: dbUser.bio || null,
-            website_url: dbUser.website_url || null,
-            github_url: dbUser.github_url || null,
-            twitter_url: dbUser.twitter_url || null,
           }}
           onUpdate={() => {
             setShowEditProfile(false)
-            window.location.reload() // Refresh to show updated data
+            window.location.reload()
           }}
         />
       )}

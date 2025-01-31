@@ -99,7 +99,7 @@ export function ComponentsHeader({
   return (
     <div className="flex flex-col gap-4 mb-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="text-lg font-semibold">All components</div>
+        <div className="font-semibold">All components</div>
 
         <div className="flex items-center gap-2 md:w-auto min-w-0">
           <div className="relative flex-1 min-w-0 lg:min-w-[300px] md:min-w-[200px]">
