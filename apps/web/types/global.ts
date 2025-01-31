@@ -35,7 +35,7 @@ export type DemoTag = Database["public"]["Tables"]["demo_tags"]["Row"]
 
 export type ComponentTag = Database["public"]["Tables"]["component_tags"]["Row"]
 
-export type SortOption = "downloads" | "likes" | "date"
+export type SortOption = "downloads" | "likes" | "date" | "recommended"
 
 export type QuickFilterOption = "all" | "last_released" | "most_downloaded"
 
@@ -46,6 +46,7 @@ export const QUICK_FILTER_OPTIONS = {
 } as const
 
 export const SORT_OPTIONS = {
+  recommended: "Recommended",
   downloads: "Most downloaded",
   likes: "Most liked",
   date: "Newest",

@@ -88,22 +88,41 @@ export default async function HomePage() {
       | undefined
 
     const defaultQuickFilter = savedQuickFilter || "all"
-    const defaultSortBy: SortOption = savedSortBy || "downloads"
+    const defaultSortBy: SortOption = "recommended"
 
-    const sortByPreference: SortOption = savedSortBy?.length
-      ? (savedSortBy as SortOption)
-      : defaultSortBy
+    const sortByPreference: SortOption = savedSortBy || defaultSortBy
     const quickFilterPreference: QuickFilterOption = savedQuickFilter?.length
       ? (savedQuickFilter as QuickFilterOption)
       : defaultQuickFilter
 
+    const { data: initialTabsCountsData, error: initialTabsCountsError } =
+      await supabaseWithAdminAccess.rpc("get_components_counts")
+
+    const initialTabsCounts =
+      !initialTabsCountsError && Array.isArray(initialTabsCountsData)
+        ? initialTabsCountsData.reduce(
+            (acc, item) => {
+              acc[item.filter_type as QuickFilterOption] = item.count
+              return acc
+            },
+            {} as Record<QuickFilterOption, number>,
+          )
+        : {
+            all: 0,
+            last_released: 0,
+            most_downloaded: 0,
+          }
+
     const orderByFields: [string, string] = (() => {
-      switch (sortByPreference) {
+      const sort = sortByPreference as string
+      switch (sort) {
         case "downloads":
           return ["component(downloads_count)", "desc"]
         case "likes":
           return ["component(likes_count)", "desc"]
         case "date":
+        case "recommended":
+        default:
           return ["created_at", "desc"]
       }
     })()
@@ -125,7 +144,7 @@ export default async function HomePage() {
     }
 
     const filteredDemos = await supabaseWithAdminAccess.rpc(
-      "get_filtered_demos_with_views_and_usage",
+      "get_demos",
       {
         p_quick_filter: quickFilterPreference,
         p_sort_by: sortByPreference,
@@ -135,30 +154,24 @@ export default async function HomePage() {
     )
 
     if (filteredDemos.error) {
-      redirect("/")
+      console.error("Error fetching filtered demos:", filteredDemos.error)
+      return (
+        <>
+          <Header variant="default" />
+          <HomePageClient
+            initialComponents={initialDemos || []}
+            initialSortBy={sortByPreference}
+            initialQuickFilter={quickFilterPreference}
+            initialTabsCounts={initialTabsCounts}
+          />
+          <NewsletterDialog />
+        </>
+      )
     }
 
     const initialFilteredSortedDemos = (filteredDemos.data || []).map(
       transformDemoResult,
     )
-
-    const { data: initialTabsCountsData, error: initialTabsCountsError } =
-      await supabaseWithAdminAccess.rpc("get_components_counts")
-
-    const initialTabsCounts =
-      !initialTabsCountsError && Array.isArray(initialTabsCountsData)
-        ? initialTabsCountsData.reduce(
-            (acc, item) => {
-              acc[item.filter_type as QuickFilterOption] = item.count
-              return acc
-            },
-            {} as Record<QuickFilterOption, number>,
-          )
-        : {
-            all: 0,
-            last_released: 0,
-            most_downloaded: 0,
-          }
 
     if (shouldShowHero) {
       return (

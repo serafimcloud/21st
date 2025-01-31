@@ -298,7 +298,6 @@ export function CommandMenu() {
       setIsGenerating(false)
     }
   }
-  console.log("Selected Component", selectedComponent)
   const handleOpen = () => {
     if (value.startsWith("component-") && selectedComponent) {
       router.push(

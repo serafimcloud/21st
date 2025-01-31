@@ -11,6 +11,7 @@ import {
   SortOption,
   DemoWithComponent,
 } from "@/types/global"
+import { Database } from "@/types/supabase"
 
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { setCookie } from "@/lib/cookies"
@@ -67,6 +68,12 @@ export function HomePageClient({
   >(initialTabsCounts)
   const queryClient = useQueryClient()
 
+  useLayoutEffect(() => {
+    if (sortBy === undefined) {
+      setSortBy("recommended")
+    }
+  }, [])
+
   // Important: we don't need useEffect here
   // https://react.dev/learn/you-might-not-need-an-effect
   if (tabCounts === undefined) {
@@ -76,7 +83,7 @@ export function HomePageClient({
   // But we need useLayoutEffect here to avoid race conditions
   useLayoutEffect(() => {
     if (sortBy === undefined) {
-      setSortBy(initialSortBy)
+      setSortBy("recommended")
     }
     if (quickFilter === undefined) {
       setQuickFilter(initialQuickFilter)
@@ -100,23 +107,23 @@ export function HomePageClient({
 
         if (!debouncedSearchQuery) {
           const { data: filteredData, error } = await supabase.rpc(
-            "get_filtered_demos_with_views_and_usage",
+            "get_demos",
             {
               p_quick_filter: quickFilter,
               p_sort_by: sortBy,
               p_offset: Number(pageParam) * 24,
               p_limit: 24,
-            },
+            } as Database["public"]["Functions"]["get_demos"]["Args"],
           )
 
           if (error) throw new Error(error.message)
+          console.log("RAW DATA FROM SQL:", filteredData?.[0])
           const transformedData = (filteredData || []).map(transformDemoResult)
           return {
             data: transformedData,
-            total_count: filteredData?.[0]?.total_count ?? 0,
+            total_count: (filteredData?.[0] as any)?.total_count ?? 0,
           }
         }
-        
 
         console.log("Searching for ai", debouncedSearchQuery)
 
