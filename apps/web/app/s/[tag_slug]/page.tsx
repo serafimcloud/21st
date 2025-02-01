@@ -6,13 +6,9 @@ import { Header } from "@/components/ui/header.client"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { Database } from "@/types/supabase"
 import { TagPageContent } from "./page.client"
-import {
-  QuickFilterOption,
-  SortOption
-} from "@/types/global"
+import { SortOption } from "@/types/global"
 import { cookies } from "next/headers"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
-import { transformDemoResult } from "@/lib/utils/transformData"
 
 interface TagPageProps {
   params: {
@@ -51,73 +47,22 @@ export default async function TagPage({ params }: TagPageProps) {
       redirect("/")
     }
 
-    const hasOnboarded = cookieStore.has("has_onboarded")
     const savedSortBy = cookieStore.get("saved_sort_by")?.value as
       | SortOption
       | undefined
-    const savedQuickFilter = cookieStore.get("saved_quick_filter")?.value as
-      | QuickFilterOption
-      | undefined
 
-    const defaultQuickFilter = hasOnboarded ? "last_released" : "all"
-    const defaultSortBy: SortOption = hasOnboarded ? "date" : "downloads"
-
+    const defaultSortBy: SortOption = "recommended"
     const sortByPreference: SortOption = savedSortBy?.length
       ? (savedSortBy as SortOption)
       : defaultSortBy
-    const quickFilterPreference: QuickFilterOption = savedQuickFilter?.length
-      ? (savedQuickFilter as QuickFilterOption)
-      : defaultQuickFilter
-
-    const filteredDemos = await supabaseWithAdminAccess.rpc(
-      "get_filtered_demos_with_views_and_usage",
-      {
-        p_quick_filter: quickFilterPreference,
-        p_sort_by: sortByPreference,
-        p_offset: 0,
-        p_limit: 40,
-        p_tag_slug: tagSlug,
-      },
-    )
-
-    if (filteredDemos.error) {
-      redirect("/")
-    }
-
-    const initialFilteredSortedDemos = (filteredDemos.data || []).map(
-      transformDemoResult,
-    )
-
-    const { data: initialTabsCountsData, error: initialTabsCountsError } =
-      await supabaseWithAdminAccess.rpc("get_components_counts", {
-        p_tag_slug: tagSlug,
-      })
-
-    const initialTabsCounts =
-      !initialTabsCountsError && Array.isArray(initialTabsCountsData)
-        ? initialTabsCountsData.reduce(
-            (acc, item) => {
-              acc[item.filter_type as QuickFilterOption] = item.count
-              return acc
-            },
-            {} as Record<QuickFilterOption, number>,
-          )
-        : {
-            all: 0,
-            last_released: 0,
-            most_downloaded: 0,
-          }
 
     return (
       <>
-        {tagInfo && <Header text={tagInfo?.name} />}
+<Header />
         <TagPageContent
-          initialComponents={initialFilteredSortedDemos}
           tagName={tagInfo.name}
           tagSlug={tagSlug}
-          initialTabCounts={initialTabsCounts}
           initialSortBy={sortByPreference}
-          initialQuickFilter={quickFilterPreference}
         />
       </>
     )

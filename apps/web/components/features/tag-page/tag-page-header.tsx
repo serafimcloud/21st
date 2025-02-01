@@ -15,13 +15,12 @@ import {
 import { searchQueryAtom } from "@/components/ui/header.client"
 import { sortByAtom } from "@/components/features/main-page/main-page-header"
 
-import type { SortOption, DemoWithComponent } from "@/types/global"
+import type { SortOption } from "@/types/global"
 import { SORT_OPTIONS } from "@/types/global"
 import { setCookie } from "@/lib/cookies"
 
 interface TagComponentsHeaderProps {
-  filtersDisabled: boolean
-  demos?: DemoWithComponent[]
+  tagName: string
   currentSection?: string
 }
 
@@ -45,7 +44,7 @@ const useSearchHotkeys = (inputRef: React.RefObject<HTMLInputElement>) => {
 }
 
 export function TagComponentsHeader({
-  filtersDisabled,
+  tagName,
   currentSection,
 }: TagComponentsHeaderProps) {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
@@ -71,7 +70,7 @@ export function TagComponentsHeader({
   return (
     <div className="flex flex-col gap-4 mb-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="font-semibold">All components</div>
+        <div className="text-lg font-semibold">{tagName}</div>
 
         <div className="flex items-center gap-2 md:w-auto min-w-0">
           <div className="relative flex-1 min-w-0 lg:min-w-[250px] md:min-w-[100px]">

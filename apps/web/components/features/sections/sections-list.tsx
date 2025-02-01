@@ -3,7 +3,6 @@ import React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import { SectionCard, SectionCardSkeleton } from "./section-card"
-import { Section } from "@/types/global"
 import { sections } from "@/lib/navigation"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
