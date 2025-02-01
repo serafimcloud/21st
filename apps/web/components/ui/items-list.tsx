@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import React, { useEffect, KeyboardEvent } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import {
@@ -9,7 +9,14 @@ import { DemoWithComponent, User, Component, SortOption } from "@/types/global"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { transformDemoResult } from "@/lib/utils/transformData"
 import { Database } from "@/types/supabase"
-import { Loader2 } from "lucide-react"
+import { Loader2, Search } from "lucide-react"
+import { useAtom } from "jotai"
+import { searchQueryAtom } from "@/components/ui/header.client"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { useHotkeys } from "react-hotkeys-hook"
+import { isMac } from "@/lib/utils"
+import { Icons } from "@/components/icons"
 
 type ComponentOrDemo =
   | DemoWithComponent
@@ -105,16 +112,13 @@ function useTagDemos(
   return useQuery({
     queryKey: ["tag-filtered-demos", tagSlug, sortBy] as const,
     queryFn: async () => {
-      const { data: filteredData, error } = await supabase.rpc(
-        "get_filtered_demos_with_views_and_usage",
-        {
-          p_quick_filter: "all",
-          p_sort_by: sortBy,
-          p_offset: 0,
-          p_limit: 40,
-          p_tag_slug: tagSlug,
-        },
-      )
+      const { data: filteredData, error } = await supabase.rpc("get_demos", {
+        p_quick_filter: "all",
+        p_sort_by: sortBy,
+        p_offset: 0,
+        p_limit: 1000,
+        p_tag_slug: tagSlug,
+      })
 
       if (error) throw error
       const transformedData = (filteredData || []).map(transformDemoResult)
@@ -129,6 +133,8 @@ function useTagDemos(
           total_count: initialData.length,
         }
       : undefined,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   })
 }
 
@@ -271,12 +277,34 @@ function useSearchDemos(
   })
 }
 
+function filterComponentsBySearch(
+  components: DemoWithComponent[] | undefined,
+  searchQuery: string,
+) {
+  if (!components || !searchQuery) return components
+  const query = searchQuery.toLowerCase()
+
+  return components.filter((component) => {
+    if (component.name?.toLowerCase().includes(query)) return true
+    if (component.component.name?.toLowerCase().includes(query)) return true
+    if (component.user.name?.toLowerCase().includes(query)) return true
+    if (component.component.description?.toLowerCase().includes(query))
+      return true
+    if (component.tags?.some((tag) => tag.name.toLowerCase().includes(query)))
+      return true
+    return false
+  })
+}
+
 export function ComponentsList({
   className,
   skeletonCount = 40,
   initialData,
   ...props
 }: ComponentsListProps) {
+  const [localSearchQuery] = useAtom(searchQueryAtom)
+  const router = useRouter()
+
   const mainQuery = useMainDemos(
     props.type === "main" ? props.sortBy : "recommended",
     props.type === "main" ? initialData : undefined,
@@ -294,13 +322,13 @@ export function ComponentsList({
     props.type === "user" ? initialData : undefined,
   )
 
-  const searchQuery = useSearchDemos(
+  const aiSearchQuery = useSearchDemos(
     props.type === "search" ? props.query : "",
     props.type === "search" ? props.sortBy : "recommended",
     props.type === "search" ? initialData : undefined,
   )
 
-  const components = React.useMemo(() => {
+  const rawComponents = React.useMemo(() => {
     switch (props.type) {
       case "main":
         return mainQuery.data?.pages?.flatMap((page) => page.data)
@@ -309,15 +337,23 @@ export function ComponentsList({
       case "user":
         return userQuery.data?.data
       case "search":
-        return searchQuery.data?.pages?.flatMap((page) => page.data)
+        return aiSearchQuery.data?.pages?.flatMap((page) => page.data)
     }
   }, [
     props.type,
     mainQuery.data,
     tagQuery.data,
     userQuery.data,
-    searchQuery.data,
+    aiSearchQuery.data,
   ])
+
+  // Применяем локальную фильтрацию только для страницы тегов
+  const components = React.useMemo(() => {
+    if (props.type === "tag") {
+      return filterComponentsBySearch(rawComponents, localSearchQuery)
+    }
+    return rawComponents
+  }, [props.type, rawComponents, localSearchQuery])
 
   const isLoading = React.useMemo(() => {
     switch (props.type) {
@@ -328,14 +364,14 @@ export function ComponentsList({
       case "user":
         return userQuery.isLoading
       case "search":
-        return searchQuery.isLoading
+        return aiSearchQuery.isLoading
     }
   }, [
     props.type,
     mainQuery.isLoading,
     tagQuery.isLoading,
     userQuery.isLoading,
-    searchQuery.isLoading,
+    aiSearchQuery.isLoading,
   ])
 
   const isFetching = React.useMemo(() => {
@@ -347,14 +383,14 @@ export function ComponentsList({
       case "user":
         return userQuery.isFetching
       case "search":
-        return searchQuery.isFetching
+        return aiSearchQuery.isFetching
     }
   }, [
     props.type,
     mainQuery.isFetching,
     tagQuery.isFetching,
     userQuery.isFetching,
-    searchQuery.isFetching,
+    aiSearchQuery.isFetching,
   ])
 
   const hasNextPage = React.useMemo(() => {
@@ -362,22 +398,22 @@ export function ComponentsList({
       case "main":
         return mainQuery.hasNextPage
       case "search":
-        return searchQuery.hasNextPage
+        return aiSearchQuery.hasNextPage
       default:
         return false
     }
-  }, [props.type, mainQuery.hasNextPage, searchQuery.hasNextPage])
+  }, [props.type, mainQuery.hasNextPage, aiSearchQuery.hasNextPage])
 
   const fetchNextPage = React.useMemo(() => {
     switch (props.type) {
       case "main":
         return mainQuery.fetchNextPage
       case "search":
-        return searchQuery.fetchNextPage
+        return aiSearchQuery.fetchNextPage
       default:
         return undefined
     }
-  }, [props.type, mainQuery.fetchNextPage, searchQuery.fetchNextPage])
+  }, [props.type, mainQuery.fetchNextPage, aiSearchQuery.fetchNextPage])
 
   useEffect(() => {
     if (!["main", "search"].includes(props.type)) return
@@ -397,8 +433,28 @@ export function ComponentsList({
     return () => window.removeEventListener("scroll", handleScroll)
   }, [isLoading, hasNextPage, fetchNextPage, props.type])
 
-  const showSkeleton = isLoading || !components?.length
+  const showSkeleton = isLoading || (!components?.length && !localSearchQuery)
   const showSpinner = isFetching && !showSkeleton
+  const showEmptyState = !isLoading && !components?.length && localSearchQuery
+
+  const handleGlobalSearch = () => {
+    if (!localSearchQuery) return
+    router.push(`/q/${encodeURIComponent(localSearchQuery)}`)
+  }
+
+  // Добавляем хоткей для глобального поиска
+  useHotkeys(
+    "mod+enter",
+    (e) => {
+      e.preventDefault()
+      handleGlobalSearch()
+    },
+    {
+      enableOnFormTags: true,
+      preventDefault: true,
+    },
+    [localSearchQuery],
+  )
 
   return (
     <>
@@ -414,6 +470,29 @@ export function ComponentsList({
               <ComponentCardSkeleton key={i} />
             ))}
           </>
+        ) : showEmptyState ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+            <div className="text-lg font-semibold mb-2">
+              No results found for "{localSearchQuery}"
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Try adjusting your search or use global search
+            </p>
+            <Button
+              onClick={handleGlobalSearch}
+              variant="outline"
+              className="gap-2"
+            >
+              <Search className="h-4 w-4" />
+              Search Everywhere
+              <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border border-muted-foreground/40 bg-muted px-1.5 ml-1.5 font-mono text-[11px] font-medium text-muted-foreground inline-flex">
+                <span className="text-[11px] leading-none font-sans">
+                  {isMac ? "⌘" : "Ctrl"}
+                </span>
+                <Icons.enter className="h-2.5 w-2.5" />
+              </kbd>
+            </Button>
+          </div>
         ) : (
           components?.map((component: DemoWithComponent) => (
             <ComponentCard

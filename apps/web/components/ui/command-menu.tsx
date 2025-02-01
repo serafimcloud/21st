@@ -644,7 +644,7 @@ export function CommandMenu() {
               >
                 <span>Open</span>
                 <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 text-[11px] leading-none font-sans opacity-100 flex">
-                  <Icons.enter className="h-3 w-3" />
+                  <Icons.enter className="h-2.5 w-2.5" />
                 </kbd>
               </button>
             </div>
