@@ -5,7 +5,7 @@ import { useAtom } from "jotai"
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
 
-import { DemoWithComponent, SortOption } from "@/types/global"
+import { DemoWithComponent, SortOption, User, Component } from "@/types/global"
 
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { searchQueryAtom } from "@/components/ui/header.client"
@@ -122,7 +122,7 @@ export function SearchPageClient({
     })
 
   const allDemos = data?.pages?.flatMap((d) => d.data)
-  const showSpinner = isFetching && !isLoading
+  const showSkeleton = isFetching && !isLoading
 
   useEffect(() => {
     const handleScroll = () => {
@@ -152,15 +152,12 @@ export function SearchPageClient({
             Search results for "{initialQuery}"
           </h1>
           <p className="text-muted-foreground">
-            Found {data?.pages[0]?.total_count || 0} components
+            {showSkeleton
+              ? "Searching..."
+              : `Found ${data?.pages[0]?.total_count || 0} components`}
           </p>
         </div>
-        <ComponentsList components={allDemos} isLoading={isLoading} />
-        {showSpinner && (
-          <div className="col-span-full flex justify-center py-4">
-            <Loader2 className="h-8 w-8 animate-spin text-foreground/20" />
-          </div>
-        )}
+        <ComponentsList components={allDemos} isLoading={showSkeleton} />
       </div>
     </motion.div>
   )
