@@ -28,7 +28,7 @@ type HomePageClientProps = {
   initialSections: SectionPreview[]
 }
 
-export function HomePageClient({ initialSections }: HomePageClientProps) {
+export function HomePageClient() {
   const supabase = useClerkSupabaseClient()
   const [sortBy, setSortBy] = useAtom(sortByAtom)
   const queryClient = useQueryClient()
@@ -57,31 +57,6 @@ export function HomePageClient({ initialSections }: HomePageClientProps) {
       setSortBy(sortFromUrl)
     }
   }, [])
-
-  // Объединяем данные из навигации с превью
-  const sectionsWithPreviews = sections
-    .flatMap((section) =>
-      section.items.map((item) => {
-        if (!item.demoId) return null
-        const preview = initialSections.find((s) => s.demo_id === item.demoId)
-        if (!preview) return null
-
-        return {
-          tag_id: item.demoId,
-          tag_name: item.title,
-          tag_slug: item.href.replace("/s/", ""),
-          component_id: item.demoId,
-          component_name: item.title,
-          component_slug: item.href.replace("/s/", ""),
-          preview_url: preview.preview_url,
-          video_url: preview.video_url || "",
-          user_data: {},
-          downloads_count: 0,
-          view_count: 0,
-        }
-      }),
-    )
-    .filter((item): item is NonNullable<typeof item> => item !== null)
 
   const { data, isLoading, isFetching, fetchNextPage, hasNextPage } =
     useInfiniteQuery<{ data: DemoWithComponent[]; total_count: number }>({
@@ -176,7 +151,7 @@ export function HomePageClient({ initialSections }: HomePageClientProps) {
           filtersDisabled={false}
         />
         {activeTab === "sections" ? (
-          <SectionsList sections={sectionsWithPreviews} />
+          <SectionsList />
         ) : (
           <ComponentsList components={allDemos} isLoading={showSkeleton} />
         )}
