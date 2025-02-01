@@ -1,16 +1,14 @@
 "use client"
 
-import React, { useEffect, useLayoutEffect, useState } from "react"
-
+import React, { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
 
-import { SortOption, DemoWithComponent, Section } from "@/types/global"
+import { DemoWithComponent } from "@/types/global"
 import { Database } from "@/types/supabase"
 
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { setCookie } from "@/lib/cookies"
 import { searchQueryAtom } from "@/components/ui/header.client"
 import {
   ComponentsHeader,
@@ -19,55 +17,54 @@ import {
 import { Loader2 } from "lucide-react"
 import { useDebounce } from "@/hooks/use-debounce"
 import ComponentsList from "@/components/ui/items-list"
-import SectionsList from "@/components/features/section-card/sections-list"
+import SectionsList from "@/components/features/sections/sections-list"
 import { transformDemoResult } from "@/lib/utils/transformData"
-import { replaceSpacesWithPlus } from "@/lib/utils"
+import { sections } from "@/lib/navigation"
 
-const useSetServerUserDataCookies = () => {
-  useEffect(() => {
-    if (!document.cookie.includes("has_onboarded")) {
-      setCookie({
-        name: "has_onboarded",
-        value: "true",
-        expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        httpOnly: true,
-        sameSite: "lax",
-      })
-    }
-  }, [])
+type SectionPreview = {
+  demo_id: number
+  preview_url: string
+  video_url: string | null
 }
 
-const refetchData = async (queryClient: any, sortBy: any) => {
-  await queryClient.invalidateQueries({
-    queryKey: ["filtered-demos", sortBy],
-  })
+type HomePageClientProps = {
+  initialSections: SectionPreview[]
 }
 
-export function HomePageClient({
-  initialComponents,
-  initialSortBy,
-  initialSections,
-}: {
-  initialComponents: DemoWithComponent[]
-  initialSortBy: SortOption
-  initialSections: Section[]
-}) {
+export function HomePageClient({ initialSections }: HomePageClientProps) {
   const [searchQuery] = useAtom(searchQueryAtom)
   const supabase = useClerkSupabaseClient()
-  const [sortBy, setSortBy] = useAtom(sortByAtom)
+  const [sortBy] = useAtom(sortByAtom)
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<"sections" | "components">(
     "sections",
   )
 
-  useLayoutEffect(() => {
-    if (sortBy === undefined) {
-      setSortBy(initialSortBy)
-    }
-  }, [])
+  // Объединяем данные из навигации с превью
+  const sectionsWithPreviews = sections
+    .flatMap((section) =>
+      section.items.map((item) => {
+        if (!item.demoId) return null
+        const preview = initialSections.find((s) => s.demo_id === item.demoId)
+        if (!preview) return null
 
-  useSetServerUserDataCookies()
+        return {
+          tag_id: item.demoId,
+          tag_name: item.title,
+          tag_slug: item.href.replace("/s/", ""),
+          component_id: item.demoId,
+          component_name: item.title,
+          component_slug: item.href.replace("/s/", ""),
+          preview_url: preview.preview_url,
+          video_url: preview.video_url || "",
+          user_data: {},
+          downloads_count: 0,
+          view_count: 0,
+        }
+      }),
+    )
+    .filter((item): item is NonNullable<typeof item> => item !== null)
 
   const { data, isLoading, isFetching, fetchNextPage, hasNextPage } =
     useInfiniteQuery<{ data: DemoWithComponent[]; total_count: number }>({
@@ -94,7 +91,6 @@ export function HomePageClient({
           )
 
           if (error) throw new Error(error.message)
-          console.log("RAW DATA FROM SQL:", filteredData?.[0])
           const transformedData = (filteredData || []).map(transformDemoResult)
           return {
             data: transformedData,
@@ -123,9 +119,7 @@ export function HomePageClient({
         }
       },
       initialData: {
-        pages: [
-          { data: initialComponents, total_count: initialComponents.length },
-        ],
+        pages: [{ data: [], total_count: 0 }],
         pageParams: [0],
       },
       enabled: activeTab === "components",
@@ -167,7 +161,9 @@ export function HomePageClient({
 
   useEffect(() => {
     if (sortBy !== undefined) {
-      refetchData(queryClient, sortBy)
+      queryClient.invalidateQueries({
+        queryKey: ["filtered-demos", sortBy],
+      })
     }
   }, [sortBy, queryClient])
 
@@ -179,12 +175,12 @@ export function HomePageClient({
     >
       <div className="flex flex-col">
         <ComponentsHeader
-          filtersDisabled={!!searchQuery}
-          onTabChange={setActiveTab}
           activeTab={activeTab}
+          onTabChange={setActiveTab}
+          filtersDisabled={!!searchQuery}
         />
         {activeTab === "sections" ? (
-          <SectionsList sections={initialSections} />
+          <SectionsList sections={sectionsWithPreviews} />
         ) : (
           <ComponentsList components={allDemos} isLoading={isLoading} />
         )}

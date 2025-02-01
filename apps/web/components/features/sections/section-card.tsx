@@ -46,10 +46,12 @@ export function SectionCard({
                 />
               </div>
               <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
+              {section.video_url && (
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <SectionVideoPreview videoUrl={section.video_url} />
+                </div>
+              )}
             </div>
-            {section.video_url && (
-              <SectionVideoPreview videoUrl={section.video_url} />
-            )}
           </div>
           {section.video_url && (
             <div className="absolute top-2 left-2 z-20 bg-background/90 backdrop-blur rounded-sm px-2 py-1 pointer-events-none">

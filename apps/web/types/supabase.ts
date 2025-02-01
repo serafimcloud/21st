@@ -1148,6 +1148,16 @@ export type Database = {
           website_url: string | null
         }[]
       }
+      get_section_previews: {
+        Args: {
+          p_demo_ids: number[]
+        }
+        Returns: {
+          demo_id: number
+          preview_url: string
+          video_url: string
+        }[]
+      }
       get_sections: {
         Args: {
           p_tag_slugs?: string[]

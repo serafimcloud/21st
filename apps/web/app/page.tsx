@@ -1,10 +1,10 @@
 import React from "react"
 import { Metadata } from "next"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { SortOption, DemoWithComponent } from "@/types/global"
-import { sections as navigationSections } from "@/lib/navigation"
+import { sections } from "@/lib/navigation"
 
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { transformDemoResult } from "@/lib/utils/transformData"
@@ -83,42 +83,17 @@ export default async function HomePage() {
     const defaultSortBy: SortOption = "recommended"
     const sortByPreference: SortOption = savedSortBy || defaultSortBy
 
-    // Собираем все слаги из навигации
-    const allSectionSlugs: string[] = navigationSections.flatMap((section) =>
-      section.items.map((item) => {
-        // Извлекаем слаг из href, убирая '/s/'
-        const slug = item.href.replace("/s/", "")
-        return slug
-      }),
-    )
+    // Собираем все ID демо из навигации
+    const allDemoIds = sections
+      .flatMap((section) => section.items.map((item) => item.demoId))
+      .filter((id): id is number => id !== undefined)
 
-    // Получаем секции
-    const { data: sectionsList, error: sectionsError } =
-      await supabaseWithAdminAccess.rpc("get_sections", {
-        p_tag_slugs: allSectionSlugs,
+    // Получаем превью для секций
+    const { data: sectionPreviews } = await supabaseWithAdminAccess
+      .rpc("get_section_previews", {
+        p_demo_ids: allDemoIds,
       })
-
-    if (sectionsError) {
-      console.error("Sections error:", sectionsError)
-      return null
-    }
-
-    // Получаем компоненты только если нужно (но пока оставим для совместимости)
-    const { data: initialDemos, error: demosError } =
-      await supabaseWithAdminAccess
-        .from("demos")
-        .select(
-          "*, component:components!demos_component_id_fkey(*, user:users!user_id(*)), user:users!user_id(*)",
-        )
-        .limit(40)
-        .eq("component.is_public", true)
-        .order("created_at", { ascending: false })
-        .returns<DemoWithComponent[]>()
-
-    if (demosError) {
-      console.error("Demos error:", demosError)
-      return null
-    }
+      .throwOnError()
 
     if (shouldShowHero) {
       return (
@@ -132,11 +107,7 @@ export default async function HomePage() {
     return (
       <>
         <Header variant="default" />
-        <HomePageClient
-          initialComponents={initialDemos || []}
-          initialSortBy={sortByPreference}
-          initialSections={sectionsList || []}
-        />
+        <HomePageClient initialSections={sectionPreviews || []} />
         <NewsletterDialog />
       </>
     )
