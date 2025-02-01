@@ -9,15 +9,18 @@ import { DemoWithComponent, SortOption, User, Component } from "@/types/global"
 
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { searchQueryAtom } from "@/components/ui/header.client"
-import {
-  sortByAtom,
-} from "@/components/features/main-page/main-page-header"
+import { sortByAtom } from "@/components/features/main-page/main-page-header"
 import { Loader2 } from "lucide-react"
 import ComponentsList from "@/components/ui/items-list"
 
 type SearchPageClientProps = {
   initialQuery: string
   initialSortBy: SortOption
+}
+
+type SearchResult = {
+  data: DemoWithComponent[]
+  total_count: number
 }
 
 export function SearchPageClient({
@@ -35,7 +38,7 @@ export function SearchPageClient({
   }, [initialQuery, initialSortBy, setSearchQuery, setSortBy])
 
   const { data, isLoading, isFetching, fetchNextPage, hasNextPage } =
-    useInfiniteQuery<{ data: DemoWithComponent[]; total_count: number }>({
+    useInfiniteQuery<SearchResult>({
       queryKey: ["search-results", initialQuery, sortBy],
       queryFn: async ({ pageParam = 0 }) => {
         try {
@@ -61,38 +64,38 @@ export function SearchPageClient({
                 return null
               }
 
-              const transformed = {
+              const componentWithUser = {
+                ...componentData,
+                user: userData,
+              }
+
+              const demoComponent: DemoWithComponent = {
+                compiled_css: componentData.compiled_css,
+                component_id: componentData.id,
+                created_at: result.created_at || null,
+                demo_code: componentData.demo_code || "",
+                demo_dependencies: componentData.dependencies,
+                demo_direct_registry_dependencies: {},
+                demo_slug: result.demo_slug || "default",
                 id: result.id,
                 name: result.name || "Default",
-                demo_slug: result.demo_slug || "default",
                 preview_url: result.preview_url,
+                user: userData,
+                user_id: userData.id,
                 video_url: result.video_url,
                 view_count: result.view_count || 0,
-                user: userData,
-                component: {
-                  id: componentData.id,
-                  name: componentData.name,
-                  description: componentData.description,
-                  component_slug: componentData.component_slug,
-                  preview_url: componentData.preview_url,
-                  video_url: componentData.video_url,
-                  code: componentData.code,
-                  demo_code: componentData.demo_code,
-                  dependencies: componentData.dependencies,
-                  tailwind_config_extension:
-                    componentData.tailwind_config_extension,
-                  compiled_css: componentData.compiled_css,
-                  likes_count: componentData.likes_count || 0,
-                  user: userData,
-                },
+                component: componentWithUser,
                 tags: [],
-                created_at: result.created_at,
-                updated_at: result.updated_at,
-              } as unknown as DemoWithComponent
+                embedding: null,
+                embedding_oai: null,
+                fts: null,
+                pro_preview_image_url: null,
+                updated_at: result.updated_at || null,
+              }
 
-              return transformed
+              return demoComponent
             })
-            .filter(Boolean)
+            .filter((item): item is DemoWithComponent => item !== null)
 
           return {
             data: transformedResults,
@@ -121,7 +124,7 @@ export function SearchPageClient({
       },
     })
 
-  const allDemos = data?.pages?.flatMap((d) => d.data)
+  const allDemos = data?.pages?.flatMap((d) => d.data) ?? []
   const showSkeleton = isFetching && !isLoading
 
   useEffect(() => {
@@ -154,7 +157,7 @@ export function SearchPageClient({
           <p className="text-muted-foreground">
             {showSkeleton
               ? "Searching..."
-              : `Found ${data?.pages[0]?.total_count || 0} components`}
+              : `Found ${data?.pages[0]?.total_count ?? 0} components`}
           </p>
         </div>
         <ComponentsList components={allDemos} isLoading={showSkeleton} />

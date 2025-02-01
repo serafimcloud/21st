@@ -19,7 +19,7 @@ import type { SortOption } from "@/types/global"
 import { SORT_OPTIONS } from "@/types/global"
 import { setCookie } from "@/lib/cookies"
 
-export const sortByAtom = atom<SortOption | undefined>(undefined)
+export const sortByAtom = atom<SortOption>("recommended")
 
 export function ComponentsHeader({
   filtersDisabled,
