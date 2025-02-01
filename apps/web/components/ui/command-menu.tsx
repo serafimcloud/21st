@@ -112,7 +112,6 @@ export function CommandMenu() {
   const [searchQuery, setSearchQuery] = useAtom(commandSearchQueryAtom)
   const [value, setValue] = useState("")
   const router = useRouter()
-
   const supabase = useClerkSupabaseClient()
 
   const { data: components, isLoading: isComponentsLoading } = useQuery<
@@ -129,6 +128,7 @@ export function CommandMenu() {
             body: {
               search: searchQuery,
               match_threshold: 0.33,
+              limit: 5,
             },
           },
         )
@@ -353,6 +353,24 @@ export function CommandMenu() {
           />
           <div className="flex h-[calc(100%-44px)]">
             <CommandList className="w-1/2 border-r overflow-y-auto">
+              {searchQuery && (
+                <CommandGroup heading="Search">
+                  <CommandItem
+                    value={`search-${searchQuery}`}
+                    onSelect={() => {
+                      router.push(`/q/${encodeURIComponent(searchQuery)}`)
+                      setSearchQuery("")
+                      setValue("")
+                      setOpen(false)
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Icons.search className="h-4 w-4" />
+                    <span>Search for "{searchQuery}"</span>
+                  </CommandItem>
+                </CommandGroup>
+              )}
+
               {filteredSections.length > 0 && (
                 <CommandGroup heading="Sections">
                   {filteredSections.map((section) =>
@@ -432,7 +450,7 @@ export function CommandMenu() {
                 components.length > 0 && (
                   <>
                     <CommandSeparator />
-                    <CommandGroup heading="Components">
+                    <CommandGroup heading="Quick Results">
                       {components?.map((component) => (
                         <CommandItem
                           key={`${component?.component?.name}-${component?.name}`}

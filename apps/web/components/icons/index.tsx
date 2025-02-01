@@ -3,6 +3,7 @@ import {
   Moon,
   SunMedium,
   Menu,
+  Search,
   type LucideIcon,
 } from "lucide-react"
 import { LovableLogo } from "./lovable"
@@ -155,6 +156,7 @@ export const Icons = {
     </svg>
   ),
   logout: LogoutIcon,
+  search: Search,
   replit: (props: LucideProps) => (
     <svg
       {...props}

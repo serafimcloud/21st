@@ -38,20 +38,34 @@ export function ComponentCard({
     | (Component & { user: User } & { view_count?: number })
   isLoading?: boolean
 }) {
+  console.log("ComponentCard received:", { component, isLoading })
+
   if (isLoading || !component) {
     return <ComponentCardSkeleton />
   }
 
   const isDemo = "demo_slug" in component
-  const userData = component.user
+  const userData = isDemo ? component.user : component.user
   const componentOwner = isDemo ? component.component.user : component.user
 
-  if (!userData) {
+  console.log("ComponentCard data:", {
+    isDemo,
+    userData,
+    componentOwner,
+    component,
+  })
+
+  if (!userData || !componentOwner || !component) {
+    console.warn("Missing required data:", {
+      userData,
+      componentOwner,
+      component,
+    })
     return <ComponentCardSkeleton />
   }
 
   const componentUrl = isDemo
-    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || 'default'}`
+    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || "default"}`
     : `/${componentOwner.display_username || componentOwner.username}/${component.component_slug}`
 
   const videoUrl = isDemo ? component.video_url : component.video_url

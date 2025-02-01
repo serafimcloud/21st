@@ -21,6 +21,13 @@ export function ComponentsList({
   className?: string
   skeletonCount?: number
 }) {
+  console.log("ComponentsList received:", {
+    components,
+    isLoading,
+    className,
+    skeletonCount,
+  })
+
   return (
     <div
       className={cn(
@@ -35,12 +42,15 @@ export function ComponentsList({
           ))}
         </>
       ) : (
-        components?.map((component) => (
-          <ComponentCard
-            key={`${component.id}-${component.updated_at}`}
-            component={component}
-          />
-        ))
+        components?.map((component) => {
+          console.log("Rendering component:", component)
+          return (
+            <ComponentCard
+              key={`${component.id}-${component.updated_at}`}
+              component={component}
+            />
+          )
+        })
       )}
     </div>
   )

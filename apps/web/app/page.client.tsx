@@ -9,17 +9,13 @@ import { DemoWithComponent } from "@/types/global"
 import { Database } from "@/types/supabase"
 
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { searchQueryAtom } from "@/components/ui/header.client"
-import {
-  ComponentsHeader,
-  sortByAtom,
-} from "@/components/features/main-page/main-page-header"
+import { sortByAtom } from "@/components/features/main-page/main-page-header"
 import { Loader2 } from "lucide-react"
-import { useDebounce } from "@/hooks/use-debounce"
 import ComponentsList from "@/components/ui/items-list"
 import SectionsList from "@/components/features/sections/sections-list"
 import { transformDemoResult } from "@/lib/utils/transformData"
 import { sections } from "@/lib/navigation"
+import { ComponentsHeader } from "@/components/features/main-page/main-page-header"
 
 type SectionPreview = {
   demo_id: number
@@ -32,10 +28,8 @@ type HomePageClientProps = {
 }
 
 export function HomePageClient({ initialSections }: HomePageClientProps) {
-  const [searchQuery] = useAtom(searchQueryAtom)
   const supabase = useClerkSupabaseClient()
   const [sortBy] = useAtom(sortByAtom)
-  const debouncedSearchQuery = useDebounce(searchQuery, 300)
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<"sections" | "components">(
     "sections",
@@ -68,54 +62,20 @@ export function HomePageClient({ initialSections }: HomePageClientProps) {
 
   const { data, isLoading, isFetching, fetchNextPage, hasNextPage } =
     useInfiniteQuery<{ data: DemoWithComponent[]; total_count: number }>({
-      queryKey: ["filtered-demos", sortBy, debouncedSearchQuery],
-      queryFn: async ({
-        pageParam = 0,
-      }): Promise<{ data: DemoWithComponent[]; total_count: number }> => {
-        if (!sortBy) {
-          return {
-            data: [],
-            total_count: 0,
-          }
-        }
-
-        if (!debouncedSearchQuery) {
-          const { data: filteredData, error } = await supabase.rpc(
-            "get_demos",
-            {
-              p_quick_filter: "all",
-              p_sort_by: sortBy,
-              p_offset: Number(pageParam) * 24,
-              p_limit: 24,
-            } as Database["public"]["Functions"]["get_demos"]["Args"],
-          )
-
-          if (error) throw new Error(error.message)
-          const transformedData = (filteredData || []).map(transformDemoResult)
-          return {
-            data: transformedData,
-            total_count: (filteredData?.[0] as any)?.total_count ?? 0,
-          }
-        }
-
-        const { data: searchResults, error } = await supabase.functions.invoke(
-          "ai-search-oai",
-          {
-            body: {
-              search: debouncedSearchQuery,
-              match_threshold: 0.33,
-            },
-          },
-        )
+      queryKey: ["filtered-demos", sortBy],
+      queryFn: async ({ pageParam = 0 }) => {
+        const { data: filteredData, error } = await supabase.rpc("get_demos", {
+          p_quick_filter: "all",
+          p_sort_by: sortBy,
+          p_offset: Number(pageParam) * 24,
+          p_limit: 24,
+        } as Database["public"]["Functions"]["get_demos"]["Args"])
 
         if (error) throw new Error(error.message)
-        const transformedSearchResults = (searchResults || []).map(
-          transformDemoResult,
-        )
-
+        const transformedData = (filteredData || []).map(transformDemoResult)
         return {
-          data: transformedSearchResults,
-          total_count: transformedSearchResults.length,
+          data: transformedData,
+          total_count: (filteredData?.[0] as any)?.total_count ?? 0,
         }
       },
       initialData: {
@@ -177,7 +137,7 @@ export function HomePageClient({ initialSections }: HomePageClientProps) {
         <ComponentsHeader
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          filtersDisabled={!!searchQuery}
+          filtersDisabled={false}
         />
         {activeTab === "sections" ? (
           <SectionsList sections={sectionsWithPreviews} />
