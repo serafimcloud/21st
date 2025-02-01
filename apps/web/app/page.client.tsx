@@ -178,7 +178,7 @@ export function HomePageClient({ initialSections }: HomePageClientProps) {
         {activeTab === "sections" ? (
           <SectionsList sections={sectionsWithPreviews} />
         ) : (
-          <ComponentsList components={allDemos} isLoading={isLoading} />
+          <ComponentsList components={allDemos} isLoading={showSkeleton} />
         )}
         {showSpinner && (
           <div className="col-span-full flex justify-center py-4">
