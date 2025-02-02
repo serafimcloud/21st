@@ -76,6 +76,8 @@ export function SectionsList({
 
       return sectionsWithPreviews
     },
+    staleTime: 1000 * 60 * 5, // 5 минут
+    gcTime: 1000 * 60 * 30, // 30 минут
   })
 
   return (

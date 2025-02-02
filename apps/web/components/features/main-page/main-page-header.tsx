@@ -6,6 +6,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { ArrowUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import {
   Select,
@@ -32,17 +33,27 @@ export function ComponentsHeader({
 }) {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
   const isDesktop = useMediaQuery("(min-width: 768px)")
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", value)
+    params.set("filter", "all")
+    if (value === "components" && sortBy) {
+      params.set("sort", sortBy)
+    } else {
+      params.delete("sort")
+    }
+    router.push(`?${params.toString()}`, { scroll: false })
+    onTabChange(value as "sections" | "components" | "authors" | "pro")
+  }
 
   return (
-    <div className="flex flex-col gap-4 mb-4">
+    <div className="flex flex-col gap-4 mb-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) =>
-              onTabChange(v as "sections" | "components" | "authors" | "pro")
-            }
-          >
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="h-auto gap-2 rounded-none bg-transparent px-0 py-1 text-foreground">
               <TabsTrigger
                 value="sections"

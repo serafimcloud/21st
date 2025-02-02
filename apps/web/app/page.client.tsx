@@ -51,6 +51,8 @@ export function HomePageClient() {
       return data || []
     },
     enabled: activeTab === "authors",
+    staleTime: 1000 * 60 * 5, // 5 минут
+    gcTime: 1000 * 60 * 30, // 30 минут
   })
 
   const { data: publishers, isLoading: isPublishersLoading } = useQuery({
@@ -83,6 +85,8 @@ export function HomePageClient() {
       return publishersWithImages
     },
     enabled: activeTab === "pro",
+    staleTime: 1000 * 60 * 5, // 5 минут
+    gcTime: 1000 * 60 * 30, // 30 минут
   })
 
   // Обновляем URL при изменении параметров

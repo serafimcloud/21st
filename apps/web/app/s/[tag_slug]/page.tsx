@@ -58,7 +58,7 @@ export default async function TagPage({ params }: TagPageProps) {
 
     return (
       <>
-<Header />
+        <Header />
         <TagPageContent
           tagName={tagInfo.name}
           tagSlug={tagSlug}
