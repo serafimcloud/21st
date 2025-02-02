@@ -7,26 +7,6 @@ export type User = Database["public"]["Tables"]["users"]["Row"]
 export type Tag = Database["public"]["Tables"]["tags"]["Row"]
 export type Submission = Database["public"]["Tables"]["submissions"]["Row"]
 
-export interface OptimizedComponent {
-  id: string
-  name: string
-  component_slug: string
-  likes_count: number
-  view_count?: number
-  user: User
-}
-
-export interface OptimizedDemo {
-  id: string
-  name: string
-  demo_slug: string
-  preview_url: string | null
-  video_url: string | null
-  updated_at: string
-  user: User
-  component: OptimizedComponent
-}
-
 export type Section =
   Database["public"]["Functions"]["get_sections"]["Returns"][0]
 

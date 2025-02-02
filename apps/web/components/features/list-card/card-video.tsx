@@ -3,8 +3,6 @@
 import { useRef, useState, useCallback } from "react"
 import { cn } from "../../../lib/utils"
 import {
-  OptimizedDemo,
-  OptimizedComponent,
   DemoWithComponent,
 } from "@/types/global"
 
@@ -12,8 +10,8 @@ const videoLoadingCache = new Map<string, boolean>()
 const videoLoadPromises = new Map<string, Promise<void>>()
 
 interface ComponentVideoPreviewProps {
-  component: OptimizedDemo | OptimizedComponent | DemoWithComponent
-  demo?: OptimizedDemo | OptimizedComponent | DemoWithComponent
+  component:  DemoWithComponent
+  demo?: DemoWithComponent
 }
 
 export function ComponentVideoPreview({

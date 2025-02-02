@@ -5,12 +5,7 @@ import React from "react"
 import Link from "next/link"
 import { Video, Eye, Heart } from "lucide-react"
 
-import {
-  DemoWithComponent,
-  User,
-  OptimizedComponent,
-  OptimizedDemo,
-} from "@/types/global"
+import { DemoWithComponent } from "@/types/global"
 import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
 import { UserAvatar } from "../../ui/user-avatar"
@@ -20,7 +15,7 @@ export function ComponentCard({
   component,
   isLoading,
 }: {
-  component?: OptimizedDemo | OptimizedComponent | DemoWithComponent
+  component?: DemoWithComponent
   isLoading?: boolean
 }) {
   if (isLoading || !component) {
@@ -30,8 +25,8 @@ export function ComponentCard({
   const isDemo = "demo_slug" in component
   const isDemoWithComponent =
     "component" in component && "demo_slug" in component
-  const userData = isDemo ? component.user : component.user
-  const componentOwner = isDemo ? component.component.user : component.user
+  const userData = component.user
+  const componentOwner = component.component.user
 
   if (!userData || !componentOwner || !component) {
     console.warn("Missing required data:", {
@@ -42,23 +37,13 @@ export function ComponentCard({
     return <ComponentCardSkeleton />
   }
 
-  const componentUrl = isDemo
-    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || "default"}`
-    : `/${componentOwner.display_username || componentOwner.username}/${component.component_slug}`
+  const componentUrl = `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || "default"}`
 
   const videoUrl = isDemo ? component.video_url : null
 
-  const likesCount = isDemo
-    ? component.component.likes_count
-    : component.likes_count
+  const likesCount = component.component.likes_count || 0
 
-  const viewCount = isDemo
-    ? "view_count" in component.component
-      ? component.component.view_count
-      : 0
-    : "view_count" in component
-      ? component.view_count
-      : 0
+  const viewCount = component.view_count || 0
 
   return (
     <div className="overflow-hidden">
@@ -73,7 +58,7 @@ export function ComponentCard({
                       ? component.preview_url || "/placeholder.svg"
                       : "/placeholder.svg"
                   }
-                  alt={isDemo ? component.name || "" : component.name || ""}
+                  alt={component.name || ""}
                   fallbackSrc="/placeholder.svg"
                   className="w-full h-full object-cover"
                 />
@@ -113,9 +98,9 @@ export function ComponentCard({
           >
             <div className="flex flex-col min-w-0">
               <h2 className="text-sm font-medium text-foreground truncate">
-                {isDemo ? component.component.name : component.name}
+                {component.component.name}
               </h2>
-              {isDemo && component.name !== "Default" && (
+              {component.name !== "Default" && (
                 <p className="text-sm text-muted-foreground truncate">
                   {component.name}
                 </p>
