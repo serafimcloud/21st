@@ -1,7 +1,7 @@
 // apps/web/components/ui/sections-list.tsx
 "use client"
 
-import React from "react"
+import React, { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import { SectionCard } from "./section-card"
@@ -22,21 +22,15 @@ export function SectionsList({
 }: SectionsListProps) {
   const supabase = useClerkSupabaseClient()
 
-  // Фильтруем секции по типу
-  const filteredSections = sections.filter((section) => {
-    if (filter === "all") return true
-    if (filter === "ui") return section.title === "UI elements"
-    if (filter === "landing") return section.title === "Landing Pages"
-    return false
-  })
-
-  // Собираем все ID демо из отфильтрованных секций
-  const allDemoIds = filteredSections
-    .flatMap((section) => section.items.map((item) => item.demoId))
-    .filter((id): id is number => id !== undefined)
+  // Собираем все ID демо из всех секций один раз
+  const allDemoIds = useMemo(() => {
+    return sections
+      .flatMap((section) => section.items.map((item) => item.demoId))
+      .filter((id): id is number => id !== undefined)
+  }, [])
 
   const { data: sectionsData, isLoading } = useQuery({
-    queryKey: ["sections-previews", filter],
+    queryKey: ["sections-previews"],
     queryFn: async () => {
       const { data: sectionPreviews, error } = await supabase.rpc(
         "get_section_previews",
@@ -47,8 +41,8 @@ export function SectionsList({
 
       if (error) throw error
 
-      // Объединяем данные из навигации с превью только для отфильтрованных секций
-      const sectionsWithPreviews = filteredSections
+      // Объединяем данные из навигации с превью
+      const sectionsWithPreviews = sections
         .flatMap((section) =>
           section.items.map((item) => {
             if (!item.demoId) return null
@@ -66,6 +60,7 @@ export function SectionsList({
               component_slug: item.href.replace("/s/", ""),
               preview_url: preview.preview_url,
               video_url: preview.video_url || "",
+              section_type: section.title === "UI elements" ? "ui" : "landing",
               user_data: {},
               downloads_count: 0,
               view_count: 0,
@@ -79,6 +74,31 @@ export function SectionsList({
     staleTime: 1000 * 60 * 5, // 5 минут
     gcTime: 1000 * 60 * 30, // 30 минут
   })
+
+  // Разделяем секции по типам при первом получении данных
+  const { uiSections, landingSections } = useMemo(() => {
+    if (!sectionsData) return { uiSections: [], landingSections: [] }
+    return {
+      uiSections: sectionsData.filter(
+        (section) => section.section_type === "ui",
+      ),
+      landingSections: sectionsData.filter(
+        (section) => section.section_type === "landing",
+      ),
+    }
+  }, [sectionsData])
+
+  // Выбираем нужный массив секций без дополнительной фильтрации
+  const sectionsToShow = useMemo(() => {
+    switch (filter) {
+      case "ui":
+        return uiSections
+      case "landing":
+        return landingSections
+      default:
+        return sectionsData || []
+    }
+  }, [filter, uiSections, landingSections, sectionsData])
 
   return (
     <div
@@ -94,7 +114,7 @@ export function SectionsList({
           ))}
         </>
       ) : (
-        sectionsData?.map((section) => (
+        sectionsToShow.map((section) => (
           <SectionCard key={`${section.tag_id}`} section={section} />
         ))
       )}

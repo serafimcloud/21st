@@ -1,6 +1,7 @@
 // apps/web/components/features/section-card/section-card.tsx
 "use client"
 
+import { memo } from "react"
 import { Video } from "lucide-react"
 import Link from "next/link"
 import { Section } from "@/types/global"
@@ -8,17 +9,11 @@ import SectionPreviewImage from "./section-preview-image"
 import SectionVideoPreview from "./section-video-preview"
 import { SectionCardSkeleton } from "../../ui/skeletons"
 
-export function SectionCard({
-  section,
-  isLoading,
-}: {
-  section?: Section
-  isLoading?: boolean
-}) {
-  if (isLoading || !section) {
-    return <SectionCardSkeleton />
-  }
+interface SectionCardProps {
+  section: Section
+}
 
+export const SectionCard = memo(function SectionCard({ section }: SectionCardProps) {
   const sectionUrl = `/s/${section.tag_slug}`
 
   return (
@@ -55,4 +50,4 @@ export function SectionCard({
       </Link>
     </div>
   )
-}
+})

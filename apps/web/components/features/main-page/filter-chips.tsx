@@ -18,7 +18,7 @@ export function FilterChips({
 }: FilterChipsProps) {
   if (activeTab === "sections") {
     return (
-      <div className="relative">
+      <div className="relative mb-3">
         <ScrollArea className="w-full whitespace-nowrap rounded-md">
           <div className="flex w-max space-x-2 p-1">
             <Button
@@ -71,7 +71,7 @@ export function FilterChips({
     )
 
     return (
-      <div className="relative">
+      <div className="relative mb-3">
         <ScrollArea className="w-full whitespace-nowrap rounded-md">
           <div className="flex w-max space-x-2 p-1">
             <Button

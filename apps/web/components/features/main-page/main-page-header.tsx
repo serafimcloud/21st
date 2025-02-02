@@ -49,7 +49,7 @@ export function ComponentsHeader({
   }
 
   return (
-    <div className="flex flex-col gap-4 mb-6">
+    <div className="flex flex-col gap-4 mb-3">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <Tabs value={activeTab} onValueChange={handleTabChange}>
