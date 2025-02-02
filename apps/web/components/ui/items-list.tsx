@@ -67,14 +67,13 @@ function useMainDemos(
   return useInfiniteQuery({
     queryKey: ["filtered-demos", sortBy, tagSlug] as const,
     queryFn: async ({ pageParam = 0 }) => {
-      const { data: filteredData, error } = await supabase.rpc("get_demos", {
-        p_quick_filter: "all",
+      const { data: filteredData, error } = await supabase.rpc("get_demos_new", {
         p_sort_by: sortBy,
         p_offset: Number(pageParam) * 24,
         p_limit: 24,
         p_tag_slug: tagSlug,
         p_include_private: false,
-      } as Database["public"]["Functions"]["get_demos"]["Args"])
+      } as Database["public"]["Functions"]["get_demos_new"]["Args"])
 
       if (error) throw error
       const transformedData = (filteredData || []).map(transformDemoResult)
@@ -117,12 +116,12 @@ function useTagDemos(
   return useQuery({
     queryKey: ["tag-filtered-demos", tagSlug, sortBy] as const,
     queryFn: async () => {
-      const { data: filteredData, error } = await supabase.rpc("get_demos", {
-        p_quick_filter: "all",
+      const { data: filteredData, error } = await supabase.rpc("get_demos_new", {
         p_sort_by: sortBy,
         p_offset: 0,
         p_limit: 1000,
         p_tag_slug: tagSlug,
+        p_include_private: false,
       })
 
       if (error) throw error
