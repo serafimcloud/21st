@@ -622,3 +622,19 @@ export async function getUserLikedComponents(
 
   return data.map(transformDemoResult)
 }
+
+export async function getUserComponentsCounts(
+  supabase: SupabaseClient,
+  userId: string,
+) {
+  const { data, error } = await supabase.rpc("get_user_components_counts", {
+    p_user_id: userId,
+  })
+
+  if (error) {
+    console.error("Error fetching user components counts:", error)
+    return null
+  }
+
+  return data
+}

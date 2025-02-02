@@ -1176,6 +1176,12 @@ export type Database = {
           view_count: number
         }[]
       }
+      get_user_components_counts: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json
+      }
       get_user_demos: {
         Args: {
           p_user_id: string
@@ -1244,25 +1250,13 @@ export type Database = {
         Returns: {
           id: number
           name: string
-          demo_code: string
           preview_url: string
           video_url: string
-          compiled_css: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          pro_preview_image_url: string
-          created_at: string
           updated_at: string
-          component_id: number
+          demo_slug: string
           component_data: Json
           user_data: Json
           component_user_data: Json
-          tags: Json
-          total_count: number
-          view_count: number
-          fts: unknown
-          demo_slug: string
-          debug_info: Json
         }[]
       }
       increment: {

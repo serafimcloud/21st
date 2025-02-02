@@ -1,22 +1,45 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { useAtom } from "jotai"
+import { useAtom, atom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { CircleX } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { searchQueryAtom } from "@/components/ui/header.client"
-import { DemoWithComponent, HuntedComponents } from "@/types/global"
+import { useClerkSupabaseClient } from "@/lib/clerk"
 
-export type UserComponentsTab = "published" | "hunted" | "demos" | "liked"
+export type UserComponentsTab = "published" | "demos" | "liked"
 
 export const userComponentsTabAtom = atomWithStorage<UserComponentsTab>(
   "user-components-tab",
   "published",
 )
+
+export const userTabAtom = atom<UserComponentsTab>("published")
+
+function useUserComponentsCounts(userId: string) {
+  const supabase = useClerkSupabaseClient()
+  return useQuery({
+    queryKey: ["user-components-counts", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_user_components_counts", {
+        p_user_id: userId,
+      })
+      if (error) throw error
+      return data as {
+        published_count: number
+        demos_count: number
+        liked_count: number
+      }
+    },
+    staleTime: 30 * 1000, // 30 секунд
+    retry: false,
+  })
+}
 
 const useTrackSearchQueries = () => {
   const lastTrackedQuery = useRef<string | null>(null)
@@ -53,22 +76,17 @@ const useSearchHotkeys = (inputRef: React.RefObject<HTMLInputElement>) => {
 }
 
 export function UserComponentsHeader({
-  publishedComponents = [],
-  huntedComponents = [],
-  userDemos = [],
-  likedComponents = [],
   username,
+  userId,
 }: {
-  publishedComponents?: DemoWithComponent[]
-  huntedComponents?: HuntedComponents
-  userDemos?: DemoWithComponent[]
-  likedComponents?: any[] // Тип можно уточнить позже
   username: string
+  userId: string
 }) {
-  const [activeTab, setActiveTab] = useAtom(userComponentsTabAtom)
+  const [activeTab, setActiveTab] = useAtom(userTabAtom)
   const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom)
   const inputRef = useRef<HTMLInputElement>(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const { data: counts, isLoading } = useUserComponentsCounts(userId)
 
   useTrackSearchQueries()
   useSearchHotkeys(inputRef)
@@ -88,24 +106,40 @@ export function UserComponentsHeader({
     {
       value: "published" as const,
       label: "Published",
-      count: publishedComponents?.length ?? 0,
-    },
-    {
-      value: "hunted" as const,
-      label: "Hunted",
-      count: huntedComponents?.length ?? 0,
+      count: counts?.published_count ?? 0,
     },
     {
       value: "demos" as const,
       label: "Demos",
-      count: userDemos?.length ?? 0,
+      count: counts?.demos_count ?? 0,
     },
     {
       value: "liked" as const,
       label: "Liked",
-      count: likedComponents?.length ?? 0,
+      count: counts?.liked_count ?? 0,
     },
   ]
+
+  useEffect(() => {
+    if (!isLoading && counts) {
+      const currentTabCount =
+        counts[`${activeTab}_count` as keyof typeof counts] ?? 0
+      if (currentTabCount === 0) {
+        const firstAvailableTab = tabs.find(
+          (tab) => counts[`${tab.value}_count` as keyof typeof counts] > 0,
+        )
+        if (firstAvailableTab) {
+          setActiveTab(firstAvailableTab.value)
+        }
+      }
+    }
+  }, [counts, isLoading, activeTab, setActiveTab])
+
+  const availableTabs = tabs.filter(
+    (tab) => counts?.[`${tab.value}_count` as keyof typeof counts] > 0,
+  )
+
+  const displayTabs = availableTabs.length > 0 ? availableTabs : tabs
 
   return (
     <div className="flex flex-col gap-4 mb-6">
@@ -117,17 +151,17 @@ export function UserComponentsHeader({
             className="w-full md:w-auto"
           >
             <TabsList className="w-full md:w-auto h-8 -space-x-px bg-background p-0 shadow-sm shadow-black/5 rtl:space-x-reverse">
-              {tabs.map(({ value, label, count }) => (
+              {displayTabs.map(({ value, label, count }) => (
                 <TabsTrigger
                   key={value}
                   value={value}
-                  disabled={count === 0}
+                  disabled={!isLoading && count === 0}
                   className="flex-1 md:flex-initial relative overflow-hidden rounded-none border border-border h-8 px-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 first:rounded-s last:rounded-e data-[state=active]:bg-muted data-[state=active]:after:bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-2">
                     <span className="truncate">{label}</span>
                     <span className="text-xs text-muted-foreground tabular-nums">
-                      {count}
+                      {isLoading ? "-" : count}
                     </span>
                   </div>
                 </TabsTrigger>

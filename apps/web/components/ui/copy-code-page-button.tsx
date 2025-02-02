@@ -12,25 +12,42 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { useSupabaseAnalytics } from "@/hooks/use-analytics"
-import {
-  AnalyticsActivityType,
-  DemoWithComponent,
-  Component,
-  User,
-} from "@/types/global"
+import { AnalyticsActivityType } from "@/types/global"
+
+interface OptimizedComponent {
+  id: string
+  name: string
+  component_slug: string
+  likes_count: number
+  view_count: number
+  user: User
+  user_id?: string
+}
+
+interface OptimizedDemo {
+  id: string
+  name: string
+  demo_slug: string
+  preview_url: string | null
+  video_url: string | null
+  updated_at: string
+  user: User
+  component: OptimizedComponent
+  user_id?: string
+}
 
 export function CopyComponentButton({
   codeUrl,
   component,
 }: {
   codeUrl: string
-  component: DemoWithComponent | (Component & { user: User })
+  component: OptimizedDemo | OptimizedComponent
 }) {
   const [copied, setCopied] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const { capture } = useSupabaseAnalytics()
 
-  const isDemo = "component" in component
+  const isDemo = "demo_slug" in component
   const componentId = isDemo ? component.component.id : component.id
   const userId = isDemo ? component.user_id : component.user_id
 

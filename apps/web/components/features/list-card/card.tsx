@@ -1,14 +1,35 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
 
-import { Video, Eye, Heart } from "lucide-react"
+import React from "react"
 import Link from "next/link"
+import { Video, Eye, Heart } from "lucide-react"
 
-import { Component, User, DemoWithComponent } from "../../../types/global"
+import { User } from "@/types/global"
 import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
 import { CopyComponentButton } from "../../ui/copy-code-page-button"
 import { UserAvatar } from "../../ui/user-avatar"
+
+interface OptimizedComponent {
+  id: string
+  name: string
+  component_slug: string
+  likes_count: number
+  view_count: number
+  user: User
+}
+
+interface OptimizedDemo {
+  id: string
+  name: string
+  demo_slug: string
+  preview_url: string | null
+  video_url: string | null
+  updated_at: string
+  user: User
+  component: OptimizedComponent
+}
 
 export function ComponentCardSkeleton() {
   return (
@@ -33,13 +54,9 @@ export function ComponentCard({
   component,
   isLoading,
 }: {
-  component?:
-    | DemoWithComponent
-    | (Component & { user: User } & { view_count?: number })
+  component?: OptimizedDemo | OptimizedComponent
   isLoading?: boolean
 }) {
-  console.log("ComponentCard received:", { component, isLoading })
-
   if (isLoading || !component) {
     return <ComponentCardSkeleton />
   }
@@ -47,13 +64,6 @@ export function ComponentCard({
   const isDemo = "demo_slug" in component
   const userData = isDemo ? component.user : component.user
   const componentOwner = isDemo ? component.component.user : component.user
-
-  console.log("ComponentCard data:", {
-    isDemo,
-    userData,
-    componentOwner,
-    component,
-  })
 
   if (!userData || !componentOwner || !component) {
     console.warn("Missing required data:", {
@@ -68,7 +78,7 @@ export function ComponentCard({
     ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || "default"}`
     : `/${componentOwner.display_username || componentOwner.username}/${component.component_slug}`
 
-  const videoUrl = isDemo ? component.video_url : component.video_url
+  const videoUrl = isDemo ? component.video_url : null
 
   const codeUrl = isDemo
     ? `/${userData.display_username || userData.username}/${component.component.component_slug}/${component.demo_slug}/code`
@@ -77,6 +87,10 @@ export function ComponentCard({
   const likesCount = isDemo
     ? component.component.likes_count
     : component.likes_count
+
+  const viewCount = isDemo
+    ? component.component.view_count
+    : component.view_count
 
   return (
     <div className="overflow-hidden">
@@ -90,7 +104,7 @@ export function ComponentCard({
                   src={
                     isDemo
                       ? component.preview_url || "/placeholder.svg"
-                      : component.preview_url || "/placeholder.svg"
+                      : "/placeholder.svg"
                   }
                   alt={isDemo ? component.name || "" : component.name || ""}
                   fallbackSrc="/placeholder.svg"
@@ -144,7 +158,7 @@ export function ComponentCard({
           <div className="flex items-center gap-3">
             <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
               <Eye size={14} />
-              <span>{component.view_count || 0}</span>
+              <span>{viewCount || 0}</span>
             </div>
             <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
               <Heart size={14} className="text-muted-foreground" />

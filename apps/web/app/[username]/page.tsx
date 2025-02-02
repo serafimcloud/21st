@@ -1,15 +1,8 @@
-import { UserProfileClient } from "./page.client"
-
-import {
-  getUserData,
-  getHuntedComponents,
-  getUserDemos,
-  getUserLikedComponents,
-} from "@/lib/queries"
+import { UserPageClient } from "./page.client"
+import { getUserData } from "@/lib/queries"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { redirect } from "next/navigation"
-import { currentUser } from "@clerk/nextjs/server"
 
 export const generateMetadata = async ({
   params,
@@ -72,42 +65,23 @@ export default async function UserProfile({
     redirect("/")
   }
 
-  const { data: user, error } = await getUserData(
+  const { data: user } = await getUserData(
     supabaseWithAdminAccess,
     params.username,
   )
-
-  const loggedInUser = await currentUser()
 
   if (!user || !user.username) {
     redirect("/")
   }
 
-  const [huntedComponents, allUserDemos, likedComponents] = await Promise.all([
-    getHuntedComponents(supabaseWithAdminAccess, user.username),
-    getUserDemos(supabaseWithAdminAccess, user.id, loggedInUser?.id),
-    getUserLikedComponents(supabaseWithAdminAccess, user.id, loggedInUser?.id),
-  ])
-
-  // userComponents - demos of own components (where user is both component and demo creator)
-  const userDemos =
-    allUserDemos?.filter((demo) => demo.component.user_id === user.id) || []
-
-  // userDemos - demos created by user for other people's components
-  const userComponents = allUserDemos
-    ? allUserDemos.filter(
-        (demo) =>
-          demo.component.user_id !== user.id && demo.user_id === user.id,
-      )
-    : []
-
   return (
-    <UserProfileClient
+    <UserPageClient
       user={user}
-      publishedComponents={userComponents}
-      huntedComponents={huntedComponents || []}
-      userDemos={userDemos}
-      likedComponents={likedComponents || []}
+      publishedComponents={[]}
+      huntedComponents={[]}
+      userDemos={[]}
+      likedComponents={[]}
+      initialTab="published"
     />
   )
 }

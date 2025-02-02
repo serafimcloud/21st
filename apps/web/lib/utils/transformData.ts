@@ -1,7 +1,6 @@
 import { Component, DemoWithComponent, User, Tag } from "@/types/global"
 
 export const transformDemoResult = (result: any): DemoWithComponent => {
-  
   const componentUser =
     result.component_user_data ||
     (result.component_data && result.component_data.user) ||
