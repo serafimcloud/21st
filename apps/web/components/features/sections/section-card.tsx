@@ -6,17 +6,7 @@ import Link from "next/link"
 import { Section } from "@/types/global"
 import SectionPreviewImage from "./section-preview-image"
 import SectionVideoPreview from "./section-video-preview"
-
-export function SectionCardSkeleton() {
-  return (
-    <div className="overflow-hidden animate-pulse">
-      <div className="relative aspect-[4/3] mb-3">
-        <div className="absolute inset-0 rounded-lg overflow-hidden bg-muted" />
-      </div>
-      <div className="h-4 bg-muted rounded w-3/4" />
-    </div>
-  )
-}
+import { SectionCardSkeleton } from "../../ui/skeletons"
 
 export function SectionCard({
   section,

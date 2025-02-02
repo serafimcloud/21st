@@ -49,10 +49,6 @@ interface UserPageClientProps {
 
 export function UserPageClient({
   user,
-  publishedComponents,
-  huntedComponents,
-  userDemos,
-  likedComponents,
   initialTab,
   initialComponents,
 }: UserPageClientProps) {

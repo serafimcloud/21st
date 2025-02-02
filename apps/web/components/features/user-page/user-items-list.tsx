@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import {
   ComponentCard,
-  ComponentCardSkeleton,
 } from "@/components/features/list-card/card"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { User } from "@/types/global"
@@ -15,7 +14,7 @@ import { Icons } from "@/components/icons"
 import { useRouter } from "next/navigation"
 import { isMac } from "@/lib/utils"
 import { useHotkeys } from "react-hotkeys-hook"
-
+import { ComponentCardSkeleton } from "@/components/ui/skeletons"
 interface OptimizedComponent {
   id: string
   name: string

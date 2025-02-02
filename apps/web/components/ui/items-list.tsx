@@ -1,9 +1,8 @@
-import React, { useEffect, KeyboardEvent } from "react"
+import React, { useEffect } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import {
   ComponentCard,
-  ComponentCardSkeleton,
 } from "../features/list-card/card"
 import { DemoWithComponent, User, Component, SortOption } from "@/types/global"
 import { useClerkSupabaseClient } from "@/lib/clerk"
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { useHotkeys } from "react-hotkeys-hook"
 import { isMac } from "@/lib/utils"
 import { Icons } from "@/components/icons"
+import { ComponentCardSkeleton } from "./skeletons"
 
 type ComponentOrDemo =
   | DemoWithComponent

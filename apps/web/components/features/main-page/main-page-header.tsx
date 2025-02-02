@@ -27,8 +27,8 @@ export function ComponentsHeader({
   onTabChange,
 }: {
   filtersDisabled: boolean
-  activeTab: "sections" | "components"
-  onTabChange: (tab: "sections" | "components") => void
+  activeTab: "sections" | "components" | "authors" | "pro"
+  onTabChange: (tab: "sections" | "components" | "authors" | "pro") => void
 }) {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
   const isDesktop = useMediaQuery("(min-width: 768px)")
@@ -39,7 +39,9 @@ export function ComponentsHeader({
         <div className="flex items-center gap-4">
           <Tabs
             value={activeTab}
-            onValueChange={(v) => onTabChange(v as "sections" | "components")}
+            onValueChange={(v) =>
+              onTabChange(v as "sections" | "components" | "authors" | "pro")
+            }
           >
             <TabsList className="h-auto gap-2 rounded-none bg-transparent px-0 py-1 text-foreground">
               <TabsTrigger
@@ -53,6 +55,18 @@ export function ComponentsHeader({
                 className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
               >
                 Components
+              </TabsTrigger>
+              <TabsTrigger
+                value="authors"
+                className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+              >
+                Design Engineers
+              </TabsTrigger>
+              <TabsTrigger
+                value="pro"
+                className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+              >
+                Pro
               </TabsTrigger>
             </TabsList>
           </Tabs>

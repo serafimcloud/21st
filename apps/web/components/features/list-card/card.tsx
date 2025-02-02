@@ -14,25 +14,7 @@ import {
 import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
 import { UserAvatar } from "../../ui/user-avatar"
-
-export function ComponentCardSkeleton() {
-  return (
-    <div className="overflow-hidden animate-pulse">
-      <div className="relative aspect-[4/3] mb-3">
-        <div className="absolute inset-0 rounded-lg overflow-hidden bg-muted" />
-      </div>
-      <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 rounded-full bg-muted" />
-        <div className="flex items-center justify-between flex-grow min-w-0">
-          <div className="min-w-0 flex-1 mr-3">
-            <div className="h-4 bg-muted rounded w-3/4" />
-          </div>
-          <div className="h-3 bg-muted rounded w-12" />
-        </div>
-      </div>
-    </div>
-  )
-}
+import { ComponentCardSkeleton } from "../../ui/skeletons"
 
 export function ComponentCard({
   component,
