@@ -951,6 +951,28 @@ export type Database = {
           count: number
         }[]
       }
+      get_demos_optimized: {
+        Args: {
+          p_quick_filter: string
+          p_sort_by: string
+          p_offset: number
+          p_limit: number
+          p_tag_slug?: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          demo_slug: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          view_count: number
+        }[]
+      }
       get_filtered_components: {
         Args: {
           p_quick_filter: string
@@ -1240,6 +1262,24 @@ export type Database = {
           fts: unknown
           demo_slug: string
           debug_info: Json
+        }[]
+      }
+      get_user_liked_components_optimized: {
+        Args: {
+          p_user_id: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          view_count: number
+          demo_slug: string
         }[]
       }
       get_user_profile_demos: {

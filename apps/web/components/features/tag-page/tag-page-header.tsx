@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react"
-import { useAtom } from "jotai"
+import { atom, useAtom } from "jotai"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { ArrowUpDown, CircleX } from "lucide-react"
+import React from "react"
 
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -12,12 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { searchQueryAtom } from "@/components/ui/header.client"
 import { sortByAtom } from "@/components/features/main-page/main-page-header"
 
 import type { SortOption } from "@/types/global"
 import { SORT_OPTIONS } from "@/types/global"
 import { setCookie } from "@/lib/cookies"
+
+export const tagPageSearchAtom = atom("")
 
 interface TagComponentsHeaderProps {
   tagName: string
@@ -48,9 +50,15 @@ export function TagComponentsHeader({
   currentSection,
 }: TagComponentsHeaderProps) {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
-  const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom)
+  const [searchQuery, setSearchQuery] = useAtom(tagPageSearchAtom)
   const inputRef = useRef<HTMLInputElement>(null)
   const isDesktop = useMediaQuery("(min-width: 768px)")
+
+  React.useEffect(() => {
+    return () => {
+      setSearchQuery("")
+    }
+  }, [setSearchQuery])
 
   useSearchHotkeys(inputRef)
 

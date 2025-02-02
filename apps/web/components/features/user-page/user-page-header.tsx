@@ -9,9 +9,9 @@ import { useQuery } from "@tanstack/react-query"
 
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { searchQueryAtom } from "@/components/ui/header.client"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
+export const userPageSearchAtom = atom("")
 export type UserComponentsTab = "published" | "demos" | "liked"
 
 export const userComponentsTabAtom = atomWithStorage<UserComponentsTab>(
@@ -43,7 +43,7 @@ function useUserComponentsCounts(userId: string) {
 
 const useTrackSearchQueries = () => {
   const lastTrackedQuery = useRef<string | null>(null)
-  const [searchQuery] = useAtom(searchQueryAtom)
+  const [searchQuery] = useAtom(userPageSearchAtom)
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -83,7 +83,7 @@ export function UserComponentsHeader({
   userId: string
 }) {
   const [activeTab, setActiveTab] = useAtom(userTabAtom)
-  const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom)
+  const [searchQuery, setSearchQuery] = useAtom(userPageSearchAtom)
   const inputRef = useRef<HTMLInputElement>(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
   const { data: counts, isLoading } = useUserComponentsCounts(userId)
@@ -134,9 +134,8 @@ export function UserComponentsHeader({
       }
     }
   }, [counts, isLoading, activeTab, setActiveTab])
-
   const availableTabs = tabs.filter(
-    (tab) => counts?.[`${tab.value}_count` as keyof typeof counts] > 0,
+    (tab) => (counts?.[`${tab.value}_count` as keyof typeof counts] ?? 0) > 0
   )
 
   const displayTabs = availableTabs.length > 0 ? availableTabs : tabs

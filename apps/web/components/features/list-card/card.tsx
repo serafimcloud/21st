@@ -5,31 +5,15 @@ import React from "react"
 import Link from "next/link"
 import { Video, Eye, Heart } from "lucide-react"
 
-import { User } from "@/types/global"
+import {
+  DemoWithComponent,
+  User,
+  OptimizedComponent,
+  OptimizedDemo,
+} from "@/types/global"
 import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
-import { CopyComponentButton } from "../../ui/copy-code-page-button"
 import { UserAvatar } from "../../ui/user-avatar"
-
-interface OptimizedComponent {
-  id: string
-  name: string
-  component_slug: string
-  likes_count: number
-  view_count: number
-  user: User
-}
-
-interface OptimizedDemo {
-  id: string
-  name: string
-  demo_slug: string
-  preview_url: string | null
-  video_url: string | null
-  updated_at: string
-  user: User
-  component: OptimizedComponent
-}
 
 export function ComponentCardSkeleton() {
   return (
@@ -54,7 +38,7 @@ export function ComponentCard({
   component,
   isLoading,
 }: {
-  component?: OptimizedDemo | OptimizedComponent
+  component?: OptimizedDemo | OptimizedComponent | DemoWithComponent
   isLoading?: boolean
 }) {
   if (isLoading || !component) {
@@ -62,6 +46,8 @@ export function ComponentCard({
   }
 
   const isDemo = "demo_slug" in component
+  const isDemoWithComponent =
+    "component" in component && "demo_slug" in component
   const userData = isDemo ? component.user : component.user
   const componentOwner = isDemo ? component.component.user : component.user
 
@@ -80,23 +66,22 @@ export function ComponentCard({
 
   const videoUrl = isDemo ? component.video_url : null
 
-  const codeUrl = isDemo
-    ? `/${userData.display_username || userData.username}/${component.component.component_slug}/${component.demo_slug}/code`
-    : `/${userData.display_username || userData.username}/${component.component_slug}/code`
-
   const likesCount = isDemo
     ? component.component.likes_count
     : component.likes_count
 
   const viewCount = isDemo
-    ? component.component.view_count
-    : component.view_count
+    ? "view_count" in component.component
+      ? component.component.view_count
+      : 0
+    : "view_count" in component
+      ? component.view_count
+      : 0
 
   return (
     <div className="overflow-hidden">
       <Link href={componentUrl} className="block cursor-pointer">
         <div className="relative aspect-[4/3] mb-3 group">
-          <CopyComponentButton codeUrl={codeUrl} component={component} />
           <div className="absolute inset-0 rounded-lg overflow-hidden">
             <div className="relative w-full h-full">
               <div className="absolute inset-0" style={{ margin: "-1px" }}>
@@ -113,7 +98,7 @@ export function ComponentCard({
               </div>
               <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
             </div>
-            {videoUrl && (
+            {videoUrl && isDemoWithComponent && (
               <ComponentVideoPreview component={component} demo={component} />
             )}
           </div>

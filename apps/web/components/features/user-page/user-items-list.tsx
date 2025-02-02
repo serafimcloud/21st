@@ -7,6 +7,14 @@ import {
 } from "@/components/features/list-card/card"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { User } from "@/types/global"
+import { useAtom } from "jotai"
+import { userPageSearchAtom } from "./user-page-header"
+import { Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Icons } from "@/components/icons"
+import { useRouter } from "next/navigation"
+import { isMac } from "@/lib/utils"
+import { useHotkeys } from "react-hotkeys-hook"
 
 interface OptimizedComponent {
   id: string
@@ -127,6 +135,22 @@ function useUserDemos(userId: string, initialData?: OptimizedDemo[]) {
   })
 }
 
+function filterComponentsBySearch(
+  components: OptimizedDemo[] | undefined,
+  searchQuery: string,
+) {
+  if (!components || !searchQuery) return components
+  const query = searchQuery.toLowerCase()
+
+  return components.filter((component) => {
+    if (component.name?.toLowerCase().includes(query)) return true
+    if (component.component?.name?.toLowerCase().includes(query)) return true
+    if (component.user?.name?.toLowerCase().includes(query)) return true
+    if (component.preview_url?.toLowerCase().includes(query)) return true
+    return false
+  })
+}
+
 export function UserItemsList({
   className,
   skeletonCount = 12,
@@ -134,6 +158,28 @@ export function UserItemsList({
   tab,
   initialData,
 }: UserItemsListProps) {
+  const [searchQuery, setSearchQuery] = useAtom(userPageSearchAtom)
+  const router = useRouter()
+
+  React.useEffect(() => {
+    return () => {
+      setSearchQuery("")
+    }
+  }, [setSearchQuery])
+
+  useHotkeys(
+    "mod+enter",
+    (e) => {
+      e.preventDefault()
+      handleGlobalSearch()
+    },
+    {
+      enableOnFormTags: true,
+      preventDefault: true,
+    },
+    [searchQuery],
+  )
+
   const publishedQuery = useUserPublishedDemos(
     tab === "published" ? userId : "",
     tab === "published" ? initialData : undefined,
@@ -171,15 +217,15 @@ export function UserItemsList({
         }
       })() || []
 
-    let filtered = allDemos
+    let filtered = filterComponentsBySearch(allDemos, searchQuery) || []
 
     if (tab === "published") {
-      filtered = allDemos.filter((demo) => {
+      filtered = filtered.filter((demo) => {
         const componentCreatorId = demo.component?.user?.id
         return componentCreatorId === userId
       })
     } else if (tab === "demos") {
-      filtered = allDemos.filter((demo) => {
+      filtered = filtered.filter((demo) => {
         return demo.user?.id === userId && demo.component?.user?.id !== userId
       })
     }
@@ -192,6 +238,7 @@ export function UserItemsList({
     demosQuery.data,
     likedQuery.data,
     userId,
+    searchQuery,
   ])
 
   const isLoading = React.useMemo(() => {
@@ -215,7 +262,13 @@ export function UserItemsList({
     likedQuery.isLoading,
   ])
 
-  const showSkeleton = isLoading || !components?.length
+  const showSkeleton = isLoading || (!components?.length && !searchQuery)
+  const showEmptyState = !isLoading && !components?.length && searchQuery
+
+  const handleGlobalSearch = () => {
+    if (!searchQuery) return
+    router.push(`/q/${encodeURIComponent(searchQuery)}`)
+  }
 
   return (
     <div
@@ -230,6 +283,29 @@ export function UserItemsList({
             <ComponentCardSkeleton key={i} />
           ))}
         </>
+      ) : showEmptyState ? (
+        <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+          <div className="text-lg font-semibold mb-2">
+            No results found for "{searchQuery}"
+          </div>
+          <p className="text-muted-foreground mb-6">
+            Try adjusting your search or use global search
+          </p>
+          <Button
+            onClick={handleGlobalSearch}
+            variant="outline"
+            className="gap-2"
+          >
+            <Search className="h-4 w-4" />
+            Search Everywhere
+            <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border border-muted-foreground/40 bg-muted px-1.5 ml-1.5 font-mono text-[11px] font-medium text-muted-foreground inline-flex">
+              <span className="text-[11px] leading-none font-sans">
+                {isMac ? "⌘" : "Ctrl"}
+              </span>
+              <Icons.enter className="h-2.5 w-2.5" />
+            </kbd>
+          </Button>
+        </div>
       ) : (
         components?.map((component: OptimizedDemo) => (
           <ComponentCard

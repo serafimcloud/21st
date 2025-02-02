@@ -11,7 +11,7 @@ import { transformDemoResult } from "@/lib/utils/transformData"
 import { Database } from "@/types/supabase"
 import { Loader2, Search } from "lucide-react"
 import { useAtom } from "jotai"
-import { searchQueryAtom } from "@/components/ui/header.client"
+import { tagPageSearchAtom } from "../features/tag-page/tag-page-header"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useHotkeys } from "react-hotkeys-hook"
@@ -302,7 +302,7 @@ export function ComponentsList({
   initialData,
   ...props
 }: ComponentsListProps) {
-  const [localSearchQuery] = useAtom(searchQueryAtom)
+  const [localSearchQuery, setLocalSearchQuery] = useAtom(tagPageSearchAtom)
   const router = useRouter()
 
   const mainQuery = useMainDemos(
@@ -347,7 +347,14 @@ export function ComponentsList({
     aiSearchQuery.data,
   ])
 
-  // Применяем локальную фильтрацию только для страницы тегов
+  // Очищаем поисковый запрос при размонтировании
+  React.useEffect(() => {
+    return () => {
+      setLocalSearchQuery("")
+    }
+  }, [setLocalSearchQuery])
+
+  // Заменяем все использования searchQuery на localSearchQuery
   const components = React.useMemo(() => {
     if (props.type === "tag") {
       return filterComponentsBySearch(rawComponents, localSearchQuery)

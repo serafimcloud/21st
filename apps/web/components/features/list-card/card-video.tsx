@@ -2,33 +2,18 @@
 
 import { useRef, useState, useCallback } from "react"
 import { cn } from "../../../lib/utils"
-
-interface OptimizedComponent {
-  id: string
-  name: string
-  component_slug: string
-  likes_count: number
-  view_count: number
-  user: User
-}
-
-interface OptimizedDemo {
-  id: string
-  name: string
-  demo_slug: string
-  preview_url: string | null
-  video_url: string | null
-  updated_at: string
-  user: User
-  component: OptimizedComponent
-}
+import {
+  OptimizedDemo,
+  OptimizedComponent,
+  DemoWithComponent,
+} from "@/types/global"
 
 const videoLoadingCache = new Map<string, boolean>()
 const videoLoadPromises = new Map<string, Promise<void>>()
 
 interface ComponentVideoPreviewProps {
-  component: OptimizedDemo | OptimizedComponent
-  demo?: OptimizedDemo | OptimizedComponent
+  component: OptimizedDemo | OptimizedComponent | DemoWithComponent
+  demo?: OptimizedDemo | OptimizedComponent | DemoWithComponent
 }
 
 export function ComponentVideoPreview({
@@ -40,7 +25,7 @@ export function ComponentVideoPreview({
   const [isLoading, setIsLoading] = useState(false)
 
   const isDemo = "demo_slug" in component
-  const id = component.id
+  const id = component.id.toString()
   const videoUrl = isDemo ? component.video_url : null
 
   const toggleVideoIcon = useCallback(
