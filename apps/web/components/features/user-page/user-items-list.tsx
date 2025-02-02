@@ -5,7 +5,7 @@ import {
   ComponentCard,
 } from "@/components/features/list-card/card"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { User } from "@/types/global"
+import { DemoWithComponent, User } from "@/types/global"
 import { useAtom } from "jotai"
 import { userPageSearchAtom } from "./user-page-header"
 import { Search } from "lucide-react"
@@ -15,26 +15,7 @@ import { useRouter } from "next/navigation"
 import { isMac } from "@/lib/utils"
 import { useHotkeys } from "react-hotkeys-hook"
 import { ComponentCardSkeleton } from "@/components/ui/skeletons"
-interface OptimizedComponent {
-  id: string
-  name: string
-  component_slug: string
-  likes_count: number
-  view_count: number
-  user: User
-}
-
-interface OptimizedDemo {
-  id: string
-  name: string
-  demo_slug: string
-  preview_url: string | null
-  video_url: string | null
-  updated_at: string
-  user: User
-  component: OptimizedComponent
-}
-
+  
 type UserTab = "published" | "hunted" | "demos" | "liked"
 
 interface UserItemsListProps {
@@ -42,10 +23,10 @@ interface UserItemsListProps {
   skeletonCount?: number
   userId: string
   tab: UserTab
-  initialData?: OptimizedDemo[]
+  initialData?: DemoWithComponent[]
 }
 
-function transformDemoData(data: any): OptimizedDemo {
+function transformDemoData(data: any): DemoWithComponent {
   return {
     id: data.id.toString(),
     name: data.name,
