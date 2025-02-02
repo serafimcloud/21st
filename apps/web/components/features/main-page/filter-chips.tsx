@@ -1,7 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { sections } from "@/lib/navigation"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
@@ -18,22 +16,9 @@ export function FilterChips({
   selectedFilter,
   onFilterChange,
 }: FilterChipsProps) {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (selectedFilter) {
-      params.set("filter", selectedFilter)
-    } else {
-      params.delete("filter")
-    }
-    router.push(`?${params.toString()}`, { scroll: false })
-  }, [selectedFilter, router, searchParams])
-
   if (activeTab === "sections") {
     return (
-      <div className="relative mb-3">
+      <div className="relative">
         <ScrollArea className="w-full whitespace-nowrap rounded-md">
           <div className="flex w-max space-x-2 p-1">
             <Button
@@ -86,7 +71,7 @@ export function FilterChips({
     )
 
     return (
-      <div className="relative mb-3">
+      <div className="relative">
         <ScrollArea className="w-full whitespace-nowrap rounded-md">
           <div className="flex w-max space-x-2 p-1">
             <Button

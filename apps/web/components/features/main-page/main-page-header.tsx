@@ -39,7 +39,6 @@ export function ComponentsHeader({
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", value)
-    params.set("filter", "all")
     if (value === "components" && sortBy) {
       params.set("sort", sortBy)
     } else {

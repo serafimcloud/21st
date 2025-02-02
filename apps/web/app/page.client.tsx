@@ -29,9 +29,7 @@ export function HomePageClient() {
       | "authors"
       | "pro") || "sections",
   )
-  const [selectedFilter, setSelectedFilter] = useState<string>(
-    searchParams.get("filter") || "all",
-  )
+  const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
   // Обновляем URL при изменении параметров
   useEffect(() => {
@@ -61,12 +59,11 @@ export function HomePageClient() {
     }
   }, [sortBy, queryClient])
 
-  const handleTabChange = (newTab: "sections" | "components" | "authors" | "pro") => {
+  const handleTabChange = (
+    newTab: "sections" | "components" | "authors" | "pro",
+  ) => {
     setActiveTab(newTab)
-    // Сбрасываем фильтр при смене таба
-    if (newTab === "authors" || newTab === "pro") {
-      setSelectedFilter("all")
-    }
+    setSelectedFilter("all")
   }
 
   const renderContent = () => {
