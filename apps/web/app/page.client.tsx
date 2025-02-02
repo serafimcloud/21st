@@ -23,6 +23,7 @@ import {
   DesignEngineerCardSkeleton,
   ProCardSkeleton,
 } from "@/components/ui/skeletons"
+import { FilterChips } from "@/components/features/main-page/filter-chips"
 
 export function HomePageClient() {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
@@ -38,6 +39,9 @@ export function HomePageClient() {
       | "components"
       | "authors"
       | "pro") || "sections",
+  )
+  const [selectedFilter, setSelectedFilter] = useState<string>(
+    searchParams.get("filter") || "all",
   )
 
   const { data: authors, isLoading: isAuthorsLoading } = useQuery({
@@ -112,9 +116,31 @@ export function HomePageClient() {
   const renderContent = () => {
     switch (activeTab) {
       case "sections":
-        return <SectionsList />
+        return (
+          <>
+            <FilterChips
+              activeTab={activeTab}
+              selectedFilter={selectedFilter}
+              onFilterChange={setSelectedFilter}
+            />
+            <SectionsList filter={selectedFilter} />
+          </>
+        )
       case "components":
-        return <ComponentsList type="main" sortBy={sortBy} />
+        return (
+          <>
+            <FilterChips
+              activeTab={activeTab}
+              selectedFilter={selectedFilter}
+              onFilterChange={setSelectedFilter}
+            />
+            <ComponentsList
+              type="main"
+              sortBy={sortBy}
+              tagSlug={selectedFilter === "all" ? undefined : selectedFilter}
+            />
+          </>
+        )
       case "authors":
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">

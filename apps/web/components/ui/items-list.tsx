@@ -1,9 +1,7 @@
 import React, { useEffect } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
-import {
-  ComponentCard,
-} from "../features/list-card/card"
+import { ComponentCard } from "../features/list-card/card"
 import { DemoWithComponent, User, Component, SortOption } from "@/types/global"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { transformDemoResult } from "@/lib/utils/transformData"
@@ -33,6 +31,7 @@ interface BaseListProps {
 interface MainListProps extends BaseListProps {
   type: "main"
   sortBy: SortOption
+  tagSlug?: string
 }
 
 interface TagListProps extends BaseListProps {
@@ -59,17 +58,21 @@ type ComponentsListProps =
   | UserListProps
   | SearchListProps
 
-function useMainDemos(sortBy: SortOption, initialData?: ComponentOrDemo[]) {
+function useMainDemos(
+  sortBy: SortOption,
+  tagSlug?: string,
+  initialData?: ComponentOrDemo[],
+) {
   const supabase = useClerkSupabaseClient()
   return useInfiniteQuery({
-    queryKey: ["filtered-demos", sortBy] as const,
+    queryKey: ["filtered-demos", sortBy, tagSlug] as const,
     queryFn: async ({ pageParam = 0 }) => {
       const { data: filteredData, error } = await supabase.rpc("get_demos", {
         p_quick_filter: "all",
         p_sort_by: sortBy,
         p_offset: Number(pageParam) * 24,
         p_limit: 24,
-        p_tag_slug: undefined,
+        p_tag_slug: tagSlug,
         p_include_private: false,
       } as Database["public"]["Functions"]["get_demos"]["Args"])
 
@@ -305,47 +308,52 @@ export function ComponentsList({
   const [localSearchQuery, setLocalSearchQuery] = useAtom(tagPageSearchAtom)
   const router = useRouter()
 
-  const mainQuery = useMainDemos(
-    props.type === "main" ? props.sortBy : "recommended",
-    props.type === "main" ? initialData : undefined,
-  )
+  let rawComponents: DemoWithComponent[] | undefined
+  let isLoading = false
+  let isFetching = false
+  let hasNextPage = false
+  let fetchNextPage: () => void = () => {}
 
-  const tagQuery = useTagDemos(
-    props.type === "tag" ? props.tagSlug : "",
-    props.type === "tag" ? props.sortBy : "recommended",
-    props.type === "tag" ? initialData : undefined,
-  )
-
-  const userQuery = useUserDemos(
-    props.type === "user" ? props.userId : "",
-    props.type === "user" ? props.tab : "published",
-    props.type === "user" ? initialData : undefined,
-  )
-
-  const aiSearchQuery = useSearchDemos(
-    props.type === "search" ? props.query : "",
-    props.type === "search" ? props.sortBy : "recommended",
-    props.type === "search" ? initialData : undefined,
-  )
-
-  const rawComponents = React.useMemo(() => {
-    switch (props.type) {
-      case "main":
-        return mainQuery.data?.pages?.flatMap((page) => page.data)
-      case "tag":
-        return tagQuery.data?.data
-      case "user":
-        return userQuery.data?.data
-      case "search":
-        return aiSearchQuery.data?.pages?.flatMap((page) => page.data)
+  switch (props.type) {
+    case "main": {
+      const mainQuery = useMainDemos(props.sortBy, props.tagSlug, initialData)
+      rawComponents = mainQuery.data?.pages.flatMap((page) => page.data)
+      isLoading = mainQuery.isLoading
+      isFetching = mainQuery.isFetching
+      hasNextPage = mainQuery.hasNextPage
+      fetchNextPage = mainQuery.fetchNextPage
+      break
     }
-  }, [
-    props.type,
-    mainQuery.data,
-    tagQuery.data,
-    userQuery.data,
-    aiSearchQuery.data,
-  ])
+    case "tag": {
+      const tagQuery = useTagDemos(props.tagSlug, props.sortBy, initialData)
+      rawComponents = tagQuery.data?.data
+      isLoading = tagQuery.isLoading
+      isFetching = tagQuery.isFetching
+      hasNextPage = false
+      break
+    }
+    case "user": {
+      const userQuery = useUserDemos(props.userId, props.tab, initialData)
+      rawComponents = userQuery.data?.data
+      isLoading = userQuery.isLoading
+      isFetching = userQuery.isFetching
+      hasNextPage = false
+      break
+    }
+    case "search": {
+      const aiSearchQuery = useSearchDemos(
+        props.query,
+        props.sortBy,
+        initialData,
+      )
+      rawComponents = aiSearchQuery.data?.pages?.flatMap((page) => page.data)
+      isLoading = aiSearchQuery.isLoading
+      isFetching = aiSearchQuery.isFetching
+      hasNextPage = aiSearchQuery.hasNextPage
+      fetchNextPage = aiSearchQuery.fetchNextPage
+      break
+    }
+  }
 
   // Очищаем поисковый запрос при размонтировании
   React.useEffect(() => {
@@ -361,84 +369,6 @@ export function ComponentsList({
     }
     return rawComponents
   }, [props.type, rawComponents, localSearchQuery])
-
-  const isLoading = React.useMemo(() => {
-    switch (props.type) {
-      case "main":
-        return mainQuery.isLoading
-      case "tag":
-        return tagQuery.isLoading
-      case "user":
-        return userQuery.isLoading
-      case "search":
-        return aiSearchQuery.isLoading
-    }
-  }, [
-    props.type,
-    mainQuery.isLoading,
-    tagQuery.isLoading,
-    userQuery.isLoading,
-    aiSearchQuery.isLoading,
-  ])
-
-  const isFetching = React.useMemo(() => {
-    switch (props.type) {
-      case "main":
-        return mainQuery.isFetching
-      case "tag":
-        return tagQuery.isFetching
-      case "user":
-        return userQuery.isFetching
-      case "search":
-        return aiSearchQuery.isFetching
-    }
-  }, [
-    props.type,
-    mainQuery.isFetching,
-    tagQuery.isFetching,
-    userQuery.isFetching,
-    aiSearchQuery.isFetching,
-  ])
-
-  const hasNextPage = React.useMemo(() => {
-    switch (props.type) {
-      case "main":
-        return mainQuery.hasNextPage
-      case "search":
-        return aiSearchQuery.hasNextPage
-      default:
-        return false
-    }
-  }, [props.type, mainQuery.hasNextPage, aiSearchQuery.hasNextPage])
-
-  const fetchNextPage = React.useMemo(() => {
-    switch (props.type) {
-      case "main":
-        return mainQuery.fetchNextPage
-      case "search":
-        return aiSearchQuery.fetchNextPage
-      default:
-        return undefined
-    }
-  }, [props.type, mainQuery.fetchNextPage, aiSearchQuery.fetchNextPage])
-
-  useEffect(() => {
-    if (!["main", "search"].includes(props.type)) return
-
-    const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-          document.documentElement.scrollHeight - 1000 &&
-        !isLoading &&
-        hasNextPage
-      ) {
-        fetchNextPage?.()
-      }
-    }
-
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [isLoading, hasNextPage, fetchNextPage, props.type])
 
   const showSkeleton = isLoading || (!components?.length && !localSearchQuery)
   const showSpinner = isFetching && !showSkeleton

@@ -34,7 +34,7 @@ export function ComponentsHeader({
   const isDesktop = useMediaQuery("(min-width: 768px)")
 
   return (
-    <div className="flex flex-col gap-4 mb-6">
+    <div className="flex flex-col gap-4 mb-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <Tabs

@@ -1,4 +1,6 @@
 // apps/web/components/ui/sections-list.tsx
+"use client"
+
 import React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
@@ -7,22 +9,34 @@ import { SectionCardSkeleton } from "@/components/ui/skeletons"
 import { sections } from "@/lib/navigation"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
-export function SectionsList({
-  className,
-  skeletonCount = 40,
-}: {
+interface SectionsListProps {
   className?: string
   skeletonCount?: number
-}) {
+  filter?: string
+}
+
+export function SectionsList({
+  className,
+  filter = "all",
+  skeletonCount = 40,
+}: SectionsListProps) {
   const supabase = useClerkSupabaseClient()
 
-  // Собираем все ID демо из навигации
-  const allDemoIds = sections
+  // Фильтруем секции по типу
+  const filteredSections = sections.filter((section) => {
+    if (filter === "all") return true
+    if (filter === "ui") return section.title === "UI elements"
+    if (filter === "landing") return section.title === "Landing Pages"
+    return false
+  })
+
+  // Собираем все ID демо из отфильтрованных секций
+  const allDemoIds = filteredSections
     .flatMap((section) => section.items.map((item) => item.demoId))
     .filter((id): id is number => id !== undefined)
 
   const { data: sectionsData, isLoading } = useQuery({
-    queryKey: ["sections-previews"],
+    queryKey: ["sections-previews", filter],
     queryFn: async () => {
       const { data: sectionPreviews, error } = await supabase.rpc(
         "get_section_previews",
@@ -33,8 +47,8 @@ export function SectionsList({
 
       if (error) throw error
 
-      // Объединяем данные из навигации с превью
-      const sectionsWithPreviews = sections
+      // Объединяем данные из навигации с превью только для отфильтрованных секций
+      const sectionsWithPreviews = filteredSections
         .flatMap((section) =>
           section.items.map((item) => {
             if (!item.demoId) return null
