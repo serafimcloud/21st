@@ -1,9 +1,7 @@
 import React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
-import {
-  ComponentCard,
-} from "@/components/features/list-card/card"
+import { ComponentCard } from "@/components/features/list-card/card"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { DemoWithComponent, User } from "@/types/global"
 import { useAtom } from "jotai"
@@ -15,7 +13,7 @@ import { useRouter } from "next/navigation"
 import { isMac } from "@/lib/utils"
 import { useHotkeys } from "react-hotkeys-hook"
 import { ComponentCardSkeleton } from "@/components/ui/skeletons"
-  
+
 type UserTab = "published" | "hunted" | "demos" | "liked"
 
 interface UserItemsListProps {
@@ -34,19 +32,31 @@ function transformDemoData(data: any): DemoWithComponent {
     preview_url: data.preview_url,
     video_url: data.video_url,
     updated_at: data.updated_at,
+    created_at: data.created_at,
     user: data.user_data,
+    user_id: data.user_data?.id,
+    component_id: data.component_data?.id,
+    demo_code: data.component_data?.demo_code || "",
+    demo_dependencies: data.component_data?.dependencies || {},
+    demo_direct_registry_dependencies: {},
+    compiled_css: data.component_data?.compiled_css,
     component: {
-      id: data.component_data.id.toString(),
-      name: data.component_data.name,
-      component_slug: data.component_data.component_slug,
-      likes_count: data.component_data.likes_count,
-      view_count: data.component_data.view_count,
+      ...data.component_data,
       user: data.component_user_data,
     },
+    tags: [],
+    embedding: null,
+    embedding_oai: null,
+    fts: null,
+    pro_preview_image_url: null,
+    view_count: data.view_count || 0,
   }
 }
 
-function useUserPublishedDemos(userId: string, initialData?: OptimizedDemo[]) {
+function useUserPublishedDemos(
+  userId: string,
+  initialData?: DemoWithComponent[],
+) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
     queryKey: ["user-published-demos", userId],
@@ -65,7 +75,7 @@ function useUserPublishedDemos(userId: string, initialData?: OptimizedDemo[]) {
 
 function useUserHuntedComponents(
   userId: string,
-  initialData?: OptimizedDemo[],
+  initialData?: DemoWithComponent[],
 ) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
@@ -81,7 +91,10 @@ function useUserHuntedComponents(
   })
 }
 
-function useUserLikedComponents(userId: string, initialData?: OptimizedDemo[]) {
+function useUserLikedComponents(
+  userId: string,
+  initialData?: DemoWithComponent[],
+) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
     queryKey: ["user-liked-components", userId],
@@ -98,7 +111,7 @@ function useUserLikedComponents(userId: string, initialData?: OptimizedDemo[]) {
   })
 }
 
-function useUserDemos(userId: string, initialData?: OptimizedDemo[]) {
+function useUserDemos(userId: string, initialData?: DemoWithComponent[]) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
     queryKey: ["user-demos", userId],
@@ -116,7 +129,7 @@ function useUserDemos(userId: string, initialData?: OptimizedDemo[]) {
 }
 
 function filterComponentsBySearch(
-  components: OptimizedDemo[] | undefined,
+  components: DemoWithComponent[] | undefined,
   searchQuery: string,
 ) {
   if (!components || !searchQuery) return components
@@ -287,7 +300,7 @@ export function UserItemsList({
           </Button>
         </div>
       ) : (
-        components?.map((component: OptimizedDemo) => (
+        components?.map((component: DemoWithComponent) => (
           <ComponentCard
             key={`${component.id}-${component.updated_at}`}
             component={component}

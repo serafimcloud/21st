@@ -37,6 +37,9 @@ import { Component, DemoWithComponent, User } from "@/types/global"
 import { PROMPT_TYPES } from "@/types/global"
 import { Icons } from "../icons"
 import { LoadingSpinner } from "./loading-spinner"
+import { SectionPreviewImage } from "@/components/features/sections/section-preview-image"
+import { SectionVideoPreview } from "@/components/features/sections/section-video-preview"
+import { Video } from "lucide-react"
 
 const commandSearchQueryAtom = atomWithStorage("commandMenuSearch", "")
 
@@ -200,6 +203,31 @@ export function CommandMenu() {
     )
   }, [components, value])
 
+  const selectedSection = useMemo(() => {
+    if (!value.startsWith("section-")) return null
+    return filteredSections
+      .flatMap((section) => section.items)
+      .find((item) => `section-${item.title}` === value)
+  }, [filteredSections, value])
+
+  const { data: sectionPreview } = useQuery({
+    queryKey: ["section-preview", selectedSection?.demoId],
+    queryFn: async () => {
+      if (!selectedSection?.demoId) return null
+
+      const { data: preview, error } = await supabase.rpc(
+        "get_section_previews",
+        {
+          p_demo_ids: [selectedSection.demoId],
+        },
+      )
+
+      if (error) throw error
+      return preview?.[0] || null
+    },
+    enabled: !!selectedSection?.demoId,
+  })
+
   const handleOpenChange = (open: boolean) => {
     setOpen(open)
     if (!open) {
@@ -352,7 +380,7 @@ export function CommandMenu() {
             className="h-11 w-full"
           />
           <div className="flex h-[calc(100%-44px)]">
-            <CommandList className="w-1/2 border-r overflow-y-auto">
+            <CommandList className="w-1/2 border-r overflow-y-auto pb-10">
               {searchQuery && (
                 <CommandGroup heading="Search">
                   <CommandItem
@@ -480,9 +508,9 @@ export function CommandMenu() {
               )}
             </CommandList>
 
-            <div className="w-1/2 p-4 overflow-y-auto flex items-center justify-center">
+            <div className="w-1/2 p-4 pb-14 overflow-y-auto flex items-center justify-center">
               {selectedComponent && selectedComponent.preview_url && (
-                <div className="rounded-md border p-4 w-full">
+                <div className="p-4 w-full">
                   <h3 className="text-sm font-medium mb-2">
                     {selectedComponent.name}
                   </h3>
@@ -496,6 +524,46 @@ export function CommandMenu() {
                       fill
                       className="object-cover"
                     />
+                  </div>
+                </div>
+              )}
+
+              {selectedSection && sectionPreview && (
+                <div className="p-4 w-full">
+                  <h3 className="text-sm font-medium mb-2">
+                    {selectedSection.title}
+                  </h3>
+                  <div className="relative aspect-[4/3] group">
+                    <div className="absolute inset-0 rounded-lg overflow-hidden">
+                      <div className="relative w-full h-full">
+                        <div
+                          className="absolute inset-0"
+                          style={{ margin: "-1px" }}
+                        >
+                          <SectionPreviewImage
+                            src={
+                              sectionPreview.preview_url || "/placeholder.svg"
+                            }
+                            alt={selectedSection.title}
+                            fallbackSrc="/placeholder.svg"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
+                        {sectionPreview.video_url && (
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <SectionVideoPreview
+                              videoUrl={sectionPreview.video_url}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {sectionPreview.video_url && (
+                      <div className="absolute top-2 left-2 z-20 bg-background/90 backdrop-blur rounded-sm px-2 py-1 pointer-events-none">
+                        <Video className="h-4 w-4 text-foreground" />
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -642,7 +710,28 @@ export function CommandMenu() {
                 onClick={handleOpen}
                 className="flex items-center gap-2 hover:bg-accent px-2 py-1 rounded-md"
               >
-                <span>Open</span>
+                <div className="relative w-12 h-5">
+                  <span
+                    className={cn(
+                      "absolute inset-0 transition-all duration-200 flex items-end justify-end",
+                      value.startsWith("search-")
+                        ? "translate-y-2 opacity-0"
+                        : "translate-y-0 opacity-100",
+                    )}
+                  >
+                    Open
+                  </span>
+                  <span
+                    className={cn(
+                      "absolute inset-0 transition-all duration-200 flex items-center justify-end",
+                      value.startsWith("search-")
+                        ? "translate-y-0 opacity-100"
+                        : "-translate-y-2 opacity-0",
+                    )}
+                  >
+                    Search
+                  </span>
+                </div>
                 <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 text-[11px] leading-none font-sans opacity-100 flex">
                   <Icons.enter className="h-2.5 w-2.5" />
                 </kbd>
