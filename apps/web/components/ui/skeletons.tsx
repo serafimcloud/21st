@@ -51,7 +51,7 @@ export function DesignEngineerCardSkeleton() {
               <div className="h-12 w-12 rounded-full bg-muted shadow-base shrink-0" />
               <div className="flex flex-col flex-1">
                 <div className="flex flex-col">
-                  <div className="h-5 bg-muted rounded w-1/2" />
+                  <div className="h-6 bg-muted rounded w-1/2" />
                   <div className="space-y-1.5 mt-3">
                     <div className="h-4 bg-muted rounded w-3/4" />
                     <div className="h-4 bg-muted rounded w-1/2" />
@@ -72,7 +72,7 @@ export function DesignEngineerCardSkeleton() {
           </div>
 
           {/* Components Cards Section - Empty Space */}
-          <div className="w-full lg:w-1/2 relative min-h-[150px]" />
+          <div className="w-full lg:w-1/2 relative min-h-[156px] lg:min-h-[150px]" />
         </div>
       </div>
     </div>

@@ -110,7 +110,7 @@ export function DesignEngineersList({
   return (
     <>
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 list-none pb-10 ${className || ""}`}
+        className={`grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 list-none pb-10 ${className || ""}`}
       >
         {authors.map((author) => (
           <DesignEngineerCard key={author.id} author={author} />

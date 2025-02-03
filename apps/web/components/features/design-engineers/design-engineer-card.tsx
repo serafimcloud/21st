@@ -54,7 +54,7 @@ export function DesignEngineerCard({ author }: DesignEngineerCardProps) {
                     <h2 className="font-semibold text-lg group-hover:text-primary transition-colors">
                       {author.display_name || author.name || author.username}
                     </h2>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
                       {author.bio || `@${author.display_username || author.username}`}
                     </p>
                   </div>
