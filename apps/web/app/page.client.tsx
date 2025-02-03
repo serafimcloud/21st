@@ -1,219 +1,152 @@
 "use client"
 
-import React, { useEffect, useLayoutEffect, useState } from "react"
-
+import React, { useEffect, useState } from "react"
 import { useAtom } from "jotai"
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
+import { useSearchParams, useRouter } from "next/navigation"
 
-import {
-  QuickFilterOption,
-  SortOption,
-  DemoWithComponent,
-} from "@/types/global"
-import { Database } from "@/types/supabase"
+import { SortOption, SORT_OPTIONS } from "@/types/global"
+import { sortByAtom } from "@/components/features/main-page/main-page-header"
+import { ComponentsList } from "@/components/ui/items-list"
+import { SectionsList } from "@/components/features/sections/sections-list"
+import { ComponentsHeader } from "@/components/features/main-page/main-page-header"
+import { FilterChips } from "@/components/features/main-page/filter-chips"
+import { DesignEngineersList } from "@/components/features/design-engineers/design-engineers-list"
+import { ProList } from "@/components/features/pro/pro-list"
 
-import { useClerkSupabaseClient } from "@/lib/clerk"
-import { setCookie } from "@/lib/cookies"
-import { searchQueryAtom } from "@/components/ui/header.client"
-import {
-  ComponentsHeader,
-  sortByAtom,
-  quickFilterAtom,
-} from "@/components/features/main-page/main-page-header"
-import { Loader2 } from "lucide-react"
-import { useDebounce } from "@/hooks/use-debounce"
-import ComponentsList from "@/components/ui/items-list"
-import { transformDemoResult } from "@/lib/utils/transformData"
-import { replaceSpacesWithPlus } from "@/lib/utils"
+export function HomePageClient() {
+  const [sortBy, setSortBy] = useAtom(sortByAtom)
+  const queryClient = useQueryClient()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<
+    "sections" | "components" | "authors" | "pro"
+  >(
+    (searchParams.get("tab") as
+      | "sections"
+      | "components"
+      | "authors"
+      | "pro") || "sections",
+  )
+  const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
-const useSetServerUserDataCookies = () => {
   useEffect(() => {
-    if (!document.cookie.includes("has_onboarded")) {
-      setCookie({
-        name: "has_onboarded",
-        value: "true",
-        expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        httpOnly: true,
-        sameSite: "lax",
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", activeTab)
+    if (activeTab === "components" && sortBy) {
+      params.set("sort", sortBy)
+    } else {
+      params.delete("sort")
+    }
+    router.push(`?${params.toString()}`, { scroll: false })
+  }, [activeTab, sortBy, router, searchParams])
+
+  useEffect(() => {
+    const sortFromUrl = searchParams.get("sort") as SortOption
+    if (sortFromUrl && Object.keys(SORT_OPTIONS).includes(sortFromUrl)) {
+      setSortBy(sortFromUrl)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (sortBy !== undefined) {
+      queryClient.invalidateQueries({
+        queryKey: ["filtered-demos", sortBy],
       })
     }
-  }, [])
-}
+  }, [sortBy, queryClient])
 
-const refetchData = async (queryClient: any, quickFilter: any, sortBy: any) => {
-  await queryClient.invalidateQueries({
-    queryKey: ["filtered-demos", quickFilter, sortBy],
-  })
-}
-
-export function HomePageClient({
-  initialComponents,
-  initialSortBy,
-  initialQuickFilter,
-  initialTabsCounts,
-}: {
-  initialComponents: DemoWithComponent[]
-  initialSortBy: SortOption
-  initialQuickFilter: QuickFilterOption
-  initialTabsCounts: Record<QuickFilterOption, number>
-}) {
-  const [searchQuery] = useAtom(searchQueryAtom)
-  const supabase = useClerkSupabaseClient()
-  const [sortBy, setSortBy] = useAtom(sortByAtom)
-  const [quickFilter, setQuickFilter] = useAtom(quickFilterAtom)
-  const debouncedSearchQuery = useDebounce(searchQuery, 300)
-  const [tabCounts, setTabCounts] = useState<
-    Record<QuickFilterOption, number> | undefined
-  >(initialTabsCounts)
-  const queryClient = useQueryClient()
-
-  useLayoutEffect(() => {
-    if (sortBy === undefined) {
-      setSortBy("recommended")
-    }
-  }, [])
-
-  // Important: we don't need useEffect here
-  // https://react.dev/learn/you-might-not-need-an-effect
-  if (tabCounts === undefined) {
-    setTabCounts(initialTabsCounts)
+  const handleTabChange = (
+    newTab: "sections" | "components" | "authors" | "pro",
+  ) => {
+    setActiveTab(newTab)
+    setSelectedFilter("all")
   }
 
-  // But we need useLayoutEffect here to avoid race conditions
-  useLayoutEffect(() => {
-    if (sortBy === undefined) {
-      setSortBy("recommended")
-    }
-    if (quickFilter === undefined) {
-      setQuickFilter(initialQuickFilter)
-    }
-  }, [])
-
-  useSetServerUserDataCookies()
-
-  const { data, isLoading, isFetching, fetchNextPage, hasNextPage } =
-    useInfiniteQuery<{ data: DemoWithComponent[]; total_count: number }>({
-      queryKey: ["filtered-demos", quickFilter, sortBy, debouncedSearchQuery],
-      queryFn: async ({
-        pageParam = 0,
-      }): Promise<{ data: DemoWithComponent[]; total_count: number }> => {
-        if (!quickFilter || !sortBy) {
-          return {
-            data: [],
-            total_count: 0,
-          }
-        }
-
-        if (!debouncedSearchQuery) {
-          const { data: filteredData, error } = await supabase.rpc(
-            "get_demos",
-            {
-              p_quick_filter: quickFilter,
-              p_sort_by: sortBy,
-              p_offset: Number(pageParam) * 24,
-              p_limit: 24,
-            } as Database["public"]["Functions"]["get_demos"]["Args"],
-          )
-
-          if (error) throw new Error(error.message)
-          console.log("RAW DATA FROM SQL:", filteredData?.[0])
-          const transformedData = (filteredData || []).map(transformDemoResult)
-          return {
-            data: transformedData,
-            total_count: (filteredData?.[0] as any)?.total_count ?? 0,
-          }
-        }
-
-        console.log("Searching for ai", debouncedSearchQuery)
-
-        const { data: searchResults, error } = await supabase.functions.invoke(
-          "ai-search-oai",
-          {
-            body: {
-              search: debouncedSearchQuery,
-              match_threshold: 0.33,
-            },
-          },
+  const renderContent = () => {
+    switch (activeTab) {
+      case "sections":
+        return (
+          <>
+            <FilterChips
+              activeTab={activeTab}
+              selectedFilter={selectedFilter}
+              onFilterChange={setSelectedFilter}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.3,
+                ease: "easeOut",
+              }}
+            >
+              <SectionsList filter={selectedFilter} />
+            </motion.div>
+          </>
         )
-
-        if (error) throw new Error(error.message)
-        const transformedSearchResults = (searchResults || []).map(
-          transformDemoResult,
+      case "components":
+        return (
+          <>
+            <FilterChips
+              activeTab={activeTab}
+              selectedFilter={selectedFilter}
+              onFilterChange={setSelectedFilter}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.3,
+                ease: "easeOut",
+              }}
+            >
+              <ComponentsList
+                type="main"
+                sortBy={sortBy}
+                tagSlug={selectedFilter === "all" ? undefined : selectedFilter}
+              />
+            </motion.div>
+          </>
         )
-
-        return {
-          data: transformedSearchResults,
-          total_count: transformedSearchResults.length,
-        }
-      },
-      initialData: {
-        pages: [
-          { data: initialComponents, total_count: initialComponents.length },
-        ],
-        pageParams: [0],
-      },
-      enabled: true,
-      staleTime: 0,
-      gcTime: 1000 * 60 * 30,
-      refetchOnWindowFocus: false,
-      retry: false,
-      initialPageParam: 0,
-      refetchOnMount: true,
-      getNextPageParam: (lastPage, allPages) => {
-        if (!lastPage?.data || lastPage.data.length === 0) return undefined
-        const loadedCount = allPages.reduce(
-          (sum, page) => sum + page.data.length,
-          0,
+      case "authors":
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.3,
+              ease: "easeOut",
+            }}
+          >
+            <DesignEngineersList />
+          </motion.div>
         )
-        return loadedCount < lastPage.total_count ? allPages.length : undefined
-      },
-    })
-  const allDemos = data?.pages?.flatMap((d) => d.data)
-
-  const showSkeleton = isLoading || !data?.pages?.[0]?.data?.length
-  const showSpinner = isFetching && !showSkeleton
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-          document.documentElement.scrollHeight - 1000 &&
-        !isLoading &&
-        hasNextPage
-      ) {
-        fetchNextPage()
-      }
+      case "pro":
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.3,
+              ease: "easeOut",
+            }}
+          >
+            <ProList />
+          </motion.div>
+        )
+      default:
+        return null
     }
-
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [isLoading, hasNextPage, fetchNextPage])
-
-  useEffect(() => {
-    if (sortBy !== undefined && quickFilter !== undefined) {
-      refetchData(queryClient, quickFilter, sortBy)
-    }
-  }, [sortBy, quickFilter, queryClient])
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="container mx-auto mt-20 px-4"
-    >
+    <div className="container mx-auto mt-20 px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px]">
       <div className="flex flex-col">
-        <ComponentsHeader
-          filtersDisabled={!!searchQuery}
-          tabCounts={tabCounts!}
-        />
-        <ComponentsList components={allDemos} isLoading={isLoading} />
-        {showSpinner && (
-          <div className="col-span-full flex justify-center py-4">
-            <Loader2 className="h-8 w-8 animate-spin text-foreground/20" />
-          </div>
-        )}
+        <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
+        {renderContent()}
       </div>
-    </motion.div>
+    </div>
   )
 }

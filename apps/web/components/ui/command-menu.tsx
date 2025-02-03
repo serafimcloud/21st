@@ -1,12 +1,22 @@
 "use client"
 
 import { useState, useMemo, useEffect, Dispatch, SetStateAction } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 
 import { useAtom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 import { useQuery } from "@tanstack/react-query"
+import {
+  Video,
+  Home,
+  Plus,
+  Download,
+  Code,
+  FileText,
+  User,
+  Settings,
+} from "lucide-react"
 
 import {
   Dialog,
@@ -24,6 +34,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command"
 import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
 
 import { sections } from "@/lib/navigation"
 import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
@@ -32,11 +43,15 @@ import { cn } from "@/lib/utils"
 import { getComponentInstallPrompt } from "@/lib/prompts"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import fetchFileTextContent from "@/lib/utils/fetchFileTextContent"
+import { useUserProfile } from "@/components/hooks/use-user-profile"
+import { EditProfileDialog } from "@/components/features/profile/edit-profile-dialog"
 
-import { Component, DemoWithComponent, User } from "@/types/global"
+import { Component, DemoWithComponent, User as UserType } from "@/types/global"
 import { PROMPT_TYPES } from "@/types/global"
 import { Icons } from "../icons"
 import { LoadingSpinner } from "./loading-spinner"
+import { SectionPreviewImage } from "@/components/features/sections/section-preview-image"
+import { SectionVideoPreview } from "@/components/features/sections/section-video-preview"
 
 const commandSearchQueryAtom = atomWithStorage("commandMenuSearch", "")
 
@@ -111,9 +126,11 @@ export function CommandMenu() {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useAtom(commandSearchQueryAtom)
   const [value, setValue] = useState("")
+  const [showEditProfile, setShowEditProfile] = useState(false)
   const router = useRouter()
-
+  const pathname = usePathname()
   const supabase = useClerkSupabaseClient()
+  const { user: dbUser, clerkUser: user, isLoading } = useUserProfile()
 
   const { data: components, isLoading: isComponentsLoading } = useQuery<
     DemoWithComponent[]
@@ -129,6 +146,7 @@ export function CommandMenu() {
             body: {
               search: searchQuery,
               match_threshold: 0.33,
+              limit: 5,
             },
           },
         )
@@ -146,7 +164,7 @@ export function CommandMenu() {
               component: {
                 ...(result.component_data as Component),
                 user: result.user_data,
-              } as Component & { user: User },
+              } as Component & { user: UserType },
               tags: [],
             }) as unknown as DemoWithComponent,
         )
@@ -157,7 +175,7 @@ export function CommandMenu() {
     },
   })
 
-  const { data: users } = useQuery<User[]>({
+  const { data: users } = useQuery<UserType[]>({
     queryKey: ["command-menu-users", searchQuery],
     queryFn: async () => {
       if (!searchQuery) return []
@@ -199,6 +217,31 @@ export function CommandMenu() {
         c.name === demoName,
     )
   }, [components, value])
+
+  const selectedSection = useMemo(() => {
+    if (!value.startsWith("section-")) return null
+    return filteredSections
+      .flatMap((section) => section.items)
+      .find((item) => `section-${item.title}` === value)
+  }, [filteredSections, value])
+
+  const { data: sectionPreview } = useQuery({
+    queryKey: ["section-preview", selectedSection?.demoId],
+    queryFn: async () => {
+      if (!selectedSection?.demoId) return null
+
+      const { data: preview, error } = await supabase.rpc(
+        "get_section_previews",
+        {
+          p_demo_ids: [selectedSection.demoId],
+        },
+      )
+
+      if (error) throw error
+      return preview?.[0] || null
+    },
+    enabled: !!selectedSection?.demoId,
+  })
 
   const handleOpenChange = (open: boolean) => {
     setOpen(open)
@@ -342,7 +385,7 @@ export function CommandMenu() {
         <Command
           value={value}
           onValueChange={setValue}
-          className="h-full"
+          className="h-full flex flex-col"
           shouldFilter={false}
         >
           <CommandInput
@@ -351,8 +394,26 @@ export function CommandMenu() {
             placeholder="Search components or sections..."
             className="h-11 w-full"
           />
-          <div className="flex h-[calc(100%-44px)]">
+          <div className="flex flex-1 min-h-0">
             <CommandList className="w-1/2 border-r overflow-y-auto">
+              {searchQuery && (
+                <CommandGroup heading="Search">
+                  <CommandItem
+                    value={`search-${searchQuery}`}
+                    onSelect={() => {
+                      router.push(`/q/${encodeURIComponent(searchQuery)}`)
+                      setSearchQuery("")
+                      setValue("")
+                      setOpen(false)
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Icons.search className="h-4 w-4" />
+                    <span>Search for "{searchQuery}"</span>
+                  </CommandItem>
+                </CommandGroup>
+              )}
+
               {filteredSections.length > 0 && (
                 <CommandGroup heading="Sections">
                   {filteredSections.map((section) =>
@@ -373,7 +434,7 @@ export function CommandMenu() {
                         }}
                         className="flex items-center gap-2 whitespace-nowrap overflow-hidden"
                       >
-                        <section.icon className="h-4 w-4" />
+                        <section.icon className="h-4 w-4 min-w-4 min-h-4 max-w-4 max-h-4" />
                         <span className="truncate">{item.title}</span>
                         <span className="text-xs text-muted-foreground">
                           in {section.title}
@@ -383,6 +444,282 @@ export function CommandMenu() {
                   )}
                 </CommandGroup>
               )}
+
+              <CommandSeparator />
+
+              {/* Profile Section */}
+              {(!searchQuery ||
+                ["view profile", "edit profile"].some((text) =>
+                  text.includes(searchQuery.toLowerCase()),
+                )) && (
+                <>
+                  <CommandGroup heading="Profile">
+                    {(!searchQuery ||
+                      "view profile".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="profile-view"
+                        onSelect={() => {
+                          if (dbUser?.display_username) {
+                            router.push(`/${dbUser.display_username}`)
+                          } else if (user?.externalAccounts?.[0]?.username) {
+                            router.push(`/${dbUser?.username}`)
+                          }
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <User className="h-4 w-4" />
+                        <span>View Profile</span>
+                      </CommandItem>
+                    )}
+                    {(!searchQuery ||
+                      "edit profile".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="profile-edit"
+                        onSelect={() => {
+                          setShowEditProfile(true)
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>Edit Profile</span>
+                      </CommandItem>
+                    )}
+                  </CommandGroup>
+                  <CommandSeparator />
+                </>
+              )}
+
+              {(!searchQuery ||
+                [
+                  ...(pathname !== "/" ? ["go home"] : []),
+                  "publish component",
+                  "import registry",
+                  "api docs keys",
+                  "terms service",
+                  "toggle theme",
+                ].some((text) => text.includes(searchQuery.toLowerCase()))) && (
+                <>
+                  <CommandGroup heading="Quick Actions">
+                    {(!searchQuery ||
+                      "go home".includes(searchQuery.toLowerCase())) &&
+                      pathname !== "/" && (
+                        <CommandItem
+                          value="action-home"
+                          onSelect={() => {
+                            router.push("/")
+                            setSearchQuery("")
+                            setValue("")
+                            setOpen(false)
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Home className="h-4 w-4" />
+                          <span>Go Home</span>
+                        </CommandItem>
+                      )}
+                    {(!searchQuery ||
+                      "publish component".includes(
+                        searchQuery.toLowerCase(),
+                      )) && (
+                      <CommandItem
+                        value="action-publish"
+                        onSelect={() => {
+                          router.push("/publish")
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Publish Component</span>
+                      </CommandItem>
+                    )}
+                    {(!searchQuery ||
+                      "import registry".includes(
+                        searchQuery.toLowerCase(),
+                      )) && (
+                      <CommandItem
+                        value="action-import"
+                        onSelect={() => {
+                          router.push("/import")
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        <div className="flex items-center gap-2">
+                          <span>Import from Registry</span>
+                          <Badge
+                            variant="secondary"
+                            className="h-5 text-[11px] tracking-wide font-medium uppercase px-1.5 py-0 leading-none"
+                          >
+                            beta
+                          </Badge>
+                        </div>
+                      </CommandItem>
+                    )}
+                    {(!searchQuery ||
+                      "api docs keys".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="action-api"
+                        onSelect={() => {
+                          router.push("/api-access")
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Code className="h-4 w-4" />
+                        <span>API Docs & Keys</span>
+                      </CommandItem>
+                    )}
+                    {(!searchQuery ||
+                      "terms service".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="action-terms"
+                        onSelect={() => {
+                          window.open("/terms", "_blank")
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span>Terms of Service</span>
+                      </CommandItem>
+                    )}
+                    {(!searchQuery ||
+                      "toggle theme".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="action-theme"
+                        onSelect={() => {
+                          document.documentElement.classList.toggle("dark")
+                          document.documentElement.classList.toggle("light")
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Icons.sun className="h-4 w-4 dark:hidden" />
+                        <Icons.moon className="h-4 w-4 hidden dark:block" />
+                        <span>Toggle Theme</span>
+                      </CommandItem>
+                    )}
+                  </CommandGroup>
+                  <CommandSeparator />
+                </>
+              )}
+
+              {(!searchQuery ||
+                ["twitter", "discord", "github"].some((text) =>
+                  text.includes(searchQuery.toLowerCase()),
+                )) && (
+                <>
+                  <CommandGroup heading="Social">
+                    {(!searchQuery ||
+                      "twitter".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="social-twitter"
+                        onSelect={() => {
+                          window.open("https://x.com/serafimcloud", "_blank")
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <div className="flex items-center justify-center w-4">
+                          <Icons.twitter className="h-3 w-3" />
+                        </div>
+                        <span>Twitter</span>
+                      </CommandItem>
+                    )}
+                    {(!searchQuery ||
+                      "discord".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="social-discord"
+                        onSelect={() => {
+                          window.open("https://discord.gg/Qx4rFunHfm", "_blank")
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Icons.discord className="h-4 w-4" />
+                        <span>Discord</span>
+                      </CommandItem>
+                    )}
+                    {(!searchQuery ||
+                      "github".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="social-github"
+                        onSelect={() => {
+                          window.open(
+                            "https://github.com/serafimcloud/21st",
+                            "_blank",
+                          )
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Icons.gitHub className="h-4 w-4" />
+                        <span>GitHub</span>
+                      </CommandItem>
+                    )}
+                  </CommandGroup>
+                  <CommandSeparator />
+                </>
+              )}
+
+              {searchQuery &&
+                !isComponentsLoading &&
+                components &&
+                components.length > 0 && (
+                  <>
+                    <CommandGroup heading="Quick Results">
+                      {components.map((component) => (
+                        <CommandItem
+                          key={`${component?.component?.name}-${component?.name}`}
+                          value={`component-${component?.user_id}/${component?.component?.component_slug}/${component?.name}`}
+                          onSelect={handleOpen}
+                          className="flex items-center gap-2"
+                        >
+                          <div className="flex-1 min-w-0 flex items-center gap-2">
+                            <span className="truncate">
+                              {component?.name === "Default"
+                                ? component?.component?.name
+                                : `${component?.component?.name} - ${component?.name}`}
+                            </span>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              by {component?.component?.user?.username}
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </>
+                )}
+
+              {searchQuery &&
+                !isComponentsLoading &&
+                (!components || components.length === 0) && (
+                  <CommandEmpty>Nothing found.</CommandEmpty>
+                )}
 
               {users && users.length > 0 && (
                 <>
@@ -420,51 +757,11 @@ export function CommandMenu() {
                   </CommandGroup>
                 </>
               )}
-
-              {searchQuery && isComponentsLoading ? (
-                <div className="p-4 flex items-center justify-center">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <LoadingSpinner size="sm" />
-                  </div>
-                </div>
-              ) : (
-                components &&
-                components.length > 0 && (
-                  <>
-                    <CommandSeparator />
-                    <CommandGroup heading="Components">
-                      {components?.map((component) => (
-                        <CommandItem
-                          key={`${component?.component?.name}-${component?.name}`}
-                          value={`component-${component?.user_id}/${component?.component?.component_slug}/${component?.name}`}
-                          onSelect={handleOpen}
-                          className="flex items-center gap-2"
-                        >
-                          <div className="flex-1 min-w-0 flex items-center gap-2">
-                            <span className="truncate">
-                              {component?.name === "Default"
-                                ? component?.component?.name
-                                : `${component?.component?.name} - ${component?.name}`}
-                            </span>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              by {component?.component?.user?.username}
-                            </span>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </>
-                )
-              )}
-
-              {searchQuery && components && components.length === 0 && (
-                <CommandEmpty>Nothing found.</CommandEmpty>
-              )}
             </CommandList>
 
-            <div className="w-1/2 p-4 overflow-y-auto flex items-center justify-center">
+            <div className="w-1/2 p-4 pb-14 overflow-y-auto flex items-center justify-center">
               {selectedComponent && selectedComponent.preview_url && (
-                <div className="rounded-md border p-4 w-full">
+                <div className="p-4 w-full">
                   <h3 className="text-sm font-medium mb-2">
                     {selectedComponent.name}
                   </h3>
@@ -481,10 +778,50 @@ export function CommandMenu() {
                   </div>
                 </div>
               )}
+
+              {selectedSection && sectionPreview && (
+                <div className="p-4 w-full">
+                  <h3 className="text-sm font-medium mb-2">
+                    {selectedSection.title}
+                  </h3>
+                  <div className="relative aspect-[4/3] group">
+                    <div className="absolute inset-0 rounded-lg overflow-hidden">
+                      <div className="relative w-full h-full">
+                        <div
+                          className="absolute inset-0"
+                          style={{ margin: "-1px" }}
+                        >
+                          <SectionPreviewImage
+                            src={
+                              sectionPreview.preview_url || "/placeholder.svg"
+                            }
+                            alt={selectedSection.title}
+                            fallbackSrc="/placeholder.svg"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
+                        {sectionPreview.video_url && (
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <SectionVideoPreview
+                              videoUrl={sectionPreview.video_url}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {sectionPreview.video_url && (
+                      <div className="absolute top-2 left-2 z-20 bg-background/90 backdrop-blur rounded-sm px-2 py-1 pointer-events-none">
+                        <Video className="h-4 w-4 text-foreground" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 border-t border-border h-10 pl-4 pr-3 flex items-center justify-between bg-background text-sm text-muted-foreground">
+          <div className="border-t border-border h-10 pl-4 pr-3 flex items-center justify-between bg-background text-sm text-muted-foreground">
             <div className="flex items-center gap-2 group hover:cursor-pointer">
               <div className="relative w-3 h-3">
                 <div
@@ -624,9 +961,54 @@ export function CommandMenu() {
                 onClick={handleOpen}
                 className="flex items-center gap-2 hover:bg-accent px-2 py-1 rounded-md"
               >
-                <span>Open</span>
+                <div className="relative w-24 h-5">
+                  <span
+                    className={cn(
+                      "absolute inset-0 transition-all duration-200 flex items-end justify-end whitespace-nowrap",
+                      value.startsWith("search-")
+                        ? "translate-y-2 opacity-0"
+                        : value.startsWith("social-")
+                          ? "translate-y-2 opacity-0"
+                          : value === "action-theme"
+                            ? "translate-y-2 opacity-0"
+                            : "translate-y-0 opacity-100",
+                    )}
+                  >
+                    Open
+                  </span>
+                  <span
+                    className={cn(
+                      "absolute inset-0 transition-all duration-200 flex items-center justify-end whitespace-nowrap",
+                      value.startsWith("search-")
+                        ? "translate-y-0 opacity-100"
+                        : "-translate-y-2 opacity-0",
+                    )}
+                  >
+                    Search
+                  </span>
+                  <span
+                    className={cn(
+                      "absolute inset-0 transition-all duration-200 flex items-center justify-end whitespace-nowrap",
+                      value.startsWith("social-")
+                        ? "translate-y-0 opacity-100"
+                        : "-translate-y-2 opacity-0",
+                    )}
+                  >
+                    Go to website
+                  </span>
+                  <span
+                    className={cn(
+                      "absolute inset-0 transition-all duration-200 flex items-center justify-end whitespace-nowrap",
+                      value === "action-theme"
+                        ? "translate-y-0 opacity-100"
+                        : "-translate-y-2 opacity-0",
+                    )}
+                  >
+                    Toggle theme
+                  </span>
+                </div>
                 <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 text-[11px] leading-none font-sans opacity-100 flex">
-                  <Icons.enter className="h-3 w-3" />
+                  <Icons.enter className="h-2.5 w-2.5" />
                 </kbd>
               </button>
             </div>

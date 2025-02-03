@@ -1,25 +1,33 @@
-import { UserProfileClient } from "./page.client"
-
-import {
-  getUserData,
-  getHuntedComponents,
-  getUserDemos,
-  getUserLikedComponents,
-} from "@/lib/queries"
+import { UserPageClient } from "./page.client"
+import { getUserData } from "@/lib/queries"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { redirect } from "next/navigation"
-import { currentUser } from "@clerk/nextjs/server"
+import { Footer } from "@/components/ui/footer"
+import { unstable_cache } from "next/cache"
+
+const getCachedUser = unstable_cache(
+  async (username: string) => {
+    const { data: user } = await getUserData(supabaseWithAdminAccess, username)
+    return user
+  },
+  ["user-data"],
+  {
+    revalidate: 30, // Cache for 30 seconds
+    tags: ["user-data"],
+  },
+)
+
+async function getUser(username: string) {
+  return getCachedUser(username)
+}
 
 export const generateMetadata = async ({
   params,
 }: {
   params: { username: string }
 }) => {
-  const { data: user } = await getUserData(
-    supabaseWithAdminAccess,
-    params.username,
-  )
+  const user = await getUser(params.username)
 
   if (!user) {
     return {
@@ -72,42 +80,25 @@ export default async function UserProfile({
     redirect("/")
   }
 
-  const { data: user, error } = await getUserData(
-    supabaseWithAdminAccess,
-    params.username,
-  )
-
-  const loggedInUser = await currentUser()
+  const user = await getUser(params.username)
 
   if (!user || !user.username) {
     redirect("/")
   }
 
-  const [huntedComponents, allUserDemos, likedComponents] = await Promise.all([
-    getHuntedComponents(supabaseWithAdminAccess, user.username),
-    getUserDemos(supabaseWithAdminAccess, user.id, loggedInUser?.id),
-    getUserLikedComponents(supabaseWithAdminAccess, user.id, loggedInUser?.id),
-  ])
-
-  // userComponents - demos of own components (where user is both component and demo creator)
-  const userDemos =
-    allUserDemos?.filter((demo) => demo.component.user_id === user.id) || []
-
-  // userDemos - demos created by user for other people's components
-  const userComponents = allUserDemos
-    ? allUserDemos.filter(
-        (demo) =>
-          demo.component.user_id !== user.id && demo.user_id === user.id,
-      )
-    : []
-
   return (
-    <UserProfileClient
-      user={user}
-      publishedComponents={userComponents}
-      huntedComponents={huntedComponents || []}
-      userDemos={userDemos}
-      likedComponents={likedComponents || []}
-    />
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-1">
+        <UserPageClient
+          user={user}
+          publishedComponents={[]}
+          huntedComponents={[]}
+          userDemos={[]}
+          likedComponents={[]}
+          initialTab="published"
+        />
+      </div>
+      <Footer />
+    </div>
   )
 }

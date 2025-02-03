@@ -3,16 +3,8 @@ import { Metadata } from "next"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import {
-  QuickFilterOption,
-  SortOption,
-  DemoWithComponent,
-} from "@/types/global"
-
-import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { transformDemoResult } from "@/lib/utils/transformData"
-
 import { Header } from "@/components/ui/header.client"
+import { Footer } from "@/components/ui/footer"
 import { HeroSection } from "@/components/ui/hero-section"
 import { NewsletterDialog } from "@/components/ui/newsletter-dialog"
 import { HomePageClient } from "./page.client"
@@ -79,120 +71,28 @@ export default async function HomePage() {
   try {
     const cookieStore = cookies()
     const shouldShowHero = !cookieStore.has("has_visited")
-    const hasOnboarded = cookieStore.has("has_onboarded")
-    const savedSortBy = cookieStore.get("saved_sort_by")?.value as
-      | SortOption
-      | undefined
-    const savedQuickFilter = cookieStore.get("saved_quick_filter")?.value as
-      | QuickFilterOption
-      | undefined
-
-    const defaultQuickFilter = savedQuickFilter || "all"
-    const defaultSortBy: SortOption = "recommended"
-
-    const sortByPreference: SortOption = savedSortBy || defaultSortBy
-    const quickFilterPreference: QuickFilterOption = savedQuickFilter?.length
-      ? (savedQuickFilter as QuickFilterOption)
-      : defaultQuickFilter
-
-    const { data: initialTabsCountsData, error: initialTabsCountsError } =
-      await supabaseWithAdminAccess.rpc("get_components_counts")
-
-    const initialTabsCounts =
-      !initialTabsCountsError && Array.isArray(initialTabsCountsData)
-        ? initialTabsCountsData.reduce(
-            (acc, item) => {
-              acc[item.filter_type as QuickFilterOption] = item.count
-              return acc
-            },
-            {} as Record<QuickFilterOption, number>,
-          )
-        : {
-            all: 0,
-            last_released: 0,
-            most_downloaded: 0,
-          }
-
-    const orderByFields: [string, string] = (() => {
-      const sort = sortByPreference as string
-      switch (sort) {
-        case "downloads":
-          return ["component(downloads_count)", "desc"]
-        case "likes":
-          return ["component(likes_count)", "desc"]
-        case "date":
-        case "recommended":
-        default:
-          return ["created_at", "desc"]
-      }
-    })()
-
-    const { data: initialDemos, error: demosError } =
-      await supabaseWithAdminAccess
-        .from("demos")
-        .select(
-          "*, component:components!demos_component_id_fkey(*, user:users!user_id(*)), user:users!user_id(*)",
-        )
-        .limit(40)
-        .eq("component.is_public", true)
-        .order(orderByFields[0], { ascending: orderByFields[1] === "desc" })
-        .returns<DemoWithComponent[]>()
-
-    if (demosError) {
-      console.error("Demos error:", demosError)
-      return null
-    }
-
-    const filteredDemos = await supabaseWithAdminAccess.rpc(
-      "get_demos",
-      {
-        p_quick_filter: quickFilterPreference,
-        p_sort_by: sortByPreference,
-        p_offset: 0,
-        p_limit: 40,
-      },
-    )
-
-    if (filteredDemos.error) {
-      console.error("Error fetching filtered demos:", filteredDemos.error)
-      return (
-        <>
-          <Header variant="default" />
-          <HomePageClient
-            initialComponents={initialDemos || []}
-            initialSortBy={sortByPreference}
-            initialQuickFilter={quickFilterPreference}
-            initialTabsCounts={initialTabsCounts}
-          />
-          <NewsletterDialog />
-        </>
-      )
-    }
-
-    const initialFilteredSortedDemos = (filteredDemos.data || []).map(
-      transformDemoResult,
-    )
 
     if (shouldShowHero) {
       return (
-        <>
-          <HeroSection />
-          <NewsletterDialog />
-        </>
+        <div className="min-h-screen flex flex-col">
+          <div className="flex-1">
+            <HeroSection />
+            <NewsletterDialog />
+          </div>
+          <Footer />
+        </div>
       )
     }
 
     return (
-      <>
+      <div className="min-h-screen flex flex-col">
         <Header variant="default" />
-        <HomePageClient
-          initialComponents={initialFilteredSortedDemos}
-          initialSortBy={sortByPreference}
-          initialQuickFilter={quickFilterPreference}
-          initialTabsCounts={initialTabsCounts}
-        />
-        <NewsletterDialog />
-      </>
+        <div className="flex-1">
+          <HomePageClient />
+          <NewsletterDialog />
+        </div>
+        <Footer />
+      </div>
     )
   } catch (error) {
     console.error("Error in home page:", error)

@@ -1,41 +1,21 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
 
-import { Video, Eye, Heart } from "lucide-react"
+import React from "react"
 import Link from "next/link"
+import { Video, Eye, Heart } from "lucide-react"
 
-import { Component, User, DemoWithComponent } from "../../../types/global"
+import { DemoWithComponent } from "@/types/global"
 import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
-import { CopyComponentButton } from "../../ui/copy-code-page-button"
 import { UserAvatar } from "../../ui/user-avatar"
-
-export function ComponentCardSkeleton() {
-  return (
-    <div className="overflow-hidden animate-pulse">
-      <div className="relative aspect-[4/3] mb-3">
-        <div className="absolute inset-0 rounded-lg overflow-hidden bg-muted" />
-      </div>
-      <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 rounded-full bg-muted" />
-        <div className="flex items-center justify-between flex-grow min-w-0">
-          <div className="min-w-0 flex-1 mr-3">
-            <div className="h-4 bg-muted rounded w-3/4" />
-          </div>
-          <div className="h-3 bg-muted rounded w-12" />
-        </div>
-      </div>
-    </div>
-  )
-}
+import { ComponentCardSkeleton } from "../../ui/skeletons"
 
 export function ComponentCard({
   component,
   isLoading,
 }: {
-  component?:
-    | DemoWithComponent
-    | (Component & { user: User } & { view_count?: number })
+  component?: DemoWithComponent
   isLoading?: boolean
 }) {
   if (isLoading || !component) {
@@ -43,51 +23,51 @@ export function ComponentCard({
   }
 
   const isDemo = "demo_slug" in component
+  const isDemoWithComponent =
+    "component" in component && "demo_slug" in component
   const userData = component.user
-  const componentOwner = isDemo ? component.component.user : component.user
+  const componentOwner = component.component.user
 
-  if (!userData) {
+  if (!userData || !componentOwner || !component) {
+    console.warn("Missing required data:", {
+      userData,
+      componentOwner,
+      component,
+    })
     return <ComponentCardSkeleton />
   }
 
-  const componentUrl = isDemo
-    ? `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || 'default'}`
-    : `/${componentOwner.display_username || componentOwner.username}/${component.component_slug}`
+  const componentUrl = `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || "default"}`
 
-  const videoUrl = isDemo ? component.video_url : component.video_url
+  const videoUrl = isDemo ? component.video_url : null
 
-  const codeUrl = isDemo
-    ? `/${userData.display_username || userData.username}/${component.component.component_slug}/${component.demo_slug}/code`
-    : `/${userData.display_username || userData.username}/${component.component_slug}/code`
+  const likesCount = component.component.likes_count || 0
 
-  const likesCount = isDemo
-    ? component.component.likes_count
-    : component.likes_count
+  const viewCount = component.view_count || 0
 
   return (
-    <div className="overflow-hidden">
+    <div className="p-[1px]">
       <Link href={componentUrl} className="block cursor-pointer">
         <div className="relative aspect-[4/3] mb-3 group">
-          <CopyComponentButton codeUrl={codeUrl} component={component} />
-          <div className="absolute inset-0 rounded-lg overflow-hidden">
-            <div className="relative w-full h-full">
-              <div className="absolute inset-0" style={{ margin: "-1px" }}>
+          <div className="absolute inset-0">
+            <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
+              <div className="absolute inset-0">
                 <ComponentPreviewImage
                   src={
                     isDemo
                       ? component.preview_url || "/placeholder.svg"
-                      : component.preview_url || "/placeholder.svg"
+                      : "/placeholder.svg"
                   }
-                  alt={isDemo ? component.name || "" : component.name || ""}
+                  alt={component.name || ""}
                   fallbackSrc="/placeholder.svg"
-                  className="w-full h-full object-cover"
+                  className="rounded-lg"
                 />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
+              <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5 rounded-lg" />
+              {videoUrl && isDemoWithComponent && (
+                <ComponentVideoPreview component={component} demo={component} />
+              )}
             </div>
-            {videoUrl && (
-              <ComponentVideoPreview component={component} demo={component} />
-            )}
           </div>
           {videoUrl && (
             <div
@@ -118,9 +98,9 @@ export function ComponentCard({
           >
             <div className="flex flex-col min-w-0">
               <h2 className="text-sm font-medium text-foreground truncate">
-                {isDemo ? component.component.name : component.name}
+                {component.component.name}
               </h2>
-              {isDemo && component.name !== "Default" && (
+              {component.name !== "Default" && (
                 <p className="text-sm text-muted-foreground truncate">
                   {component.name}
                 </p>
@@ -130,7 +110,7 @@ export function ComponentCard({
           <div className="flex items-center gap-3">
             <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
               <Eye size={14} />
-              <span>{component.view_count || 0}</span>
+              <span>{viewCount || 0}</span>
             </div>
             <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
               <Heart size={14} className="text-muted-foreground" />

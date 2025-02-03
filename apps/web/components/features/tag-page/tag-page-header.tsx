@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react"
-import { useAtom } from "jotai"
+import { atom, useAtom } from "jotai"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { ArrowUpDown, CircleX } from "lucide-react"
+import React from "react"
 
-import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -12,26 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { searchQueryAtom } from "@/components/ui/header.client"
-import {
-  sortByAtom,
-  quickFilterAtom,
-} from "@/components/features/main-page/main-page-header"
+import { sortByAtom } from "@/components/features/main-page/main-page-header"
 
-import type {
-  SortOption,
-  QuickFilterOption,
-  DemoWithComponent,
-} from "@/types/global"
-import { QUICK_FILTER_OPTIONS, SORT_OPTIONS } from "@/types/global"
+import type { SortOption } from "@/types/global"
+import { SORT_OPTIONS } from "@/types/global"
 import { setCookie } from "@/lib/cookies"
 
+export const tagPageSearchAtom = atom("")
+
 interface TagComponentsHeaderProps {
-  filtersDisabled: boolean
-  demos?: DemoWithComponent[]
+  tagName: string
   currentSection?: string
-  tabCounts: Record<QuickFilterOption, number>
 }
 
 const useSearchHotkeys = (inputRef: React.RefObject<HTMLInputElement>) => {
@@ -54,25 +45,21 @@ const useSearchHotkeys = (inputRef: React.RefObject<HTMLInputElement>) => {
 }
 
 export function TagComponentsHeader({
-  filtersDisabled,
+  tagName,
   currentSection,
-  tabCounts,
 }: TagComponentsHeaderProps) {
-  const [quickFilter, setQuickFilter] = useAtom(quickFilterAtom)
   const [sortBy, setSortBy] = useAtom(sortByAtom)
-  const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom)
+  const [searchQuery, setSearchQuery] = useAtom(tagPageSearchAtom)
   const inputRef = useRef<HTMLInputElement>(null)
   const isDesktop = useMediaQuery("(min-width: 768px)")
-  const isMobile = useMediaQuery("(max-width: 768px)")
+
+  React.useEffect(() => {
+    return () => {
+      setSearchQuery("")
+    }
+  }, [setSearchQuery])
 
   useSearchHotkeys(inputRef)
-
-  const getFilterLabel = (label: string) => {
-    if (isMobile && label === "All Components") {
-      return "All"
-    }
-    return label
-  }
 
   const getSearchPlaceholder = () => {
     const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1200px)")
@@ -90,44 +77,10 @@ export function TagComponentsHeader({
   return (
     <div className="flex flex-col gap-4 mb-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <Tabs
-            value={quickFilter}
-            onValueChange={(value) => {
-              setQuickFilter(value as QuickFilterOption)
-              setCookie({
-                name: "saved_quick_filter",
-                value: value,
-                expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-                httpOnly: true,
-                sameSite: "lax",
-              })
-            }}
-            className={cn("w-full md:w-auto", filtersDisabled && "opacity-50")}
-          >
-            <TabsList className="w-full md:w-auto h-8 -space-x-px bg-background p-0 shadow-sm shadow-black/5 rtl:space-x-reverse">
-              {Object.entries(QUICK_FILTER_OPTIONS).map(([value, label]) => (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  disabled={tabCounts[value as QuickFilterOption] === 0}
-                  className="flex-1 md:flex-initial relative overflow-hidden rounded-none border border-border h-8 px-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 first:rounded-s last:rounded-e data-[state=active]:bg-muted data-[state=active]:after:bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">{getFilterLabel(label)}</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {tabCounts[value as QuickFilterOption]}
-                    </span>
-                  </div>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
+        <div className="text-lg font-semibold">{tagName}</div>
 
         <div className="flex items-center gap-2 md:w-auto min-w-0">
-          {/* temporarily hide search */}
-          {/* <div className="relative flex-1 min-w-0 lg:min-w-[250px] md:min-w-[100px]">
+          <div className="relative flex-1 min-w-0 lg:min-w-[250px] md:min-w-[100px]">
             <Input
               ref={inputRef}
               type="text"
@@ -154,7 +107,7 @@ export function TagComponentsHeader({
                 </kbd>
               </div>
             )}
-          </div> */}
+          </div>
 
           <Select
             value={sortBy}

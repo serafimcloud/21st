@@ -1,15 +1,15 @@
 "use client"
 
 import { useRef, useState, useCallback } from "react"
-import { Component, User, DemoWithComponent } from "../../../types/global"
 import { cn } from "../../../lib/utils"
+import { DemoWithComponent } from "@/types/global"
 
 const videoLoadingCache = new Map<string, boolean>()
 const videoLoadPromises = new Map<string, Promise<void>>()
 
 interface ComponentVideoPreviewProps {
-  component: DemoWithComponent | (Component & { user: User })
-  demo?: DemoWithComponent | (Component & { user: User })
+  component: DemoWithComponent
+  demo?: DemoWithComponent
 }
 
 export function ComponentVideoPreview({
@@ -20,11 +20,9 @@ export function ComponentVideoPreview({
   const [isVideoLoaded, setIsVideoLoaded] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const isDemo = "component" in component
-  const id = isDemo ? component.id : component.id
-  const videoUrl = isDemo
-    ? component.video_url
-    : (component as Component & { user: User }).video_url
+  const isDemo = "demo_slug" in component
+  const id = component.id.toString()
+  const videoUrl = isDemo ? component.video_url : null
 
   const toggleVideoIcon = useCallback(
     (hide: boolean) => {

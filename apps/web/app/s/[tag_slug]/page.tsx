@@ -1,18 +1,14 @@
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { SupabaseClient } from "@supabase/supabase-js"
 
 import { Header } from "@/components/ui/header.client"
+import { Footer } from "@/components/ui/footer"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { Database } from "@/types/supabase"
 import { TagPageContent } from "./page.client"
-import {
-  QuickFilterOption,
-  SortOption
-} from "@/types/global"
+import { SortOption } from "@/types/global"
 import { cookies } from "next/headers"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
-import { transformDemoResult } from "@/lib/utils/transformData"
+import { unstable_cache } from "next/cache"
 
 interface TagPageProps {
   params: {
@@ -20,21 +16,29 @@ interface TagPageProps {
   }
 }
 
-const getTagInfo = async (
-  supabase: SupabaseClient<Database>,
-  tagSlug: string,
-) => {
-  const { data, error } = await supabase
-    .from("tags")
-    .select("*")
-    .eq("slug", tagSlug)
-    .single()
+const getCachedTagInfo = unstable_cache(
+  async (tagSlug: string) => {
+    const { data, error } = await supabaseWithAdminAccess
+      .from("tags")
+      .select("*")
+      .eq("slug", tagSlug)
+      .single()
 
-  if (error) {
-    throw error
-  }
+    if (error) {
+      throw error
+    }
 
-  return data
+    return data
+  },
+  ["tag-info"],
+  {
+    revalidate: 30, // Cache for 30 seconds
+    tags: ["tag-info"],
+  },
+)
+
+async function getTagInfo(tagSlug: string) {
+  return getCachedTagInfo(tagSlug)
 }
 
 export default async function TagPage({ params }: TagPageProps) {
@@ -46,80 +50,32 @@ export default async function TagPage({ params }: TagPageProps) {
   const tagSlug = params.tag_slug
 
   try {
-    const tagInfo = await getTagInfo(supabaseWithAdminAccess, tagSlug)
+    const tagInfo = await getTagInfo(tagSlug)
     if (!tagInfo) {
       redirect("/")
     }
 
-    const hasOnboarded = cookieStore.has("has_onboarded")
     const savedSortBy = cookieStore.get("saved_sort_by")?.value as
       | SortOption
       | undefined
-    const savedQuickFilter = cookieStore.get("saved_quick_filter")?.value as
-      | QuickFilterOption
-      | undefined
 
-    const defaultQuickFilter = hasOnboarded ? "last_released" : "all"
-    const defaultSortBy: SortOption = hasOnboarded ? "date" : "downloads"
-
+    const defaultSortBy: SortOption = "recommended"
     const sortByPreference: SortOption = savedSortBy?.length
       ? (savedSortBy as SortOption)
       : defaultSortBy
-    const quickFilterPreference: QuickFilterOption = savedQuickFilter?.length
-      ? (savedQuickFilter as QuickFilterOption)
-      : defaultQuickFilter
-
-    const filteredDemos = await supabaseWithAdminAccess.rpc(
-      "get_filtered_demos_with_views_and_usage",
-      {
-        p_quick_filter: quickFilterPreference,
-        p_sort_by: sortByPreference,
-        p_offset: 0,
-        p_limit: 40,
-        p_tag_slug: tagSlug,
-      },
-    )
-
-    if (filteredDemos.error) {
-      redirect("/")
-    }
-
-    const initialFilteredSortedDemos = (filteredDemos.data || []).map(
-      transformDemoResult,
-    )
-
-    const { data: initialTabsCountsData, error: initialTabsCountsError } =
-      await supabaseWithAdminAccess.rpc("get_components_counts", {
-        p_tag_slug: tagSlug,
-      })
-
-    const initialTabsCounts =
-      !initialTabsCountsError && Array.isArray(initialTabsCountsData)
-        ? initialTabsCountsData.reduce(
-            (acc, item) => {
-              acc[item.filter_type as QuickFilterOption] = item.count
-              return acc
-            },
-            {} as Record<QuickFilterOption, number>,
-          )
-        : {
-            all: 0,
-            last_released: 0,
-            most_downloaded: 0,
-          }
 
     return (
-      <>
-        {tagInfo && <Header text={tagInfo?.name} />}
-        <TagPageContent
-          initialComponents={initialFilteredSortedDemos}
-          tagName={tagInfo.name}
-          tagSlug={tagSlug}
-          initialTabCounts={initialTabsCounts}
-          initialSortBy={sortByPreference}
-          initialQuickFilter={quickFilterPreference}
-        />
-      </>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1">
+          <TagPageContent
+            tagName={tagInfo.name}
+            tagSlug={tagSlug}
+            initialSortBy={sortByPreference}
+          />
+        </div>
+        <Footer />
+      </div>
     )
   } catch (error) {
     console.error("Error in tag page:", error)
@@ -131,7 +87,7 @@ export async function generateMetadata({
   params,
 }: TagPageProps): Promise<Metadata> {
   try {
-    const tagInfo = await getTagInfo(supabaseWithAdminAccess, params.tag_slug)
+    const tagInfo = await getTagInfo(params.tag_slug)
     if (!tagInfo) {
       redirect("/")
     }

@@ -48,3 +48,7 @@ export function makeSlugFromName(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
 }
+
+export const isMac =
+  typeof window !== "undefined" &&
+  /Mac|iPod|iPhone|iPad/.test(window.navigator.platform)

@@ -1,20 +1,21 @@
 "use client"
 
 import Link from "next/link"
+import { useAtom } from "jotai"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/ui/header.client"
 import { Icons } from "@/components/icons"
 import { UserAvatar } from "@/components/ui/user-avatar"
 import { UserComponentsHeader } from "@/components/features/user-page/user-page-header"
-import { UserComponentsList } from "@/components/features/user-page/user-page-items-list"
+import { UserItemsList } from "@/components/features/user-page/user-items-list"
 import { appendQueryParam } from "@/lib/utils"
 import { Globe, SquareArrowOutUpRight } from "lucide-react"
 import { trackEvent } from "@/lib/amplitude"
 import { useEffect } from "react"
 import { AMPLITUDE_EVENTS } from "@/lib/amplitude"
+import { userTabAtom } from "@/components/features/user-page/user-page-header"
 import {
-  Component,
   DemoWithComponent,
   User,
   HuntedComponents,
@@ -35,19 +36,23 @@ const useProfileAnalytics = ({
   }, [username, isManuallyAdded])
 }
 
-export function UserProfileClient({
-  user,
-  publishedComponents,
-  huntedComponents,
-  userDemos,
-  likedComponents,
-}: {
+interface UserPageClientProps {
   user: User
   publishedComponents: DemoWithComponent[]
   huntedComponents: HuntedComponents
   userDemos: DemoWithComponent[]
   likedComponents: DemoWithComponent[]
-}) {
+  initialTab: "published" | "hunted" | "demos" | "liked"
+  initialComponents?: DemoWithComponent[]
+}
+
+export function UserPageClient({
+  user,
+  initialTab,
+  initialComponents,
+}: UserPageClientProps) {
+  const [tab] = useAtom(userTabAtom)
+
   useProfileAnalytics({
     username: user.display_username || user.username || "",
     isManuallyAdded: user.manually_added,
@@ -169,18 +174,13 @@ export function UserProfileClient({
           </div>
           <div className="w-full md:w-[80%]">
             <UserComponentsHeader
-              publishedComponents={publishedComponents}
-              huntedComponents={huntedComponents}
-              userDemos={userDemos}
-              likedComponents={likedComponents}
               username={user.display_username || user.username || ""}
+              userId={user.id}
             />
-            <UserComponentsList
-              user={user}
-              publishedComponents={publishedComponents}
-              huntedComponents={huntedComponents}
-              userDemos={userDemos}
-              likedComponents={likedComponents}
+            <UserItemsList
+              userId={user.id}
+              tab={tab || initialTab}
+              initialData={initialComponents}
             />
           </div>
         </div>

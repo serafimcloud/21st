@@ -453,8 +453,8 @@ export type Database = {
           demo_dependencies: Json | null
           demo_direct_registry_dependencies: Json | null
           demo_slug: string
-          embedding?: string | null
-          embedding_oai?: string | null
+          embedding: string | null
+          embedding_oai: string | null
           fts: unknown | null
           id: number
           name: string | null
@@ -951,6 +951,60 @@ export type Database = {
           count: number
         }[]
       }
+      get_demos_new: {
+        Args: {
+          p_sort_by: string
+          p_offset: number
+          p_limit: number
+          p_tag_slug?: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          demo_code: string
+          preview_url: string
+          video_url: string
+          compiled_css: string
+          demo_dependencies: Json
+          demo_direct_registry_dependencies: Json
+          pro_preview_image_url: string
+          created_at: string
+          updated_at: string
+          component_id: number
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          tags: Json
+          total_count: number
+          view_count: number
+          fts: unknown
+          demo_slug: string
+          debug_info: Json
+        }[]
+      }
+      get_demos_optimized: {
+        Args: {
+          p_quick_filter: string
+          p_sort_by: string
+          p_offset: number
+          p_limit: number
+          p_tag_slug?: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          demo_slug: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          view_count: number
+        }[]
+      }
       get_filtered_components: {
         Args: {
           p_quick_filter: string
@@ -1148,6 +1202,40 @@ export type Database = {
           website_url: string | null
         }[]
       }
+      get_section_previews: {
+        Args: {
+          p_demo_ids: number[]
+        }
+        Returns: {
+          demo_id: number
+          preview_url: string
+          video_url: string
+        }[]
+      }
+      get_sections: {
+        Args: {
+          p_tag_slugs?: string[]
+        }
+        Returns: {
+          tag_id: number
+          tag_name: string
+          tag_slug: string
+          component_id: number
+          component_name: string
+          component_slug: string
+          preview_url: string
+          video_url: string
+          user_data: Json
+          downloads_count: number
+          view_count: number
+        }[]
+      }
+      get_user_components_counts: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json
+      }
       get_user_demos: {
         Args: {
           p_user_id: string
@@ -1208,6 +1296,24 @@ export type Database = {
           debug_info: Json
         }[]
       }
+      get_user_liked_components_optimized: {
+        Args: {
+          p_user_id: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          view_count: number
+          demo_slug: string
+        }[]
+      }
       get_user_profile_demos: {
         Args: {
           p_user_id: string
@@ -1216,25 +1322,13 @@ export type Database = {
         Returns: {
           id: number
           name: string
-          demo_code: string
           preview_url: string
           video_url: string
-          compiled_css: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          pro_preview_image_url: string
-          created_at: string
           updated_at: string
-          component_id: number
+          demo_slug: string
           component_data: Json
           user_data: Json
           component_user_data: Json
-          tags: Json
-          total_count: number
-          view_count: number
-          fts: unknown
-          demo_slug: string
-          debug_info: Json
         }[]
       }
       increment: {

@@ -1,7 +1,6 @@
 import { Component, DemoWithComponent, User, Tag } from "@/types/global"
 
 export const transformDemoResult = (result: any): DemoWithComponent => {
-  
   const componentUser =
     result.component_user_data ||
     (result.component_data && result.component_data.user) ||
@@ -30,6 +29,8 @@ export const transformDemoResult = (result: any): DemoWithComponent => {
     user: result.user_data as User,
     tags: (result.tags as Tag[]) || [],
     view_count: result.view_count,
+    embedding: result.embedding || null,
+    embedding_oai: result.embedding_oai || null,
   }
   return transformed
 }
