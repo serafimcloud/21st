@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react"
 
-interface SectionVideoPreviewProps {
+interface CategoryVideoPreviewProps {
   videoUrl: string
 }
 
-export function SectionVideoPreview({ videoUrl }: SectionVideoPreviewProps) {
+export function CategoryVideoPreview({ videoUrl }: CategoryVideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isHovered, setIsHovered] = useState(false)
 
@@ -39,4 +39,4 @@ export function SectionVideoPreview({ videoUrl }: SectionVideoPreviewProps) {
   )
 }
 
-export default SectionVideoPreview
+export default CategoryVideoPreview

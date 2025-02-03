@@ -21,7 +21,7 @@ export const sortByAtom = atom<SortOption>("recommended")
 
 const TAB_OPTIONS = {
   components: "Components",
-  sections: "Sections",
+  categories: "Categories",
   authors: "Design Engineers",
   pro: "Pro",
 } as const
@@ -30,8 +30,8 @@ export function ComponentsHeader({
   activeTab,
   onTabChange,
 }: {
-  activeTab: "sections" | "components" | "authors" | "pro"
-  onTabChange: (tab: "sections" | "components" | "authors" | "pro") => void
+  activeTab: "categories" | "components" | "authors" | "pro"
+  onTabChange: (tab: "categories" | "components" | "authors" | "pro") => void
 }) {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
   const isDesktop = useMediaQuery("(min-width: 768px)")
@@ -52,7 +52,7 @@ export function ComponentsHeader({
       params.delete("sort")
     }
     router.push(`?${params.toString()}`, { scroll: false })
-    onTabChange(value as "sections" | "components" | "authors" | "pro")
+    onTabChange(value as "categories" | "components" | "authors" | "pro")
   }
 
   if (!isClient) {
@@ -69,10 +69,10 @@ export function ComponentsHeader({
                   Components
                 </TabsTrigger>
                 <TabsTrigger
-                  value="sections"
+                  value="categories"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
-                  Sections
+                  Categories
                 </TabsTrigger>
                 <TabsTrigger
                   value="authors"
@@ -96,7 +96,7 @@ export function ComponentsHeader({
 
   return (
     <div
-      className={`flex flex-col gap-4 ${activeTab !== "sections" && activeTab !== "components" ? "mb-5" : "mb-3"}`}
+      className={`flex flex-col gap-4 ${activeTab !== "categories" && activeTab !== "components" ? "mb-5" : "mb-3"}`}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -110,10 +110,10 @@ export function ComponentsHeader({
                   Components
                 </TabsTrigger>
                 <TabsTrigger
-                  value="sections"
+                  value="categories"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
-                  Sections
+                  Categories
                 </TabsTrigger>
                 <TabsTrigger
                   value="authors"

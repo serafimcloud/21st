@@ -36,7 +36,7 @@ import {
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 
-import { sections } from "@/lib/navigation"
+import { categories } from "@/lib/navigation"
 import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { cn } from "@/lib/utils"
@@ -44,14 +44,12 @@ import { getComponentInstallPrompt } from "@/lib/prompts"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import fetchFileTextContent from "@/lib/utils/fetchFileTextContent"
 import { useUserProfile } from "@/components/hooks/use-user-profile"
-import { EditProfileDialog } from "@/components/features/profile/edit-profile-dialog"
 
 import { Component, DemoWithComponent, User as UserType } from "@/types/global"
 import { PROMPT_TYPES } from "@/types/global"
-import { Icons } from "../icons"
-import { LoadingSpinner } from "./loading-spinner"
-import { SectionPreviewImage } from "@/components/features/sections/section-preview-image"
-import { SectionVideoPreview } from "@/components/features/sections/section-video-preview"
+import { Icons } from "../icons"  
+import { CategoryPreviewImage } from "@/components/features/categories/category-preview-image"
+import { CategoryVideoPreview } from "@/components/features/categories/category-video-preview"
 
 const commandSearchQueryAtom = atomWithStorage("commandMenuSearch", "")
 
@@ -193,17 +191,17 @@ export function CommandMenu() {
     retry: false,
   })
 
-  const filteredSections = useMemo(() => {
-    if (!searchQuery) return sections
-    return sections
-      .map((section) => ({
-        ...section,
-        items: section.items.filter((item) =>
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery) return categories
+    return categories
+      .map((category) => ({
+        ...category,
+        items: category.items.filter((item) =>
           item.title.toLowerCase().includes(searchQuery.toLowerCase()),
         ),
       }))
-      .filter((section) => section.items.length > 0)
-  }, [sections, searchQuery])
+      .filter((category) => category.items.length > 0)
+  }, [categories, searchQuery])
 
   const selectedComponent = useMemo(() => {
     if (!value.startsWith("component-")) return null
@@ -218,29 +216,29 @@ export function CommandMenu() {
     )
   }, [components, value])
 
-  const selectedSection = useMemo(() => {
-    if (!value.startsWith("section-")) return null
-    return filteredSections
-      .flatMap((section) => section.items)
-      .find((item) => `section-${item.title}` === value)
-  }, [filteredSections, value])
+  const selectedCategory = useMemo(() => {
+    if (!value.startsWith("category-")) return null
+    return filteredCategories
+      .flatMap((category) => category.items)
+      .find((item) => `category-${item.title}` === value)
+  }, [filteredCategories, value])
 
-  const { data: sectionPreview } = useQuery({
-    queryKey: ["section-preview", selectedSection?.demoId],
+  const { data: categoryPreview } = useQuery({
+    queryKey: ["category-preview", selectedCategory?.demoId],
     queryFn: async () => {
-      if (!selectedSection?.demoId) return null
+      if (!selectedCategory?.demoId) return null
 
       const { data: preview, error } = await supabase.rpc(
         "get_section_previews",
         {
-          p_demo_ids: [selectedSection.demoId],
+          p_demo_ids: [selectedCategory.demoId],
         },
       )
 
       if (error) throw error
       return preview?.[0] || null
     },
-    enabled: !!selectedSection?.demoId,
+      enabled: !!selectedCategory?.demoId,
   })
 
   const handleOpenChange = (open: boolean) => {
@@ -346,16 +344,16 @@ export function CommandMenu() {
       router.push(
         `/${selectedComponent.component.user.username}/${selectedComponent.component.component_slug}/${selectedComponent.demo_slug || "default"}`,
       )
-    } else if (value.startsWith("section-")) {
-      const section = filteredSections
-        .flatMap((section) => section.items)
-        .find((item) => `section-${item.title}` === value)
+    } else if (value.startsWith("category-")) {
+      const category = filteredCategories
+        .flatMap((category) => category.items)
+        .find((item) => `category-${item.title}` === value)
 
-      if (section) {
-        router.push(section.href)
+      if (category) {
+        router.push(category.href)
         trackEvent(AMPLITUDE_EVENTS.VIEW_SIDEBAR_SECTION, {
-          itemTitle: section.title,
-          path: section.href,
+          itemTitle: category.title,
+          path: category.href,
         })
       }
     }
@@ -414,30 +412,30 @@ export function CommandMenu() {
                 </CommandGroup>
               )}
 
-              {filteredSections.length > 0 && (
-                <CommandGroup heading="Sections">
-                  {filteredSections.map((section) =>
-                    section.items.map((item) => (
+              {filteredCategories.length > 0 && (
+                <CommandGroup heading="Categories">
+                  {filteredCategories.map((category) =>
+                    category.items.map((item) => (
                       <CommandItem
                         key={item.title}
-                        value={`section-${item.title}`}
+                        value={`category-${item.title}`}
                         onSelect={() => {
                           router.push(item.href)
                           setSearchQuery("")
                           setValue("")
                           setOpen(false)
                           trackEvent(AMPLITUDE_EVENTS.VIEW_SIDEBAR_SECTION, {
-                            sectionTitle: section.title,
+                            categoryTitle: category.title,
                             itemTitle: item.title,
                             path: item.href,
                           })
                         }}
                         className="flex items-center gap-2 whitespace-nowrap overflow-hidden"
                       >
-                        <section.icon className="h-4 w-4 min-w-4 min-h-4 max-w-4 max-h-4" />
+                        <category.icon className="h-4 w-4 min-w-4 min-h-4 max-w-4 max-h-4" />
                         <span className="truncate">{item.title}</span>
                         <span className="text-xs text-muted-foreground">
-                          in {section.title}
+                          in {category.title}
                         </span>
                       </CommandItem>
                     )),
@@ -779,10 +777,10 @@ export function CommandMenu() {
                 </div>
               )}
 
-              {selectedSection && sectionPreview && (
+              {selectedCategory && categoryPreview && (
                 <div className="p-4 w-full">
                   <h3 className="text-sm font-medium mb-2">
-                    {selectedSection.title}
+                    {selectedCategory.title}
                   </h3>
                   <div className="relative aspect-[4/3] group">
                     <div className="absolute inset-0 rounded-lg overflow-hidden">
@@ -791,26 +789,26 @@ export function CommandMenu() {
                           className="absolute inset-0"
                           style={{ margin: "-1px" }}
                         >
-                          <SectionPreviewImage
+                          <CategoryPreviewImage
                             src={
-                              sectionPreview.preview_url || "/placeholder.svg"
+                              categoryPreview.preview_url || "/placeholder.svg"
                             }
-                            alt={selectedSection.title}
+                            alt={selectedCategory.title}
                             fallbackSrc="/placeholder.svg"
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
-                        {sectionPreview.video_url && (
+                        {categoryPreview.video_url && (
                           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <SectionVideoPreview
-                              videoUrl={sectionPreview.video_url}
+                            <CategoryVideoPreview
+                              videoUrl={categoryPreview.video_url}
                             />
                           </div>
                         )}
                       </div>
                     </div>
-                    {sectionPreview.video_url && (
+                    {categoryPreview.video_url && (
                       <div className="absolute top-2 left-2 z-20 bg-background/90 backdrop-blur rounded-sm px-2 py-1 pointer-events-none">
                         <Video className="h-4 w-4 text-foreground" />
                       </div>

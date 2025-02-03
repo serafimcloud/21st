@@ -1,4 +1,4 @@
-import { Card, CardHeader } from "@/components/ui/card"
+import { CardHeader } from "@/components/ui/card"
 
 export function ComponentCardSkeleton() {
   return (
@@ -23,7 +23,7 @@ export function ComponentCardSkeleton() {
   )
 }
 
-export function SectionCardSkeleton() {
+export function CategoryCardSkeleton() {
   return (
     <div className="p-[1px] animate-pulse">
       <div className="relative aspect-[4/3] mb-3">

@@ -7,14 +7,14 @@ type NavigationItem = {
   demoId?: number
 }
 
-type NavigationSection = {
+type NavigationCategory = {
   title: string
   icon: any
   items: NavigationItem[]
   isNew?: boolean
 }
 
-const landingPageSections: NavigationItem[] = [
+const landing: NavigationItem[] = [
   { title: "Announcements", href: "/s/announcement", demoId: 541 },
   { title: "Backgrounds", href: "/s/background", demoId: 1120 },
   { title: "Borders", href: "/s/border", demoId: 1135 },
@@ -36,7 +36,7 @@ const landingPageSections: NavigationItem[] = [
   { title: "Videos", href: "/s/video", demoId: 651 },
 ].sort((a, b) => a.title.localeCompare(b.title))
 
-const uiComponents: NavigationItem[] = [
+const ui: NavigationItem[] = [
   { title: "Accordions", href: "/s/accordion", demoId: 1517 },
   { title: "AI Chats", href: "/s/ai-chat", isNew: true, demoId: 1437 },
   { title: "Alerts", href: "/s/alert", demoId: 341 },
@@ -83,15 +83,15 @@ const uiComponents: NavigationItem[] = [
   { title: "Tooltips", href: "/s/tooltip", demoId: 230 },
 ].sort((a, b) => a.title.localeCompare(b.title))
 
-export const sections: NavigationSection[] = [
+export const categories: NavigationCategory[] = [
   {
     title: "Landing Pages",
     icon: Dock,
-    items: landingPageSections,
+    items: landing,
   },
   {
     title: "UI Elements",
     icon: Box,
-    items: uiComponents,
+    items: ui,
   },
 ]

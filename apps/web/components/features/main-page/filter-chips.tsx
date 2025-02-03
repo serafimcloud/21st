@@ -1,13 +1,13 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { sections } from "@/lib/navigation"
+import { categories } from "@/lib/navigation"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { useEffect, useRef, useState } from "react"
 
 interface FilterChipsProps {
-  activeTab: "sections" | "components"
+  activeTab: "categories" | "components"
   selectedFilter: string
   onFilterChange: (filter: string) => void
 }
@@ -46,7 +46,7 @@ export function FilterChips({
   }, [])
 
   const renderContent = () => {
-    if (activeTab === "sections") {
+    if (activeTab === "categories") {
       return (
         <>
           <Button
@@ -62,16 +62,16 @@ export function FilterChips({
             All
           </Button>
           <Button
-            onClick={() => onFilterChange("ui")}
-            variant={selectedFilter === "ui" ? "default" : "outline"}
+            onClick={() => onFilterChange("ui-elements")}
+            variant={selectedFilter === "ui-elements" ? "default" : "outline"}
             className="rounded-full"
             size="sm"
           >
             UI Elements
           </Button>
           <Button
-            onClick={() => onFilterChange("landing")}
-            variant={selectedFilter === "landing" ? "default" : "outline"}
+            onClick={() => onFilterChange("landing-pages")}
+            variant={selectedFilter === "landing-pages" ? "default" : "outline"}
             className="rounded-full"
             size="sm"
           >
@@ -82,10 +82,10 @@ export function FilterChips({
     }
 
     if (activeTab === "components") {
-      const allTags = sections
+      const allTags = categories
         .reduce(
-          (acc, section) => {
-            section.items.forEach((item) => {
+          (acc, category) => {
+            category.items.forEach((item) => {
               if (!acc.some((tag) => tag.href === item.href)) {
                 acc.push(item)
               }

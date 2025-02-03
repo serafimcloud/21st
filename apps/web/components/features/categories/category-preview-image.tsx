@@ -3,19 +3,19 @@
 import Image from "next/image"
 import { useState } from "react"
 
-interface SectionPreviewImageProps {
+interface CategoryPreviewImageProps {
   src: string
   alt: string
   fallbackSrc?: string
   className?: string
 }
 
-export function SectionPreviewImage({
+export function CategoryPreviewImage({
   src,
   alt,
   fallbackSrc = "/placeholder.svg",
   className,
-}: SectionPreviewImageProps) {
+}: CategoryPreviewImageProps) {
   const [error, setError] = useState(false)
 
   return (
@@ -31,4 +31,4 @@ export function SectionPreviewImage({
   )
 }
 
-export default SectionPreviewImage 
+export default CategoryPreviewImage

@@ -3,34 +3,34 @@
 import React, { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
-import { SectionCard } from "./section-card"
-import { SectionCardSkeleton } from "@/components/ui/skeletons"
-import { sections } from "@/lib/navigation"
+import { CategoryCard } from "./category-card"
+import { CategoryCardSkeleton } from "@/components/ui/skeletons"
+import { categories } from "@/lib/navigation"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
-interface SectionsListProps {
+interface CategoriesListProps {
   className?: string
   skeletonCount?: number
   filter?: string
 }
 
-export function SectionsList({
+export function CategoriesList({
   className,
   filter = "all",
   skeletonCount = 40,
-}: SectionsListProps) {
+}: CategoriesListProps) {
   const supabase = useClerkSupabaseClient()
 
   const allDemoIds = useMemo(() => {
-    return sections
-      .flatMap((section) => section.items.map((item) => item.demoId))
+    return categories
+      .flatMap((category) => category.items.map((item) => item.demoId))
       .filter((id): id is number => id !== undefined)
   }, [])
 
-  const { data: sectionsData, isLoading } = useQuery({
-    queryKey: ["sections-previews"],
+  const { data: categoriesData, isLoading } = useQuery({
+    queryKey: ["categories-previews"],
     queryFn: async () => {
-      const { data: sectionPreviews, error } = await supabase.rpc(
+      const { data: categoryPreviews, error } = await supabase.rpc(
         "get_section_previews",
         {
           p_demo_ids: allDemoIds,
@@ -39,11 +39,11 @@ export function SectionsList({
 
       if (error) throw error
 
-      const sectionsWithPreviews = sections
-        .flatMap((section) =>
-          section.items.map((item) => {
+      const categoriesWithPreviews = categories
+        .flatMap((category) =>
+          category.items.map((item) => {
             if (!item.demoId) return null
-            const preview = sectionPreviews?.find(
+            const preview = categoryPreviews?.find(
               (s) => s.demo_id === item.demoId,
             )
             if (!preview) return null
@@ -57,7 +57,10 @@ export function SectionsList({
               component_slug: item.href.replace("/s/", ""),
               preview_url: preview.preview_url,
               video_url: preview.video_url || "",
-              section_type: section.title === "UI elements" ? "ui" : "landing",
+              category_type:
+                category.title === "UI Elements"
+                  ? "ui-elements"
+                  : "landing-pages",
               user_data: {},
               downloads_count: 0,
               view_count: 0,
@@ -66,34 +69,34 @@ export function SectionsList({
         )
         .filter((item): item is NonNullable<typeof item> => item !== null)
 
-      return sectionsWithPreviews
+      return categoriesWithPreviews
     },
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
   })
 
-  const { uiSections, landingSections } = useMemo(() => {
-    if (!sectionsData) return { uiSections: [], landingSections: [] }
+  const { uiCategories, landingCategories } = useMemo(() => {
+    if (!categoriesData) return { uiCategories: [], landingCategories: [] }
     return {
-      uiSections: sectionsData.filter(
-        (section) => section.section_type === "ui",
+      uiCategories: categoriesData.filter(
+        (category) => category.category_type === "ui-elements",
       ),
-      landingSections: sectionsData.filter(
-        (section) => section.section_type === "landing",
+      landingCategories: categoriesData.filter(
+        (category) => category.category_type === "landing-pages",
       ),
     }
-  }, [sectionsData])
+  }, [categoriesData])
 
-  const sectionsToShow = useMemo(() => {
+  const categoriesToShow = useMemo(() => {
     switch (filter) {
-      case "ui":
-        return uiSections
-      case "landing":
-        return landingSections
+      case "ui-elements":
+        return uiCategories
+      case "landing-pages":
+        return landingCategories
       default:
-        return sectionsData || []
+        return categoriesData || []
     }
-  }, [filter, uiSections, landingSections, sectionsData])
+  }, [filter, uiCategories, landingCategories, categoriesData])
 
   return (
     <div
@@ -105,16 +108,16 @@ export function SectionsList({
       {isLoading ? (
         <>
           {Array.from({ length: skeletonCount }).map((_, i) => (
-            <SectionCardSkeleton key={i} />
+            <CategoryCardSkeleton key={i} />
           ))}
         </>
       ) : (
-        sectionsToShow.map((section) => (
-          <SectionCard key={`${section.tag_id}`} section={section} />
+        categoriesToShow.map((category) => (
+          <CategoryCard key={`${category.tag_id}`} category={category} />
         ))
       )}
     </div>
   )
 }
 
-export default SectionsList
+export default CategoriesList

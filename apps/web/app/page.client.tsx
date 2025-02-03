@@ -9,7 +9,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { SortOption, SORT_OPTIONS } from "@/types/global"
 import { sortByAtom } from "@/components/features/main-page/main-page-header"
 import { ComponentsList } from "@/components/ui/items-list"
-import { SectionsList } from "@/components/features/sections/sections-list"
+import { CategoriesList } from "@/components/features/categories/category-list"
 import { ComponentsHeader } from "@/components/features/main-page/main-page-header"
 import { FilterChips } from "@/components/features/main-page/filter-chips"
 import { DesignEngineersList } from "@/components/features/design-engineers/design-engineers-list"
@@ -21,10 +21,10 @@ export function HomePageClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<
-    "sections" | "components" | "authors" | "pro"
+    "categories" | "components" | "authors" | "pro"
   >(
     (searchParams.get("tab") as
-      | "sections"
+      | "categories"
       | "components"
       | "authors"
       | "pro") || "components",
@@ -58,7 +58,7 @@ export function HomePageClient() {
   }, [sortBy, queryClient])
 
   const handleTabChange = (
-    newTab: "sections" | "components" | "authors" | "pro",
+    newTab: "categories" | "components" | "authors" | "pro",
   ) => {
     setActiveTab(newTab)
     setSelectedFilter("all")
@@ -66,7 +66,7 @@ export function HomePageClient() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "sections":
+      case "categories":
         return (
           <>
             <FilterChips
@@ -82,7 +82,7 @@ export function HomePageClient() {
                 ease: "easeOut",
               }}
             >
-              <SectionsList filter={selectedFilter} />
+              <CategoriesList filter={selectedFilter} />
             </motion.div>
           </>
         )
