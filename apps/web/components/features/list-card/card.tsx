@@ -46,12 +46,12 @@ export function ComponentCard({
   const viewCount = component.view_count || 0
 
   return (
-    <div className="overflow-hidden">
+    <div className="p-[1px]">
       <Link href={componentUrl} className="block cursor-pointer">
         <div className="relative aspect-[4/3] mb-3 group">
-          <div className="absolute inset-0 rounded-lg overflow-hidden">
-            <div className="relative w-full h-full">
-              <div className="absolute inset-0" style={{ margin: "-1px" }}>
+          <div className="absolute inset-0">
+            <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
+              <div className="absolute inset-0">
                 <ComponentPreviewImage
                   src={
                     isDemo
@@ -60,14 +60,14 @@ export function ComponentCard({
                   }
                   alt={component.name || ""}
                   fallbackSrc="/placeholder.svg"
-                  className="w-full h-full object-cover"
+                  className="rounded-lg"
                 />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
+              <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5 rounded-lg" />
+              {videoUrl && isDemoWithComponent && (
+                <ComponentVideoPreview component={component} demo={component} />
+              )}
             </div>
-            {videoUrl && isDemoWithComponent && (
-              <ComponentVideoPreview component={component} demo={component} />
-            )}
           </div>
           {videoUrl && (
             <div

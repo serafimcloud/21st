@@ -31,7 +31,11 @@ export function UserAvatar({
 }: UserAvatarProps) {
   const avatarContent = (
     <Avatar
-      className={cn("group", isClickable && "cursor-pointer", className)}
+      className={cn(
+        "group shadow-base",
+        isClickable && "cursor-pointer",
+        className,
+      )}
       style={{ width: size, height: size }}
     >
       <AvatarImage src={src || "/placeholder.svg"} alt={alt || "User avatar"} />
@@ -76,7 +80,7 @@ export function UserAvatar({
           className="no-underline cursor-pointer"
         >
           <div className="flex gap-4">
-            <Avatar className="h-12 w-12">
+            <Avatar className="h-12 w-12 shadow-base">
               <AvatarImage
                 src={
                   user.display_image_url || user.image_url || "/placeholder.svg"

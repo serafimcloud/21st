@@ -62,38 +62,36 @@ export function ProList({ className }: ProListProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 list-none pb-10">
       {publishers?.map((publisher) => (
-        <div className="flex flex-col group" key={publisher.id}>
+        <div className="p-[1px]" key={publisher.id}>
           <Link
             href={publisher.pro_referral_url!!}
             target="_blank"
             rel="noopener noreferrer"
             className="block cursor-pointer"
           >
-            <div className="relative aspect-[16/9] mb-3 group">
-              <div className="absolute inset-0 rounded-lg overflow-hidden">
-                <div className="relative w-full h-full">
-                  <div className="absolute inset-0" style={{ margin: "-1px" }}>
-                    {publisher.image ? (
-                      <Image
-                        src={publisher.image}
-                        alt={`${publisher.name || publisher.username}'s Pro Components`}
-                        fill
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                        <span className="text-gray-400">
-                          No preview available
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
+            <div className="relative aspect-[4/3] mb-3 group">
+              <div className="absolute inset-0">
+                <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
+                  {publisher.image ? (
+                    <Image
+                      src={publisher.image}
+                      alt={`${publisher.name || publisher.username}'s Pro Components`}
+                      fill
+                      className="object-cover object-top rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
+                      <span className="text-gray-400">
+                        No preview available
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5 rounded-lg" />
                 </div>
               </div>
             </div>
           </Link>
-          <div className="flex items-center space-x-3">
+          <div className="flex space-x-3 items-center">
             <UserAvatar
               src={
                 publisher.display_image_url ||
@@ -106,7 +104,7 @@ export function ProList({ className }: ProListProps) {
                 publisher.username ||
                 ""
               }
-              size={24}
+              size={32}
               user={publisher}
               isClickable
             />

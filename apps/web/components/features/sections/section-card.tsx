@@ -17,20 +17,18 @@ export const SectionCard = memo(function SectionCard({
   const sectionUrl = `/s/${section.tag_slug}`
 
   return (
-    <div className="overflow-hidden">
+    <div className="p-[1px]">
       <Link href={sectionUrl} className="block cursor-pointer">
         <div className="relative aspect-[4/3] mb-3 group">
-          <div className="absolute inset-0 rounded-lg overflow-hidden">
-            <div className="relative w-full h-full">
-              <div className="absolute inset-0" style={{ margin: "-1px" }}>
-                <SectionPreviewImage
-                  src={section.preview_url || "/placeholder.svg"}
-                  alt={section.tag_name || ""}
-                  fallbackSrc="/placeholder.svg"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5" />
+          <div className="absolute inset-0">
+            <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
+              <SectionPreviewImage
+                src={section.preview_url || "/placeholder.svg"}
+                alt={section.tag_name || ""}
+                fallbackSrc="/placeholder.svg"
+                className="w-full h-full object-cover rounded-lg"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5 rounded-lg" />
               {section.video_url && (
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <SectionVideoPreview videoUrl={section.video_url} />
