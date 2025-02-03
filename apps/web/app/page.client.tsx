@@ -27,7 +27,7 @@ export function HomePageClient() {
       | "sections"
       | "components"
       | "authors"
-      | "pro") || "sections",
+      | "pro") || "components",
   )
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
