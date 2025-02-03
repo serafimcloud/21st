@@ -58,9 +58,9 @@ export function CategoriesList({
               preview_url: preview.preview_url,
               video_url: preview.video_url || "",
               category_type:
-                category.title === "UI Elements"
-                  ? "ui-elements"
-                  : "landing-pages",
+                category.title === "UI Components"
+                  ? "ui"
+                  : "marketing",
               user_data: {},
               downloads_count: 0,
               view_count: 0,
@@ -75,28 +75,28 @@ export function CategoriesList({
     gcTime: 1000 * 60 * 30,
   })
 
-  const { uiCategories, landingCategories } = useMemo(() => {
-    if (!categoriesData) return { uiCategories: [], landingCategories: [] }
+  const { uiCategories, marketingCategories } = useMemo(() => {
+    if (!categoriesData) return { uiCategories: [], marketingCategories: [] }
     return {
       uiCategories: categoriesData.filter(
-        (category) => category.category_type === "ui-elements",
+        (category) => category.category_type === "ui",
       ),
-      landingCategories: categoriesData.filter(
-        (category) => category.category_type === "landing-pages",
+      marketingCategories: categoriesData.filter(
+        (category) => category.category_type === "marketing",
       ),
     }
   }, [categoriesData])
 
   const categoriesToShow = useMemo(() => {
     switch (filter) {
-      case "ui-elements":
+      case "ui":
         return uiCategories
-      case "landing-pages":
-        return landingCategories
+      case "marketing":
+        return marketingCategories
       default:
         return categoriesData || []
     }
-  }, [filter, uiCategories, landingCategories, categoriesData])
+  }, [filter, uiCategories, marketingCategories, categoriesData])
 
   return (
     <div

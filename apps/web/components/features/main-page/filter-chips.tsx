@@ -62,20 +62,20 @@ export function FilterChips({
             All
           </Button>
           <Button
-            onClick={() => onFilterChange("ui-elements")}
-            variant={selectedFilter === "ui-elements" ? "default" : "outline"}
+            onClick={() => onFilterChange("ui")}
+            variant={selectedFilter === "ui" ? "default" : "outline"}
             className="rounded-full"
             size="sm"
           >
-            UI Elements
+            UI Components
           </Button>
           <Button
-            onClick={() => onFilterChange("landing-pages")}
-            variant={selectedFilter === "landing-pages" ? "default" : "outline"}
+            onClick={() => onFilterChange("marketing")}
+            variant={selectedFilter === "marketing" ? "default" : "outline"}
             className="rounded-full"
             size="sm"
           >
-            Landing Pages
+            Marketing Blocks
           </Button>
         </>
       )

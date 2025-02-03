@@ -14,7 +14,7 @@ type NavigationCategory = {
   isNew?: boolean
 }
 
-const landing: NavigationItem[] = [
+const marketing: NavigationItem[] = [
   { title: "Announcements", href: "/s/announcement", demoId: 541 },
   { title: "Backgrounds", href: "/s/background", demoId: 1120 },
   { title: "Borders", href: "/s/border", demoId: 1135 },
@@ -85,12 +85,12 @@ const ui: NavigationItem[] = [
 
 export const categories: NavigationCategory[] = [
   {
-    title: "Landing Pages",
+    title: "Marketing Blocks",
     icon: Dock,
-    items: landing,
+    items: marketing,
   },
   {
-    title: "UI Elements",
+    title: "UI Components",
     icon: Box,
     items: ui,
   },
