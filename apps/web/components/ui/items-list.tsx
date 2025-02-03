@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import React from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import { ComponentCard } from "../features/list-card/card"
@@ -19,8 +19,6 @@ import { ComponentCardSkeleton } from "./skeletons"
 type ComponentOrDemo =
   | DemoWithComponent
   | (Component & { user: User } & { view_count?: number })
-
-type ListType = "main" | "tag" | "user" | "search"
 
 interface BaseListProps {
   className?: string
@@ -191,13 +189,14 @@ function useUserDemos(
     queryFn: async () => {
       let data: any[] = []
       switch (tab) {
-        case "published":
+        case "published": {
           const { data: userDemos } = await supabase.rpc("get_user_demos", {
             p_user_id: userId,
           })
           data = userDemos || []
           break
-        case "hunted":
+        }
+        case "hunted": {
           const { data: huntedComponents } = await supabase.rpc(
             "get_hunted_components",
             {
@@ -206,6 +205,7 @@ function useUserDemos(
           )
           data = huntedComponents || []
           break
+        }
       }
       return {
         data: data.map(transformDemoResult),
@@ -422,14 +422,12 @@ export function ComponentsList({
     }
   }, [hasNextPage, isFetching, fetchNextPage])
 
-  // Очищаем поисковый запрос при размонтировании
   React.useEffect(() => {
     return () => {
       setLocalSearchQuery("")
     }
   }, [setLocalSearchQuery])
 
-  // Заменяем все использования searchQuery на localSearchQuery
   const components = React.useMemo(() => {
     if (props.type === "tag") {
       return filterComponentsBySearch(rawComponents, localSearchQuery)
@@ -446,7 +444,6 @@ export function ComponentsList({
     router.push(`/q/${encodeURIComponent(localSearchQuery)}`)
   }
 
-  // Добавляем хоткей для глобального поиска
   useHotkeys(
     "mod+enter",
     (e) => {
@@ -506,7 +503,10 @@ export function ComponentsList({
               />
             ))}
             {hasNextPage && (
-              <div ref={loadMoreRef} className="col-span-full h-10 -z-10 -mt-5" />
+              <div
+                ref={loadMoreRef}
+                className="col-span-full h-10 -z-10 -mt-5"
+              />
             )}
           </>
         )}

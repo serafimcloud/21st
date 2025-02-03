@@ -31,7 +31,6 @@ export function HomePageClient() {
   )
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
-  // Обновляем URL при изменении параметров
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", activeTab)
@@ -43,7 +42,6 @@ export function HomePageClient() {
     router.push(`?${params.toString()}`, { scroll: false })
   }, [activeTab, sortBy, router, searchParams])
 
-  // Инициализируем sortBy из URL при загрузке
   useEffect(() => {
     const sortFromUrl = searchParams.get("sort") as SortOption
     if (sortFromUrl && Object.keys(SORT_OPTIONS).includes(sortFromUrl)) {
@@ -113,7 +111,6 @@ export function HomePageClient() {
         <ComponentsHeader
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          filtersDisabled={false}
         />
         {renderContent()}
       </div>

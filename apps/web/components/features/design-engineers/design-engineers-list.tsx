@@ -21,8 +21,8 @@ export function DesignEngineersList({ className }: DesignEngineersListProps) {
       const { data } = await supabaseWithAdminAccess.rpc("get_active_authors")
       return data || []
     },
-    staleTime: 1000 * 60 * 5, // 5 минут
-    gcTime: 1000 * 60 * 30, // 30 минут
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   })
 
   if (isLoading) {

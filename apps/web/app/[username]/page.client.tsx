@@ -16,7 +16,6 @@ import { useEffect } from "react"
 import { AMPLITUDE_EVENTS } from "@/lib/amplitude"
 import { userTabAtom } from "@/components/features/user-page/user-page-header"
 import {
-  Component,
   DemoWithComponent,
   User,
   HuntedComponents,

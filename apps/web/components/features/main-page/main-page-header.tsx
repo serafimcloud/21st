@@ -1,10 +1,6 @@
-"use client"
-
-import { useEffect } from "react"
 import { atom, useAtom } from "jotai"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { ArrowUpDown } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -23,11 +19,9 @@ import { setCookie } from "@/lib/cookies"
 export const sortByAtom = atom<SortOption>("recommended")
 
 export function ComponentsHeader({
-  filtersDisabled,
   activeTab,
   onTabChange,
 }: {
-  filtersDisabled: boolean
   activeTab: "sections" | "components" | "authors" | "pro"
   onTabChange: (tab: "sections" | "components" | "authors" | "pro") => void
 }) {

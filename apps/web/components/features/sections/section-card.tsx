@@ -1,4 +1,3 @@
-// apps/web/components/features/section-card/section-card.tsx
 "use client"
 
 import { memo } from "react"
@@ -7,7 +6,6 @@ import Link from "next/link"
 import { Section } from "@/types/global"
 import SectionPreviewImage from "./section-preview-image"
 import SectionVideoPreview from "./section-video-preview"
-import { SectionCardSkeleton } from "../../ui/skeletons"
 
 interface SectionCardProps {
   section: Section

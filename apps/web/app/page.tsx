@@ -3,8 +3,6 @@ import { Metadata } from "next"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { SortOption } from "@/types/global"
-
 import { Header } from "@/components/ui/header.client"
 import { HeroSection } from "@/components/ui/hero-section"
 import { NewsletterDialog } from "@/components/ui/newsletter-dialog"
@@ -72,9 +70,6 @@ export default async function HomePage() {
   try {
     const cookieStore = cookies()
     const shouldShowHero = !cookieStore.has("has_visited")
-    const savedSortBy = cookieStore.get("saved_sort_by")?.value as
-      | SortOption
-      | undefined
 
     if (shouldShowHero) {
       return (

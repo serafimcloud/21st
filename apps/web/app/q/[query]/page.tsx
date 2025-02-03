@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 import { SortOption } from "@/types/global"
 import { Header } from "@/components/ui/header.client"
 import { NewsletterDialog } from "@/components/ui/newsletter-dialog"
-import { SearchPageClient } from "./page.client"
+import { SearchPageClient } from "@/app/q/[query]/page.client"
 
 export const dynamic = "force-dynamic"
 

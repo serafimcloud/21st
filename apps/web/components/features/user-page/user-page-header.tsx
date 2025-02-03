@@ -36,7 +36,7 @@ function useUserComponentsCounts(userId: string) {
         liked_count: number
       }
     },
-    staleTime: 30 * 1000, // 30 секунд
+    staleTime: 30 * 1000,
     retry: false,
   })
 }
@@ -85,7 +85,6 @@ export function UserComponentsHeader({
   const [activeTab, setActiveTab] = useAtom(userTabAtom)
   const [searchQuery, setSearchQuery] = useAtom(userPageSearchAtom)
   const inputRef = useRef<HTMLInputElement>(null)
-  const isMobile = useMediaQuery("(max-width: 768px)")
   const { data: counts, isLoading } = useUserComponentsCounts(userId)
 
   useTrackSearchQueries()

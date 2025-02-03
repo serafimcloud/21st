@@ -29,6 +29,8 @@ export const transformDemoResult = (result: any): DemoWithComponent => {
     user: result.user_data as User,
     tags: (result.tags as Tag[]) || [],
     view_count: result.view_count,
+    embedding: result.embedding || null,
+    embedding_oai: result.embedding_oai || null,
   }
   return transformed
 }

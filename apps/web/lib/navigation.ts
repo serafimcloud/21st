@@ -25,6 +25,7 @@ const landingPageSections: NavigationItem[] = [
   { title: "Features", href: "/s/features", demoId: 1521 },
   { title: "Footer", href: "/s/footer", demoId: 1520 },
   { title: "Hero", href: "/s/hero", demoId: 1526 },
+  { title: "Hooks", href: "/s/hook", demoId: 915 },
   { title: "Images", href: "/s/image", demoId: 1018 },
   { title: "Maps", href: "/s/map", demoId: 999 },
   { title: "Navigation Menus", href: "/s/navbar-navigation", demoId: 1432 },

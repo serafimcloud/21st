@@ -117,7 +117,7 @@ export function Header({
                   asChild
                   className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
                 >
-                  <Link href="/publish">Publish component</Link>
+                  <Link href="/publish">Add new</Link>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

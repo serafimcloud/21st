@@ -1,4 +1,3 @@
-// apps/web/components/ui/sections-list.tsx
 "use client"
 
 import React, { useMemo } from "react"
@@ -22,7 +21,6 @@ export function SectionsList({
 }: SectionsListProps) {
   const supabase = useClerkSupabaseClient()
 
-  // Собираем все ID демо из всех секций один раз
   const allDemoIds = useMemo(() => {
     return sections
       .flatMap((section) => section.items.map((item) => item.demoId))
@@ -41,7 +39,6 @@ export function SectionsList({
 
       if (error) throw error
 
-      // Объединяем данные из навигации с превью
       const sectionsWithPreviews = sections
         .flatMap((section) =>
           section.items.map((item) => {
@@ -71,11 +68,10 @@ export function SectionsList({
 
       return sectionsWithPreviews
     },
-    staleTime: 1000 * 60 * 5, // 5 минут
-    gcTime: 1000 * 60 * 30, // 30 минут
+    staleTime: 1000 * 60 * 5, 
+    gcTime: 1000 * 60 * 30,
   })
 
-  // Разделяем секции по типам при первом получении данных
   const { uiSections, landingSections } = useMemo(() => {
     if (!sectionsData) return { uiSections: [], landingSections: [] }
     return {
@@ -88,7 +84,6 @@ export function SectionsList({
     }
   }, [sectionsData])
 
-  // Выбираем нужный массив секций без дополнительной фильтрации
   const sectionsToShow = useMemo(() => {
     switch (filter) {
       case "ui":
