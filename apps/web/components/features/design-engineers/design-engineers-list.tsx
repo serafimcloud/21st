@@ -27,7 +27,6 @@ export function DesignEngineersList({
     useInfiniteQuery({
       queryKey: ["active-authors"],
       queryFn: async ({ pageParam = 0 }) => {
-        console.log("🔍 Fetching page:", pageParam)
         const { data, error } = await supabaseWithAdminAccess.rpc(
           "get_active_authors_with_top_components",
           {
@@ -57,15 +56,6 @@ export function DesignEngineersList({
           }
         : undefined,
       getNextPageParam: (lastPage, allPages) => {
-        console.log("📝 getNextPageParam called with:", {
-          lastPageData: lastPage?.data?.length,
-          lastPageTotalCount: lastPage?.total_count,
-          allPagesCount: allPages.length,
-          loadedItemsCount: allPages.reduce(
-            (sum, page) => sum + page.data.length,
-            0,
-          ),
-        })
 
         if (!lastPage?.data || lastPage.data.length === 0) return undefined
         const loadedCount = allPages.reduce(
@@ -83,7 +73,6 @@ export function DesignEngineersList({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && hasNextPage && !isFetching) {
-          console.log("🔄 Loading next page...")
           fetchNextPage()
         }
       },
@@ -105,7 +94,7 @@ export function DesignEngineersList({
   if (isLoading) {
     return (
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 list-none pb-10 ${className || ""}`}
+        className={`grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 list-none pb-10 ${className || ""}`}
       >
         {Array(10)
           .fill(0)

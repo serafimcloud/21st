@@ -40,29 +40,40 @@ export function CategoryCardSkeleton() {
 
 export function DesignEngineerCardSkeleton() {
   return (
-    <div className="p-[1px] animate-pulse">
-      <div className="relative bg-background rounded-lg shadow-base overflow-hidden h-[200px]">
-        <CardHeader className="relative h-full">
-          <div className="flex items-start gap-4 h-full">
-            <div className="h-12 w-12 rounded-full bg-muted shadow-base shrink-0" />
-            <div className="flex flex-col flex-1 h-full">
-              <div className="space-y-2 mb-4">
-                <div className="h-6 bg-muted rounded w-1/2" />
-                <div className="h-10 bg-muted rounded w-3/4" />
-              </div>
-              <div className="mt-auto space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-muted" />
-                  <div className="h-4 bg-muted rounded w-24" />
+    <div className="block p-[1px] animate-pulse">
+      <div className="relative bg-background rounded-lg shadow-base p-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-background to-accent/10" />
+
+        <div className="relative flex flex-col lg:flex-row gap-6">
+          {/* Author Info Section */}
+          <div className="w-full lg:w-1/2 relative z-10">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-full bg-muted shadow-base shrink-0" />
+              <div className="flex flex-col flex-1">
+                <div className="flex flex-col">
+                  <div className="h-5 bg-muted rounded w-1/2" />
+                  <div className="space-y-1.5 mt-3">
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-muted" />
-                  <div className="h-4 bg-muted rounded w-28" />
+                <div className="space-y-1.5 mt-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-muted" />
+                    <div className="h-4 bg-muted rounded w-24" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-muted" />
+                    <div className="h-4 bg-muted rounded w-28" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </CardHeader>
+
+          {/* Components Cards Section - Empty Space */}
+          <div className="w-full lg:w-1/2 relative min-h-[150px]" />
+        </div>
       </div>
     </div>
   )

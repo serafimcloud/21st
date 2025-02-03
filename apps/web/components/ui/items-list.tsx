@@ -65,7 +65,6 @@ function useMainDemos(
   return useInfiniteQuery({
     queryKey: ["filtered-demos", sortBy, tagSlug] as const,
     queryFn: async ({ pageParam = 0 }) => {
-      console.log("🔍 Fetching page:", pageParam)
       const { data: filteredData, error } = await supabase.rpc(
         "get_demos_new",
         {
@@ -79,19 +78,7 @@ function useMainDemos(
 
       if (error) throw error
 
-      console.log("📊 Raw data from API:", {
-        firstItem: filteredData?.[0],
-        totalCount: filteredData?.[0]?.total_count,
-        itemsCount: filteredData?.length,
-      })
-
       const transformedData = (filteredData || []).map(transformDemoResult)
-
-      console.log("🔄 After transformation:", {
-        firstItem: transformedData[0],
-        itemsCount: transformedData.length,
-        totalCount: (filteredData?.[0] as any)?.total_count,
-      })
 
       return {
         data: transformedData,
@@ -110,28 +97,11 @@ function useMainDemos(
         }
       : undefined,
     getNextPageParam: (lastPage, allPages) => {
-      console.log("📝 getNextPageParam called with:", {
-        lastPageData: lastPage?.data?.length,
-        lastPageTotalCount: lastPage?.total_count,
-        allPagesCount: allPages.length,
-        loadedItemsCount: allPages.reduce(
-          (sum, page) => sum + page.data.length,
-          0,
-        ),
-      })
-
       if (!lastPage?.data || lastPage.data.length === 0) return undefined
       const loadedCount = allPages.reduce(
         (sum, page) => sum + page.data.length,
         0,
       )
-      const hasNextPage = loadedCount < lastPage.total_count
-      console.log("📊 Pagination decision:", {
-        loadedCount,
-        totalCount: lastPage.total_count,
-        hasNextPage,
-        nextPageParam: hasNextPage ? allPages.length : undefined,
-      })
       return loadedCount < lastPage.total_count ? allPages.length : undefined
     },
     initialPageParam: 0,
@@ -403,7 +373,6 @@ export function ComponentsList({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && hasNextPage && !isFetching) {
-          console.log("🔄 Loading next page...")
           fetchNextPage()
         }
       },
