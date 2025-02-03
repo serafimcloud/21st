@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { Eye, Download } from "lucide-react"
+import Image from "next/image"
+import { Eye, Download, Video } from "lucide-react"
 import { CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { ComponentCard } from "../list-card/card"
@@ -19,7 +20,6 @@ export function DesignEngineerCard({ author }: DesignEngineerCardProps) {
   const totalUsages = Number(author.total_usages) || 0
   const totalDownloads = Number(author.total_downloads) || 0
   const topComponents = (author.top_components || []) as DemoWithComponent[]
-
   return (
     <div className="block p-[1px]">
       <div className="group relative bg-background rounded-lg shadow-base p-6 overflow-hidden">
@@ -87,7 +87,7 @@ export function DesignEngineerCard({ author }: DesignEngineerCardProps) {
           {/* Components Cards Section */}
           {topComponents.length > 0 && (
             <div className="w-full lg:w-1/2 relative min-h-[150px] flex justify-center">
-              <div className="absolute bottom-0 translate-y-12 flex items-end">
+              <div className="absolute bottom-0 translate-y-12 lg:translate-x-5 flex items-end">
                 {topComponents.map((demo, index) => (
                   <Link
                     key={demo.id}
@@ -96,40 +96,35 @@ export function DesignEngineerCard({ author }: DesignEngineerCardProps) {
                       block
                       transition-all duration-300 ease-out
                       hover:z-10
-                      hover:-translate-y-3
-                      ${index === 0 ? "mr-[-100px]" : ""}
-                      w-[220px]
+                      hover:-translate-y-5
+                      ${index === 0 ? "mr-[-110px]" : ""}
+                      w-[240px]
                       relative
                     `}
                   >
-                    <div className="relative aspect-[4/3] mb-3 group">
+                    <div className="relative aspect-[4/3] mb-3">
                       <div className="absolute inset-0">
-                        <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden hover:shadow-lg transition-shadow">
+                        <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden hover:z-10 group/card">
                           <div className="absolute inset-0">
-                            {demo.preview_url && demo.preview_url !== null ? (
-                              <img
-                                src={demo.preview_url}
-                                alt={demo.name || ""}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <img
-                                src="/placeholder.svg"
-                                alt={demo.name || ""}
-                                className="w-full h-full object-cover"
-                              />
-                            )}
+                            <Image
+                              src={demo.preview_url || "/placeholder.svg"}
+                              alt={demo.name || ""}
+                              className="object-cover"
+                              fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              priority={index === 0}
+                            />
                           </div>
                           {demo.video_url && (
-                            <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity">
+                            <div className="absolute inset-0">
                               <ComponentVideoPreview
                                 component={demo}
                                 demo={demo}
                               />
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent">
-                            <div className="absolute bottom-0 left-0 right-0 p-3">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent pointer-events-none opacity-100 group-hover/card:opacity-0 transition-opacity duration-300">
+                            <div className="absolute bottom-2 left-0 right-0 p-3">
                               <h3 className="text-white font-medium text-sm mb-0.5 line-clamp-1">
                                 {demo.component?.name}
                               </h3>
