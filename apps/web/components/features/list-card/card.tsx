@@ -63,7 +63,7 @@ export function ComponentCard({
                   className="rounded-lg"
                 />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5 rounded-lg" />
+              <div className="absolute inset-0 rounded-lg" />
               {videoUrl && isDemoWithComponent && (
                 <ComponentVideoPreview component={component} demo={component} />
               )}
