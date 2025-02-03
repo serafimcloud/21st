@@ -28,7 +28,7 @@ export const CategoryCard = memo(function CategoryCard({
                 fallbackSrc="/placeholder.svg"
                 className="w-full h-full object-cover rounded-lg"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-foreground/0 to-foreground/5 rounded-lg" />
+              <div className="absolute inset-0 rounded-lg" />
               {category.video_url && (
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <CategoryVideoPreview videoUrl={category.video_url} />

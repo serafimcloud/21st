@@ -58,9 +58,7 @@ export function CategoriesList({
               preview_url: preview.preview_url,
               video_url: preview.video_url || "",
               category_type:
-                category.title === "UI Components"
-                  ? "ui"
-                  : "marketing",
+                category.title === "UI Components" ? "ui" : "marketing",
               user_data: {},
               downloads_count: 0,
               view_count: 0,
@@ -88,14 +86,18 @@ export function CategoriesList({
   }, [categoriesData])
 
   const categoriesToShow = useMemo(() => {
+    let result
     switch (filter) {
       case "ui":
-        return uiCategories
+        result = uiCategories
+        break
       case "marketing":
-        return marketingCategories
+        result = marketingCategories
+        break
       default:
-        return categoriesData || []
+        result = categoriesData || []
     }
+    return result.sort((a, b) => a.tag_name.localeCompare(b.tag_name))
   }, [filter, uiCategories, marketingCategories, categoriesData])
 
   return (
