@@ -29,7 +29,7 @@ export function SearchPageClient({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="container mx-auto mt-20 px-4 max-w-[1200px]"
+      className="container mx-auto mt-20 px-4 max-w-[3680px]"
     >
       <div className="flex flex-col">
         <div className="mb-8">

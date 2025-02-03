@@ -274,6 +274,24 @@ iframe {
     --sidebar-ring: 217.2 91.2% 59.8%;
     --border-gradient-mid: rgba(255, 255, 255, 0.8);
   }
+
+  @media (min-width: 720px) {
+    .min-720\: {
+      --container-x-padding: 24px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .min-1280\: {
+      --container-x-padding: 32px;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .min-1536\: {
+      --container-x-padding: 80px;
+    }
+  }
 }
 
 @layer base {

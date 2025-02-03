@@ -12,6 +12,16 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    screens: {
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+      "min-720": "720px",
+      "min-1280": "1280px",
+      "min-1536": "1536px",
+    },
     extend: {
       fontFamily: {
         sans: [

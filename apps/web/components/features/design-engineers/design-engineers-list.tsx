@@ -27,7 +27,7 @@ export function DesignEngineersList({ className }: DesignEngineersListProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 list-none pb-10">
         {Array(6)
           .fill(0)
           .map((_, index) => (
@@ -38,7 +38,7 @@ export function DesignEngineersList({ className }: DesignEngineersListProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 list-none pb-10">
       {authors?.map((author) => (
         <Link
           href={`/${author.display_username || author.username}`}
