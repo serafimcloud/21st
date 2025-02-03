@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 
 import { SortOption } from "@/types/global"
 import { Header } from "@/components/ui/header.client"
+import { Footer } from "@/components/ui/footer"
 import { NewsletterDialog } from "@/components/ui/newsletter-dialog"
 import { SearchPageClient } from "@/app/q/[query]/page.client"
 
@@ -40,14 +41,17 @@ export default async function SearchPage({ params }: Props) {
     const decodedQuery = decodeURIComponent(params.query)
 
     return (
-      <>
+      <div className="min-h-screen flex flex-col">
         <Header variant="default" />
-        <SearchPageClient
-          initialQuery={decodedQuery}
-          initialSortBy={sortByPreference}
-        />
-        <NewsletterDialog />
-      </>
+        <div className="flex-1">
+          <SearchPageClient
+            initialQuery={decodedQuery}
+            initialSortBy={sortByPreference}
+          />
+          <NewsletterDialog />
+        </div>
+        <Footer />
+      </div>
     )
   } catch (error) {
     console.error("Error in search page:", error)

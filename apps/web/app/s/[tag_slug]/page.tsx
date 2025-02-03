@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { SupabaseClient } from "@supabase/supabase-js"
 
 import { Header } from "@/components/ui/header.client"
+import { Footer } from "@/components/ui/footer"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { Database } from "@/types/supabase"
 import { TagPageContent } from "./page.client"
@@ -57,14 +58,17 @@ export default async function TagPage({ params }: TagPageProps) {
       : defaultSortBy
 
     return (
-      <>
+      <div className="min-h-screen flex flex-col">
         <Header />
-        <TagPageContent
-          tagName={tagInfo.name}
-          tagSlug={tagSlug}
-          initialSortBy={sortByPreference}
-        />
-      </>
+        <div className="flex-1">
+          <TagPageContent
+            tagName={tagInfo.name}
+            tagSlug={tagSlug}
+            initialSortBy={sortByPreference}
+          />
+        </div>
+        <Footer />
+      </div>
     )
   } catch (error) {
     console.error("Error in tag page:", error)

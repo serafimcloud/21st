@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { Header } from "@/components/ui/header.client"
+import { Footer } from "@/components/ui/footer"
 import { HeroSection } from "@/components/ui/hero-section"
 import { NewsletterDialog } from "@/components/ui/newsletter-dialog"
 import { HomePageClient } from "./page.client"
@@ -73,19 +74,25 @@ export default async function HomePage() {
 
     if (shouldShowHero) {
       return (
-        <>
-          <HeroSection />
-          <NewsletterDialog />
-        </>
+        <div className="min-h-screen flex flex-col">
+          <div className="flex-1">
+            <HeroSection />
+            <NewsletterDialog />
+          </div>
+          <Footer />
+        </div>
       )
     }
 
     return (
-      <>
+      <div className="min-h-screen flex flex-col">
         <Header variant="default" />
-        <HomePageClient />
-        <NewsletterDialog />
-      </>
+        <div className="flex-1">
+          <HomePageClient />
+          <NewsletterDialog />
+        </div>
+        <Footer />
+      </div>
     )
   } catch (error) {
     console.error("Error in home page:", error)

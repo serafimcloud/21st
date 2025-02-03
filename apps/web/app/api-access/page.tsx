@@ -8,6 +8,7 @@ import { Suspense } from "react"
 import { ApiDocs } from "@/components/features/api/api-docs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Header } from "@/components/ui/header.client"
+import { Footer } from "@/components/ui/footer"
 
 export const metadata: Metadata = {
   title: "API Access - 21st.dev",
@@ -52,9 +53,9 @@ export default async function ApiAccessPage() {
   const apiKey = userId ? await getApiKey(userId) : null
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header text="API Access" />
-      <main>
+      <main className="flex-1">
         <div className="container mx-auto max-w-2xl py-6 px-4 sm:py-20 pt-20 sm:px-0">
           <div className="space-y-8 sm:space-y-12">
             <div className="space-y-4">
@@ -96,6 +97,7 @@ export default async function ApiAccessPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

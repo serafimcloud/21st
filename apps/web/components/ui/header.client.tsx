@@ -22,7 +22,6 @@ import { NavigationMenuLink } from "@/components/ui/navigation-menu"
 import { useIsMobile } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
 
-import { HeaderServer } from "./header"
 import { UserAvatar } from "./user-avatar"
 import { Icons } from "@/components/icons"
 import { EditProfileDialog } from "@/components/features/profile/edit-profile-dialog"

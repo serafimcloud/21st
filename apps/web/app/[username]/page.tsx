@@ -3,6 +3,7 @@ import { getUserData } from "@/lib/queries"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { redirect } from "next/navigation"
+import { Footer } from "@/components/ui/footer"
 
 export const generateMetadata = async ({
   params,
@@ -75,13 +76,18 @@ export default async function UserProfile({
   }
 
   return (
-    <UserPageClient
-      user={user}
-      publishedComponents={[]}
-      huntedComponents={[]}
-      userDemos={[]}
-      likedComponents={[]}
-      initialTab="published"
-    />
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-1">
+        <UserPageClient
+          user={user}
+          publishedComponents={[]}
+          huntedComponents={[]}
+          userDemos={[]}
+          likedComponents={[]}
+          initialTab="published"
+        />
+      </div>
+      <Footer />
+    </div>
   )
 }
