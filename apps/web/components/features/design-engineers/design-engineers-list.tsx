@@ -1,34 +1,102 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
-import Link from "next/link"
-import { Eye, Download } from "lucide-react"
-import { Card, CardHeader } from "@/components/ui/card"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import { DesignEngineerCardSkeleton } from "@/components/ui/skeletons"
 import { useClerkSupabaseClient } from "@/lib/clerk"
+import { DesignEngineerCard } from "./design-engineer-card"
+import { Database } from "@/types/supabase"
+import { useEffect, useRef } from "react"
+import { Loader2 } from "lucide-react"
+
+type DatabaseAuthor =
+  Database["public"]["Functions"]["get_active_authors_with_top_components"]["Returns"][0]
 
 interface DesignEngineersListProps {
   className?: string
+  initialData?: DatabaseAuthor[]
 }
 
-export function DesignEngineersList({ className }: DesignEngineersListProps) {
+export function DesignEngineersList({
+  className,
+  initialData,
+}: DesignEngineersListProps) {
   const supabaseWithAdminAccess = useClerkSupabaseClient()
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
-  const { data: authors, isLoading } = useQuery({
-    queryKey: ["active-authors"],
-    queryFn: async () => {
-      const { data } = await supabaseWithAdminAccess.rpc("get_active_authors")
-      return data || []
-    },
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-  })
+  const { data, isLoading, isFetching, hasNextPage, fetchNextPage } =
+    useInfiniteQuery({
+      queryKey: ["active-authors"],
+      queryFn: async ({ pageParam = 0 }) => {
+        const { data, error } = await supabaseWithAdminAccess.rpc(
+          "get_active_authors_with_top_components",
+          {
+            p_offset: Number(pageParam) * 10,
+            p_limit: 10,
+          },
+        )
+
+        if (error) {
+          throw error
+        }
+
+        return {
+          data: data || [],
+          total_count: data?.[0]?.total_count ?? 0,
+        }
+      },
+      initialData: initialData
+        ? {
+            pages: [
+              {
+                data: initialData,
+                total_count: initialData.length,
+              },
+            ],
+            pageParams: [0],
+          }
+        : undefined,
+      getNextPageParam: (lastPage, allPages) => {
+
+        if (!lastPage?.data || lastPage.data.length === 0) return undefined
+        const loadedCount = allPages.reduce(
+          (sum, page) => sum + page.data.length,
+          0,
+        )
+        return loadedCount < lastPage.total_count ? allPages.length : undefined
+      },
+      initialPageParam: 0,
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 30,
+    })
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetching) {
+          fetchNextPage()
+        }
+      },
+      { threshold: 0.1 },
+    )
+
+    const currentRef = loadMoreRef.current
+    if (currentRef) {
+      observer.observe(currentRef)
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef)
+      }
+    }
+  }, [hasNextPage, isFetching, fetchNextPage])
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 list-none pb-10">
-        {Array(24)
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 list-none pb-10 ${className || ""}`}
+      >
+        {Array(10)
           .fill(0)
           .map((_, index) => (
             <DesignEngineerCardSkeleton key={index} />
@@ -37,73 +105,25 @@ export function DesignEngineersList({ className }: DesignEngineersListProps) {
     )
   }
 
+  const authors = data?.pages.flatMap((page) => page.data) || []
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 list-none pb-10">
-      {authors?.map((author) => (
-        <Link
-          href={`/${author.display_username || author.username}`}
-          key={author.id}
-          className="block p-[1px]"
-        >
-          <div className="group relative bg-background rounded-lg shadow-base overflow-hidden h-[200px]">
-            <div className="absolute inset-0 bg-gradient-to-b from-background to-accent/10 group-hover:to-accent/20 transition-colors" />
-            <CardHeader className="relative h-full">
-              <div className="flex items-start gap-4 h-full">
-                <Avatar className="h-12 w-12 shadow-base bg-muted/30 shrink-0">
-                  {author.display_image_url || author.image_url ? (
-                    <AvatarImage
-                      src={author.display_image_url || author.image_url || ""}
-                      alt={
-                        author.display_name ||
-                        author.name ||
-                        author.username ||
-                        ""
-                      }
-                    />
-                  ) : (
-                    <AvatarFallback>
-                      {(
-                        (author.display_name ||
-                          author.name ||
-                          author.username ||
-                          "?")?.[0] || "?"
-                      ).toUpperCase()}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="flex flex-col flex-1 h-full">
-                  <div className="space-y-1 mb-4">
-                    <h2 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                      {author.display_name || author.name || author.username}
-                    </h2>
-                    <p className="text-sm text-muted-foreground h-10 line-clamp-2">
-                      {author.bio ||
-                        `@${author.display_username || author.username}`}
-                    </p>
-                  </div>
-                  <div className="mt-auto space-y-1.5">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Eye className="w-4 h-4" />
-                      <span className="text-sm">
-                        {author.total_views.toLocaleString()} views
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Download className="w-4 h-4" />
-                      <span className="text-sm">
-                        {(
-                          author.total_usages + author.total_downloads
-                        ).toLocaleString()}{" "}
-                        usages
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-          </div>
-        </Link>
-      ))}
-    </div>
+    <>
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 list-none pb-10 ${className || ""}`}
+      >
+        {authors.map((author) => (
+          <DesignEngineerCard key={author.id} author={author} />
+        ))}
+        {hasNextPage && (
+          <div ref={loadMoreRef} className="col-span-full h-10 -z-10 -mt-5" />
+        )}
+      </div>
+      {isFetching && (
+        <div className="col-span-full flex justify-center pt-2 pb-4">
+          <Loader2 className="h-5 w-5 animate-spin text-foreground/20 -mt-6" />
+        </div>
+      )}
+    </>
   )
 }

@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log("Search results:", data)
 
     if (!Array.isArray(data)) {
       console.error("Unexpected data format:", data)
