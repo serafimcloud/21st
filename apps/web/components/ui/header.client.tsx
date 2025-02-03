@@ -111,7 +111,7 @@ export function Header({
 
         <div className="flex items-center gap-1">
           <SignedIn>
-            {variant !== "publish" && (
+            {!isMobile && variant !== "publish" && (
               <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse ml-2">
                 <Button
                   asChild
@@ -289,7 +289,7 @@ export function Header({
 
           <SignedOut>
             <SignInButton>
-              <Button className="ml-2">Publish component</Button>
+              <Button className="ml-2">Sign up</Button>
             </SignInButton>
           </SignedOut>
         </div>

@@ -419,7 +419,7 @@ export function CommandMenu() {
                         }}
                         className="flex items-center gap-2 whitespace-nowrap overflow-hidden"
                       >
-                        <section.icon className="h-4 w-4" />
+                        <section.icon className="h-4 w-4 min-w-4 min-h-4 max-w-4 max-h-4" />
                         <span className="truncate">{item.title}</span>
                         <span className="text-xs text-muted-foreground">
                           in {section.title}
