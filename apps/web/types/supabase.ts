@@ -891,6 +891,7 @@ export type Database = {
           total_views: number
           total_engagement: number
           top_components: Json
+          total_count: number
         }[]
       }
       get_component_by_slug: {
