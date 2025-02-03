@@ -1,15 +1,14 @@
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
-import { SupabaseClient } from "@supabase/supabase-js"
 
 import { Header } from "@/components/ui/header.client"
 import { Footer } from "@/components/ui/footer"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { Database } from "@/types/supabase"
 import { TagPageContent } from "./page.client"
 import { SortOption } from "@/types/global"
 import { cookies } from "next/headers"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
+import { unstable_cache } from "next/cache"
 
 interface TagPageProps {
   params: {
@@ -17,21 +16,29 @@ interface TagPageProps {
   }
 }
 
-const getTagInfo = async (
-  supabase: SupabaseClient<Database>,
-  tagSlug: string,
-) => {
-  const { data, error } = await supabase
-    .from("tags")
-    .select("*")
-    .eq("slug", tagSlug)
-    .single()
+const getCachedTagInfo = unstable_cache(
+  async (tagSlug: string) => {
+    const { data, error } = await supabaseWithAdminAccess
+      .from("tags")
+      .select("*")
+      .eq("slug", tagSlug)
+      .single()
 
-  if (error) {
-    throw error
-  }
+    if (error) {
+      throw error
+    }
 
-  return data
+    return data
+  },
+  ["tag-info"],
+  {
+    revalidate: 30, // Cache for 30 seconds
+    tags: ["tag-info"],
+  },
+)
+
+async function getTagInfo(tagSlug: string) {
+  return getCachedTagInfo(tagSlug)
 }
 
 export default async function TagPage({ params }: TagPageProps) {
@@ -43,7 +50,7 @@ export default async function TagPage({ params }: TagPageProps) {
   const tagSlug = params.tag_slug
 
   try {
-    const tagInfo = await getTagInfo(supabaseWithAdminAccess, tagSlug)
+    const tagInfo = await getTagInfo(tagSlug)
     if (!tagInfo) {
       redirect("/")
     }
@@ -80,7 +87,7 @@ export async function generateMetadata({
   params,
 }: TagPageProps): Promise<Metadata> {
   try {
-    const tagInfo = await getTagInfo(supabaseWithAdminAccess, params.tag_slug)
+    const tagInfo = await getTagInfo(params.tag_slug)
     if (!tagInfo) {
       redirect("/")
     }

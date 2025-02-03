@@ -4,16 +4,30 @@ import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { redirect } from "next/navigation"
 import { Footer } from "@/components/ui/footer"
+import { unstable_cache } from "next/cache"
+
+const getCachedUser = unstable_cache(
+  async (username: string) => {
+    const { data: user } = await getUserData(supabaseWithAdminAccess, username)
+    return user
+  },
+  ["user-data"],
+  {
+    revalidate: 30, // Cache for 30 seconds
+    tags: ["user-data"],
+  },
+)
+
+async function getUser(username: string) {
+  return getCachedUser(username)
+}
 
 export const generateMetadata = async ({
   params,
 }: {
   params: { username: string }
 }) => {
-  const { data: user } = await getUserData(
-    supabaseWithAdminAccess,
-    params.username,
-  )
+  const user = await getUser(params.username)
 
   if (!user) {
     return {
@@ -66,10 +80,7 @@ export default async function UserProfile({
     redirect("/")
   }
 
-  const { data: user } = await getUserData(
-    supabaseWithAdminAccess,
-    params.username,
-  )
+  const user = await getUser(params.username)
 
   if (!user || !user.username) {
     redirect("/")
