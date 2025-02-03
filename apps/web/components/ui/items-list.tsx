@@ -67,16 +67,34 @@ function useMainDemos(
   return useInfiniteQuery({
     queryKey: ["filtered-demos", sortBy, tagSlug] as const,
     queryFn: async ({ pageParam = 0 }) => {
-      const { data: filteredData, error } = await supabase.rpc("get_demos_new", {
-        p_sort_by: sortBy,
-        p_offset: Number(pageParam) * 24,
-        p_limit: 24,
-        p_tag_slug: tagSlug,
-        p_include_private: false,
-      } as Database["public"]["Functions"]["get_demos_new"]["Args"])
+      console.log("🔍 Fetching page:", pageParam)
+      const { data: filteredData, error } = await supabase.rpc(
+        "get_demos_new",
+        {
+          p_sort_by: sortBy,
+          p_offset: Number(pageParam) * 24,
+          p_limit: 24,
+          p_tag_slug: tagSlug,
+          p_include_private: false,
+        } as Database["public"]["Functions"]["get_demos_new"]["Args"],
+      )
 
       if (error) throw error
+
+      console.log("📊 Raw data from API:", {
+        firstItem: filteredData?.[0],
+        totalCount: filteredData?.[0]?.total_count,
+        itemsCount: filteredData?.length,
+      })
+
       const transformedData = (filteredData || []).map(transformDemoResult)
+
+      console.log("🔄 After transformation:", {
+        firstItem: transformedData[0],
+        itemsCount: transformedData.length,
+        totalCount: (filteredData?.[0] as any)?.total_count,
+      })
+
       return {
         data: transformedData,
         total_count: (filteredData?.[0] as any)?.total_count ?? 0,
@@ -94,11 +112,28 @@ function useMainDemos(
         }
       : undefined,
     getNextPageParam: (lastPage, allPages) => {
+      console.log("📝 getNextPageParam called with:", {
+        lastPageData: lastPage?.data?.length,
+        lastPageTotalCount: lastPage?.total_count,
+        allPagesCount: allPages.length,
+        loadedItemsCount: allPages.reduce(
+          (sum, page) => sum + page.data.length,
+          0,
+        ),
+      })
+
       if (!lastPage?.data || lastPage.data.length === 0) return undefined
       const loadedCount = allPages.reduce(
         (sum, page) => sum + page.data.length,
         0,
       )
+      const hasNextPage = loadedCount < lastPage.total_count
+      console.log("📊 Pagination decision:", {
+        loadedCount,
+        totalCount: lastPage.total_count,
+        hasNextPage,
+        nextPageParam: hasNextPage ? allPages.length : undefined,
+      })
       return loadedCount < lastPage.total_count ? allPages.length : undefined
     },
     initialPageParam: 0,
@@ -116,13 +151,16 @@ function useTagDemos(
   return useQuery({
     queryKey: ["tag-filtered-demos", tagSlug, sortBy] as const,
     queryFn: async () => {
-      const { data: filteredData, error } = await supabase.rpc("get_demos_new", {
-        p_sort_by: sortBy,
-        p_offset: 0,
-        p_limit: 1000,
-        p_tag_slug: tagSlug,
-        p_include_private: false,
-      })
+      const { data: filteredData, error } = await supabase.rpc(
+        "get_demos_new",
+        {
+          p_sort_by: sortBy,
+          p_offset: 0,
+          p_limit: 1000,
+          p_tag_slug: tagSlug,
+          p_include_private: false,
+        },
+      )
 
       if (error) throw error
       const transformedData = (filteredData || []).map(transformDemoResult)
@@ -312,6 +350,7 @@ export function ComponentsList({
 }: ComponentsListProps) {
   const [localSearchQuery, setLocalSearchQuery] = useAtom(tagPageSearchAtom)
   const router = useRouter()
+  const loadMoreRef = React.useRef<HTMLDivElement>(null)
 
   let rawComponents: DemoWithComponent[] | undefined
   let isLoading = false
@@ -359,6 +398,29 @@ export function ComponentsList({
       break
     }
   }
+
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetching) {
+          console.log("🔄 Loading next page...")
+          fetchNextPage()
+        }
+      },
+      { threshold: 0.1 },
+    )
+
+    const currentRef = loadMoreRef.current
+    if (currentRef) {
+      observer.observe(currentRef)
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef)
+      }
+    }
+  }, [hasNextPage, isFetching, fetchNextPage])
 
   // Очищаем поисковый запрос при размонтировании
   React.useEffect(() => {
@@ -436,17 +498,22 @@ export function ComponentsList({
             </Button>
           </div>
         ) : (
-          components?.map((component: DemoWithComponent) => (
-            <ComponentCard
-              key={`${component.id}-${component.updated_at}`}
-              component={component}
-            />
-          ))
+          <>
+            {components?.map((component: DemoWithComponent) => (
+              <ComponentCard
+                key={`${component.id}-${component.updated_at}`}
+                component={component}
+              />
+            ))}
+            {hasNextPage && (
+              <div ref={loadMoreRef} className="col-span-full h-10 -z-10 -mt-5" />
+            )}
+          </>
         )}
       </div>
       {showSpinner && (
-        <div className="col-span-full flex justify-center py-4">
-          <Loader2 className="h-8 w-8 animate-spin text-foreground/20" />
+        <div className="col-span-full flex justify-center pt-2 pb-4">
+          <Loader2 className="h-5 w-5 animate-spin text-foreground/20 -mt-6" />
         </div>
       )}
     </>

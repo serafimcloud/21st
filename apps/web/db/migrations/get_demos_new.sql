@@ -1,5 +1,5 @@
 -- Обновляем функцию get_demos, убирая quick_filter
-CREATE OR REPLACE FUNCTION public.get_demos(
+CREATE OR REPLACE FUNCTION public.get_demos_new(
   p_sort_by text,
   p_offset integer,
   p_limit integer,

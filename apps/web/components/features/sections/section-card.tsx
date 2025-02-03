@@ -13,7 +13,9 @@ interface SectionCardProps {
   section: Section
 }
 
-export const SectionCard = memo(function SectionCard({ section }: SectionCardProps) {
+export const SectionCard = memo(function SectionCard({
+  section,
+}: SectionCardProps) {
   const sectionUrl = `/s/${section.tag_slug}`
 
   return (
