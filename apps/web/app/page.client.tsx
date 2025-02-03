@@ -74,7 +74,16 @@ export function HomePageClient() {
               selectedFilter={selectedFilter}
               onFilterChange={setSelectedFilter}
             />
-            <SectionsList filter={selectedFilter} />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.3,
+                ease: "easeOut",
+              }}
+            >
+              <SectionsList filter={selectedFilter} />
+            </motion.div>
           </>
         )
       case "components":
@@ -85,32 +94,59 @@ export function HomePageClient() {
               selectedFilter={selectedFilter}
               onFilterChange={setSelectedFilter}
             />
-            <ComponentsList
-              type="main"
-              sortBy={sortBy}
-              tagSlug={selectedFilter === "all" ? undefined : selectedFilter}
-            />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.3,
+                ease: "easeOut",
+              }}
+            >
+              <ComponentsList
+                type="main"
+                sortBy={sortBy}
+                tagSlug={selectedFilter === "all" ? undefined : selectedFilter}
+              />
+            </motion.div>
           </>
         )
       case "authors":
-        return <DesignEngineersList />
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.3,
+              ease: "easeOut",
+            }}
+          >
+            <DesignEngineersList />
+          </motion.div>
+        )
       case "pro":
-        return <ProList />
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.3,
+              ease: "easeOut",
+            }}
+          >
+            <ProList />
+          </motion.div>
+        )
       default:
         return null
     }
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="container mx-auto mt-20 px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px]"
-    >
+    <div className="container mx-auto mt-20 px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px]">
       <div className="flex flex-col">
         <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
         {renderContent()}
       </div>
-    </motion.div>
+    </div>
   )
 }

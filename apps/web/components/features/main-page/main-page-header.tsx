@@ -3,6 +3,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { ArrowUpDown } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
 
 import {
   Select,
@@ -36,6 +37,11 @@ export function ComponentsHeader({
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -49,8 +55,49 @@ export function ComponentsHeader({
     onTabChange(value as "sections" | "components" | "authors" | "pro")
   }
 
+  if (!isClient) {
+    return (
+      <div className="flex flex-col gap-4 mb-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
+              <TabsList className="h-auto gap-2 rounded-none bg-transparent px-0 py-1 text-foreground">
+                <TabsTrigger
+                  value="sections"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Sections
+                </TabsTrigger>
+                <TabsTrigger
+                  value="components"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Components
+                </TabsTrigger>
+                <TabsTrigger
+                  value="authors"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Design Engineers
+                </TabsTrigger>
+                <TabsTrigger
+                  value="pro"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Pro
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className={`flex flex-col gap-4 ${activeTab !== "sections" && activeTab !== "components" ? "mb-5" : "mb-3"}`}>
+    <div
+      className={`flex flex-col gap-4 ${activeTab !== "sections" && activeTab !== "components" ? "mb-5" : "mb-3"}`}
+    >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {isDesktop ? (
