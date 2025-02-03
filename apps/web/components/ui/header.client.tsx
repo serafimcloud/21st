@@ -231,7 +231,7 @@ export function Header({
                     }
                   >
                     <span>Twitter</span>
-                    <div className="flex items-center w-4">
+                    <div className="flex items-center justify-center w-4">
                       <Icons.twitter className="h-3 w-3" />
                     </div>
                   </DropdownMenuItem>
