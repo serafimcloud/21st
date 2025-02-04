@@ -5,7 +5,7 @@ import React from "react"
 import Link from "next/link"
 import { Video, Eye, Heart } from "lucide-react"
 
-import { DemoWithComponent } from "@/types/global"
+import { DemoWithComponent, Component, User } from "@/types/global"
 import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
 import { UserAvatar } from "../../ui/user-avatar"
@@ -15,35 +15,41 @@ export function ComponentCard({
   component,
   isLoading,
 }: {
-  component?: DemoWithComponent
+  component?: DemoWithComponent | (Component & { user: User })
   isLoading?: boolean
 }) {
   if (isLoading || !component) {
     return <ComponentCardSkeleton />
   }
 
-  const isDemo = "demo_slug" in component
-  const isDemoWithComponent =
-    "component" in component && "demo_slug" in component
   const userData = component.user
-  const componentOwner = component.component.user
+  const username = userData?.username || userData?.display_username
+  const isDemo = "demo_slug" in component
+  const componentSlug = isDemo
+    ? component.component?.component_slug
+    : component.component_slug
 
-  if (!userData || !componentOwner || !component) {
+  if (!userData || !username || !componentSlug) {
     console.warn("Missing required data:", {
       userData,
-      componentOwner,
+      username,
+      componentSlug,
       component,
     })
     return <ComponentCardSkeleton />
   }
 
-  const componentUrl = `/${componentOwner.display_username || componentOwner.username}/${component.component.component_slug}/${component.demo_slug || "default"}`
+  const isDemoWithComponent = isDemo && "component" in component
+
+  const componentUrl = `/${username}/${componentSlug}/${isDemo ? component.demo_slug || "default" : "default"}`
 
   const videoUrl = isDemo ? component.video_url : null
 
-  const likesCount = component.component.likes_count || 0
+  const likesCount = isDemo
+    ? component.component?.likes_count || 0
+    : component.likes_count || 0
 
-  const viewCount = component.view_count || 0
+  const viewCount = isDemo ? component.view_count || 0 : 0
 
   return (
     <div className="p-[1px]">
@@ -56,7 +62,7 @@ export function ComponentCard({
                   src={
                     isDemo
                       ? component.preview_url || "/placeholder.svg"
-                      : "/placeholder.svg"
+                      : component.preview_url || "/placeholder.svg"
                   }
                   alt={component.name || ""}
                   fallbackSrc="/placeholder.svg"
@@ -65,7 +71,10 @@ export function ComponentCard({
               </div>
               <div className="absolute inset-0 rounded-lg" />
               {videoUrl && isDemoWithComponent && (
-                <ComponentVideoPreview component={component} demo={component} />
+                <ComponentVideoPreview
+                  component={component as DemoWithComponent}
+                  demo={component as DemoWithComponent}
+                />
               )}
             </div>
           </div>
@@ -98,7 +107,7 @@ export function ComponentCard({
           >
             <div className="flex flex-col min-w-0">
               <h2 className="text-sm font-medium text-foreground truncate">
-                {component.component.name}
+                {isDemo ? component.component?.name : component.name}
               </h2>
               {component.name !== "Default" && (
                 <p className="text-sm text-muted-foreground truncate">
@@ -108,14 +117,18 @@ export function ComponentCard({
             </div>
           </Link>
           <div className="flex items-center gap-3">
-            <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
-              <Eye size={14} />
-              <span>{viewCount || 0}</span>
-            </div>
-            <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
-              <Heart size={14} className="text-muted-foreground" />
-              <span>{likesCount || 0}</span>
-            </div>
+            {viewCount > 0 && (
+              <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
+                <Eye size={14} />
+                <span>{viewCount}</span>
+              </div>
+            )}
+            {likesCount > 0 && (
+              <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
+                <Heart size={14} className="text-muted-foreground" />
+                <span>{likesCount}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

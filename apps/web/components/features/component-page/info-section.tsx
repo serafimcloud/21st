@@ -7,8 +7,7 @@ import { toast } from "sonner"
 import { Component, Tag, User } from "@/types/global"
 
 import { UserAvatar } from "@/components/ui/user-avatar"
-import { LoadingSpinner } from "../../ui/loading-spinner"
-import { ComponentsList } from "../../ui/items-list"
+import { ComponentCard } from "../list-card/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Tag as TagComponent } from "@/components/ui/tag"
@@ -43,8 +42,17 @@ import { useHunterUser } from "@/lib/queries"
 export const ComponentPageInfo = ({
   component,
 }: {
-  component: Component & { user: User } & { tags: Tag[] }
+  component: Component & { user?: User } & { tags: Tag[] }
 }) => {
+  if (!component) {
+    return null
+  }
+
+  const user = component.user
+  if (!user) {
+    return null
+  }
+
   const supabase = useClerkSupabaseClient()
   const [copiedLibDependencies, setCopiedLibDependencies] = useState(false)
   const [copiedDependency, setCopiedDependency] = useState<string | null>(null)
@@ -55,7 +63,7 @@ export const ComponentPageInfo = ({
     string
   >
   const directRegistryDependencies =
-    component.direct_registry_dependencies as string[]
+    (component.direct_registry_dependencies as string[]) ?? []
 
   const { data: dependencyComponents, isLoading: isLoadingDependencies } =
     useQuery({
@@ -64,8 +72,6 @@ export const ComponentPageInfo = ({
         directRegistryDependencies,
       ],
       queryFn: async () => {
-        // Using a view here because PostgREST has issues with `or(and(...))` on joined tables
-        // See: https://github.com/PostgREST/postgrest/issues/2563
         const { data, error } = await supabase
           .from("components_with_username")
           .select("*")
@@ -84,7 +90,7 @@ export const ComponentPageInfo = ({
           throw error
         }
 
-        return data
+        return data ?? []
       },
       enabled: directRegistryDependencies.length > 0,
       staleTime: 1000 * 60 * 15, // Consider data fresh for 15 minutes
@@ -151,39 +157,34 @@ export const ComponentPageInfo = ({
       </div>
       <Separator className="w-full" />
       <div className="px-4 pt-2.5 pb-6 space-y-3">
-        {component.user && (
+        {user && (
           <div className="flex flex-col gap-2">
             <span className="text-muted-foreground">Created by</span>
             <HoverCard openDelay={300}>
               <HoverCardTrigger asChild>
                 <div className="flex items-center justify-start hover:bg-accent rounded-md px-2 py-1 -mx-2 mr-auto">
                   <Link
-                    href={`/${component.user.display_username || component.user.username}`}
+                    href={`/${user.display_username || user.username}`}
                     className="flex items-center"
                   >
                     <Avatar className="h-[22px] w-[22px]">
                       <AvatarImage
                         src={
-                          component.user.display_image_url ||
-                          component.user.image_url ||
+                          user.display_image_url ||
+                          user.image_url ||
                           "/placeholder.svg"
                         }
                         alt={
-                          component.user.display_name ||
-                          component.user.name ||
-                          component.user.username ||
-                          ""
+                          user.display_name || user.name || user.username || ""
                         }
                       />
                       <AvatarFallback>
-                        {(component.user.display_name ||
-                          component.user.name)?.[0]?.toUpperCase()}
+                        {(user.display_name || user.name)?.[0]?.toUpperCase() ||
+                          ""}
                       </AvatarFallback>
                     </Avatar>
                     <span className="ml-1 font-medium">
-                      {component.user.display_name ||
-                        component.user.name ||
-                        component.user.username}
+                      {user.display_name || user.name || user.username}
                     </span>
                   </Link>
                 </div>
@@ -197,59 +198,52 @@ export const ComponentPageInfo = ({
                   <Avatar className="h-12 w-12">
                     <AvatarImage
                       src={
-                        component.user.display_image_url ||
-                        component.user.image_url ||
+                        user.display_image_url ||
+                        user.image_url ||
                         "/placeholder.svg"
                       }
                       alt={
-                        component.user.display_name ||
-                        component.user.name ||
-                        component.user.username ||
-                        ""
+                        user.display_name || user.name || user.username || ""
                       }
                     />
                     <AvatarFallback>
-                      {(component.user.display_name ||
-                        component.user.name)?.[0]?.toUpperCase()}
+                      {(user.display_name || user.name)?.[0]?.toUpperCase() ||
+                        ""}
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-1">
                     <Link
-                      href={`/${component.user.display_username || component.user.username}`}
+                      href={`/${user.display_username || user.username}`}
                       className="hover:underline"
                     >
                       <h4 className="text-sm font-semibold">
-                        {component.user.display_name ||
-                          component.user.name ||
-                          component.user.username}
+                        {user.display_name || user.name || user.username}
                       </h4>
                     </Link>
                     <Link
-                      href={`/${component.user.display_username || component.user.username}`}
+                      href={`/${user.display_username || user.username}`}
                       className="hover:underline"
                     >
                       <p className="text-sm text-muted-foreground">
-                        @
-                        {component.user.display_username ||
-                          component.user.username}
+                        @{user.display_username || user.username}
                       </p>
                     </Link>
-                    {component.user.bio && (
+                    {user.bio && (
                       <p className="text-xs text-muted-foreground whitespace-pre-wrap">
-                        {component.user.bio}
+                        {user.bio}
                       </p>
                     )}
-                    {component.user.created_at && (
+                    {user.created_at && (
                       <div className="flex items-center pt-1">
-                        {!component.user.manually_added ? (
+                        {!user.manually_added ? (
                           <CalendarDays className="mr-2 h-4 w-4 opacity-70" />
                         ) : (
                           <Info className="mr-2 h-4 w-4 opacity-70" />
                         )}
                         <span className="text-xs text-muted-foreground">
-                          {component.user.manually_added
+                          {user.manually_added
                             ? `Created by 21st.dev`
-                            : `Joined ${formatDate(new Date(component.user.created_at))}`}
+                            : `Joined ${formatDate(new Date(user.created_at))}`}
                         </span>
                       </div>
                     )}
@@ -314,7 +308,7 @@ export const ComponentPageInfo = ({
                     />
                     <AvatarFallback>
                       {(hunterUser.display_name ||
-                        hunterUser.name)?.[0]?.toUpperCase()}
+                        hunterUser.name)?.[0]?.toUpperCase() || ""}
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-1">
@@ -591,7 +585,7 @@ export const ComponentPageInfo = ({
           </>
         )}
 
-        {Object.keys(directRegistryDependencies).length > 0 && (
+        {directRegistryDependencies.length > 0 && (
           <>
             <Separator className="w-full !my-6" />
             <div className="flex flex-col">
@@ -602,13 +596,20 @@ export const ComponentPageInfo = ({
               </div>
               <div className="pl-1/3">
                 {isLoadingDependencies ? (
-                  <LoadingSpinner />
+                  <div className="flex flex-col gap-4">
+                    {[1, 2, 3].map((i) => (
+                      <ComponentCard key={i} isLoading />
+                    ))}
+                  </div>
                 ) : dependencyComponents ? (
-                  <ComponentsList
-                    type="main"
-                    sortBy="date"
-                    initialData={dependencyComponents}
-                  />
+                  <div className="flex flex-col gap-4">
+                    {dependencyComponents.map((component) => (
+                      <ComponentCard
+                        key={`${component.id}-${component.updated_at}`}
+                        component={component}
+                      />
+                    ))}
+                  </div>
                 ) : (
                   <span>Error loading registry dependencies</span>
                 )}
