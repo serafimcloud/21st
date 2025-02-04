@@ -63,6 +63,7 @@ export const PROMPT_TYPES = {
   BOLT: "bolt",
   EXTENDED: "extended",
   REPLIT: "replit",
+  MAGIC_PATTERNS: "magic_patterns",
 } as const
 
 export type PromptType = (typeof PROMPT_TYPES)[keyof typeof PROMPT_TYPES]

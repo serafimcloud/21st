@@ -12,6 +12,7 @@ import { TerminalIcon } from "./terminal"
 import { ClapIcon } from "./clap"
 import { WorkflowIcon } from "./workslow"
 import { LogoutIcon } from "./logout-icon"
+import { MagicPatternsLogo } from "./magic-patterns"
 
 export type Icon = LucideIcon
 
@@ -198,4 +199,5 @@ export const Icons = {
       />
     </svg>
   ),
+  magicPatterns: MagicPatternsLogo,
 }

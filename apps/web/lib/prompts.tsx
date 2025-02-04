@@ -64,6 +64,16 @@ export const promptOptions: PromptOption[] = [
   },
   {
     type: "option",
+    id: PROMPT_TYPES.MAGIC_PATTERNS,
+    label: "Magic Patterns",
+    description: "Optimized for Magic Patterns",
+    action: "copy",
+    icon: (
+      <Icons.magicPatterns className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
+    ),
+  },
+  {
+    type: "option",
     id: PROMPT_TYPES.V0,
     label: "v0 by Vercel",
     description: "Optimized for v0.dev",
@@ -147,6 +157,55 @@ export const getComponentInstallPrompt = ({
   const componentDemoFileName = demoCodeFileName.split("/").slice(-1)[0]
 
   let prompt = ""
+
+  if (promptType === PROMPT_TYPES.MAGIC_PATTERNS) {
+    prompt =
+      "Take the following code of a React component and add it to the design.\n" +
+      endent`        
+        ${componentFileName}
+        ${code}
+      ` +
+      "\n Here is an example how to use the component:\n" +
+      endent`
+        ${componentDemoFileName}
+        ${demoCode}
+      ` +
+      "\n"
+
+    if (tailwindConfig) {
+      prompt +=
+        "\n" +
+        endent`
+        Extend existing tailwind.config.js with this code:
+        \`\`\`js
+        ${tailwindConfig}
+        \`\`\`
+      ` +
+        "\n"
+    }
+
+    if (globalCss) {
+      prompt +=
+        "\n" +
+        endent`
+        Extend existing index.css with this code:
+        \`\`\`css
+        ${globalCss}
+        \`\`\`
+      ` +
+        "\n"
+    }
+
+    prompt +=
+      "\n" +
+      endent`
+        IMPORTANT:
+          - Modify the component as needed to fit the existing codebase + design
+          - Extend the tailwind.config.js and index.css if needed to include additional variables or styles
+      `
+
+    return prompt
+  }
 
   if (promptType === PROMPT_TYPES.REPLIT) {
     prompt += "Build this as my initial prototype\n\n"
