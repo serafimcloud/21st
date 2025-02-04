@@ -1,5 +1,3 @@
-import { CardHeader } from "@/components/ui/card"
-
 export function ComponentCardSkeleton() {
   return (
     <div className="p-[1px] animate-pulse">
@@ -96,6 +94,30 @@ export function ProCardSkeleton() {
             <div className="h-4 bg-muted rounded w-3/4" />
           </div>
           <div className="h-4 bg-muted rounded w-12" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function TemplateCardSkeleton() {
+  return (
+    <div className="p-[1px] animate-pulse">
+      <div className="relative aspect-[4/3] mb-3">
+        <div className="absolute inset-0">
+          <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
+            <div className="w-full h-full bg-muted rounded-lg" />
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center space-x-3">
+        <div className="w-8 h-8 rounded-full bg-muted shadow-base" />
+        <div className="flex items-center justify-between flex-grow min-w-0">
+          <div className="min-w-0 flex-1">
+            <div className="h-4 bg-muted rounded w-3/4" />
+            <div className="h-3 bg-muted rounded w-1/2 mt-1" />
+          </div>
+          <div className="h-4 bg-muted rounded w-12 ml-3" />
         </div>
       </div>
     </div>
