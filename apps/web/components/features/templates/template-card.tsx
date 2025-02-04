@@ -27,7 +27,7 @@ export function TemplateCard({ template }: TemplateCardProps) {
         target="_blank"
         rel="noopener noreferrer"
       >
-        <div className="relative aspect-[4/3] mb-3 group">
+        <div className="relative aspect-[16/10] mb-3 group">
           <div className="absolute inset-0">
             <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
               <div className="absolute inset-0">
