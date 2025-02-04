@@ -165,7 +165,7 @@ export const getComponentInstallPrompt = ({
         ${componentFileName}
         ${code}
       ` +
-      "\n Here is an example how to use the component:\n" +
+      "\n Here is an example of how to use the component:\n" +
       endent`
         ${componentDemoFileName}
         ${demoCode}
@@ -176,7 +176,7 @@ export const getComponentInstallPrompt = ({
       prompt +=
         "\n" +
         endent`
-        Extend existing tailwind.config.js with this code:
+        Extend the existing tailwind.config.js (or create a new one if non-existent) with this code:
         \`\`\`js
         ${tailwindConfig}
         \`\`\`
@@ -188,10 +188,29 @@ export const getComponentInstallPrompt = ({
       prompt +=
         "\n" +
         endent`
-        Extend existing index.css with this code:
+        Extend the existing index.css (or create a new one if non-existent) with this code:
         \`\`\`css
         ${globalCss}
         \`\`\`
+      ` +
+        "\n"
+    }
+
+    if (Object.keys(registryDependencies || {}).length > 0) {
+      prompt +=
+        "\n" +
+        endent`
+        Copy-paste these files for dependencies:
+        ${Object.entries(registryDependencies)
+          .map(
+            ([fileName, fileContent]) => endent`
+            \`\`\`tsx
+            ${fileName}
+            ${fileContent}
+            \`\`\`
+          `,
+          )
+          .join("\n")}
       ` +
         "\n"
     }
