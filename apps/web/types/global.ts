@@ -130,3 +130,20 @@ export type ApiKey = {
   is_active: boolean
   project_url: string
 }
+
+export type Template = Database["public"]["Tables"]["templates"]["Row"]
+
+export type TemplateWithUser = Template & {
+  user_data: {
+    id: string
+    name: string | null
+    username: string | null
+    display_name: string | null
+    display_username: string | null
+    image_url: string | null
+    display_image_url: string | null
+  }
+}
+
+export type GetTemplatesResponse =
+  Database["public"]["Functions"]["get_templates"]["Returns"][0]

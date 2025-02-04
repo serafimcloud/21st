@@ -52,3 +52,10 @@ export function makeSlugFromName(name: string): string {
 export const isMac =
   typeof window !== "undefined" &&
   /Mac|iPod|iPhone|iPad/.test(window.navigator.platform)
+
+export function formatPrice(price: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(price)
+}

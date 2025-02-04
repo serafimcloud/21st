@@ -24,14 +24,17 @@ const TAB_OPTIONS = {
   categories: "Categories",
   authors: "Design Engineers",
   pro: "Pro",
+  templates: "Templates",
 } as const
 
 export function ComponentsHeader({
   activeTab,
   onTabChange,
 }: {
-  activeTab: "categories" | "components" | "authors" | "pro"
-  onTabChange: (tab: "categories" | "components" | "authors" | "pro") => void
+  activeTab: "categories" | "components" | "authors" | "pro" | "templates"
+  onTabChange: (
+    tab: "categories" | "components" | "authors" | "pro" | "templates",
+  ) => void
 }) {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
   const isDesktop = useMediaQuery("(min-width: 768px)")
@@ -52,7 +55,9 @@ export function ComponentsHeader({
       params.delete("sort")
     }
     router.push(`?${params.toString()}`, { scroll: false })
-    onTabChange(value as "categories" | "components" | "authors" | "pro")
+    onTabChange(
+      value as "categories" | "components" | "authors" | "pro" | "templates",
+    )
   }
 
   if (!isClient) {
@@ -85,6 +90,12 @@ export function ComponentsHeader({
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
                   Pro
+                </TabsTrigger>
+                <TabsTrigger
+                  value="templates"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Templates
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -126,6 +137,12 @@ export function ComponentsHeader({
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
                   Pro
+                </TabsTrigger>
+                <TabsTrigger
+                  value="templates"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Templates
                 </TabsTrigger>
               </TabsList>
             </Tabs>

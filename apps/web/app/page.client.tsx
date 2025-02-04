@@ -14,6 +14,7 @@ import { ComponentsHeader } from "@/components/features/main-page/main-page-head
 import { FilterChips } from "@/components/features/main-page/filter-chips"
 import { DesignEngineersList } from "@/components/features/design-engineers/design-engineers-list"
 import { ProList } from "@/components/features/pro/pro-list"
+import { TemplatesList } from "@/components/features/templates/templates-list"
 
 export function HomePageClient() {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
@@ -21,13 +22,14 @@ export function HomePageClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<
-    "categories" | "components" | "authors" | "pro"
+    "categories" | "components" | "authors" | "pro" | "templates"
   >(
     (searchParams.get("tab") as
       | "categories"
       | "components"
       | "authors"
-      | "pro") || "components",
+      | "pro"
+      | "templates") || "components",
   )
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
@@ -58,7 +60,7 @@ export function HomePageClient() {
   }, [sortBy, queryClient])
 
   const handleTabChange = (
-    newTab: "categories" | "components" | "authors" | "pro",
+    newTab: "categories" | "components" | "authors" | "pro" | "templates",
   ) => {
     setActiveTab(newTab)
     setSelectedFilter("all")
@@ -136,13 +138,26 @@ export function HomePageClient() {
             <ProList />
           </motion.div>
         )
+      case "templates":
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.3,
+              ease: "easeOut",
+            }}
+          >
+            <TemplatesList />
+          </motion.div>
+        )
       default:
         return null
     }
   }
 
   return (
-    <div className="container mx-auto mt-20 px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px]">
+    <div className="container mx-auto my-20 px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px]">
       <div className="flex flex-col">
         <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
         {renderContent()}

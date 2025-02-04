@@ -597,6 +597,57 @@ export type Database = {
         }
         Relationships: []
       }
+      templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          downloads_count: number | null
+          id: number
+          is_public: boolean | null
+          likes_count: number | null
+          name: string
+          payment_url: string | null
+          preview_url: string
+          price: number
+          updated_at: string
+          user_id: string
+          video_url: string | null
+          website_preview_url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          downloads_count?: number | null
+          id?: number
+          is_public?: boolean | null
+          likes_count?: number | null
+          name: string
+          payment_url?: string | null
+          preview_url: string
+          price?: number
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+          website_preview_url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          downloads_count?: number | null
+          id?: number
+          is_public?: boolean | null
+          likes_count?: number | null
+          name?: string
+          payment_url?: string | null
+          preview_url?: string
+          price?: number
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
+          website_preview_url?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           bio: string | null
@@ -1250,6 +1301,28 @@ export type Database = {
           user_data: Json
           downloads_count: number
           view_count: number
+        }[]
+      }
+      get_templates: {
+        Args: {
+          p_offset?: number
+          p_limit?: number
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          description: string
+          preview_url: string
+          video_url: string
+          website_preview_url: string
+          price: number
+          payment_url: string
+          created_at: string
+          updated_at: string
+          user_data: Json
+          downloads_count: number
+          likes_count: number
         }[]
       }
       get_user_components_counts: {
