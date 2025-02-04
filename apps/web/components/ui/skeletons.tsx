@@ -26,14 +26,14 @@ export function ComponentCardSkeleton() {
 export function CategoryCardSkeleton() {
   return (
     <div className="p-[1px] animate-pulse">
-      <div className="relative aspect-[4/3] mb-3">
+      <div className="relative aspect-[4/3] mb-4">
         <div className="absolute inset-0">
           <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
             <div className="w-full h-full bg-muted rounded-lg" />
           </div>
         </div>
       </div>
-      <div className="h-4 bg-muted rounded w-3/4" />
+      <div className="h-4 bg-muted rounded w-2/4" />
     </div>
   )
 }
