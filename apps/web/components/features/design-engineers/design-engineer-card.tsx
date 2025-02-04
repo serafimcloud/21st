@@ -36,7 +36,12 @@ export function DesignEngineerCard({ author }: DesignEngineerCardProps) {
                   {author.display_image_url || author.image_url ? (
                     <Image
                       src={author.display_image_url || author.image_url || ""}
-                      alt={author.display_name || author.name || author.username || ""}
+                      alt={
+                        author.display_name ||
+                        author.name ||
+                        author.username ||
+                        ""
+                      }
                       className="h-12 w-12 rounded-full shadow-base object-cover"
                       width={48}
                       height={48}
@@ -44,7 +49,12 @@ export function DesignEngineerCard({ author }: DesignEngineerCardProps) {
                   ) : (
                     <div className="h-12 w-12 rounded-full shadow-base bg-muted flex items-center justify-center">
                       <span className="text-lg font-medium">
-                        {((author.display_name || author.name || author.username || "?")?.[0] || "?").toUpperCase()}
+                        {(
+                          (author.display_name ||
+                            author.name ||
+                            author.username ||
+                            "?")?.[0] || "?"
+                        ).toUpperCase()}
                       </span>
                     </div>
                   )}
@@ -55,17 +65,22 @@ export function DesignEngineerCard({ author }: DesignEngineerCardProps) {
                       {author.display_name || author.name || author.username}
                     </h2>
                     <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
-                      {author.bio || `@${author.display_username || author.username}`}
+                      {author.bio ||
+                        `@${author.display_username || author.username}`}
                     </p>
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Eye className="w-4 h-4" />
-                      <span className="text-sm">{totalViews.toLocaleString()} views</span>
+                      <span className="text-sm">
+                        {totalViews.toLocaleString()} views
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Download className="w-4 h-4" />
-                      <span className="text-sm">{(totalUsages + totalDownloads).toLocaleString()} usages</span>
+                      <span className="text-sm">
+                        {(totalUsages + totalDownloads).toLocaleString()} usages
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -76,17 +91,17 @@ export function DesignEngineerCard({ author }: DesignEngineerCardProps) {
           {/* Components Cards Section */}
           {topComponents.length > 0 && (
             <div className="w-full lg:w-1/2 relative min-h-[150px] flex justify-center">
-              <div className="absolute bottom-0 translate-y-12 lg:translate-x-5 flex items-end">
+              <div className="absolute bottom-0 translate-y-12 translate-x-12 min-420:translate-x-0 lg:translate-x-5 flex items-end">
                 {topComponents.map((demo, index) => (
                   <motion.div
                     key={demo.id}
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
+                    transition={{
                       duration: 0.3,
-                      delay: 0.3 + (index * 0.15),
+                      delay: 0.3 + index * 0.15,
                       type: "spring",
-                      stiffness: 100
+                      stiffness: 100,
                     }}
                   >
                     <Link
@@ -128,7 +143,8 @@ export function DesignEngineerCard({ author }: DesignEngineerCardProps) {
                                   {demo.component?.name}
                                 </h3>
                                 <p className="text-white/80 text-xs">
-                                  {(demo.view_count || 0).toLocaleString()} views
+                                  {(demo.view_count || 0).toLocaleString()}{" "}
+                                  views
                                 </p>
                               </div>
                             </div>
