@@ -221,6 +221,7 @@ export const getComponentInstallPrompt = ({
         IMPORTANT:
           - Modify the component as needed to fit the existing codebase + design
           - Extend the tailwind.config.js and index.css if needed to include additional variables or styles
+          - You MUST create all mentioned files in full, without abbreviations. Do not use placeholders like "insert the rest of the code here"
       `
 
     return prompt
