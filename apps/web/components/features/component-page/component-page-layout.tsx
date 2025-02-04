@@ -840,12 +840,12 @@ export default function ComponentPage({
                       submission.status === "on_review" &&
                         "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
                       submission.status === "featured" &&
-                        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", 
+                        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
                       submission.status === "posted" &&
                         "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
                     )}
                   >
-                    {submission.status === "posted" 
+                    {submission.status === "posted"
                       ? "Not featured"
                       : submission.status
                           .replace("_", " ")
@@ -882,7 +882,9 @@ export default function ComponentPage({
                         <>
                           <div className="h-px bg-border" />
                           <div className="rounded-lg border bg-muted/50 p-3">
-                            <p className="text-sm font-medium mb-1">Moderator Feedback</p>
+                            <p className="text-sm font-medium mb-1">
+                              Moderator Feedback
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               {submission.moderators_feedback}
                             </p>
@@ -899,7 +901,7 @@ export default function ComponentPage({
         <div className="flex items-center gap-1">
           <ThemeToggle fillIcon={false} />
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger className="hidden md:flex" asChild>
               <button
                 onClick={handleReportClick}
                 className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-md relative group"
@@ -918,7 +920,7 @@ export default function ComponentPage({
           </Tooltip>
           {canEdit && (
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger className="hidden md:flex" asChild>
                 <button
                   onClick={handleEditClick}
                   className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-md relative"

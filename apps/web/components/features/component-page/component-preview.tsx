@@ -228,7 +228,7 @@ export function ComponentPagePreview({
     <motion.div
       layout
       className={cn(
-        "h-full w-full flex gap-2 rounded-lg md:flex-row flex-col max-h-[92vh] ",
+        "h-full w-full flex gap-2 rounded-lg md:flex-row flex-col md:max-h-[92vh] pb-4",
         isFullScreen && "fixed inset-0 z-50 bg-background p-4",
       )}
       transition={{
