@@ -55,35 +55,19 @@ function PublishTemplateForm() {
   })
 
   const onSubmit = async (data: TemplateFormData) => {
-    console.log("Current user:", user)
-    console.log("PublishAsUser:", publishAsUser)
-    console.log("Is admin:", isAdmin)
-    console.log("PublishAsUsername:", publishAsUsername)
-
-    // Определяем пользователя для публикации
     let effectiveUserId: string | undefined
     let effectiveUsername: string | undefined
 
     if (isAdmin && publishAsUsername && publishAsUser) {
-      // Для админа используем ID указанного пользователя
       effectiveUserId = publishAsUser.id
       effectiveUsername = publishAsUsername
     } else if (user) {
-      // Для обычного пользователя используем его собственный ID
       effectiveUserId = user.id
       effectiveUsername = user.username || undefined
     }
 
-    // Проверяем наличие ID пользователя
     if (!effectiveUserId || !effectiveUsername) {
       toast.error("No effective user found")
-      console.error("No effective user found:", {
-        userId: user?.id,
-        username: user?.username,
-        publishAsUserId: publishAsUser?.id,
-        publishAsUsername,
-        isAdmin,
-      })
       return
     }
 
@@ -91,7 +75,6 @@ function PublishTemplateForm() {
     setPublishProgress("Getting user data...")
 
     try {
-      // Получаем UUID пользователя из таблицы public.users
       const { data: userData, error: userError } = await client
         .from("users")
         .select("id")
@@ -107,18 +90,9 @@ function PublishTemplateForm() {
 
       const baseFolder = `${effectiveUserId}/${data.template_slug}`
 
-      // Логируем данные перед загрузкой
-      console.log("Upload data:", {
-        baseFolder,
-        hasImageFile: !!data.preview_image_file,
-        hasVideoFile: !!data.preview_video_file,
-        userUuid,
-      })
-
       let previewImageUrl = data.preview_url
       let videoUrl = null
 
-      // Загружаем файлы только если они есть
       if (data.preview_image_file) {
         previewImageUrl = await uploadToStorage(
           data.preview_image_file,
@@ -136,20 +110,11 @@ function PublishTemplateForm() {
             contentType: "video/mp4",
           })
         } catch (error) {
-          console.error("Error uploading video:", error)
           throw new Error("Failed to upload video")
         }
       }
 
       setPublishProgress("Creating template...")
-
-      // Логируем данные перед созданием записи
-      console.log("Template data:", {
-        ...data,
-        user_id: userUuid,
-        previewImageUrl,
-        videoUrl,
-      })
 
       const { error } = await client.from("templates").insert({
         name: data.name,
@@ -158,7 +123,7 @@ function PublishTemplateForm() {
         preview_url: previewImageUrl || "",
         video_url: videoUrl || null,
         website_preview_url: data.website_preview_url,
-        payment_url: data.payment_url,
+        payment_url: `${data.payment_url}${data.payment_url.includes("?") ? "&" : "?"}ref=21st`,
         price: data.price,
         user_id: userUuid,
         is_public: true,
@@ -168,7 +133,6 @@ function PublishTemplateForm() {
       })
 
       if (error) {
-        console.error("Supabase error:", error)
         throw error
       }
 
@@ -176,7 +140,6 @@ function PublishTemplateForm() {
       toast.success("Template published successfully")
       router.push("/?tab=templates")
     } catch (error) {
-      console.error("Error publishing template:", error)
       toast.error(
         error instanceof Error ? error.message : "Error publishing template",
       )
@@ -191,7 +154,6 @@ function PublishTemplateForm() {
     form.setValue("template_slug", makeSlugFromName(name))
   }
 
-  // Вспомогательная функция для получения расширения файла
   const getFileExtension = (file: File | undefined): string => {
     if (!file?.name) return ""
     const parts = file.name.split(".")

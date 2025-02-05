@@ -45,18 +45,10 @@ export function TemplateDetailsForm({
   }
 
   const handleVideoClick = () => {
-    console.log("handleVideoClick called")
     if (fileInputRef.current) {
-      console.log("Setting up file input for video")
       fileInputRef.current.accept = "video/mp4,video/quicktime"
-      fileInputRef.current.onchange = (e) => {
-        console.log("File input change event triggered")
-        console.log("Files:", e.target.files)
-        handleFileChange(e as any, "video")
-      }
+      fileInputRef.current.onchange = (e) => handleFileChange(e as any, "video")
       handleClick()
-    } else {
-      console.log("fileInputRef.current is null")
     }
   }
 
@@ -76,11 +68,6 @@ export function TemplateDetailsForm({
         ref={fileInputRef}
         className="hidden"
         accept="image/*,video/mp4,video/quicktime"
-        onChange={(e) => {
-          console.log("Global input onChange triggered")
-          console.log("Files:", e.target.files)
-          console.log("Accept:", e.target.accept)
-        }}
       />
 
       <div className="space-y-2">

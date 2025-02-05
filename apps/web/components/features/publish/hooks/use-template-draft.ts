@@ -10,7 +10,6 @@ export function useTemplateDraft(form: UseFormReturn<TemplateFormData>) {
   const saveDraft = (data: Partial<TemplateFormData>) => {
     if (!isClient) return
     try {
-      // Создаем копию данных без файлов и data URLs
       const draftData = { ...data }
       delete draftData.preview_image_file
       delete draftData.preview_video_file
@@ -18,9 +17,7 @@ export function useTemplateDraft(form: UseFormReturn<TemplateFormData>) {
       delete draftData.preview_video_data_url
 
       localStorage.setItem(TEMPLATE_DRAFT_KEY, JSON.stringify(draftData))
-    } catch (error) {
-      console.error("Error saving draft:", error)
-    }
+    } catch (error) {}
   }
 
   const loadDraft = (): Partial<TemplateFormData> | null => {
@@ -29,7 +26,6 @@ export function useTemplateDraft(form: UseFormReturn<TemplateFormData>) {
       const draft = localStorage.getItem(TEMPLATE_DRAFT_KEY)
       return draft ? JSON.parse(draft) : null
     } catch (error) {
-      console.error("Error loading draft:", error)
       return null
     }
   }
@@ -38,9 +34,7 @@ export function useTemplateDraft(form: UseFormReturn<TemplateFormData>) {
     if (!isClient) return
     try {
       localStorage.removeItem(TEMPLATE_DRAFT_KEY)
-    } catch (error) {
-      console.error("Error clearing draft:", error)
-    }
+    } catch (error) {}
   }
 
   const hasDraft = (): boolean => {
@@ -59,7 +53,6 @@ export function useTemplateDraft(form: UseFormReturn<TemplateFormData>) {
     }
   }
 
-  // Автоматически сохраняем драфт при изменении формы
   useEffect(() => {
     const subscription = form.watch((data) => {
       saveDraft(data)
