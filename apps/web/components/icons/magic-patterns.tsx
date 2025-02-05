@@ -1,7 +1,6 @@
 export const MagicPatternsLogo = ({ className }: { className?: string }) => (
   <svg
-    width="85"
-    height="85"
+    className={className}
     viewBox="0 0 85 85"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
