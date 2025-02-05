@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useClerkSupabaseClient } from "@/lib/clerk"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface FilterChipsProps {
   activeTab: "categories" | "components" | "templates"
@@ -142,6 +143,21 @@ export function FilterChips({
     }
 
     if (activeTab === "templates") {
+      const skeletonWidths = [
+        "w-[115px]",
+        "w-[55px]",
+        "w-[40px]",
+        "w-[140px]",
+        "w-[98px]",
+        "w-[84px]",
+        "w-[76px]",
+        "w-[92px]",
+        "w-[68px]",
+        "w-[120px]",
+        "w-[88px]",
+        "w-[104px]",
+      ]
+
       return (
         <>
           <Button
@@ -156,17 +172,26 @@ export function FilterChips({
           >
             All
           </Button>
-          {templateTags?.map((tag) => (
-            <Button
-              key={tag.tag_id}
-              onClick={() => onFilterChange(tag.tag_slug)}
-              variant={selectedFilter === tag.tag_slug ? "default" : "outline"}
-              className="rounded-full"
-              size="sm"
-            >
-              {tag.tag_name}
-            </Button>
-          ))}
+          {templateTags === undefined
+            ? Array.from({ length: 20 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className={`h-8 rounded-full border border-input ${skeletonWidths[i % skeletonWidths.length]}`}
+                />
+              ))
+            : templateTags?.map((tag) => (
+                <Button
+                  key={tag.tag_id}
+                  onClick={() => onFilterChange(tag.tag_slug)}
+                  variant={
+                    selectedFilter === tag.tag_slug ? "default" : "outline"
+                  }
+                  className="rounded-full"
+                  size="sm"
+                >
+                  {tag.tag_name}
+                </Button>
+              ))}
         </>
       )
     }
