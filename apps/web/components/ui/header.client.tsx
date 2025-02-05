@@ -151,6 +151,18 @@ export function Header({
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link href="/publish/template" className="cursor-pointer">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium">
+                            Publish template
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Create and publish a new website template
+                          </span>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link href="/import" className="cursor-pointer">
                         <div className="flex flex-col gap-1">
                           <span className="text-sm font-medium flex items-center gap-1">
