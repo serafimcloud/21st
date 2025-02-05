@@ -105,7 +105,7 @@ function PublishTemplateForm() {
       const userUuid = userData.id
       setPublishProgress("Uploading files...")
 
-      const baseFolder = `${data.template_slug}`
+      const baseFolder = `${effectiveUserId}/${data.template_slug}`
 
       // Логируем данные перед загрузкой
       console.log("Upload data:", {
