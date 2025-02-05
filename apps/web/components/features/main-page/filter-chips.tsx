@@ -5,9 +5,11 @@ import { categories } from "@/lib/navigation"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { useEffect, useRef, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useClerkSupabaseClient } from "@/lib/clerk"
 
 interface FilterChipsProps {
-  activeTab: "categories" | "components"
+  activeTab: "categories" | "components" | "templates"
   selectedFilter: string
   onFilterChange: (filter: string) => void
 }
@@ -20,6 +22,17 @@ export function FilterChips({
   const [showLeftGradient, setShowLeftGradient] = useState(false)
   const [showRightGradient, setShowRightGradient] = useState(true)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const supabase = useClerkSupabaseClient()
+
+  const { data: templateTags } = useQuery({
+    queryKey: ["template-tags"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_template_tags")
+      if (error) throw error
+      return data
+    },
+    enabled: activeTab === "templates",
+  })
 
   useEffect(() => {
     const scrollArea = scrollAreaRef.current
@@ -124,6 +137,36 @@ export function FilterChips({
               </Button>
             )
           })}
+        </>
+      )
+    }
+
+    if (activeTab === "templates") {
+      return (
+        <>
+          <Button
+            onClick={() => onFilterChange("all")}
+            variant={
+              selectedFilter === "all" || !selectedFilter
+                ? "default"
+                : "outline"
+            }
+            className="rounded-full"
+            size="sm"
+          >
+            All
+          </Button>
+          {templateTags?.map((tag) => (
+            <Button
+              key={tag.tag_id}
+              onClick={() => onFilterChange(tag.tag_slug)}
+              variant={selectedFilter === tag.tag_slug ? "default" : "outline"}
+              className="rounded-full"
+              size="sm"
+            >
+              {tag.tag_name}
+            </Button>
+          ))}
         </>
       )
     }

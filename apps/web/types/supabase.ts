@@ -659,6 +659,42 @@ export type Database = {
           },
         ]
       }
+      templates_tags: {
+        Row: {
+          created_at: string | null
+          id: number
+          tag_id: number
+          template_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          tag_id: number
+          template_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          tag_id?: number
+          template_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "templates_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "templates_tags_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           bio: string | null
@@ -1341,6 +1377,15 @@ export type Database = {
           view_count: number
         }[]
       }
+      get_template_tags: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          tag_id: number
+          tag_name: string
+          tag_slug: string
+          templates_count: number
+        }[]
+      }
       get_templates: {
         Args: {
           p_offset?: number
@@ -1368,6 +1413,29 @@ export type Database = {
           p_offset?: number
           p_limit?: number
           p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          description: string
+          preview_url: string
+          video_url: string
+          website_preview_url: string
+          price: number
+          payment_url: string
+          created_at: string
+          updated_at: string
+          user_data: Json
+          downloads_count: number
+          likes_count: number
+        }[]
+      }
+      get_templates_v3: {
+        Args: {
+          p_offset?: number
+          p_limit?: number
+          p_include_private?: boolean
+          p_tag_slug?: string
         }
         Returns: {
           id: number
@@ -1624,6 +1692,13 @@ export type Database = {
       update_demo_tags: {
         Args: {
           p_demo_id: number
+          p_tags: Json
+        }
+        Returns: undefined
+      }
+      update_template_tags: {
+        Args: {
+          p_template_id: number
           p_tags: Json
         }
         Returns: undefined
