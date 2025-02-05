@@ -123,7 +123,7 @@ function PublishTemplateForm() {
         preview_url: previewImageUrl || "",
         video_url: videoUrl || null,
         website_preview_url: data.website_preview_url,
-        payment_url: `${data.payment_url}${data.payment_url.includes("?") ? "&" : "?"}ref=21st`,
+        payment_url: data.payment_url,
         price: data.price,
         user_id: userUuid,
         is_public: true,

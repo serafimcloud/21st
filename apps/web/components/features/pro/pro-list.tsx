@@ -17,30 +17,17 @@ export function ProList({ className }: ProListProps) {
   const { data: publishers, isLoading } = useQuery({
     queryKey: ["pro-publishers"],
     queryFn: async () => {
-      const { data: publishersData } = await supabaseWithAdminAccess
-        .from("users")
-        .select("*")
-        .not("pro_referral_url", "is", null)
-        .not("pro_referral_url", "eq", "")
-        .order("created_at", { ascending: true })
+      const { data, error } =
+        await supabaseWithAdminAccess.rpc("get_pro_publishers")
 
-      if (!publishersData) return []
+      if (error) throw error
+      if (!data) return []
 
-      const publishersWithImages = await Promise.all(
-        publishersData.map(async (publisher) => {
-          if (!publisher.pro_banner_url) {
-            return {
-              ...publisher,
-              image: publisher.pro_banner_url,
-            }
-          }
+      const publishersWithImages = data.map((publisher) => ({
+        ...publisher,
+        image: publisher.pro_banner_url,
+      }))
 
-          return {
-            ...publisher,
-            image: publisher.pro_banner_url,
-          }
-        }),
-      )
       return publishersWithImages
     },
     staleTime: 1000 * 60 * 5,

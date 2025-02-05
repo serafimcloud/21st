@@ -12,7 +12,7 @@ export function TemplatesList() {
   const { data: templates, isLoading } = useQuery({
     queryKey: ["templates"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_templates", {
+      const { data, error } = await supabase.rpc("get_templates_v2", {
         p_offset: 0,
         p_limit: 50,
         p_include_private: false,
