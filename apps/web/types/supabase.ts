@@ -609,6 +609,7 @@ export type Database = {
           payment_url: string | null
           preview_url: string
           price: number
+          template_slug: string
           updated_at: string
           user_id: string
           video_url: string | null
@@ -625,6 +626,7 @@ export type Database = {
           payment_url?: string | null
           preview_url: string
           price?: number
+          template_slug: string
           updated_at?: string
           user_id: string
           video_url?: string | null
@@ -641,12 +643,21 @@ export type Database = {
           payment_url?: string | null
           preview_url?: string
           price?: number
+          template_slug?: string
           updated_at?: string
           user_id?: string
           video_url?: string | null
           website_preview_url?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "templates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
