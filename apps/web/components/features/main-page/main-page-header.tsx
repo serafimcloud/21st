@@ -21,10 +21,10 @@ export const sortByAtom = atom<SortOption>("recommended")
 
 const TAB_OPTIONS = {
   components: "Components",
+  templates: "Templates",
   categories: "Categories",
   authors: "Design Engineers",
   pro: "Pro",
-  templates: "Templates",
 } as const
 
 export function ComponentsHeader({
@@ -74,6 +74,12 @@ export function ComponentsHeader({
                   Components
                 </TabsTrigger>
                 <TabsTrigger
+                  value="templates"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Templates
+                </TabsTrigger>
+                <TabsTrigger
                   value="categories"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
@@ -90,12 +96,6 @@ export function ComponentsHeader({
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
                   Pro
-                </TabsTrigger>
-                <TabsTrigger
-                  value="templates"
-                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
-                >
-                  Templates
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -121,6 +121,12 @@ export function ComponentsHeader({
                   Components
                 </TabsTrigger>
                 <TabsTrigger
+                  value="templates"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Templates
+                </TabsTrigger>
+                <TabsTrigger
                   value="categories"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
@@ -137,12 +143,6 @@ export function ComponentsHeader({
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
                   Pro
-                </TabsTrigger>
-                <TabsTrigger
-                  value="templates"
-                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
-                >
-                  Templates
                 </TabsTrigger>
               </TabsList>
             </Tabs>
