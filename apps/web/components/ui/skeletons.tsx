@@ -80,7 +80,7 @@ export function DesignEngineerCardSkeleton() {
 export function ProCardSkeleton() {
   return (
     <div className="flex flex-col group p-[1px] animate-pulse">
-      <div className="relative aspect-[4/3] mb-3">
+      <div className="relative aspect-[16/10] mb-3">
         <div className="absolute inset-0">
           <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
             <div className="w-full h-full bg-muted rounded-lg" />
