@@ -174,7 +174,7 @@ function PublishTemplateForm() {
 
       clearDraft()
       toast.success("Template published successfully")
-      router.push("/")
+      router.push("/?tab=templates")
     } catch (error) {
       console.error("Error publishing template:", error)
       toast.error(
