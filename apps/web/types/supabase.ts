@@ -675,6 +675,7 @@ export type Database = {
           name: string | null
           pro_banner_url: string | null
           pro_referral_url: string | null
+          ref: string | null
           twitter_url: string | null
           updated_at: string | null
           username: string | null
@@ -695,6 +696,7 @@ export type Database = {
           name?: string | null
           pro_banner_url?: string | null
           pro_referral_url?: string | null
+          ref?: string | null
           twitter_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -715,6 +717,7 @@ export type Database = {
           name?: string | null
           pro_banner_url?: string | null
           pro_referral_url?: string | null
+          ref?: string | null
           twitter_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -1249,6 +1252,30 @@ export type Database = {
           view_count: number
         }[]
       }
+      get_pro_publishers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          created_at: string
+          updated_at: string
+          image_url: string
+          username: string
+          name: string
+          email: string
+          manually_added: boolean
+          is_admin: boolean
+          twitter_url: string
+          bio: string
+          github_url: string
+          pro_referral_url: string
+          website_url: string
+          pro_banner_url: string
+          display_name: string
+          display_username: string
+          display_image_url: string
+          ref: string
+        }[]
+      }
       get_random_components: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1315,6 +1342,28 @@ export type Database = {
         }[]
       }
       get_templates: {
+        Args: {
+          p_offset?: number
+          p_limit?: number
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          description: string
+          preview_url: string
+          video_url: string
+          website_preview_url: string
+          price: number
+          payment_url: string
+          created_at: string
+          updated_at: string
+          user_data: Json
+          downloads_count: number
+          likes_count: number
+        }[]
+      }
+      get_templates_v2: {
         Args: {
           p_offset?: number
           p_limit?: number
