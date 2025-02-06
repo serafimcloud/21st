@@ -87,6 +87,7 @@ export type FormStep =
 
 // API Types
 export interface ComponentSearchResult {
+  demo_id: number
   name: string
   preview_url: string
   video_url: string | null

@@ -267,7 +267,10 @@ export const getComponentInstallPrompt = ({
     return prompt
   }
 
-  if (promptType === PROMPT_TYPES.EXTENDED) {
+  if (
+    promptType === PROMPT_TYPES.EXTENDED ||
+    promptType === PROMPT_TYPES.BOLT
+  ) {
     prompt +=
       endent`
         You are given a task to integrate an existing React component in the codebase
@@ -361,12 +364,10 @@ export const getComponentInstallPrompt = ({
       "\n"
   }
 
-  // Comment out Bolt-specific logic for now
-  /*if (promptType === PROMPT_TYPES.BOLT) {
-      // Bolt-specific prompt logic here
-    }*/
-
-  if (promptType === PROMPT_TYPES.EXTENDED) {
+  if (
+    promptType === PROMPT_TYPES.EXTENDED ||
+    promptType === PROMPT_TYPES.BOLT
+  ) {
     prompt +=
       "\n" +
       endent`
