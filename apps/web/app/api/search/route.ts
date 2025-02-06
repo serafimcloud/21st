@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
         name: item.name || "",
         preview_url: item.preview_url || "",
         video_url: item.video_url,
+        demo_id: item.id,
         component_data: {
           name: item.component_data?.name || "",
           description: item.component_data?.description || "",

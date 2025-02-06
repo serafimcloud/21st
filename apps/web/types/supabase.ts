@@ -54,6 +54,13 @@ export type Database = {
             foreignKeyName: "api_keys_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -102,6 +109,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "component_analytics_user_id_fkey"
@@ -213,6 +227,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "component_likes_user_id_fkey"
@@ -403,6 +424,13 @@ export type Database = {
             foreignKeyName: "components_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "components_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -528,6 +556,67 @@ export type Database = {
             foreignKeyName: "demos_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "demos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: number
+          notes: string | null
+          payment_date: string
+          reference_number: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: number
+          notes?: string | null
+          payment_date: string
+          reference_number?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: number
+          notes?: string | null
+          payment_date?: string
+          reference_number?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "referral_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -650,6 +739,13 @@ export type Database = {
           website_preview_url?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "templates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "templates_user_id_fkey"
             columns: ["user_id"]
@@ -843,6 +939,13 @@ export type Database = {
             foreignKeyName: "components_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "components_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -887,10 +990,26 @@ export type Database = {
             foreignKeyName: "components_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "components_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_referral_analytics: {
+        Row: {
+          avg_amount: number | null
+          month: string | null
+          payments_count: number | null
+          total_amount: number | null
+        }
+        Relationships: []
       }
       mv_component_analytics: {
         Row: {
@@ -921,6 +1040,19 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referral_analytics: {
+        Row: {
+          avg_payment: number | null
+          email: string | null
+          first_payment: string | null
+          last_payment: string | null
+          referral_code: string | null
+          total_earned: number | null
+          total_payments: number | null
+          user_id: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
@@ -1635,6 +1767,7 @@ export type Database = {
           name: string
           preview_url: string
           video_url: string
+          demo_id: number
           component_data: Json
           user_data: Json
           usage_data: Json
@@ -1706,6 +1839,7 @@ export type Database = {
     }
     Enums: {
       api_plan: "free" | "pro" | "enterprise"
+      payment_status: "pending" | "paid" | "rejected"
       submission_status: "on_review" | "featured" | "posted"
     }
     CompositeTypes: {
