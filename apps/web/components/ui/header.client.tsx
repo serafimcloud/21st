@@ -27,6 +27,8 @@ import { Icons } from "@/components/icons"
 import { EditProfileDialog } from "@/components/features/profile/edit-profile-dialog"
 import { useUserProfile } from "@/components/hooks/use-user-profile"
 import { useAnimation } from "framer-motion"
+import { useAtom } from "jotai"
+import { sidebarOpenAtom } from "@/lib/atoms/sidebar"
 
 export const searchQueryAtom = atom("")
 
@@ -46,6 +48,7 @@ export function Header({
   const step = searchParams.get("step")
   const controls = useAnimation()
   const router = useRouter()
+  const [open] = useAtom(sidebarOpenAtom)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -72,40 +75,48 @@ export function Header({
     <>
       <header
         className={cn(
-          "flex fixed top-0 left-0 right-0 h-14 z-40 items-center justify-between px-4 py-3 text-foreground",
+          "flex fixed top-0 left-0 right-0 h-14 z-40 items-center px-4 py-3 text-foreground",
           {
             "border-b border-border/40 bg-background": variant !== "publish",
           },
         )}
       >
-        <div className="flex items-center gap-4">
-          <Link href="/" className="h-8 w-8 bg-foreground rounded-full" />
+        <div
+          className={cn("flex items-center flex-1", open ? "ml-64 pl-3" : "")}
+        >
           {text && !isMobile && (
             <div className="flex items-center gap-2">
               <Icons.slash className="text-border w-[22px] h-[22px]" />
               <span className="text-[14px] font-medium">{text}</span>
             </div>
           )}
-        </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 w-[400px]">
-          <Button
-            variant="outline"
+          <div
             className={cn(
-              "relative h-8 w-full justify-start bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pr-12 hidden md:inline-flex",
+              "w-[400px]",
+              open ? "ml-4" : "absolute left-1/2 -translate-x-1/2",
             )}
-            onClick={() =>
-              document.dispatchEvent(
-                new KeyboardEvent("keydown", { key: "k", metaKey: true }),
-              )
-            }
           >
-            <span className="hidden lg:inline-flex mr-4">Global search...</span>
-            <span className="inline-flex lg:hidden mr-4">Search...</span>
-            <kbd className="pointer-events-none absolute right-[0.3rem] top-[0.3rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-sans text-[11px] opacity-100 sm:flex">
-              <span className="text-[11px] font-sans">⌘</span>K
-            </kbd>
-          </Button>
+            <Button
+              variant="outline"
+              className={cn(
+                "relative h-8 w-full justify-start bg-muted/50 text-sm font-normal text-muted-foreground shadow-none sm:pr-12 hidden md:inline-flex",
+              )}
+              onClick={() =>
+                document.dispatchEvent(
+                  new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+                )
+              }
+            >
+              <span className="hidden lg:inline-flex mr-4">
+                Global search...
+              </span>
+              <span className="inline-flex lg:hidden mr-4">Search...</span>
+              <kbd className="pointer-events-none absolute right-[0.3rem] top-[0.3rem] hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-sans text-[11px] opacity-100 sm:flex">
+                <span className="text-[11px] font-sans">⌘</span>K
+              </kbd>
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-1">

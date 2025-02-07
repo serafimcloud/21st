@@ -16,7 +16,7 @@ export default function PublishTemplatePage() {
         <title>Publish New Template | 21st.dev</title>
       </Head>
       <SignedIn>
-        <header className="flex fixed top-0 left-0 right-0 h-14 z-40 items-center px-4 py-3 text-foreground border-b border-border/40 bg-background">
+        <header className="flex fixed top-0 left-0 right-0 h-14 z-30 items-center px-4 py-3 text-foreground border-b border-border/40 bg-background">
           <HeaderServer text="Publish template" />
         </header>
         <div className="flex flex-row items-center h-screen w-full">

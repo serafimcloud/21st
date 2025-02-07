@@ -13,15 +13,24 @@ module.exports = {
   ],
   theme: {
     screens: {
+      "min-420": "420px",
+      "min-720": "720px",
+      "min-1280": "1280px",
+      "min-1536": "1536px",
       sm: "640px",
       md: "768px",
       lg: "1024px",
       xl: "1280px",
       "2xl": "1536px",
-      "min-420": "420px",
-      "min-720": "720px",
-      "min-1280": "1280px",
-      "min-1536": "1536px",
+    },
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: "20px",
+        "min-720": "24px",
+        "min-1280": "32px",
+        "min-1536": "80px",
+      },
     },
     extend: {
       fontFamily: {
