@@ -377,7 +377,7 @@ export function CommandMenu() {
       >
         <DialogTitle className="sr-only">Command Menu</DialogTitle>
         <DialogDescription className="sr-only">
-          Search and navigate through components and sections using keyboard
+          Search and navigate through components and categories using keyboard
           shortcuts
         </DialogDescription>
         <Command
@@ -389,7 +389,7 @@ export function CommandMenu() {
           <CommandInput
             value={searchQuery}
             onValueChange={setSearchQuery}
-            placeholder="Search components or sections..."
+            placeholder="Search components or categories..."
             className="h-11 w-full"
           />
           <div className="flex flex-1 min-h-0">
