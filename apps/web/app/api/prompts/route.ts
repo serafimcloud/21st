@@ -23,33 +23,28 @@ async function fetchCode(url: string) {
 
 export async function POST(request: NextRequest) {
   const apiKey = request.headers.get("x-api-key")
+  const internalToken = request.headers.get("x-internal-token")
+  const isInternalRequest = internalToken === process.env.INTERNAL_API_SECRET
 
-  if (!apiKey) {
+  if (!isInternalRequest && !apiKey) {
     return NextResponse.json({ error: "API key is required" }, { status: 401 })
   }
 
-  try {
-    // Check API key
+  if (!isInternalRequest && apiKey) {
     const { data: keyCheck, error: keyError } = await supabase.rpc(
       "check_api_key",
       { api_key: apiKey },
     )
 
-    if (keyError) {
-      console.error("API key check error:", keyError)
-      return NextResponse.json(
-        { error: "Error validating API key" },
-        { status: 401 },
-      )
-    }
-
-    if (!keyCheck?.valid) {
+    if (keyError || !keyCheck?.valid) {
       return NextResponse.json(
         { error: keyCheck?.error || "Invalid API key" },
         { status: 401 },
       )
     }
+  }
 
+  try {
     const body = await request.json()
     const { prompt_type, demo_id } = body
 
