@@ -102,6 +102,7 @@ export const Icons = {
   boltLogo: (props: LucideProps) => (
     <svg
       {...props}
+      className={props.className}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 51 21.9"
       fill="currentColor"
@@ -161,6 +162,7 @@ export const Icons = {
   replit: (props: LucideProps) => (
     <svg
       {...props}
+      className={props.className}
       viewBox="0 0 793.8 871.5"
       xmlns="http://www.w3.org/2000/svg"
     >
