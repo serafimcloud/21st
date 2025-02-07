@@ -303,7 +303,7 @@ export function UserItemsList({
         components?.map((component: DemoWithComponent) => (
           <ComponentCard
             key={`${component.id}-${component.updated_at}`}
-            component={component}
+            demo={component}
           />
         ))
       )}

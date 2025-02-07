@@ -606,7 +606,7 @@ export const ComponentPageInfo = ({
                     {dependencyComponents.map((component) => (
                       <ComponentCard
                         key={`${component.id}-${component.updated_at}`}
-                        component={component}
+                        demo={component}
                       />
                     ))}
                   </div>

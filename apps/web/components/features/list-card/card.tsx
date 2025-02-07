@@ -12,44 +12,48 @@ import { UserAvatar } from "../../ui/user-avatar"
 import { ComponentCardSkeleton } from "../../ui/skeletons"
 
 export function ComponentCard({
-  component,
+  demo,
   isLoading,
 }: {
-  component?: DemoWithComponent | (Component & { user: User })
+  demo?: DemoWithComponent | (Component & { user: User })
   isLoading?: boolean
 }) {
-  if (isLoading || !component) {
+  if (isLoading || !demo) {
     return <ComponentCardSkeleton />
   }
 
-  const userData = component.user
+  const userData = "component" in demo ? demo.component?.user : demo.user
   const username = userData?.username || userData?.display_username
-  const isDemo = "demo_slug" in component
+  const isDemo = "demo_slug" in demo
   const componentSlug = isDemo
-    ? component.component?.component_slug
-    : component.component_slug
+    ? demo.component?.component_slug
+    : demo.component_slug
 
   if (!userData || !username || !componentSlug) {
     console.warn("Missing required data:", {
       userData,
       username,
       componentSlug,
-      component,
+      demo,
     })
     return <ComponentCardSkeleton />
   }
 
-  const isDemoWithComponent = isDemo && "component" in component
+  const isDemoWithComponent = isDemo && "component" in demo
 
-  const componentUrl = `/${username}/${componentSlug}/${isDemo ? component.demo_slug || "default" : "default"}`
+  const componentUrl = `/${username}/${componentSlug}/${isDemo ? demo.demo_slug || "default" : "default"}`
 
-  const videoUrl = isDemo ? component.video_url : null
+  const videoUrl = isDemo ? demo.video_url : null
 
   const likesCount = isDemo
-    ? component.component?.likes_count || 0
-    : component.likes_count || 0
+    ? demo.component?.likes_count || 0
+    : demo.likes_count || 0
 
-  const viewCount = isDemo ? component.view_count || 0 : 0
+  const viewCount = isDemo ? demo.view_count || 0 : 0
+
+  const previewUrl = demo.preview_url || "/placeholder.svg"
+
+  const componentName = isDemo ? demo.component?.name || "" : demo.name || ""
 
   return (
     <div className="p-[1px]">
@@ -59,12 +63,8 @@ export function ComponentCard({
             <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
               <div className="absolute inset-0">
                 <ComponentPreviewImage
-                  src={
-                    isDemo
-                      ? component.preview_url || "/placeholder.svg"
-                      : component.preview_url || "/placeholder.svg"
-                  }
-                  alt={component.name || ""}
+                  src={previewUrl}
+                  alt={componentName}
                   fallbackSrc="/placeholder.svg"
                   className="rounded-lg"
                 />
@@ -72,8 +72,8 @@ export function ComponentCard({
               <div className="absolute inset-0 rounded-lg" />
               {videoUrl && isDemoWithComponent && (
                 <ComponentVideoPreview
-                  component={component as DemoWithComponent}
-                  demo={component as DemoWithComponent}
+                  component={demo as DemoWithComponent}
+                  demo={demo as DemoWithComponent}
                 />
               )}
             </div>
@@ -81,7 +81,7 @@ export function ComponentCard({
           {videoUrl && (
             <div
               className="absolute top-2 left-2 z-20 bg-background/90 backdrop-blur rounded-sm px-2 py-1 pointer-events-none"
-              data-video-icon={`${component.id}`}
+              data-video-icon={`${demo.id}`}
             >
               <Video size={16} className="text-foreground" />
             </div>
@@ -91,13 +91,13 @@ export function ComponentCard({
       <div className="flex space-x-3 items-center">
         <UserAvatar
           src={
-            userData.display_image_url ||
-            userData.image_url ||
+            demo.user.display_image_url ||
+            demo.user.image_url ||
             "/placeholder.svg"
           }
-          alt={userData.display_name || userData.name || ""}
+          alt={demo.user.display_name || demo.user.name || ""}
           size={32}
-          user={userData}
+          user={demo.user}
           isClickable
         />
         <div className="flex items-center justify-between flex-grow min-w-0">
@@ -107,11 +107,11 @@ export function ComponentCard({
           >
             <div className="flex flex-col min-w-0">
               <h2 className="text-sm font-medium text-foreground truncate">
-                {isDemo ? component.component?.name : component.name}
+                {isDemo ? demo.component?.name : demo.name}
               </h2>
-              {component.name !== "Default" && (
+              {demo.name !== "Default" && (
                 <p className="text-sm text-muted-foreground truncate">
-                  {component.name}
+                  {demo.name}
                 </p>
               )}
             </div>
