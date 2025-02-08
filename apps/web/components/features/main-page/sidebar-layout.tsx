@@ -50,7 +50,7 @@ export function MainSidebar() {
               </button>
             </TooltipTrigger>
             <TooltipContent
-              className="flex items-center gap-1.5 z-[200]"
+              className="flex items-center gap-1.5 z-50"
               side="right"
             >
               <span>Toggle Sidebar</span>

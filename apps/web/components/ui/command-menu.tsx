@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/command"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { useSidebarVisibility } from "@/hooks/use-sidebar-visibility"
 
 import { categories } from "@/lib/navigation"
 import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
@@ -131,6 +132,7 @@ export function CommandMenu() {
   const supabase = useClerkSupabaseClient()
   const { user: dbUser, clerkUser: user, isLoading } = useUserProfile()
   const [, setSidebarOpen] = useAtom(sidebarOpenAtom)
+  const shouldShowSidebar = useSidebarVisibility()
 
   const { data: components, isLoading: isComponentsLoading } = useQuery<
     DemoWithComponent[]
@@ -503,7 +505,7 @@ export function CommandMenu() {
                   "api docs keys",
                   "terms service",
                   "toggle theme",
-                  "toggle sidebar",
+                  ...(shouldShowSidebar ? ["toggle sidebar"] : []),
                 ].some((text) => text.includes(searchQuery.toLowerCase()))) && (
                 <>
                   <CommandGroup heading="Quick Actions">
@@ -619,26 +621,27 @@ export function CommandMenu() {
                       </CommandItem>
                     )}
                     {(!searchQuery ||
-                      "toggle sidebar".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
-                        value="action-sidebar"
-                        onSelect={() => {
-                          setSidebarOpen((prev) => !prev)
-                          setSearchQuery("")
-                          setValue("")
-                          setOpen(false)
-                        }}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Icons.sidebar className="h-4 w-4" />
-                          <span>Toggle Sidebar</span>
-                        </div>
-                        <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-sans text-[11px] leading-none opacity-100 flex">
-                          S
-                        </kbd>
-                      </CommandItem>
-                    )}
+                      "toggle sidebar".includes(searchQuery.toLowerCase())) &&
+                      shouldShowSidebar && (
+                        <CommandItem
+                          value="action-sidebar"
+                          onSelect={() => {
+                            setSidebarOpen((prev) => !prev)
+                            setSearchQuery("")
+                            setValue("")
+                            setOpen(false)
+                          }}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Icons.sidebar className="h-4 w-4" />
+                            <span>Toggle Sidebar</span>
+                          </div>
+                          <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-sans text-[11px] leading-none opacity-100 flex">
+                            S
+                          </kbd>
+                        </CommandItem>
+                      )}
                   </CommandGroup>
                   <CommandSeparator />
                 </>

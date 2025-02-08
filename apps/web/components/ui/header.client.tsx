@@ -85,6 +85,7 @@ export function Header({
         <div
           className={cn("flex items-center flex-1", open ? "ml-64 pl-3" : "")}
         >
+          <Link href="/" className="absolute left-4 top-3 h-8 w-8 bg-foreground rounded-full" />
           {text && !isMobile && (
             <div className="flex items-center gap-2">
               <Icons.slash className="text-border w-[22px] h-[22px]" />

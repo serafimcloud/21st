@@ -77,7 +77,6 @@ export default async function HomePage() {
       return (
         <div className="min-h-screen flex flex-col">
           <div className="flex-1">
-            <Logo />
             <HeroSection />
             <NewsletterDialog />
           </div>
