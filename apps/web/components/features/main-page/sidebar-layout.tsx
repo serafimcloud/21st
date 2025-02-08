@@ -74,13 +74,19 @@ export function MainSidebar() {
                     <SidebarMenuButton asChild>
                       <Link
                         href={item.href}
-                        className={cn(
-                          "w-full",
-                          item.isNew &&
-                            "after:ml-2 after:rounded-md after:bg-[#adfa1d] after:px-1.5 after:py-0.5 after:text-xs after:leading-none after:text-[#000000] after:no-underline after:group-hover:no-underline after:content-['New']",
-                        )}
+                        className="w-full flex items-center justify-between"
                       >
-                        <span>{item.title}</span>
+                        <span className="flex items-center">
+                          {item.title}
+                          {item.isNew && (
+                            <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
+                              New
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-muted-foreground text-sm">
+                          {item.demosCount}
+                        </span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
