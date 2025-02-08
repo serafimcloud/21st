@@ -30,6 +30,7 @@ import { useUserProfile } from "@/components/hooks/use-user-profile"
 import { useAnimation } from "framer-motion"
 import { useAtom } from "jotai"
 import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
+import { useTheme } from "next-themes"
 
 export const searchQueryAtom = atom("")
 
@@ -50,6 +51,7 @@ export function Header({
   const controls = useAnimation()
   const router = useRouter()
   const [open, setSidebarOpen] = useAtom(sidebarOpenAtom)
+  const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -309,19 +311,68 @@ export function Header({
                 </div>
 
                 <div className="border-t border-border p-1">
-                  <DropdownMenuItem
-                    className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
-                    onSelect={() => {
-                      document.documentElement.classList.toggle("dark")
-                      document.documentElement.classList.toggle("light")
-                    }}
-                  >
-                    <span>Toggle Theme</span>
-                    <div className="flex items-center">
-                      <Icons.sun className="h-4 w-4 dark:hidden" />
-                      <Icons.moon className="h-4 w-4 hidden dark:block" />
-                    </div>
-                  </DropdownMenuItem>
+                  <li className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span>Theme</span>
+                    <fieldset className="flex items-center rounded-full border border-border/40 bg-background">
+                      <legend className="sr-only">
+                        Select a display theme:
+                      </legend>
+                      <span>
+                        <input
+                          type="radio"
+                          id="theme-switch-system"
+                          value="system"
+                          className="sr-only peer"
+                          name="theme"
+                          checked={theme === "system"}
+                          onChange={() => setTheme("system")}
+                        />
+                        <label
+                          htmlFor="theme-switch-system"
+                          className="inline-flex items-center justify-center rounded-full p-1.5 text-sm cursor-pointer text-muted-foreground hover:text-foreground peer-checked:bg-accent peer-checked:text-foreground"
+                        >
+                          <span className="sr-only">system</span>
+                          <Icons.system className="h-4 w-4" />
+                        </label>
+                      </span>
+                      <span>
+                        <input
+                          type="radio"
+                          id="theme-switch-light"
+                          value="light"
+                          name="theme"
+                          className="sr-only peer"
+                          checked={theme === "light"}
+                          onChange={() => setTheme("light")}
+                        />
+                        <label
+                          htmlFor="theme-switch-light"
+                          className="inline-flex items-center justify-center rounded-full p-1.5 text-sm cursor-pointer text-muted-foreground hover:text-foreground peer-checked:bg-accent peer-checked:text-foreground"
+                        >
+                          <span className="sr-only">light</span>
+                          <Icons.lightTheme className="h-4 w-4" />
+                        </label>
+                      </span>
+                      <span>
+                        <input
+                          type="radio"
+                          id="theme-switch-dark"
+                          value="dark"
+                          name="theme"
+                          className="sr-only peer"
+                          checked={theme === "dark"}
+                          onChange={() => setTheme("dark")}
+                        />
+                        <label
+                          htmlFor="theme-switch-dark"
+                          className="inline-flex items-center justify-center rounded-full p-1.5 text-sm cursor-pointer text-muted-foreground hover:text-foreground peer-checked:bg-accent peer-checked:text-foreground"
+                        >
+                          <span className="sr-only">dark</span>
+                          <Icons.darkTheme className="h-4 w-4" />
+                        </label>
+                      </span>
+                    </fieldset>
+                  </li>
                   <DropdownMenuItem
                     className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
                     onSelect={() => setSidebarOpen((prev) => !prev)}
