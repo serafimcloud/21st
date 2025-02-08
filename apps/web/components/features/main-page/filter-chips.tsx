@@ -8,6 +8,10 @@ import { useEffect, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useAtom } from "jotai"
+import { sidebarHintDismissedAtom, sidebarOpenAtom } from "./main-layout"
+import { X } from "lucide-react"
+import { AnimatePresence, motion } from "framer-motion"
 
 interface FilterChipsProps {
   activeTab: "categories" | "components" | "templates"
@@ -110,34 +114,103 @@ export function FilterChips({
         )
         .sort((a, b) => a.title.localeCompare(b.title))
 
+      const [hintDismissed, setHintDismissed] = useAtom(
+        sidebarHintDismissedAtom,
+      )
+      const [, setSidebarOpen] = useAtom(sidebarOpenAtom)
+
+      const [showHint, setShowHint] = useState(false)
+
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          setShowHint(true)
+        }, 500)
+        return () => clearTimeout(timer)
+      }, [])
+
       return (
         <>
-          <Button
-            onClick={() => onFilterChange("all")}
-            variant={
-              selectedFilter === "all" || !selectedFilter
-                ? "default"
-                : "outline"
-            }
-            className="rounded-full"
-            size="sm"
-          >
-            All
-          </Button>
-          {allTags.map((tag) => {
-            const tagSlug = tag.href.split("/")[2] || ""
-            return (
-              <Button
-                key={tag.href}
-                onClick={() => onFilterChange(tagSlug)}
-                variant={selectedFilter === tagSlug ? "default" : "outline"}
-                className="rounded-full"
-                size="sm"
+          <AnimatePresence mode="popLayout">
+            <div className="flex items-center gap-2">
+              {!hintDismissed && showHint && (
+                <motion.div
+                  className="relative items-center hidden md:flex"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  layout
+                >
+                  <Button
+                    variant="outline"
+                    className="rounded-full pr-8 cursor-pointer hover:bg-transparent"
+                    size="sm"
+                    onClick={() => {
+                      setHintDismissed(true)
+                      setSidebarOpen(true)
+                    }}
+                  >
+                    <p className="flex items-center gap-1.5">
+                      Miss sidebar? Open with
+                      <kbd className="pointer-events-none h-5 text-foreground/80 select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
+                        S
+                      </kbd>
+                    </p>
+
+                    <div
+                      className="absolute right-1 p-1 rounded-full hover:bg-muted"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setHintDismissed(true)
+                      }}
+                    >
+                      <X className="h-4 w-4 cursor-pointer text-muted-foreground hover:text-foreground" />
+                    </div>
+                  </Button>
+                </motion.div>
+              )}
+              <motion.div
+                layout
+                className="flex items-center gap-2"
+                transition={{
+                  duration: 0.3,
+                  layout: {
+                    duration: 0.4,
+                    ease: "easeOut",
+                  },
+                }}
               >
-                {tag.title}
-              </Button>
-            )
-          })}
+                <Button
+                  onClick={() => onFilterChange("all")}
+                  variant={
+                    selectedFilter === "all" || !selectedFilter
+                      ? "default"
+                      : "outline"
+                  }
+                  className="rounded-full"
+                  size="sm"
+                >
+                  All
+                </Button>
+                {allTags.map((tag) => {
+                  const tagSlug = tag.href.split("/")[2] || ""
+                  return (
+                    <Button
+                      key={tag.href}
+                      onClick={() => onFilterChange(tagSlug)}
+                      variant={
+                        selectedFilter === tagSlug ? "default" : "outline"
+                      }
+                      className="rounded-full"
+                      size="sm"
+                    >
+                      {tag.title}
+                    </Button>
+                  )
+                })}
+              </motion.div>
+            </div>
+          </AnimatePresence>
         </>
       )
     }
