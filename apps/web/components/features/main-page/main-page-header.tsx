@@ -109,7 +109,14 @@ export function ComponentsHeader({
 
   return (
     <div
-      className={`flex flex-col gap-4 ${!sidebarOpen && activeTab !== "categories" && activeTab !== "components" && activeTab !== "templates" ? "mb-5" : "mb-3"}`}
+      className={`flex flex-col gap-4 ${
+        (activeTab !== "categories" &&
+          activeTab !== "components" &&
+          activeTab !== "templates") ||
+        (activeTab === "components" && sidebarOpen)
+          ? "mb-5"
+          : "mb-3"
+      }`}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
