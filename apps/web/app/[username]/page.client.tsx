@@ -15,11 +15,7 @@ import { trackEvent } from "@/lib/amplitude"
 import { useEffect } from "react"
 import { AMPLITUDE_EVENTS } from "@/lib/amplitude"
 import { userTabAtom } from "@/components/features/user-page/user-page-header"
-import {
-  DemoWithComponent,
-  User,
-  HuntedComponents,
-} from "@/types/global"
+import { DemoWithComponent, User, HuntedComponents } from "@/types/global"
 
 const useProfileAnalytics = ({
   username,
@@ -51,7 +47,11 @@ export function UserPageClient({
   initialTab,
   initialComponents,
 }: UserPageClientProps) {
-  const [tab] = useAtom(userTabAtom)
+  const [tab, setTab] = useAtom(userTabAtom)
+
+  useEffect(() => {
+    setTab(initialTab)
+  }, [initialTab, setTab])
 
   useProfileAnalytics({
     username: user.display_username || user.username || "",

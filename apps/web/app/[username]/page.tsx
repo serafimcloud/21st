@@ -73,8 +73,10 @@ export const generateMetadata = async ({
 
 export default async function UserProfile({
   params,
+  searchParams,
 }: {
   params: { username: string }
+  searchParams: { tab?: string }
 }) {
   if (!validateRouteParams(params)) {
     redirect("/")
@@ -86,6 +88,8 @@ export default async function UserProfile({
     redirect("/")
   }
 
+  const initialTab = searchParams.tab === "liked" ? "liked" : "published"
+
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex-1">
@@ -95,7 +99,7 @@ export default async function UserProfile({
           huntedComponents={[]}
           userDemos={[]}
           likedComponents={[]}
-          initialTab="published"
+          initialTab={initialTab}
         />
       </div>
       <Footer />

@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
 export const userPageSearchAtom = atom("")
-export type UserComponentsTab = "published" | "demos" | "liked"
+export type UserComponentsTab = "published" | "demos" | "liked" | "hunted"
 
 export const userComponentsTabAtom = atomWithStorage<UserComponentsTab>(
   "user-components-tab",
@@ -134,7 +134,7 @@ export function UserComponentsHeader({
     }
   }, [counts, isLoading, activeTab, setActiveTab])
   const availableTabs = tabs.filter(
-    (tab) => (counts?.[`${tab.value}_count` as keyof typeof counts] ?? 0) > 0
+    (tab) => (counts?.[`${tab.value}_count` as keyof typeof counts] ?? 0) > 0,
   )
 
   const displayTabs = availableTabs.length > 0 ? availableTabs : tabs

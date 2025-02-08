@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 
 import { atom } from "jotai"
 import { SignInButton, SignedIn, SignedOut, useClerk } from "@clerk/nextjs"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Bookmark } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -68,6 +68,14 @@ export function Header({
     }
   }, [])
 
+  const handleBookmarksClick = () => {
+    if (dbUser?.display_username) {
+      router.push(`/${dbUser.display_username}?tab=liked`)
+    } else if (user?.externalAccounts?.[0]?.username) {
+      router.push(`/${dbUser?.username}?tab=liked`)
+    }
+  }
+
   if (variant === "publish" && step) {
     return null
   }
@@ -85,7 +93,10 @@ export function Header({
         <div
           className={cn("flex items-center flex-1", open ? "ml-64 pl-3" : "")}
         >
-          <Link href="/" className="absolute left-4 top-3 h-8 w-8 bg-foreground rounded-full" />
+          <Link
+            href="/"
+            className="absolute left-4 top-3 h-8 w-8 bg-foreground rounded-full"
+          />
           {text && !isMobile && (
             <div className="flex items-center gap-2">
               <Icons.slash className="text-border w-[22px] h-[22px]" />
@@ -124,78 +135,92 @@ export function Header({
         <div className="flex items-center gap-1">
           <SignedIn>
             {!isMobile && variant !== "publish" && (
-              <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse ml-2">
+              <>
                 <Button
-                  asChild
-                  className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleBookmarksClick}
+                  className="mr-2"
+                  aria-label="Saved components"
                 >
-                  <Link href="/publish">Add new</Link>
+                  <Bookmark size={18} />
                 </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
-                      size="icon"
-                      aria-label="Component options"
-                    >
-                      <ChevronDown
-                        size={16}
-                        strokeWidth={2}
-                        aria-hidden="true"
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="w-64"
-                    side="bottom"
-                    sideOffset={4}
-                    align="end"
+                <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse">
+                  <Button
+                    asChild
+                    className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
                   >
-                    <DropdownMenuItem asChild>
-                      <Link href="/publish" className="cursor-pointer">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium">
-                            Publish component
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            Create and publish a new component to the registry
-                          </span>
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/publish/template" className="cursor-pointer">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium">
-                            Publish template
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            Create and publish a new website template
-                          </span>
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/import" className="cursor-pointer">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium flex items-center gap-1">
-                            Import from registry
-                            <Badge
-                              variant="secondary"
-                              className="h-5 text-[11px] tracking-wide font-medium uppercase px-1.5 py-0 leading-none"
-                            >
-                              beta
-                            </Badge>
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            Import an existing component from shadcn registry
-                          </span>
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                    <Link href="/publish">Add new</Link>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
+                        size="icon"
+                        aria-label="Component options"
+                      >
+                        <ChevronDown
+                          size={16}
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      className="w-64"
+                      side="bottom"
+                      sideOffset={4}
+                      align="end"
+                    >
+                      <DropdownMenuItem asChild>
+                        <Link href="/publish" className="cursor-pointer">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium">
+                              Publish component
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              Create and publish a new component to the registry
+                            </span>
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/publish/template"
+                          className="cursor-pointer"
+                        >
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium">
+                              Publish template
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              Create and publish a new website template
+                            </span>
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/import" className="cursor-pointer">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium flex items-center gap-1">
+                              Import from registry
+                              <Badge
+                                variant="secondary"
+                                className="h-5 text-[11px] tracking-wide font-medium uppercase px-1.5 py-0 leading-none"
+                              >
+                                beta
+                              </Badge>
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              Import an existing component from shadcn registry
+                            </span>
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer rounded-full ml-2">
