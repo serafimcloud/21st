@@ -28,7 +28,7 @@ import { EditProfileDialog } from "@/components/features/profile/edit-profile-di
 import { useUserProfile } from "@/components/hooks/use-user-profile"
 import { useAnimation } from "framer-motion"
 import { useAtom } from "jotai"
-import { sidebarOpenAtom } from "@/lib/atoms/sidebar"
+import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 
 export const searchQueryAtom = atom("")
 

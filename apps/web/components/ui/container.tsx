@@ -3,7 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { useAtom } from "jotai"
-import { sidebarOpenAtom } from "@/lib/atoms/sidebar"
+import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 
 export function Container({
   children,

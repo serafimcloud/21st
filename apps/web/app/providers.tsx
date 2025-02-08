@@ -13,7 +13,7 @@ import { MainLayout } from "@/components/features/main-page/main-layout"
 
 import { initAmplitude } from "@/lib/amplitude"
 import { useAtom } from "jotai"
-import { sidebarOpenAtom } from "@/lib/atoms/sidebar"
+import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 
 const queryClient = new QueryClient()
 

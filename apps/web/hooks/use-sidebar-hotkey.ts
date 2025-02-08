@@ -1,6 +1,6 @@
 import { useHotkeys } from "react-hotkeys-hook"
 import { useAtom } from "jotai"
-import { sidebarOpenAtom } from "@/lib/atoms/sidebar"
+import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 
 export function useSidebarHotkey() {
   const [, setSidebarOpen] = useAtom(sidebarOpenAtom)

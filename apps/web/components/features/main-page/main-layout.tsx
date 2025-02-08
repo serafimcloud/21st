@@ -4,8 +4,10 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Container } from "@/components/ui/container"
 import { useAtom } from "jotai"
-import { sidebarOpenAtom } from "@/lib/atoms/sidebar"
+import { atomWithStorage } from "jotai/utils"
 import { useSidebarHotkey } from "@/hooks/use-sidebar-hotkey"
+
+export const sidebarOpenAtom = atomWithStorage<boolean>("sidebar:state", false)
 
 export function MainLayout({
   children,
@@ -18,12 +20,7 @@ export function MainLayout({
   useSidebarHotkey()
 
   return (
-    <main
-      className={cn(
-        "min-h-screen w-full",
-        className
-      )}
-    >
+    <main className={cn("min-h-screen w-full", className)}>
       <Container>{children}</Container>
     </main>
   )
