@@ -133,11 +133,6 @@ export function UserComponentsHeader({
       }
     }
   }, [counts, isLoading, activeTab, setActiveTab])
-  const availableTabs = tabs.filter(
-    (tab) => (counts?.[`${tab.value}_count` as keyof typeof counts] ?? 0) > 0,
-  )
-
-  const displayTabs = availableTabs.length > 0 ? availableTabs : tabs
 
   return (
     <div className="flex flex-col gap-4 mb-6">
@@ -149,11 +144,11 @@ export function UserComponentsHeader({
             className="w-full md:w-auto"
           >
             <TabsList className="w-full md:w-auto h-8 -space-x-px bg-background p-0 shadow-sm shadow-black/5 rtl:space-x-reverse">
-              {displayTabs.map(({ value, label, count }) => (
+              {tabs.map(({ value, label, count }) => (
                 <TabsTrigger
                   key={value}
                   value={value}
-                  disabled={!isLoading && count === 0}
+                  disabled={!isLoading && count === 0 && value !== "liked"}
                   className="flex-1 md:flex-initial relative overflow-hidden rounded-none border border-border h-8 px-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 first:rounded-s last:rounded-e data-[state=active]:bg-muted data-[state=active]:after:bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-2">

@@ -6,7 +6,7 @@ import { useClerkSupabaseClient } from "@/lib/clerk"
 import { DemoWithComponent } from "@/types/global"
 import { useAtom } from "jotai"
 import { userPageSearchAtom } from "./user-page-header"
-import { Search } from "lucide-react"
+import { Search, Bookmark } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
 import { useRouter } from "next/navigation"
@@ -142,6 +142,20 @@ function filterComponentsBySearch(
     if (component.preview_url?.toLowerCase().includes(query)) return true
     return false
   })
+}
+
+function EmptyLikedState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+        <Bookmark className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-medium">No saved components</h3>
+      <p className="text-sm text-muted-foreground mt-2 max-w-[420px]">
+        When you like a component, it will appear here for quick access
+      </p>
+    </div>
+  )
 }
 
 export function UserItemsList({
@@ -298,6 +312,10 @@ export function UserItemsList({
               <Icons.enter className="h-2.5 w-2.5" />
             </kbd>
           </Button>
+        </div>
+      ) : tab === "liked" && components.length === 0 ? (
+        <div className="col-span-full">
+          <EmptyLikedState />
         </div>
       ) : (
         components?.map((component: DemoWithComponent) => (
