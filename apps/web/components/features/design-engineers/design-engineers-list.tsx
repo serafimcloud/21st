@@ -7,6 +7,7 @@ import { DesignEngineerCard } from "./design-engineer-card"
 import { Database } from "@/types/supabase"
 import { useEffect, useRef } from "react"
 import { Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 type DatabaseAuthor =
   Database["public"]["Functions"]["get_active_authors_with_top_components"]["Returns"][0]
@@ -56,7 +57,6 @@ export function DesignEngineersList({
           }
         : undefined,
       getNextPageParam: (lastPage, allPages) => {
-
         if (!lastPage?.data || lastPage.data.length === 0) return undefined
         const loadedCount = allPages.reduce(
           (sum, page) => sum + page.data.length,
@@ -94,7 +94,10 @@ export function DesignEngineersList({
   if (isLoading) {
     return (
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 list-none pb-10 ${className || ""}`}
+        className={cn(
+          "grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 list-none pb-10",
+          className,
+        )}
       >
         {Array(10)
           .fill(0)
@@ -110,7 +113,10 @@ export function DesignEngineersList({
   return (
     <>
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 list-none pb-10 ${className || ""}`}
+        className={cn(
+          "grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 list-none pb-10",
+          className,
+        )}
       >
         {authors.map((author) => (
           <DesignEngineerCard key={author.id} author={author} />

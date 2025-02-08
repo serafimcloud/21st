@@ -20,7 +20,7 @@ export function MainLayout({
   return (
     <main
       className={cn(
-        "min-h-screen",
+        "min-h-screen w-full",
         className
       )}
     >
