@@ -98,7 +98,13 @@ export function UserComponentsHeader({
   const getSearchPlaceholder = () => {
     const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1200px)")
     if (isTablet) return "Search..."
-    return `${username}'s components...`
+
+    const tabLabels = {
+      components: "components",
+      demos: "use cases",
+      bookmarks: "bookmarks",
+    }
+    return `${username}'s ${tabLabels[activeTab]}...`
   }
 
   const tabs = [
