@@ -5,6 +5,7 @@ import { categories } from "@/lib/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
+import { Icons } from "@/components/icons"
 import {
   Tooltip,
   TooltipTrigger,
@@ -45,18 +46,7 @@ export function MainSidebar() {
                   showTrigger ? "opacity-100 scale-100" : "opacity-0 scale-90",
                 )}
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                  role="img"
-                  focusable="false"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M15 5.25A3.25 3.25 0 0 0 11.75 2h-7.5A3.25 3.25 0 0 0 1 5.25v5.5A3.25 3.25 0 0 0 4.25 14h7.5A3.25 3.25 0 0 0 15 10.75v-5.5Zm-3.5 7.25H7v-9h4.5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2Zm-6 0H4.25a1.75 1.75 0 0 1-1.75-1.75v-5.5c0-.966.784-1.75 1.75-1.75H5.5v9Z" />
-                </svg>
+                <Icons.sidebar className="h-4 w-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent

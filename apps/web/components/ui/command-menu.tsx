@@ -47,9 +47,10 @@ import { useUserProfile } from "@/components/hooks/use-user-profile"
 
 import { Component, DemoWithComponent, User as UserType } from "@/types/global"
 import { PROMPT_TYPES } from "@/types/global"
-import { Icons } from "../icons"  
+import { Icons } from "../icons"
 import { CategoryPreviewImage } from "@/components/features/categories/category-preview-image"
 import { CategoryVideoPreview } from "@/components/features/categories/category-video-preview"
+import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 
 const commandSearchQueryAtom = atomWithStorage("commandMenuSearch", "")
 
@@ -129,6 +130,7 @@ export function CommandMenu() {
   const pathname = usePathname()
   const supabase = useClerkSupabaseClient()
   const { user: dbUser, clerkUser: user, isLoading } = useUserProfile()
+  const [, setSidebarOpen] = useAtom(sidebarOpenAtom)
 
   const { data: components, isLoading: isComponentsLoading } = useQuery<
     DemoWithComponent[]
@@ -238,7 +240,7 @@ export function CommandMenu() {
       if (error) throw error
       return preview?.[0] || null
     },
-      enabled: !!selectedCategory?.demoId,
+    enabled: !!selectedCategory?.demoId,
   })
 
   const handleOpenChange = (open: boolean) => {
@@ -501,6 +503,7 @@ export function CommandMenu() {
                   "api docs keys",
                   "terms service",
                   "toggle theme",
+                  "toggle sidebar",
                 ].some((text) => text.includes(searchQuery.toLowerCase()))) && (
                 <>
                   <CommandGroup heading="Quick Actions">
@@ -613,6 +616,27 @@ export function CommandMenu() {
                         <Icons.sun className="h-4 w-4 dark:hidden" />
                         <Icons.moon className="h-4 w-4 hidden dark:block" />
                         <span>Toggle Theme</span>
+                      </CommandItem>
+                    )}
+                    {(!searchQuery ||
+                      "toggle sidebar".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="action-sidebar"
+                        onSelect={() => {
+                          setSidebarOpen((prev) => !prev)
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icons.sidebar className="h-4 w-4" />
+                          <span>Toggle Sidebar</span>
+                        </div>
+                        <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-sans text-[11px] leading-none opacity-100 flex">
+                          S
+                        </kbd>
                       </CommandItem>
                     )}
                   </CommandGroup>

@@ -16,6 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { NavigationMenuLink } from "@/components/ui/navigation-menu"
 
@@ -48,7 +49,7 @@ export function Header({
   const step = searchParams.get("step")
   const controls = useAnimation()
   const router = useRouter()
-  const [open] = useAtom(sidebarOpenAtom)
+  const [open, setSidebarOpen] = useAtom(sidebarOpenAtom)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -279,6 +280,9 @@ export function Header({
                     <span>GitHub</span>
                     <Icons.gitHub className="h-4 w-4" />
                   </DropdownMenuItem>
+                </div>
+
+                <div className="border-t border-border p-1">
                   <DropdownMenuItem
                     className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
                     onSelect={() => {
@@ -290,6 +294,15 @@ export function Header({
                     <div className="flex items-center">
                       <Icons.sun className="h-4 w-4 dark:hidden" />
                       <Icons.moon className="h-4 w-4 hidden dark:block" />
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer flex justify-between items-center"
+                    onSelect={() => setSidebarOpen((prev) => !prev)}
+                  >
+                    <span>Toggle Sidebar</span>
+                    <div className="flex items-center">
+                      <Icons.sidebar className="h-4 w-4" />
                     </div>
                   </DropdownMenuItem>
                 </div>

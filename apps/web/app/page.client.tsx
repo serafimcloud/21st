@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { useQueryClient } from "@tanstack/react-query"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useSearchParams, useRouter } from "next/navigation"
 
 import { SortOption, SORT_OPTIONS } from "@/types/global"
 import { sortByAtom } from "@/components/features/main-page/main-page-header"
+import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 import { ComponentsList } from "@/components/ui/items-list"
 import { CategoriesList } from "@/components/features/categories/category-list"
 import { ComponentsHeader } from "@/components/features/main-page/main-page-header"
@@ -18,6 +19,8 @@ import { TemplatesList } from "@/components/features/templates/templates-list"
 
 export function HomePageClient() {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
+  const [sidebarOpen] = useAtom(sidebarOpenAtom)
+  const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
   const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -59,6 +62,10 @@ export function HomePageClient() {
     }
   }, [sortBy, queryClient])
 
+  useEffect(() => {
+    setPrevSidebarState(sidebarOpen)
+  }, [sidebarOpen])
+
   const handleTabChange = (
     newTab: "categories" | "components" | "authors" | "pro" | "templates",
   ) => {
@@ -76,32 +83,45 @@ export function HomePageClient() {
               selectedFilter={selectedFilter}
               onFilterChange={setSelectedFilter}
             />
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.3,
-                ease: "easeOut",
-              }}
-            >
-              <CategoriesList filter={selectedFilter} />
-            </motion.div>
+            <CategoriesList filter={selectedFilter} />
           </>
         )
       case "components":
         return (
           <>
-            <FilterChips
-              activeTab={activeTab}
-              selectedFilter={selectedFilter}
-              onFilterChange={setSelectedFilter}
-            />
+            <AnimatePresence mode="popLayout">
+              {!sidebarOpen && (
+                <motion.div
+                  initial={
+                    prevSidebarState !== sidebarOpen
+                      ? { opacity: 0, height: 0, marginBottom: 0 }
+                      : false
+                  }
+                  animate={{ opacity: 1, height: "auto"}}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  transition={{
+                    duration: 0.2,
+                    height: {
+                      duration: 0.2,
+                    },
+                  }}
+                >
+                  <FilterChips
+                    activeTab={activeTab}
+                    selectedFilter={selectedFilter}
+                    onFilterChange={setSelectedFilter}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              layout={prevSidebarState !== sidebarOpen}
+              initial={
+                prevSidebarState !== sidebarOpen ? { opacity: 0, y: 20 } : false
+              }
               animate={{ opacity: 1, y: 0 }}
               transition={{
-                duration: 0.3,
-                ease: "easeOut",
+                layout: { duration: 0.2 },
               }}
             >
               <ComponentsList
@@ -113,31 +133,9 @@ export function HomePageClient() {
           </>
         )
       case "authors":
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.3,
-              ease: "easeOut",
-            }}
-          >
-            <DesignEngineersList />
-          </motion.div>
-        )
+        return <DesignEngineersList />
       case "pro":
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.3,
-              ease: "easeOut",
-            }}
-          >
-            <ProList />
-          </motion.div>
-        )
+        return <ProList />
       case "templates":
         return (
           <>
@@ -146,16 +144,7 @@ export function HomePageClient() {
               selectedFilter={selectedFilter}
               onFilterChange={setSelectedFilter}
             />
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.3,
-                ease: "easeOut",
-              }}
-            >
-              <TemplatesList tagSlug={selectedFilter} />
-            </motion.div>
+            <TemplatesList tagSlug={selectedFilter} />
           </>
         )
       default:
