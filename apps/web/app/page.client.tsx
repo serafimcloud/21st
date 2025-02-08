@@ -15,7 +15,7 @@ import { ComponentsHeader } from "@/components/features/main-page/main-page-head
 import { FilterChips } from "@/components/features/main-page/filter-chips"
 import { DesignEngineersList } from "@/components/features/design-engineers/design-engineers-list"
 import { ProList } from "@/components/features/pro/pro-list"
-import { TemplatesList } from "@/components/features/templates/templates-list"
+import { TemplatesContainer } from "@/components/features/templates/templates-list"
 
 export function HomePageClient() {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
@@ -97,7 +97,7 @@ export function HomePageClient() {
                       ? { opacity: 0, height: 0, marginBottom: 0 }
                       : false
                   }
-                  animate={{ opacity: 1, height: "auto"}}
+                  animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                   transition={{
                     duration: 0.2,
@@ -144,7 +144,7 @@ export function HomePageClient() {
               selectedFilter={selectedFilter}
               onFilterChange={setSelectedFilter}
             />
-            <TemplatesList tagSlug={selectedFilter} />
+            <TemplatesContainer tagSlug={selectedFilter} />
           </>
         )
       default:
