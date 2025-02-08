@@ -69,4 +69,38 @@ begin
   where cl.user_id = p_user_id
     and c.is_public = true;
 end;
+$$;
+
+create or replace function public.like_component_by_demo(
+  p_user_id text,
+  p_demo_id bigint,
+  p_liked boolean
+)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  v_component_id bigint;
+begin
+  -- Get component_id from demo
+  select component_id into v_component_id
+  from demos
+  where id = p_demo_id;
+
+  if v_component_id is null then
+    raise exception 'Demo not found';
+  end if;
+
+  if p_liked then
+    -- Unlike
+    delete from component_likes
+    where user_id = p_user_id and component_id = v_component_id;
+  else
+    -- Like
+    insert into component_likes (user_id, component_id)
+    values (p_user_id, v_component_id)
+    on conflict (user_id, component_id) do nothing;
+  end if;
+end;
 $$; 

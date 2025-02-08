@@ -23,6 +23,10 @@ import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
 import { UserAvatar } from "../../ui/user-avatar"
 import { ComponentCardSkeleton } from "../../ui/skeletons"
+import { useUser } from "@clerk/nextjs"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { useLikeMutation } from "@/lib/queries"
+import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
 
 export function ComponentCard({
   demo,
@@ -34,6 +38,9 @@ export function ComponentCard({
   if (isLoading || !demo) {
     return <ComponentCardSkeleton />
   }
+
+  const { user } = useUser()
+  const supabase = useClerkSupabaseClient()
 
   const userData = "component" in demo ? demo.component?.user : demo.user
   const username = userData?.username || userData?.display_username
@@ -95,6 +102,37 @@ export function ComponentCard({
       toast.success("Prompt copied to clipboard")
     } catch (error) {
       toast.error("Error generating prompt")
+    }
+  }
+
+  const handleLike = async () => {
+    if (!user) {
+      toast.error("Please sign in to like components")
+      return
+    }
+
+    try {
+      if (isDemo) {
+        await supabase.rpc("like_component_by_demo", {
+          p_user_id: user.id,
+          p_demo_id: demo.id,
+          p_liked: false,
+        })
+      } else {
+        await supabase.from("component_likes").insert({
+          user_id: user.id,
+          component_id: demo.id,
+        })
+      }
+      toast.success("Component liked!")
+      trackEvent(AMPLITUDE_EVENTS.LIKE_COMPONENT, {
+        componentId: isDemo ? demo.component_id : demo.id,
+        userId: user.id,
+        source: "context_menu",
+      })
+    } catch (error) {
+      console.error("Error liking component:", error)
+      toast.error("Failed to like component")
     }
   }
 
@@ -181,6 +219,7 @@ export function ComponentCard({
           Open in new tab
         </ContextMenuItem>
         <ContextMenuItem onSelect={handleCopyLink}>Copy link</ContextMenuItem>
+        <ContextMenuItem onSelect={handleLike}>Like component</ContextMenuItem>
         <ContextMenuSub>
           <ContextMenuSubTrigger>Copy prompt</ContextMenuSubTrigger>
           <ContextMenuSubContent className="w-64">

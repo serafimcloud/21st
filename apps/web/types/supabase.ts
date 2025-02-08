@@ -1420,6 +1420,12 @@ export type Database = {
           view_count: number
         }[]
       }
+      get_liked_components: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json[]
+      }
       get_pro_publishers: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1699,6 +1705,14 @@ export type Database = {
       is_trigger_operation: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      like_component_by_demo: {
+        Args: {
+          p_user_id: string
+          p_demo_id: number
+          p_liked: boolean
+        }
+        Returns: undefined
       }
       requesting_user_id: {
         Args: Record<PropertyKey, never>
