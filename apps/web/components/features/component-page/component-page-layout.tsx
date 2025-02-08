@@ -50,7 +50,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import { UserAvatar } from "../../ui/user-avatar"
-import { LikeButton } from "../../ui/like-button"
+import { LikeButton } from "../../ui/bookmark-button"
 import { ThemeToggle } from "../../ui/theme-toggle"
 import { ComponentPagePreview } from "./component-preview"
 import { EditComponentDialog } from "../../ui/edit-component-dialog"

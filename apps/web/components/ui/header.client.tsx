@@ -70,9 +70,9 @@ export function Header({
 
   const handleBookmarksClick = () => {
     if (dbUser?.display_username) {
-      router.push(`/${dbUser.display_username}?tab=liked`)
+      router.push(`/${dbUser.display_username}?tab=bookmarks`)
     } else if (user?.externalAccounts?.[0]?.username) {
-      router.push(`/${dbUser?.username}?tab=liked`)
+      router.push(`/${dbUser?.username}?tab=bookmarks`)
     }
   }
 

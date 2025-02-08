@@ -14,14 +14,13 @@ import { isMac } from "@/lib/utils"
 import { useHotkeys } from "react-hotkeys-hook"
 import { ComponentCardSkeleton } from "@/components/ui/skeletons"
 
-type UserTab = "published" | "hunted" | "demos" | "liked"
+type UserTab = "components" | "demos" | "bookmarks"
 
 interface UserItemsListProps {
   className?: string
   skeletonCount?: number
   userId: string
   tab: UserTab
-  initialData?: DemoWithComponent[]
 }
 
 function transformDemoData(data: any): DemoWithComponent {
@@ -53,10 +52,7 @@ function transformDemoData(data: any): DemoWithComponent {
   }
 }
 
-function useUserPublishedDemos(
-  userId: string,
-  initialData?: DemoWithComponent[],
-) {
+function useUserPublishedDemos(userId: string) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
     queryKey: ["user-published-demos", userId],
@@ -68,33 +64,11 @@ function useUserPublishedDemos(
       if (error) throw error
       return data.map(transformDemoData)
     },
-    initialData,
     staleTime: 30 * 1000,
   })
 }
 
-function useUserHuntedComponents(
-  userId: string,
-  initialData?: DemoWithComponent[],
-) {
-  const supabase = useClerkSupabaseClient()
-  return useQuery({
-    queryKey: ["user-hunted-components", userId] as const,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_hunted_components", {
-        p_hunter_username: userId,
-      })
-      if (error) throw error
-      return (data || []).map(transformDemoData)
-    },
-    initialData,
-  })
-}
-
-function useUserLikedComponents(
-  userId: string,
-  initialData?: DemoWithComponent[],
-) {
+function useUserLikedComponents(userId: string) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
     queryKey: ["user-liked-components", userId],
@@ -106,12 +80,11 @@ function useUserLikedComponents(
       if (error) throw error
       return data.map(transformDemoData)
     },
-    initialData,
     staleTime: 30 * 1000,
   })
 }
 
-function useUserDemos(userId: string, initialData?: DemoWithComponent[]) {
+function useUserDemos(userId: string) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
     queryKey: ["user-demos", userId],
@@ -123,7 +96,6 @@ function useUserDemos(userId: string, initialData?: DemoWithComponent[]) {
       if (error) throw error
       return data.map(transformDemoData)
     },
-    initialData,
     staleTime: 30 * 1000,
   })
 }
@@ -150,9 +122,9 @@ function EmptyLikedState() {
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
         <Bookmark className="h-6 w-6 text-muted-foreground" />
       </div>
-      <h3 className="text-lg font-medium">No saved components</h3>
+      <h3 className="text-lg font-medium">No bookmarked components</h3>
       <p className="text-sm text-muted-foreground mt-2 max-w-[420px]">
-        When you like a component, it will appear here for quick access
+        When you bookmark a component, it will appear here for quick access
       </p>
     </div>
   )
@@ -163,7 +135,6 @@ export function UserItemsList({
   skeletonCount = 12,
   userId,
   tab,
-  initialData,
 }: UserItemsListProps) {
   const [searchQuery, setSearchQuery] = useAtom(userPageSearchAtom)
   const router = useRouter()
@@ -188,36 +159,22 @@ export function UserItemsList({
   )
 
   const publishedQuery = useUserPublishedDemos(
-    tab === "published" ? userId : "",
-    tab === "published" ? initialData : undefined,
+    tab === "components" ? userId : "",
   )
 
-  const huntedQuery = useUserHuntedComponents(
-    tab === "hunted" ? userId : "",
-    tab === "hunted" ? initialData : undefined,
-  )
+  const likedQuery = useUserLikedComponents(tab === "bookmarks" ? userId : "")
 
-  const likedQuery = useUserLikedComponents(
-    tab === "liked" ? userId : "",
-    tab === "liked" ? initialData : undefined,
-  )
-
-  const demosQuery = useUserDemos(
-    tab === "demos" ? userId : "",
-    tab === "demos" ? initialData : undefined,
-  )
+  const demosQuery = useUserDemos(tab === "demos" ? userId : "")
 
   const components = React.useMemo(() => {
     const allDemos =
       (() => {
         switch (tab) {
-          case "published":
+          case "components":
             return publishedQuery.data
-          case "hunted":
-            return huntedQuery.data
           case "demos":
             return demosQuery.data
-          case "liked":
+          case "bookmarks":
             return likedQuery.data
           default:
             return []
@@ -226,7 +183,7 @@ export function UserItemsList({
 
     let filtered = filterComponentsBySearch(allDemos, searchQuery) || []
 
-    if (tab === "published") {
+    if (tab === "components") {
       filtered = filtered.filter((demo) => {
         const componentCreatorId = demo.component?.user?.id
         return componentCreatorId === userId
@@ -241,7 +198,6 @@ export function UserItemsList({
   }, [
     tab,
     publishedQuery.data,
-    huntedQuery.data,
     demosQuery.data,
     likedQuery.data,
     userId,
@@ -250,13 +206,11 @@ export function UserItemsList({
 
   const isLoading = React.useMemo(() => {
     switch (tab) {
-      case "published":
+      case "components":
         return publishedQuery.isLoading
-      case "hunted":
-        return huntedQuery.isLoading
       case "demos":
         return demosQuery.isLoading
-      case "liked":
+      case "bookmarks":
         return likedQuery.isLoading
       default:
         return false
@@ -264,7 +218,6 @@ export function UserItemsList({
   }, [
     tab,
     publishedQuery.isLoading,
-    huntedQuery.isLoading,
     demosQuery.isLoading,
     likedQuery.isLoading,
   ])
@@ -275,6 +228,15 @@ export function UserItemsList({
   const handleGlobalSearch = () => {
     if (!searchQuery) return
     router.push(`/q/${encodeURIComponent(searchQuery)}`)
+  }
+
+  if (
+    tab === "bookmarks" &&
+    !isLoading &&
+    components.length === 0 &&
+    !searchQuery
+  ) {
+    return <EmptyLikedState />
   }
 
   return (
@@ -312,10 +274,6 @@ export function UserItemsList({
               <Icons.enter className="h-2.5 w-2.5" />
             </kbd>
           </Button>
-        </div>
-      ) : tab === "liked" && components.length === 0 ? (
-        <div className="col-span-full">
-          <EmptyLikedState />
         </div>
       ) : (
         components?.map((component: DemoWithComponent) => (

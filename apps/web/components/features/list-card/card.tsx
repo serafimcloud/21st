@@ -1,9 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import React from "react"
 import Link from "next/link"
-import { Video, Eye, Heart } from "lucide-react"
+import { Video, Eye, Bookmark, X } from "lucide-react"
 import { toast } from "sonner"
 import {
   ContextMenu,
@@ -25,8 +24,8 @@ import { UserAvatar } from "../../ui/user-avatar"
 import { ComponentCardSkeleton } from "../../ui/skeletons"
 import { useUser } from "@clerk/nextjs"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { useLikeMutation } from "@/lib/queries"
 import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
+import { Button } from "@/components/ui/button"
 
 export function ComponentCard({
   demo,
@@ -107,7 +106,24 @@ export function ComponentCard({
 
   const handleLike = async () => {
     if (!user) {
-      toast.error("Please sign in to like components")
+      toast(
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium">Authentication required</p>
+            <p className="text-sm text-muted-foreground">
+              Please sign in to bookmark components
+            </p>
+          </div>
+          <Link href="https://accounts.21st.dev/sign-in">
+            <Button size="sm" variant="outline">
+              Sign In
+            </Button>
+          </Link>
+        </div>,
+        {
+          duration: 5000,
+        },
+      )
       return
     }
 
@@ -124,15 +140,20 @@ export function ComponentCard({
           component_id: demo.id,
         })
       }
-      toast.success("Component liked!")
+      toast.success(
+        <div className="flex items-center gap-2">
+          <Bookmark size={16} className="shrink-0" fill="currentColor" />
+          <span>Component bookmarked!</span>
+        </div>,
+      )
       trackEvent(AMPLITUDE_EVENTS.LIKE_COMPONENT, {
         componentId: isDemo ? demo.component_id : demo.id,
         userId: user.id,
         source: "context_menu",
       })
     } catch (error) {
-      console.error("Error liking component:", error)
-      toast.error("Failed to like component")
+      console.error("Error bookmarking component:", error)
+      toast.error("Failed to bookmark component")
     }
   }
 
@@ -204,7 +225,7 @@ export function ComponentCard({
                   )}
                   {likesCount > 0 && (
                     <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
-                      <Heart size={14} className="text-muted-foreground" />
+                      <Bookmark size={14} className="text-muted-foreground" />
                       <span>{likesCount}</span>
                     </div>
                   )}
@@ -219,7 +240,7 @@ export function ComponentCard({
           Open in new tab
         </ContextMenuItem>
         <ContextMenuItem onSelect={handleCopyLink}>Copy link</ContextMenuItem>
-        <ContextMenuItem onSelect={handleLike}>Like component</ContextMenuItem>
+        <ContextMenuItem onSelect={handleLike}>Save for later</ContextMenuItem>
         <ContextMenuSub>
           <ContextMenuSubTrigger>Copy prompt</ContextMenuSubTrigger>
           <ContextMenuSubContent className="w-64">

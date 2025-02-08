@@ -12,14 +12,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
 export const userPageSearchAtom = atom("")
-export type UserComponentsTab = "published" | "demos" | "liked" | "hunted"
+export type UserComponentsTab = "components" | "demos" | "bookmarks"
 
 export const userComponentsTabAtom = atomWithStorage<UserComponentsTab>(
   "user-components-tab",
-  "published",
+  "components",
 )
 
-export const userTabAtom = atom<UserComponentsTab>("published")
+export const userTabAtom = atom<UserComponentsTab>("components")
 
 function useUserComponentsCounts(userId: string) {
   const supabase = useClerkSupabaseClient()
@@ -103,18 +103,18 @@ export function UserComponentsHeader({
 
   const tabs = [
     {
-      value: "published" as const,
-      label: "Published",
+      value: "components" as const,
+      label: "Components",
       count: counts?.published_count ?? 0,
     },
     {
       value: "demos" as const,
-      label: "Demos",
+      label: "Use Cases",
       count: counts?.demos_count ?? 0,
     },
     {
-      value: "liked" as const,
-      label: "Liked",
+      value: "bookmarks" as const,
+      label: "Bookmarks",
       count: counts?.liked_count ?? 0,
     },
   ]
@@ -148,7 +148,7 @@ export function UserComponentsHeader({
                 <TabsTrigger
                   key={value}
                   value={value}
-                  disabled={!isLoading && count === 0 && value !== "liked"}
+                  disabled={!isLoading && count === 0 && value !== "bookmarks"}
                   className="flex-1 md:flex-initial relative overflow-hidden rounded-none border border-border h-8 px-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 first:rounded-s last:rounded-e data-[state=active]:bg-muted data-[state=active]:after:bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-2">

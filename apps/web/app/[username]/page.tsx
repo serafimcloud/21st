@@ -88,17 +88,14 @@ export default async function UserProfile({
     redirect("/")
   }
 
-  const initialTab = searchParams.tab === "liked" ? "liked" : "published"
+  const initialTab =
+    searchParams.tab === "bookmarks" ? "bookmarks" : "components"
 
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex-1">
         <UserPageClient
           user={user}
-          publishedComponents={[]}
-          huntedComponents={[]}
-          userDemos={[]}
-          likedComponents={[]}
           initialTab={initialTab}
         />
       </div>

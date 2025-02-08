@@ -34,19 +34,10 @@ const useProfileAnalytics = ({
 
 interface UserPageClientProps {
   user: User
-  publishedComponents: DemoWithComponent[]
-  huntedComponents: HuntedComponents
-  userDemos: DemoWithComponent[]
-  likedComponents: DemoWithComponent[]
-  initialTab: "published" | "hunted" | "demos" | "liked"
-  initialComponents?: DemoWithComponent[]
+  initialTab: "components" | "demos" | "bookmarks"
 }
 
-export function UserPageClient({
-  user,
-  initialTab,
-  initialComponents,
-}: UserPageClientProps) {
+export function UserPageClient({ user, initialTab }: UserPageClientProps) {
   const [tab, setTab] = useAtom(userTabAtom)
 
   useEffect(() => {
@@ -177,11 +168,7 @@ export function UserPageClient({
               username={user.display_username || user.username || ""}
               userId={user.id}
             />
-            <UserItemsList
-              userId={user.id}
-              tab={tab || initialTab}
-              initialData={initialComponents}
-            />
+            <UserItemsList userId={user.id} tab={tab || initialTab} />
           </div>
         </div>
       </div>
