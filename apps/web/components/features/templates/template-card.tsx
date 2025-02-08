@@ -15,12 +15,7 @@ interface TemplateCardProps {
 
 export function TemplateCard({ template }: TemplateCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="group relative p-[1px]"
-    >
+    <motion.div className="group relative p-[1px]">
       <Link
         href={template.payment_url || "#"}
         className="block cursor-pointer"

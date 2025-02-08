@@ -9,6 +9,7 @@ import { SortOption } from "@/types/global"
 import { cookies } from "next/headers"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { unstable_cache } from "next/cache"
+import { Logo } from "@/components/ui/logo"
 
 interface TagPageProps {
   params: {
@@ -66,6 +67,7 @@ export default async function TagPage({ params }: TagPageProps) {
 
     return (
       <div className="min-h-screen flex flex-col">
+        <Logo />
         <Header />
         <div className="flex-1">
           <TagPageContent

@@ -4,6 +4,7 @@ import { ArrowUpDown } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 
 import {
   Select,
@@ -37,6 +38,7 @@ export function ComponentsHeader({
   ) => void
 }) {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
+  const [sidebarOpen] = useAtom(sidebarOpenAtom)
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -107,7 +109,7 @@ export function ComponentsHeader({
 
   return (
     <div
-      className={`flex flex-col gap-4 ${activeTab !== "categories" && activeTab !== "components" && activeTab !== "templates" ? "mb-5" : "mb-3"}`}
+      className={`flex flex-col gap-4 ${!sidebarOpen && activeTab !== "categories" && activeTab !== "components" && activeTab !== "templates" ? "mb-5" : "mb-3"}`}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">

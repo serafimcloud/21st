@@ -8,6 +8,7 @@ import { Footer } from "@/components/ui/footer"
 import { HeroSection } from "@/components/ui/hero-section"
 import { NewsletterDialog } from "@/components/ui/newsletter-dialog"
 import { HomePageClient } from "./page.client"
+import { Logo } from "@/components/ui/logo"
 
 export const dynamic = "force-dynamic"
 
@@ -88,6 +89,7 @@ export default async function HomePage() {
       <div className="min-h-screen flex flex-col">
         <Header variant="default" />
         <div className="flex-1">
+          <Logo />
           <HomePageClient />
           <NewsletterDialog />
         </div>

@@ -7,8 +7,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 import { CommandMenu } from "@/components/ui/command-menu"
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { MainSidebar } from "@/components/features/main-page/sidebar-layout"
+import { MainLayout } from "@/components/features/main-page/main-layout"
+import { useSidebarVisibility } from "@/hooks/use-sidebar-visibility"
 
 import { initAmplitude } from "@/lib/amplitude"
+import { useAtom } from "jotai"
+import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 
 const queryClient = new QueryClient()
 
@@ -17,6 +23,9 @@ export function AppProviders({
 }: {
   children: React.ReactNode
 }): JSX.Element {
+  const [open, setOpen] = useAtom(sidebarOpenAtom)
+  const shouldShowSidebar = useSidebarVisibility()
+
   useEffect(() => {
     initAmplitude()
   }, [])
@@ -24,9 +33,14 @@ export function AppProviders({
   return (
     <QueryClientProvider client={queryClient}>
       <ClerkProvider>
-        <CommandMenu />
-        <SpeedInsights />
-        {children}
+        <SidebarProvider defaultOpen={open} open={open} onOpenChange={setOpen}>
+          {shouldShowSidebar && <MainSidebar />}
+          <MainLayout>
+            <CommandMenu />
+            <SpeedInsights />
+            {children}
+          </MainLayout>
+        </SidebarProvider>
       </ClerkProvider>
     </QueryClientProvider>
   )
