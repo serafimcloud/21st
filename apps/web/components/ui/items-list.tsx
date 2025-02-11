@@ -66,18 +66,17 @@ function useMainDemos(
     queryKey: ["filtered-demos", sortBy, tagSlug] as const,
     queryFn: async ({ pageParam = 0 }) => {
       const { data: filteredData, error } = await supabase.rpc(
-        "get_demos_new",
+        "get_demos_list",
         {
           p_sort_by: sortBy,
           p_offset: Number(pageParam) * 24,
           p_limit: 24,
           p_tag_slug: tagSlug,
           p_include_private: false,
-        } as Database["public"]["Functions"]["get_demos_new"]["Args"],
+        } as Database["public"]["Functions"]["get_demos_list"]["Args"],
       )
 
       if (error) throw error
-
       const transformedData = (filteredData || []).map(transformDemoResult)
 
       return {
@@ -120,7 +119,7 @@ function useTagDemos(
     queryKey: ["tag-filtered-demos", tagSlug, sortBy] as const,
     queryFn: async () => {
       const { data: filteredData, error } = await supabase.rpc(
-        "get_demos_new",
+        "get_demos_list",
         {
           p_sort_by: sortBy,
           p_offset: 0,
@@ -160,25 +159,19 @@ function useUserDemos(
       let data: any[] = []
       switch (tab) {
         case "published": {
-          const { data: userDemos } = await supabase.rpc("get_user_demos", {
-            p_user_id: userId,
-          })
+          const { data: userDemos } = await supabase.rpc(
+            "get_user_profile_demo_list",
+            {
+              p_user_id: userId,
+            },
+          )
           data = userDemos || []
           break
         }
-        case "hunted": {
-          const { data: huntedComponents } = await supabase.rpc(
-            "get_hunted_components",
-            {
-              p_hunter_username: userId,
-            },
-          )
-          data = huntedComponents || []
-          break
-        }
       }
+      const transformedData = data.map(transformDemoResult)
       return {
-        data: data.map(transformDemoResult),
+        data: transformedData,
         total_count: data.length,
       }
     },
@@ -233,11 +226,11 @@ function useSearchDemos(
             }
 
             const demoComponent: DemoWithComponent = {
-              compiled_css: componentData.compiled_css,
+              compiled_css: "",
               component_id: componentData.id,
               created_at: result.created_at || null,
-              demo_code: componentData.demo_code || "",
-              demo_dependencies: componentData.dependencies,
+              demo_code: "",
+              demo_dependencies: "",
               demo_direct_registry_dependencies: {},
               demo_slug: result.demo_slug || "default",
               id: result.id,

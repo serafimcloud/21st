@@ -15,7 +15,7 @@ import { trackEvent } from "@/lib/amplitude"
 import { useEffect } from "react"
 import { AMPLITUDE_EVENTS } from "@/lib/amplitude"
 import { userTabAtom } from "@/components/features/user-page/user-page-header"
-import { DemoWithComponent, User, HuntedComponents } from "@/types/global"
+import { User } from "@/types/global"
 
 const useProfileAnalytics = ({
   username,

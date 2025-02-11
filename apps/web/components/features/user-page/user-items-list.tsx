@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import { isMac } from "@/lib/utils"
 import { useHotkeys } from "react-hotkeys-hook"
 import { ComponentCardSkeleton } from "@/components/ui/skeletons"
+import { transformDemoResult } from "@/lib/utils/transformData"
 
 type UserTab = "components" | "demos" | "bookmarks"
 
@@ -23,46 +24,20 @@ interface UserItemsListProps {
   tab: UserTab
 }
 
-function transformDemoData(data: any): DemoWithComponent {
-  return {
-    id: data.id.toString(),
-    name: data.name,
-    demo_slug: data.demo_slug,
-    preview_url: data.preview_url,
-    video_url: data.video_url,
-    updated_at: data.updated_at,
-    created_at: data.created_at,
-    user: data.user_data,
-    user_id: data.user_data?.id,
-    component_id: data.component_data?.id,
-    demo_code: data.component_data?.demo_code || "",
-    demo_dependencies: data.component_data?.dependencies || {},
-    demo_direct_registry_dependencies: {},
-    compiled_css: data.component_data?.compiled_css,
-    component: {
-      ...data.component_data,
-      user: data.component_user_data,
-    },
-    tags: [],
-    embedding: null,
-    embedding_oai: null,
-    fts: null,
-    pro_preview_image_url: null,
-    view_count: data.view_count || 0,
-  }
-}
-
 function useUserPublishedDemos(userId: string) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
     queryKey: ["user-published-demos", userId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_user_profile_demos", {
-        p_user_id: userId,
-        p_include_private: false,
-      })
+      const { data, error } = await supabase.rpc(
+        "get_user_profile_demo_list",
+        {
+          p_user_id: userId,
+          p_include_private: false,
+        },
+      )
       if (error) throw error
-      return data.map(transformDemoData)
+      return data.map(transformDemoResult)
     },
     staleTime: 30 * 1000,
   })
@@ -73,12 +48,12 @@ function useUserLikedComponents(userId: string) {
   return useQuery({
     queryKey: ["user-liked-components", userId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_user_liked_components", {
+      const { data, error } = await supabase.rpc("get_user_bookmarks_list", {
         p_user_id: userId,
         p_include_private: false,
       })
       if (error) throw error
-      return data.map(transformDemoData)
+      return data.map(transformDemoResult)
     },
     staleTime: 30 * 1000,
   })
@@ -89,12 +64,12 @@ function useUserDemos(userId: string) {
   return useQuery({
     queryKey: ["user-demos", userId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_user_profile_demos", {
+      const { data, error } = await supabase.rpc("get_user_profile_demo_list", {
         p_user_id: userId,
         p_include_private: false,
       })
       if (error) throw error
-      return data.map(transformDemoData)
+      return data.map(transformDemoResult)
     },
     staleTime: 30 * 1000,
   })

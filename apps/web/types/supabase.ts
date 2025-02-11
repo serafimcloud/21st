@@ -1127,48 +1127,8 @@ export type Database = {
           total_count: number
         }[]
       }
-      get_component_by_slug: {
+      get_demos_list: {
         Args: {
-          user_username: string
-          component_slug_param: string
-        }
-        Returns: {
-          component_id: number
-          component_name: Json
-          description: string
-          code: string
-          demo_code: string
-          created_at: string
-          updated_at: string
-          user_id: string
-          install_url: string
-          dependencies: Json
-          is_public: boolean
-          downloads_count: number
-          likes_count: number
-          component_slug: string
-          demo_component_name: string
-          name: string
-          demo_dependencies: Json
-          internal_dependencies: Json
-          preview_url: string
-          license: string
-          user_data: Json
-          tags: Json
-        }[]
-      }
-      get_components_counts: {
-        Args: {
-          p_tag_slug?: string
-        }
-        Returns: {
-          filter_type: string
-          count: number
-        }[]
-      }
-      get_demos: {
-        Args: {
-          p_quick_filter: string
           p_sort_by: string
           p_offset: number
           p_limit: number
@@ -1178,245 +1138,14 @@ export type Database = {
         Returns: {
           id: number
           name: string
-          demo_code: string
           preview_url: string
           video_url: string
-          compiled_css: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          pro_preview_image_url: string
-          created_at: string
           updated_at: string
-          component_id: number
+          demo_slug: string
           component_data: Json
           user_data: Json
           component_user_data: Json
-          tags: Json
           total_count: number
-          view_count: number
-          fts: unknown
-          demo_slug: string
-          debug_info: Json
-        }[]
-      }
-      get_demos_counts: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          filter_type: string
-          count: number
-        }[]
-      }
-      get_demos_new: {
-        Args: {
-          p_sort_by: string
-          p_offset: number
-          p_limit: number
-          p_tag_slug?: string
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          name: string
-          demo_code: string
-          preview_url: string
-          video_url: string
-          compiled_css: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          pro_preview_image_url: string
-          created_at: string
-          updated_at: string
-          component_id: number
-          component_data: Json
-          user_data: Json
-          component_user_data: Json
-          tags: Json
-          total_count: number
-          view_count: number
-          fts: unknown
-          demo_slug: string
-          debug_info: Json
-        }[]
-      }
-      get_demos_optimized: {
-        Args: {
-          p_quick_filter: string
-          p_sort_by: string
-          p_offset: number
-          p_limit: number
-          p_tag_slug?: string
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          name: string
-          demo_slug: string
-          preview_url: string
-          video_url: string
-          updated_at: string
-          component_data: Json
-          user_data: Json
-          component_user_data: Json
-          view_count: number
-        }[]
-      }
-      get_filtered_components: {
-        Args: {
-          p_quick_filter: string
-          p_sort_by: string
-          p_offset: number
-          p_limit: number
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          component_names: Json
-          description: string
-          code: string
-          demo_code: string
-          created_at: string
-          updated_at: string
-          user_id: string
-          dependencies: Json
-          is_public: boolean
-          downloads_count: number
-          likes_count: number
-          component_slug: string
-          name: string
-          demo_dependencies: Json
-          registry: string
-          direct_registry_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          preview_url: string
-          video_url: string
-          license: string
-          user_data: Json
-          total_count: number
-        }[]
-      }
-      get_filtered_demos: {
-        Args: {
-          p_quick_filter: string
-          p_sort_by: string
-          p_offset: number
-          p_limit: number
-          p_tag_slug?: string
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          name: string
-          demo_code: string
-          preview_url: string
-          video_url: string
-          compiled_css: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          pro_preview_image_url: string
-          created_at: string
-          updated_at: string
-          component_id: number
-          component_data: Json
-          user_data: Json
-          component_user_data: Json
-          tags: Json
-          total_count: number
-          fts: unknown
-          demo_slug: string
-          debug_info: Json
-        }[]
-      }
-      get_filtered_demos_with_views: {
-        Args: {
-          p_quick_filter: string
-          p_sort_by: string
-          p_offset: number
-          p_limit: number
-          p_tag_slug?: string
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          name: string
-          demo_code: string
-          preview_url: string
-          video_url: string
-          compiled_css: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          pro_preview_image_url: string
-          created_at: string
-          updated_at: string
-          component_id: number
-          component_data: Json
-          user_data: Json
-          component_user_data: Json
-          tags: Json
-          total_count: number
-          view_count: number
-          fts: unknown
-          demo_slug: string
-          debug_info: Json
-        }[]
-      }
-      get_filtered_demos_with_views_and_usage: {
-        Args: {
-          p_quick_filter: string
-          p_sort_by: string
-          p_offset: number
-          p_limit: number
-          p_tag_slug?: string
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          name: string
-          demo_code: string
-          preview_url: string
-          video_url: string
-          compiled_css: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          pro_preview_image_url: string
-          created_at: string
-          updated_at: string
-          component_id: number
-          component_data: Json
-          user_data: Json
-          component_user_data: Json
-          tags: Json
-          total_count: number
-          view_count: number
-          fts: unknown
-          demo_slug: string
-          debug_info: Json
-        }[]
-      }
-      get_hunted_components: {
-        Args: {
-          p_hunter_username: string
-        }
-        Returns: {
-          id: number
-          name: string
-          description: string
-          component_slug: string
-          demo_code: string
-          preview_url: string
-          video_url: string
-          compiled_css: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          demo_slug: string
-          component_id: number
-          user_id: string
-          pro_preview_image_url: string
-          created_at: string
-          updated_at: string
-          fts: unknown
-          component: Json
-          user_data: Json
-          tags: Json
           view_count: number
         }[]
       }
@@ -1450,43 +1179,6 @@ export type Database = {
           ref: string
         }[]
       }
-      get_random_components: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          code: string
-          compiled_css: string | null
-          component_names: Json
-          component_slug: string
-          created_at: string
-          demo_code: string | null
-          demo_dependencies: Json | null
-          demo_direct_registry_dependencies: Json
-          dependencies: Json | null
-          description: string | null
-          direct_registry_dependencies: Json
-          downloads_count: number
-          fts: unknown | null
-          global_css_extension: string | null
-          hunter_username: string | null
-          id: number
-          is_paid: boolean
-          is_public: boolean
-          license: string
-          likes_count: number
-          name: string
-          payment_url: string | null
-          preview_url: string
-          price: number
-          pro_preview_image_url: string | null
-          registry: string
-          registry_url: string | null
-          tailwind_config_extension: string | null
-          updated_at: string
-          user_id: string
-          video_url: string | null
-          website_url: string | null
-        }[]
-      }
       get_section_previews: {
         Args: {
           p_demo_ids: number[]
@@ -1497,24 +1189,6 @@ export type Database = {
           video_url: string
         }[]
       }
-      get_sections: {
-        Args: {
-          p_tag_slugs?: string[]
-        }
-        Returns: {
-          tag_id: number
-          tag_name: string
-          tag_slug: string
-          component_id: number
-          component_name: string
-          component_slug: string
-          preview_url: string
-          video_url: string
-          user_data: Json
-          downloads_count: number
-          view_count: number
-        }[]
-      }
       get_template_tags: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1522,50 +1196,6 @@ export type Database = {
           tag_name: string
           tag_slug: string
           templates_count: number
-        }[]
-      }
-      get_templates: {
-        Args: {
-          p_offset?: number
-          p_limit?: number
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          name: string
-          description: string
-          preview_url: string
-          video_url: string
-          website_preview_url: string
-          price: number
-          payment_url: string
-          created_at: string
-          updated_at: string
-          user_data: Json
-          downloads_count: number
-          likes_count: number
-        }[]
-      }
-      get_templates_v2: {
-        Args: {
-          p_offset?: number
-          p_limit?: number
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          name: string
-          description: string
-          preview_url: string
-          video_url: string
-          website_preview_url: string
-          price: number
-          payment_url: string
-          created_at: string
-          updated_at: string
-          user_data: Json
-          downloads_count: number
-          likes_count: number
         }[]
       }
       get_templates_v3: {
@@ -1591,91 +1221,30 @@ export type Database = {
           likes_count: number
         }[]
       }
+      get_user_bookmarks_list: {
+        Args: {
+          p_user_id: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+        }[]
+      }
       get_user_components_counts: {
         Args: {
           p_user_id: string
         }
         Returns: Json
       }
-      get_user_demos: {
-        Args: {
-          p_user_id: string
-        }
-        Returns: {
-          id: number
-          component_id: number
-          name: string
-          demo_code: string
-          created_at: string
-          updated_at: string
-          user_id: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          preview_url: string
-          video_url: string
-          compiled_css: string
-          pro_preview_image_url: string
-          component_data: Json
-          user_data: Json
-          is_paid: boolean
-          payment_url: string
-          price: number
-          license: string
-          website_url: string
-          downloads_count: number
-          likes_count: number
-          fts: unknown
-          demo_slug: string
-        }[]
-      }
-      get_user_liked_components: {
-        Args: {
-          p_user_id: string
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          name: string
-          demo_code: string
-          preview_url: string
-          video_url: string
-          compiled_css: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          pro_preview_image_url: string
-          created_at: string
-          updated_at: string
-          component_id: number
-          component_data: Json
-          user_data: Json
-          component_user_data: Json
-          tags: Json
-          total_count: number
-          view_count: number
-          fts: unknown
-          demo_slug: string
-          debug_info: Json
-        }[]
-      }
-      get_user_liked_components_optimized: {
-        Args: {
-          p_user_id: string
-          p_include_private?: boolean
-        }
-        Returns: {
-          id: number
-          name: string
-          preview_url: string
-          video_url: string
-          updated_at: string
-          component_data: Json
-          user_data: Json
-          component_user_data: Json
-          view_count: number
-          demo_slug: string
-        }[]
-      }
-      get_user_profile_demos: {
+      get_user_profile_demo_list: {
         Args: {
           p_user_id: string
           p_include_private?: boolean
@@ -1718,12 +1287,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      search_components: {
-        Args: {
-          search_query: string
-        }
-        Returns: Database["public"]["CompositeTypes"]["component_with_user"][]
-      }
       search_components_preview: {
         Args: {
           p_search_query: string
@@ -1737,37 +1300,6 @@ export type Database = {
           downloads_count: number
           likes_count: number
           component_slug: string
-        }[]
-      }
-      search_demos: {
-        Args: {
-          search_query: string
-        }
-        Returns: {
-          id: number
-          component_id: number
-          name: string
-          demo_code: string
-          created_at: string
-          updated_at: string
-          user_id: string
-          demo_dependencies: Json
-          demo_direct_registry_dependencies: Json
-          preview_url: string
-          video_url: string
-          compiled_css: string
-          pro_preview_image_url: string
-          component_data: Json
-          user_data: Json
-          is_paid: boolean
-          payment_url: string
-          price: number
-          license: string
-          website_url: string
-          downloads_count: number
-          likes_count: number
-          fts: unknown
-          demo_slug: string
         }[]
       }
       search_demos_ai: {

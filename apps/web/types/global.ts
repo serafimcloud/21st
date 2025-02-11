@@ -6,12 +6,13 @@ export type Demo = Database["public"]["Tables"]["demos"]["Row"]
 export type User = Database["public"]["Tables"]["users"]["Row"]
 export type Tag = Database["public"]["Tables"]["tags"]["Row"]
 export type Submission = Database["public"]["Tables"]["submissions"]["Row"]
+export type Category = {
+  tag_slug: string
+  tag_name: string
+  preview_url: string | null
+  video_url: string | null
+}
 
-export type Category =
-  Database["public"]["Functions"]["get_sections"]["Returns"][0]
-
-export type HuntedComponents =
-  Database["public"]["Functions"]["get_hunted_components"]["Returns"]
 
 export type DemoWithComponent = Demo & {
   component: Component & { user: User }
@@ -148,4 +149,4 @@ export type TemplateWithUser = Template & {
 }
 
 export type GetTemplatesResponse =
-  Database["public"]["Functions"]["get_templates"]["Returns"][0]
+  Database["public"]["Functions"]["get_templates_v3"]["Returns"][0]

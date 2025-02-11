@@ -310,33 +310,44 @@ export function useHunterUser(hunterUsername: string | null) {
   })
 }
 
-export async function getHuntedComponents(
+export async function getComponentDemos(
   supabase: SupabaseClient<Database>,
-  hunterUsername: string,
+  componentId: number,
 ) {
-  const { data, error } = await supabase.rpc("get_hunted_components", {
-    p_hunter_username: hunterUsername,
-  })
+  const { data, error } = await supabase
+    .from("demos")
+    .select(
+      `
+      *,
+      user:users!user_id (*),
+      tags:demo_tags(
+        tag:tag_id(*)
+      ),
+      component:components!component_id (
+        *,
+        user:users!user_id (*)
+      )
+    `,
+    )
+    .eq("component_id", componentId)
+    .order("created_at", { ascending: false })
 
   if (error) {
-    console.error("Error fetching hunted components:", error)
-    return null
+    console.error("Error fetching component demos:", error)
+    return { data: null, error }
   }
 
-  return data.map((component) => ({
-    ...component,
-    user: component.user_data as User,
-    view_count: component.view_count || 0,
+  // Transform the data to match DemoWithTags type
+  const transformedData = data?.map((demo: any) => ({
+    ...demo,
+    tags: demo.tags.map((tagRelation: any) => tagRelation.tag),
+    component: {
+      ...demo.component,
+      user: demo.component.user,
+    },
   }))
-}
 
-export function useHuntedComponents(username: string) {
-  const supabase = useClerkSupabaseClient()
-  return useQuery({
-    queryKey: ["huntedComponents", username],
-    queryFn: () => getHuntedComponents(supabase, username),
-    staleTime: Infinity,
-  })
+  return { data: transformedData, error: null }
 }
 
 export async function getComponentWithDemo(
@@ -448,7 +459,7 @@ export async function getUserDemos(
   userId: string,
   loggedInUserId?: string,
 ) {
-  const { data, error } = await supabase.rpc("get_user_profile_demos", {
+  const { data, error } = await supabase.rpc("get_user_profile_demo_list", {
     p_user_id: userId,
     p_include_private: userId === loggedInUserId,
   })
@@ -459,46 +470,6 @@ export async function getUserDemos(
   }
 
   return data.map(transformDemoResult)
-}
-
-export async function getComponentDemos(
-  supabase: SupabaseClient<Database>,
-  componentId: number,
-) {
-  const { data, error } = await supabase
-    .from("demos")
-    .select(
-      `
-      *,
-      user:users!user_id (*),
-      tags:demo_tags(
-        tag:tag_id(*)
-      ),
-      component:components!component_id (
-        *,
-        user:users!user_id (*)
-      )
-    `,
-    )
-    .eq("component_id", componentId)
-    .order("created_at", { ascending: false })
-
-  if (error) {
-    console.error("Error fetching component demos:", error)
-    return { data: null, error }
-  }
-
-  // Transform the data to match DemoWithTags type
-  const transformedData = data?.map((demo: any) => ({
-    ...demo,
-    tags: demo.tags.map((tagRelation: any) => tagRelation.tag),
-    component: {
-      ...demo.component,
-      user: demo.component.user,
-    },
-  }))
-
-  return { data: transformedData, error: null }
 }
 
 export async function getComponentWithDemoForOG(
@@ -610,7 +581,7 @@ export async function getUserLikedComponents(
   userId: string,
   loggedInUserId?: string,
 ) {
-  const { data, error } = await supabase.rpc("get_user_liked_components", {
+  const { data, error } = await supabase.rpc("get_user_bookmarks_list", {
     p_user_id: userId,
     p_include_private: userId === loggedInUserId,
   })
