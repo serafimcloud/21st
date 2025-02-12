@@ -7,7 +7,8 @@ import { makeSlugFromName } from "@/lib/utils"
 
 export async function POST(request: Request) {
   try {
-    const { userId } = auth()
+    const session = await auth()
+    const userId = session?.userId
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }

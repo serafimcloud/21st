@@ -14,7 +14,8 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { userId } = auth()
+    const session = await auth()
+    const userId = session?.userId
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
