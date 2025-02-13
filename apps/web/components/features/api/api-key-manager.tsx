@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useClerkSupabaseClient } from "@/lib/clerk"
+import Link from "next/link"
 import { ApiKey } from "@/types/global"
 import { toast } from "sonner"
 import { AlertTriangle, LoaderCircle } from "lucide-react"
@@ -52,12 +53,12 @@ export function ApiKeyManager({ initialKey, userId }: ApiKeyManagerProps) {
         </Alert>
 
         <div className="flex justify-center">
-          <a
+          <Link
             href="https://accounts.21st.dev/sign-in"
             className="inline-block px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
           >
             Sign In
-          </a>
+          </Link>
         </div>
       </div>
     )
