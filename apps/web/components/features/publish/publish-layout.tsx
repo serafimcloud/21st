@@ -816,6 +816,25 @@ export default function PublishComponentForm({
       console.error("Error adding component:", error)
       toast.error(
         `An error occurred while adding the component${error instanceof Error ? `: ${error.message}` : ""}`,
+        {
+          action: {
+            label: "Create Issue",
+            onClick: () => {
+              const errorMessage =
+                error instanceof Error ? error.message : String(error)
+              const title = encodeURIComponent(
+                "Bug: Error while publishing component",
+              )
+              const body = encodeURIComponent(
+                `## Error Description\n\`\`\`\n${errorMessage}\n\`\`\`\n\n## Additional Information\n- Time: ${new Date().toISOString()}\n- Environment: ${process.env.NODE_ENV}\n- Browser: ${navigator.userAgent}`,
+              )
+              window.open(
+                `https://github.com/serafimcloud/21st/issues/new?title=${title}&body=${body}`,
+                "_blank",
+              )
+            },
+          },
+        },
       )
     } finally {
       setIsSubmitting(false)
