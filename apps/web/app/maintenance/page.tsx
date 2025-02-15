@@ -1,4 +1,4 @@
-import { MaintenancePage } from '@/components/maintenance-page';
+import { MaintenancePage } from '@/components/ui/maintenance-page';
 
 export default function Page() {
   return <MaintenancePage />;

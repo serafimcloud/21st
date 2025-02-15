@@ -371,7 +371,7 @@ export const ComponentPageInfo = ({
             <div className="flex items-center justify-between group hover:bg-accent rounded-md p-1 -mx-2">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <a
+                  <Link
                     href={
                       component.website_url.startsWith("http")
                         ? component.website_url
@@ -428,7 +428,7 @@ export const ComponentPageInfo = ({
                         }
                       })()}
                     </span>
-                  </a>
+                  </Link>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Visit website</p>
@@ -437,7 +437,7 @@ export const ComponentPageInfo = ({
               <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <a
+                    <Link
                       href={
                         component.website_url.startsWith("http")
                           ? component.website_url
@@ -451,7 +451,7 @@ export const ComponentPageInfo = ({
                       <div className="relative p-1 transition-all duration-300 ease-in-out hover:translate-x-[2px] hover:-translate-y-[2px]">
                         <ArrowUpRight size={16} />
                       </div>
-                    </a>
+                    </Link>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Visit website</p>

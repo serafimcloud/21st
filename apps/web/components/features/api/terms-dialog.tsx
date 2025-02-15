@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-
+import Link from "next/link"
 interface TermsDialogProps {
   open: boolean
   onAccept: () => void
@@ -217,12 +217,12 @@ export function TermsDialog({ open, onAccept, onClose }: TermsDialogProps) {
                       <p>
                         For support, questions, or to report potential misuse,
                         please contact us at{" "}
-                        <a
+                        <Link
                           href="mailto:support@21st.dev"
                           className="text-primary hover:underline"
                         >
                           serafimcloud@gmail.com
-                        </a>
+                        </Link>
                       </p>
                     </div>
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { Icons } from "@/components/icons"
-
+import Link from "next/link"
 export function MaintenancePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground px-4">
@@ -39,15 +39,15 @@ export function MaintenancePage() {
         <div className="flex flex-col items-center gap-4">
           <div className="text-sm text-muted-foreground">
             Contact us at{" "}
-            <a
+            <Link
               href="mailto:support@21st.dev"
               className="text-primary hover:underline"
             >
               support@21st.dev
-            </a>
+            </Link>
           </div>
           
-          <a
+          <Link
             href="https://discord.gg/Qx4rFunHfm"
             target="_blank"
             rel="noopener noreferrer"
@@ -55,7 +55,7 @@ export function MaintenancePage() {
           >
             <Icons.discord className="h-5 w-5" />
             <span>Join our Discord</span>
-          </a>
+          </Link>
         </div>
       </div>
     </div>

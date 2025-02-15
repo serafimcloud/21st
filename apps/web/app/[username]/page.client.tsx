@@ -149,14 +149,14 @@ export function UserPageClient({ user, initialTab }: UserPageClientProps) {
                     </AlertTitle>
                     <AlertDescription>
                       To claim this profile, please contact{" "}
-                      <a
+                      <Link
                         href="https://x.com/serafimcloud"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:underline"
                       >
                         @serafimcloud
-                      </a>
+                      </Link>
                     </AlertDescription>
                   </Alert>
                 </div>

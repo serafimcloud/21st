@@ -4,7 +4,6 @@ import { useEffect } from "react"
 
 import { ClerkProvider } from "@clerk/nextjs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { SpeedInsights } from "@vercel/speed-insights/next"
 
 import { CommandMenu } from "@/components/ui/command-menu"
 import { SidebarProvider } from "@/components/ui/sidebar"
@@ -37,7 +36,6 @@ export function AppProviders({
           {shouldShowSidebar && <MainSidebar />}
           <MainLayout>
             <CommandMenu />
-            <SpeedInsights />
             {children}
           </MainLayout>
         </SidebarProvider>
