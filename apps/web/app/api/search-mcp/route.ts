@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const searchResultsTruncated = searchResults.slice(0, 20)
+    const searchResultsTruncated = searchResults.slice(0, limit)
 
     const { data: demos, error: demosError } = await supabase
       .from("demos")
