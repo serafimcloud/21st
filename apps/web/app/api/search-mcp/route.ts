@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js"
 import { NextRequest, NextResponse } from "next/server"
-import { SearchResponse } from "@/types/global"
+import { SearchResponse, SearchResponseMCP } from "@/types/global"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import fetchFileTextContent from "@/lib/utils/fetchFileTextContent"
 
@@ -59,6 +59,14 @@ export async function POST(request: NextRequest) {
       },
     )
 
+    if (error) {
+      console.error("Search error:", error)
+      return NextResponse.json(
+        { error: "Error fetching search results" },
+        { status: 500 },
+      )
+    }
+
     const searchResultsTruncated = searchResults.slice(0, 20)
 
     const { data: demos, error: demosError } = await supabase
@@ -80,15 +88,27 @@ export async function POST(request: NextRequest) {
         searchResultsTruncated.map((result: any) => result.id),
       )
 
-    const promises = demos?.map(async (d) => {
-      console.log("demo", d)
+    if (demosError) {
+      console.error("Fetching demos error:", demosError)
+      return NextResponse.json(
+        { error: "Error fetching demos" },
+        { status: 500 },
+      )
+    }
+
+    const promises = demos?.map(async (demoRaw) => {
+      // TS thinks that component could be an array, but it's not
+      const component = Array.isArray(demoRaw.component)
+        ? demoRaw.component[0]
+        : demoRaw.component
+      const d = { ...demoRaw, component }
 
       const { data: demoCode } = await fetchFileTextContent(d.demo_code)
       const { data: componentCode } = await fetchFileTextContent(
-        d.component!.code,
+        d.component!.code as string,
       )
 
-      const { data: registryDependencies, error } =
+      const { data: registryDependencies } =
         await resolveRegistryDependencyTree({
           supabase,
           sourceDependencySlugs: [
@@ -100,16 +120,16 @@ export async function POST(request: NextRequest) {
 
       return {
         demoName: d.name,
-        demoCode: demoCode,
+        demoCode: demoCode ?? "",
         componentName: d.component!.name,
-        componentCode: componentCode,
+        componentCode: componentCode ?? "",
         registryDependencies: registryDependencies || undefined,
       }
     })
 
     const demosWithCodeAndRegistryDependencies = await Promise.all(promises)
 
-    return NextResponse.json<SearchResponse>({
+    return NextResponse.json<SearchResponseMCP>({
       results: demosWithCodeAndRegistryDependencies,
     })
   } catch (error) {

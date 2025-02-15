@@ -13,7 +13,6 @@ export type Category = {
   video_url: string | null
 }
 
-
 export type DemoWithComponent = Demo & {
   component: Component & { user: User }
   user: User
@@ -118,6 +117,19 @@ export interface SearchResponse {
       total_pages: number
     }
   }
+}
+
+export interface SearchResponseMCP {
+  results: {
+    demoName: string
+    demoCode: string
+    componentName: string
+    componentCode: string
+    registryDependencies?: {
+      filesWithRegistry: Record<string, { code: string; registry: string }>
+      npmDependencies: Record<string, string>
+    }
+  }[]
 }
 
 export type ApiKey = {
