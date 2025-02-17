@@ -7,9 +7,10 @@ const plugin = require("tailwindcss/plugin")
 module.exports = {
   darkMode: ["class"],
   content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "./pages/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
   theme: {
     screens: {
@@ -25,11 +26,9 @@ module.exports = {
     },
     container: {
       center: true,
-      padding: {
-        DEFAULT: "20px",
-        "min-720": "24px",
-        "min-1280": "32px",
-        "min-1536": "80px",
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
       },
     },
     extend: {
@@ -209,6 +208,10 @@ module.exports = {
             opacity: "0",
           },
         },
+        "border-rotate": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -224,6 +227,16 @@ module.exports = {
         "copy-success": "copy-success 1000ms ease-out forwards",
         "ping-slow": "ping-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "scale-pulse": "scale-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "border-rotate": "border-rotate var(--duration) linear infinite",
+      },
+      backgroundImage: {
+        "grid-white/[0.02]": `
+          linear-gradient(to right, rgb(255 255 255 / 0.02) 1px, transparent 1px),
+          linear-gradient(to bottom, rgb(255 255 255 / 0.02) 1px, transparent 1px)
+        `,
+      },
+      backgroundSize: {
+        grid: "30px 30px",
       },
     },
   },
