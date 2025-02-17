@@ -24,7 +24,7 @@ export const generateMetadata = async (): Promise<Metadata> => {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${process.env.NEXT_PUBLIC_APP_URL}/s/{search_term_string}`,
+        urlTemplate: `${process.env.NEXT_PUBLIC_APP_URL}/q/{search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },
