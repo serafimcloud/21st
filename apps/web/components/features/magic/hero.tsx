@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { Mockup, MockupFrame } from "@/components/ui/mockup"
 import Image from "next/image"
+import Link from "next/link"
 
 type SpotlightProps = {
   gradientFirst?: string
@@ -214,7 +215,7 @@ export function Hero() {
         <section
           ref={ref}
           id="waitlist-form"
-          className="flex min-h-screen flex-col items-center justify-center px-4 py-20 lg:py-40"
+          className="flex min-h-screen flex-col items-center justify-center px-4 pt-20 pb-10 lg:py-40"
         >
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -241,7 +242,15 @@ export function Hero() {
             className="mt-6 max-w-2xl text-center text-xl leading-8 text-neutral-300"
           >
             Empower your IDE with an AI extension that creates stunning,
-            production-ready components inspired by 21st.dev.
+            production-ready components inspired by{" "}
+            <Link
+              href="https://21st.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-neutral-50 transition-colors"
+            >
+              21st.dev
+            </Link>
           </motion.p>
 
           <motion.div

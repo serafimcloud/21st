@@ -3,13 +3,15 @@ import { Hero } from "@/components/features/magic/hero"
 import { HowItWorks } from "@/components/features/magic/how-it-works"
 import { Pricing } from "@/components/features/magic/pricing"
 import { FAQ } from "@/components/features/magic/faq"
-
+import { Footer } from "@/components/ui/footer"
 export const metadata: Metadata = {
-  title: "Magic - AI Agent for Your IDE That Creates Professional UI Components | 21st.dev",
-  description: "Transform your IDE with our AI agent that understands Modern Component Patterns. Create production-ready UI components in seconds instead of hours. Built for developers who want beautiful, consistent, and maintainable React components.",
+  title:
+    "Magic - AI Agent for Your IDE That Creates Professional UI Components | 21st.dev",
+  description:
+    "Transform your IDE with our AI agent that understands Modern Component Patterns. Create production-ready UI components in seconds instead of hours. Built for developers who want beautiful, consistent, and maintainable React components.",
   keywords: [
     "Cursor IDE",
-    "AI code editor", 
+    "AI code editor",
     "GitHub Copilot alternative",
     "VSCode extension",
     "AI pair programming",
@@ -24,22 +26,26 @@ export const metadata: Metadata = {
     "Windsurf",
     "code generation",
     "MCP",
-    "modern component patterns"
+    "modern component patterns",
   ],
   openGraph: {
-    title: "Magic - AI Agent for Your IDE That Creates Professional UI Components | 21st.dev",
-    description: "Transform your IDE with our AI agent that understands Modern Component Patterns. Create production-ready UI components in seconds instead of hours. Built for developers who want beautiful, consistent, and maintainable React components.",
+    title:
+      "Magic - AI Agent for Your IDE That Creates Professional UI Components | 21st.dev",
+    description:
+      "Transform your IDE with our AI agent that understands Modern Component Patterns. Create production-ready UI components in seconds instead of hours. Built for developers who want beautiful, consistent, and maintainable React components.",
     images: ["/magic-agent-og-image.png"],
     type: "website",
     siteName: "21st.dev",
-    locale: "en_US"
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Magic - AI Agent for Your IDE That Creates Professional UI Components | 21st.dev",
-    description: "Transform your IDE with our AI agent that understands Modern Component Patterns. Create production-ready UI components in seconds instead of hours. Built for developers who want beautiful, consistent, and maintainable React components.",
-    images: ["/magic-agent-og-image.png"]
-  }
+    title:
+      "Magic - AI Agent for Your IDE That Creates Professional UI Components | 21st.dev",
+    description:
+      "Transform your IDE with our AI agent that understands Modern Component Patterns. Create production-ready UI components in seconds instead of hours. Built for developers who want beautiful, consistent, and maintainable React components.",
+    images: ["/magic-agent-og-image.png"],
+  },
 }
 
 export default function MagicPage() {
@@ -52,6 +58,7 @@ export default function MagicPage() {
           <Pricing />
           <FAQ />
         </div>
+        <Footer isOpenSource={false} />
       </main>
     </div>
   )

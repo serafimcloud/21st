@@ -25,7 +25,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="py-24 overflow-hidden">
+    <section className="pt-10 pb-10 lg:pb-24 overflow-hidden">
       <div className="text-center">
         <h2 className="text-3xl font-bold tracking-tight text-neutral-200 sm:text-4xl">
           How It Works

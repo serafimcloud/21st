@@ -43,7 +43,7 @@ export function PricingSection({
         </div>
       </div>
 
-      <div className="container grid max-w-5xl gap-6 px-4 sm:grid-cols-3">
+      <div className="container grid max-w-5xl gap-6 px-0 sm:px-4 sm:grid-cols-3">
         {tiers.map((tier) => (
           <PricingCard
             key={tier.name}

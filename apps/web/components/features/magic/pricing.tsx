@@ -37,7 +37,7 @@ const TIERS = [
       yearly: 288,
     },
     description: "For power users",
-    features: ["200+ generations per month", "Access to all components", "Priority support", "50% of revenue goes to component authors"],
+    features: ["200 generations per month", "Access to all components", "Priority support", "50% of revenue goes to component authors"],
     cta: "Join waitlist",
     highlighted: true,
   },
