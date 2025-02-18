@@ -5,6 +5,7 @@ import { useAtom } from "jotai"
 import { useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import { useSearchParams, useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 import { SortOption, SORT_OPTIONS } from "@/types/global"
 import { sortByAtom } from "@/components/features/main-page/main-page-header"
@@ -16,10 +17,15 @@ import { FilterChips } from "@/components/features/main-page/filter-chips"
 import { DesignEngineersList } from "@/components/features/design-engineers/design-engineers-list"
 import { ProList } from "@/components/features/pro/pro-list"
 import { TemplatesContainer } from "@/components/features/templates/templates-list"
+import {
+  MagicBanner,
+  magicBannerVisibleAtom,
+} from "@/components/features/magic/magic-banner"
 
 export function HomePageClient() {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
   const [sidebarOpen] = useAtom(sidebarOpenAtom)
+  const [isBannerVisible] = useAtom(magicBannerVisibleAtom)
   const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
   const queryClient = useQueryClient()
   const searchParams = useSearchParams()
@@ -153,11 +159,22 @@ export function HomePageClient() {
   }
 
   return (
-    <div className="container mx-auto my-20 px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px]">
-      <div className="flex flex-col">
-        <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
-        {renderContent()}
+    <>
+      <MagicBanner />
+      <div
+        className={cn(
+          "container mx-auto px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px] transition-[margin] duration-200 ease-in-out",
+          isBannerVisible ? "mt-[144px]" : "mt-20",
+        )}
+      >
+        <div className="flex flex-col">
+          <ComponentsHeader
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+          {renderContent()}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

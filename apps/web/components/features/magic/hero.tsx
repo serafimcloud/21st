@@ -326,7 +326,7 @@ export function Hero() {
                 <div className="relative w-full h-full group">
                   <div className="absolute inset-0 flex items-center justify-center z-20">
                     <a
-                      href="https://screen.studio/share/LbiqiDHh"
+                      href="https://screen.studio/share/2mcsIlwF"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-20 h-20 rounded-full bg-neutral-200/30 backdrop-blur-sm flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
@@ -340,7 +340,7 @@ export function Hero() {
                     </a>
                   </div>
                   <Image
-                    src="https://vucvdpamtrjkzmubwlts.supabase.co/storage/v1/object/public/images//screenshot.png"
+                    src="https://vucvdpamtrjkzmubwlts.supabase.co/storage/v1/object/public/images//screenshot_magic.png"
                     alt="Magic Agent Demo"
                     fill
                     className="object-cover object-center"
