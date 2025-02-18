@@ -13,6 +13,8 @@ import { ClapIcon } from "./clap"
 import { WorkflowIcon } from "./workslow"
 import { LogoutIcon } from "./logout-icon"
 import { MagicPatternsLogo } from "./magic-patterns"
+import WindsurfTealLogo from "./WindsurfTealLogo"
+import { VSCodeLogo } from "./vscode"
 
 export type Icon = LucideIcon
 
@@ -20,6 +22,7 @@ export const Icons = {
   sun: SunMedium,
   moon: Moon,
   menu: Menu,
+  vscode: VSCodeLogo,
   cursorAnimatedLogo: (props: LucideProps) => (
     <div className="pointer-events-none relative -ml-0.5 size-6 mix-blend-multiply dark:mix-blend-lighten lg:-ml-1 lg:mr-px lg:size-8">
       <img
@@ -99,6 +102,7 @@ export const Icons = {
   lovableLogo: LovableLogo,
   sitebrewLogo: SitebrewLogo,
   workflowIcon: WorkflowIcon,
+  windsurfTealLogo: WindsurfTealLogo,
   boltLogo: (props: LucideProps) => (
     <svg
       {...props}

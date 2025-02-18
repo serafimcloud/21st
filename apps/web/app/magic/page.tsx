@@ -4,6 +4,8 @@ import { HowItWorks } from "@/components/features/magic/how-it-works"
 import { Pricing } from "@/components/features/magic/pricing"
 import { FAQ } from "@/components/features/magic/faq"
 import { Footer } from "@/components/ui/footer"
+import { SupportedEditors } from "@/components/features/magic/supported-editors"
+
 export const metadata: Metadata = {
   title:
     "Magic - AI Agent for Your IDE That Creates Professional UI Components | 21st.dev",
@@ -54,6 +56,7 @@ export default function MagicPage() {
       <main className="relative w-full">
         <Hero />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <SupportedEditors />
           <HowItWorks />
           <Pricing />
           <FAQ />

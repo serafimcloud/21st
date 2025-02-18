@@ -22,63 +22,25 @@ import {
   magicBannerVisibleAtom,
 } from "@/components/features/magic/magic-banner"
 
-export function HomePageClient() {
-  const [sortBy, setSortBy] = useAtom(sortByAtom)
-  const [sidebarOpen] = useAtom(sidebarOpenAtom)
-  const [isBannerVisible] = useAtom(magicBannerVisibleAtom)
-  const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
-  const queryClient = useQueryClient()
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState<
-    "categories" | "components" | "authors" | "pro" | "templates"
-  >(
-    (searchParams.get("tab") as
-      | "categories"
-      | "components"
-      | "authors"
-      | "pro"
-      | "templates") || "components",
-  )
-  const [selectedFilter, setSelectedFilter] = useState<string>("all")
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("tab", activeTab)
-    if (activeTab === "components" && sortBy) {
-      params.set("sort", sortBy)
-    } else {
-      params.delete("sort")
-    }
-    router.push(`?${params.toString()}`, { scroll: false })
-  }, [activeTab, sortBy, router, searchParams])
-
-  useEffect(() => {
-    const sortFromUrl = searchParams.get("sort") as SortOption
-    if (sortFromUrl && Object.keys(SORT_OPTIONS).includes(sortFromUrl)) {
-      setSortBy(sortFromUrl)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (sortBy !== undefined) {
-      queryClient.invalidateQueries({
-        queryKey: ["filtered-demos", sortBy],
-      })
-    }
-  }, [sortBy, queryClient])
-
-  useEffect(() => {
-    setPrevSidebarState(sidebarOpen)
-  }, [sidebarOpen])
-
-  const handleTabChange = (
-    newTab: "categories" | "components" | "authors" | "pro" | "templates",
-  ) => {
-    setActiveTab(newTab)
-    setSelectedFilter("all")
-  }
-
+const MainContent = React.memo(function MainContent({
+  activeTab,
+  selectedFilter,
+  setSelectedFilter,
+  sortBy,
+  sidebarOpen,
+  prevSidebarState,
+  handleTabChange,
+}: {
+  activeTab: "categories" | "components" | "authors" | "pro" | "templates"
+  selectedFilter: string
+  setSelectedFilter: (filter: string) => void
+  sortBy: SortOption
+  sidebarOpen: boolean
+  prevSidebarState: boolean
+  handleTabChange: (
+    tab: "categories" | "components" | "authors" | "pro" | "templates"
+  ) => void
+}) {
   const renderContent = () => {
     switch (activeTab) {
       case "categories":
@@ -159,22 +121,115 @@ export function HomePageClient() {
   }
 
   return (
+    <div className="flex flex-col">
+      <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
+      {renderContent()}
+    </div>
+  )
+})
+
+export function HomePageClient() {
+  const [sortBy, setSortBy] = useAtom(sortByAtom)
+  const [sidebarOpen] = useAtom(sidebarOpenAtom)
+  const [isBannerVisible] = useAtom(magicBannerVisibleAtom)
+  const [shouldShowBanner, setShouldShowBanner] = useState(false)
+  const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
+  const queryClient = useQueryClient()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<
+    "categories" | "components" | "authors" | "pro" | "templates"
+  >(
+    (searchParams.get("tab") as
+      | "categories"
+      | "components"
+      | "authors"
+      | "pro"
+      | "templates") || "components",
+  )
+  const [selectedFilter, setSelectedFilter] = useState<string>("all")
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShouldShowBanner(true)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", activeTab)
+    if (activeTab === "components" && sortBy) {
+      params.set("sort", sortBy)
+    } else {
+      params.delete("sort")
+    }
+    router.push(`?${params.toString()}`, { scroll: false })
+  }, [activeTab, sortBy, router, searchParams])
+
+  useEffect(() => {
+    const sortFromUrl = searchParams.get("sort") as SortOption
+    if (sortFromUrl && Object.keys(SORT_OPTIONS).includes(sortFromUrl)) {
+      setSortBy(sortFromUrl)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (sortBy !== undefined) {
+      queryClient.invalidateQueries({
+        queryKey: ["filtered-demos", sortBy],
+      })
+    }
+  }, [sortBy, queryClient])
+
+  useEffect(() => {
+    setPrevSidebarState(sidebarOpen)
+  }, [sidebarOpen])
+
+  const handleTabChange = (
+    newTab: "categories" | "components" | "authors" | "pro" | "templates",
+  ) => {
+    setActiveTab(newTab)
+    setSelectedFilter("all")
+  }
+
+  return (
     <>
-      <MagicBanner />
-      <div
-        className={cn(
-          "container mx-auto px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px] transition-[margin] duration-200 ease-in-out",
-          isBannerVisible ? "mt-[144px]" : "mt-20",
-        )}
-      >
-        <div className="flex flex-col">
-          <ComponentsHeader
+      <AnimatePresence mode="popLayout">
+        <AnimatePresence>
+          {shouldShowBanner && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              transition={{
+                duration: 0.2,
+                height: {
+                  duration: 0.2,
+                }
+              }}
+            >
+              <MagicBanner />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div
+          className={cn(
+            "container mx-auto px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px] transition-[margin] duration-200 ease-in-out",
+            shouldShowBanner && isBannerVisible ? "mt-[144px]" : "mt-20",
+          )}
+        >
+          <MainContent
             activeTab={activeTab}
-            onTabChange={handleTabChange}
+            selectedFilter={selectedFilter}
+            setSelectedFilter={setSelectedFilter}
+            sortBy={sortBy}
+            sidebarOpen={sidebarOpen}
+            prevSidebarState={prevSidebarState}
+            handleTabChange={handleTabChange}
           />
-          {renderContent()}
         </div>
-      </div>
+      </AnimatePresence>
     </>
   )
 }
