@@ -12,9 +12,25 @@ import { useAtom } from "jotai"
 import { sidebarHintDismissedAtom, sidebarOpenAtom } from "./main-layout"
 import { X } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
+import { SVGCategory } from "@/types/global"
+
+const skeletonWidths = [
+  "w-[115px]",
+  "w-[55px]",
+  "w-[40px]",
+  "w-[140px]",
+  "w-[98px]",
+  "w-[84px]",
+  "w-[76px]",
+  "w-[92px]",
+  "w-[68px]",
+  "w-[120px]",
+  "w-[88px]",
+  "w-[104px]",
+]
 
 interface FilterChipsProps {
-  activeTab: "categories" | "components" | "templates"
+  activeTab: "categories" | "components" | "templates" | "logos"
   selectedFilter: string
   onFilterChange: (filter: string) => void
 }
@@ -38,6 +54,21 @@ export function FilterChips({
     },
     enabled: activeTab === "templates",
   })
+  const { data: logoCategories, isLoading: isLogoCategoriesLoading } = useQuery(
+    {
+      queryKey: ["logo-categories"],
+      queryFn: async () => {
+        const response = await fetch("/api/svgl?type=categories")
+        if (!response.ok) {
+          throw new Error("Failed to fetch logo categories")
+        }
+        const data = await response.json()
+        return data as SVGCategory[]
+      },
+      enabled: activeTab === "logos",
+      staleTime: 1000 * 60 * 5,
+    },
+  )
 
   useEffect(() => {
     const scrollArea = scrollAreaRef.current
@@ -216,21 +247,6 @@ export function FilterChips({
     }
 
     if (activeTab === "templates") {
-      const skeletonWidths = [
-        "w-[115px]",
-        "w-[55px]",
-        "w-[40px]",
-        "w-[140px]",
-        "w-[98px]",
-        "w-[84px]",
-        "w-[76px]",
-        "w-[92px]",
-        "w-[68px]",
-        "w-[120px]",
-        "w-[88px]",
-        "w-[104px]",
-      ]
-
       return (
         <>
           <Button
@@ -263,6 +279,49 @@ export function FilterChips({
                   size="sm"
                 >
                   {tag.tag_name}
+                </Button>
+              ))}
+        </>
+      )
+    }
+
+    if (activeTab === "logos") {
+      return (
+        <>
+          <Button
+            onClick={() => onFilterChange("all")}
+            variant={
+              selectedFilter === "all" || !selectedFilter
+                ? "default"
+                : "outline"
+            }
+            className="rounded-full"
+            size="sm"
+          >
+            All
+          </Button>
+          {isLogoCategoriesLoading
+            ? Array.from({ length: 12 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className={`h-8 rounded-full border border-input ${skeletonWidths[i % skeletonWidths.length]}`}
+                />
+              ))
+            : logoCategories?.map((category) => (
+                <Button
+                  key={category.category}
+                  onClick={() =>
+                    onFilterChange(category.category.toLowerCase())
+                  }
+                  variant={
+                    selectedFilter === category.category.toLowerCase()
+                      ? "default"
+                      : "outline"
+                  }
+                  className="rounded-full"
+                  size="sm"
+                >
+                  {category.category}
                 </Button>
               ))}
         </>

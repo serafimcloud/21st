@@ -21,6 +21,7 @@ import {
   MagicBanner,
   magicBannerVisibleAtom,
 } from "@/components/features/magic/magic-banner"
+import { LogosList } from "@/components/features/logos/logos-list"
 
 const MainContent = React.memo(function MainContent({
   activeTab,
@@ -31,14 +32,26 @@ const MainContent = React.memo(function MainContent({
   prevSidebarState,
   handleTabChange,
 }: {
-  activeTab: "categories" | "components" | "authors" | "pro" | "templates"
+  activeTab:
+    | "categories"
+    | "components"
+    | "authors"
+    | "pro"
+    | "templates"
+    | "logos"
   selectedFilter: string
   setSelectedFilter: (filter: string) => void
   sortBy: SortOption
   sidebarOpen: boolean
   prevSidebarState: boolean
   handleTabChange: (
-    tab: "categories" | "components" | "authors" | "pro" | "templates"
+    tab:
+      | "categories"
+      | "components"
+      | "authors"
+      | "pro"
+      | "templates"
+      | "logos",
   ) => void
 }) {
   const renderContent = () => {
@@ -115,6 +128,20 @@ const MainContent = React.memo(function MainContent({
             <TemplatesContainer tagSlug={selectedFilter} />
           </>
         )
+      case "logos":
+        return (
+          <>
+            <FilterChips
+              activeTab={activeTab}
+              selectedFilter={selectedFilter}
+              onFilterChange={setSelectedFilter}
+            />
+            <LogosList
+              category={selectedFilter === "all" ? undefined : selectedFilter}
+              onCategoryChange={setSelectedFilter}
+            />
+          </>
+        )
       default:
         return null
     }
@@ -138,14 +165,15 @@ export function HomePageClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<
-    "categories" | "components" | "authors" | "pro" | "templates"
+    "categories" | "components" | "authors" | "pro" | "templates" | "logos"
   >(
     (searchParams.get("tab") as
       | "categories"
       | "components"
       | "authors"
       | "pro"
-      | "templates") || "components",
+      | "templates"
+      | "logos") || "components",
   )
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
@@ -187,7 +215,13 @@ export function HomePageClient() {
   }, [sidebarOpen])
 
   const handleTabChange = (
-    newTab: "categories" | "components" | "authors" | "pro" | "templates",
+    newTab:
+      | "categories"
+      | "components"
+      | "authors"
+      | "pro"
+      | "templates"
+      | "logos",
   ) => {
     setActiveTab(newTab)
     setSelectedFilter("all")
@@ -206,7 +240,7 @@ export function HomePageClient() {
                 duration: 0.2,
                 height: {
                   duration: 0.2,
-                }
+                },
               }}
             >
               <MagicBanner />
