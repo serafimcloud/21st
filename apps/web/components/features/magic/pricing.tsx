@@ -15,6 +15,7 @@ const TIERS = [
     features: [
       "5 generations per month",
       "Access to basic components",
+      "Access to SVGL logo library",
       "Community support",
     ],
     cta: "Join waitlist",
@@ -26,7 +27,13 @@ const TIERS = [
       yearly: 96,
     },
     description: "For professional developers",
-    features: ["50 generations per month", "Access to all components", "Priority support", "50% of revenue goes to component authors"],
+    features: [
+      "50 generations per month", 
+      "Access to all components",
+      "Access to SVGL logo library",
+      "Priority support",
+      "50% of revenue goes to component authors"
+    ],
     cta: "Join waitlist",
     popular: true,
   },
@@ -37,7 +44,13 @@ const TIERS = [
       yearly: 288,
     },
     description: "For power users",
-    features: ["200 generations per month", "Access to all components", "Priority support", "50% of revenue goes to component authors"],
+    features: [
+      "200 generations per month",
+      "Access to all components", 
+      "Access to SVGL logo library",
+      "Priority support",
+      "50% of revenue goes to component authors"
+    ],
     cta: "Join waitlist",
     highlighted: true,
   },

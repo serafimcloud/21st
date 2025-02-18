@@ -31,7 +31,7 @@ export function PricingCard({ tier, paymentFrequency }: PricingCardProps) {
   return (
     <Card
       className={cn(
-        "relative flex flex-col overflow-hidden p-8 border-white/10 bg-white/5 min-h-[30rem]",
+        "relative flex flex-col overflow-hidden p-8 border-white/10 bg-white/5 min-h-[33rem]",
         isPopular && "ring-2 ring-accent/50",
       )}
     >

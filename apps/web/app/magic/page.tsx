@@ -5,6 +5,7 @@ import { Pricing } from "@/components/features/magic/pricing"
 import { FAQ } from "@/components/features/magic/faq"
 import { Footer } from "@/components/ui/footer"
 import { SupportedEditors } from "@/components/features/magic/supported-editors"
+import { Features } from "@/components/features/magic/features"
 
 export const metadata: Metadata = {
   title:
@@ -57,6 +58,7 @@ export default function MagicPage() {
         <Hero />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SupportedEditors />
+          <Features />
           <HowItWorks />
           <Pricing />
           <FAQ />
