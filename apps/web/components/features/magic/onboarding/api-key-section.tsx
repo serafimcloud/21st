@@ -166,8 +166,8 @@ export function ApiKeySection({
       <div className="rounded-lg bg-card space-y-4">
 
         <div className="relative">
-          <div className="flex items-center gap-2 bg-secondary p-4 rounded-md">
-            <code className="flex-1 font-mono text-muted-foreground text-sm tracking-wider">
+          <div className="flex items-center gap-2 bg-secondary p-1 rounded-md w-full max-w-[400px]">
+            <code className="flex-1 font-mono text-muted-foreground text-sm tracking-wider overflow-hidden pl-1">
               {apiKey.key
                 .split("")
                 .map(() => "•")

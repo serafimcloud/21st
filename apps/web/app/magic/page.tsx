@@ -57,13 +57,13 @@ export default function MagicPage() {
   return (
     <div className="absolute inset-0 min-h-screen w-full overflow-auto bg-black">
       <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-        <SignedIn>
+        {/* <SignedIn >
           <Button asChild>
             <a href="/magic/console" className="text-sm">
               Open Console
             </a>
           </Button>
-        </SignedIn>
+        </SignedIn> */}
         <SignedOut>
           <SignInButton>
             <Button>Sign up</Button>

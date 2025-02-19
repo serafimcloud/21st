@@ -40,7 +40,6 @@ export function ConsolePageClient({
             target="_blank"
             className="gap-2"
           >
-            <MessageSquare size={16} />
             Feedback
           </Link>
         </Button>
