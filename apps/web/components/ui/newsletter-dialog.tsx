@@ -18,6 +18,8 @@ import { useIsMobile } from "@/hooks/use-media-query"
 import { Mail } from "lucide-react"
 import { toast } from "sonner"
 
+import { addToNewsletter } from "@/lib/resend"
+
 export function NewsletterDialog() {
   const [isOpen, setIsOpen] = useState(false)
   const [email, setEmail] = useState("")
@@ -59,27 +61,14 @@ export function NewsletterDialog() {
     localStorage.setItem("loops-form-timestamp", timestamp.toString())
 
     try {
-      const formBody = `userGroup=&mailingLists=&email=${encodeURIComponent(email)}`
+      const { success, error } = await addToNewsletter(email)
 
-      const response = await fetch(
-        "https://app.loops.so/api/newsletter-form/cm53que9u00xu5nps0o5zq8wj",
-        {
-          method: "POST",
-          body: formBody,
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        },
-      )
-
-      const data = await response.json()
-
-      if (response.ok) {
+      if (success) {
         toast.success("Thanks! We'll be in touch!")
         localStorage.setItem("hasSubscribedToNewsletter", "true")
         setIsOpen(false)
       } else {
-        throw new Error(data.message || response.statusText)
+        throw error
       }
     } catch (error) {
       if (error instanceof Error && error.message === "Failed to fetch") {

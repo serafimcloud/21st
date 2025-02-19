@@ -1,3 +1,6 @@
+import { Copy, Download, Link } from "lucide-react"
+import Image from "next/image"
+
 export function ComponentCardSkeleton() {
   return (
     <div className="p-[1px] animate-pulse">
@@ -119,6 +122,51 @@ export function TemplateCardSkeleton() {
           </div>
           <div className="h-4 bg-muted rounded w-12 ml-3" />
         </div>
+      </div>
+    </div>
+  )
+}
+
+export function LogoCardSkeleton() {
+  const shapes = [
+    "rounded-full",
+    "rounded-md",
+    "rounded-sm",
+    "rounded-lg",
+    "rounded-xl",
+  ]
+  const randomShape = shapes[Math.floor(Math.random() * shapes.length)]
+
+  return (
+    <div className="group flex flex-col items-center justify-center rounded-md border border-neutral-200 p-4 transition-colors duration-100 dark:border-neutral-800 min-h-[190px]">
+      <div className={`mb-4 mt-2 h-10 w-10 bg-muted ${randomShape}`} />
+      <div className="mb-3 flex flex-col items-center justify-center space-y-1">
+        <div className="h-[22px] w-24 rounded bg-muted" />
+        <div className="flex items-center justify-center space-x-1">
+          <div className="inline-flex items-center px-2.5 py-0.5 rounded-full font-medium bg-neutral-100 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 text-xs font-mono hover:bg-neutral-200 dark:hover:bg-neutral-700/50 transition-colors duration-100">
+            Category
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center space-x-1">
+        <button
+          disabled
+          className="flex items-center space-x-2 rounded-md p-2 duration-100 opacity-50"
+        >
+          <Copy className="h-4 w-4 stroke-[1.8] text-muted-foreground" />
+        </button>
+        <button
+          disabled
+          className="flex items-center space-x-2 rounded-md p-2 duration-100 opacity-50"
+        >
+          <Download className="h-4 w-4 stroke-[1.8] text-muted-foreground" />
+        </button>
+        <button
+          disabled
+          className="flex items-center space-x-2 rounded-md p-2 duration-100 opacity-50"
+        >
+          <Link className="h-4 w-4 stroke-[1.8] text-muted-foreground" />
+        </button>
       </div>
     </div>
   )

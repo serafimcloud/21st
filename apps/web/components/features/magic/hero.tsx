@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { Mockup, MockupFrame } from "@/components/ui/mockup"
 import Image from "next/image"
 import Link from "next/link"
+import { addToMagicWaitlist } from "@/lib/resend"
 
 type SpotlightProps = {
   gradientFirst?: string
@@ -164,28 +165,15 @@ export function Hero() {
     localStorage.setItem("loops-form-timestamp", timestamp.toString())
 
     try {
-      const formBody = `userGroup=magic-waitlist&mailingLists=&email=${encodeURIComponent(email)}`
+      const { success, error } = await addToMagicWaitlist(email)
 
-      const response = await fetch(
-        "https://app.loops.so/api/newsletter-form/cm53que9u00xu5nps0o5zq8wj",
-        {
-          method: "POST",
-          body: formBody,
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        },
-      )
-
-      const data = await response.json()
-
-      if (response.ok) {
+      if (success) {
         toast.success(
           "Thanks for joining the waitlist! We'll be in touch soon!",
         )
         setEmail("")
       } else {
-        throw new Error(data.message || response.statusText)
+        throw error
       }
     } catch (error) {
       if (error instanceof Error && error.message === "Failed to fetch") {
