@@ -505,6 +505,7 @@ export function CommandMenu() {
                   "api docs keys",
                   "terms service",
                   "toggle theme",
+                  "subscription",
                   ...(shouldShowSidebar ? ["toggle sidebar"] : []),
                 ].some((text) => text.includes(searchQuery.toLowerCase()))) && (
                 <>
@@ -618,6 +619,22 @@ export function CommandMenu() {
                         <Icons.sun className="h-4 w-4 dark:hidden" />
                         <Icons.moon className="h-4 w-4 hidden dark:block" />
                         <span>Toggle Theme</span>
+                      </CommandItem>
+                    )}
+                    {(!searchQuery ||
+                      "subscription".includes(searchQuery.toLowerCase())) && (
+                      <CommandItem
+                        value="action-subscription"
+                        onSelect={() => {
+                          router.push("/subscription")
+                          setSearchQuery("")
+                          setValue("")
+                          setOpen(false)
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Icons.creditCard className="h-4 w-4" />
+                        <span>Subscription</span>
                       </CommandItem>
                     )}
                     {(!searchQuery ||
