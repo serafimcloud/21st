@@ -147,12 +147,12 @@ export function ComponentsHeader({
                 >
                   Pro
                 </TabsTrigger>
-                <TabsTrigger
+                {/* <TabsTrigger
                   value="logos"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
                   Logos
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
             </Tabs>
           </div>
@@ -208,12 +208,12 @@ export function ComponentsHeader({
                 >
                   Pro
                 </TabsTrigger>
-                <TabsTrigger
+                {/* <TabsTrigger
                   value="logos"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
                   Logos <span className="text-xs text-muted-foreground ml-1">by svgl</span>
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
             </Tabs>
           ) : (
