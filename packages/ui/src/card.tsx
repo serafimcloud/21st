@@ -23,3 +23,4 @@ export function Card({
     </a>
   )
 }
+
