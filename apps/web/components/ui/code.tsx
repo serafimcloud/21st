@@ -48,7 +48,7 @@ const Code = ({
   language = "jsx",
   display,
   fontSize,
-  highlightTheme = "darcula",
+  highlightTheme = "coy",
   className,
 }: CodeProps) => {
   const [isCopied, setIsCopied] = useState(false)
