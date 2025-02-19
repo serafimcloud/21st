@@ -1,15 +1,35 @@
 import { Resend } from "resend"
 import { NextResponse } from "next/server"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const AUDIENCES = {
-  MAGIC_WAITLIST: process.env.MAGIC_WAITLIST_AUDIENCE || "",
-  NEWSLETTER: process.env.NEWSLETTER_AUDIENCE || "",
+  MAGIC_WAITLIST: process.env.MAGIC_WAITLIST_AUDIENCE ?? "",
+  NEWSLETTER: process.env.NEWSLETTER_AUDIENCE ?? "",
 } as const
 
 export async function POST(request: Request) {
   try {
+    // Check environment variables
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json(
+        { error: "RESEND_API_KEY is not set in environment variables" },
+        { status: 500 },
+      )
+    }
+
+    if (
+      !process.env.MAGIC_WAITLIST_AUDIENCE ||
+      !process.env.NEWSLETTER_AUDIENCE
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "MAGIC_WAITLIST_AUDIENCE or NEWSLETTER_AUDIENCE is not set in environment variables",
+        },
+        { status: 500 },
+      )
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
     const { email, type } = await request.json()
 
     if (!email) {
@@ -25,6 +45,13 @@ export async function POST(request: Request) {
 
     const audienceId =
       type === "newsletter" ? AUDIENCES.NEWSLETTER : AUDIENCES.MAGIC_WAITLIST
+
+    if (!audienceId) {
+      return NextResponse.json(
+        { error: "Invalid audience configuration" },
+        { status: 500 },
+      )
+    }
 
     const response = await resend.contacts.create({
       email,
