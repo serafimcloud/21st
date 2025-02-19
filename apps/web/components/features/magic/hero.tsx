@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
+import NumberFlow from "@number-flow/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer"
@@ -147,6 +148,7 @@ export function Hero() {
     threshold: 0,
     rootMargin: "-80px",
   })
+  const [count, setCount] = useState(561)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -172,6 +174,7 @@ export function Hero() {
           "Thanks for joining the waitlist! We'll be in touch soon!",
         )
         setEmail("")
+        setCount(prev => prev + 1)
       } else {
         throw error
       }
@@ -289,7 +292,7 @@ export function Hero() {
                     </Avatar>
                   </div>
                   <span className="text-sm text-neutral-300">
-                    561+ people joined
+                    <NumberFlow value={count} />+ people joined
                   </span>
                 </div>
                 <span className="text-sm text-neutral-300">
