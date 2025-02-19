@@ -5,6 +5,7 @@ import {
   Menu,
   Search,
   type LucideIcon,
+  CreditCardIcon,
 } from "lucide-react"
 import { LovableLogo } from "./lovable"
 import { SitebrewLogo } from "./sitebrew"
@@ -137,6 +138,7 @@ export const Icons = {
   ),
   terminal: TerminalIcon,
   clap: ClapIcon,
+
   discord: (props: LucideProps) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -277,4 +279,5 @@ export const Icons = {
       />
     </svg>
   ),
+  creditCard: CreditCardIcon,
 }
