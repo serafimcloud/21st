@@ -289,7 +289,7 @@ export function Hero() {
                     </Avatar>
                   </div>
                   <span className="text-sm text-neutral-300">
-                    128+ people joined
+                    561+ people joined
                   </span>
                 </div>
                 <span className="text-sm text-neutral-300">
