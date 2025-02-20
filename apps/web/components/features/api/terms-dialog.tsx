@@ -193,7 +193,8 @@ export function TermsDialog({ open, onAccept, onClose }: TermsDialogProps) {
                     <div className="space-y-2">
                       <p>
                         <strong>
-                          8. Guidelines for Component Installation
+                          8. Guidelines for Component Installation and Magic
+                          Usage
                         </strong>
                       </p>
                       <ul className="list-disc pl-6 space-y-1">
@@ -206,6 +207,20 @@ export function TermsDialog({ open, onAccept, onClose }: TermsDialogProps) {
                           Modifying, forking, or creating derivative works based
                           on the components accessed via the API is prohibited
                           unless explicitly allowed by the component's license.
+                        </li>
+                        <li>
+                          When using Magic through the API key, you agree to use
+                          it for your personal or organization's development
+                          purposes only.
+                        </li>
+                        <li>
+                          Components and code generated through Magic remain
+                          subject to the same usage terms as those accessed via
+                          the API.
+                        </li>
+                        <li>
+                          You may not share, redistribute, or resell access to
+                          Magic functionality through your API key.
                         </li>
                       </ul>
                     </div>
@@ -221,7 +236,7 @@ export function TermsDialog({ open, onAccept, onClose }: TermsDialogProps) {
                           href="mailto:support@21st.dev"
                           className="text-primary hover:underline"
                         >
-                          serafimcloud@gmail.com
+                          support@21st.dev
                         </Link>
                       </p>
                     </div>

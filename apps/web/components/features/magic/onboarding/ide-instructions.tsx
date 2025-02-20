@@ -103,15 +103,27 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                   <h3 className="font-medium">Open Cursor Settings</h3>
                   <div className="text-sm text-muted-foreground space-y-2">
                     <p>Use keyboard shortcut:</p>
-                    <div className="flex items-center gap-2">
-                      <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
-                        ⌘ ,
-                      </kbd>
+                    <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
+                        <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
+                          ⌘
+                        </kbd>
+                        +
+                        <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[13px] leading-none font-sans">
+                          ,
+                        </kbd>
+                      </div>
                       <span className="text-xs">(Mac)</span>
                       <span className="mx-1">or</span>
-                      <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
-                        Ctrl ,
-                      </kbd>
+                      <div className="flex items-center gap-0.5">
+                        <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
+                          Ctrl
+                        </kbd>
+                        +
+                        <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[13px] leading-none font-sans">
+                          ,
+                        </kbd>
+                      </div>
                       <span className="text-xs">(Windows)</span>
                     </div>
                     <p className="mt-1">Navigate to:</p>
@@ -156,9 +168,9 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   3
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-3 w-full">
                   <h3 className="font-medium">Add Magic Command</h3>
-                  <div className="text-sm text-muted-foreground space-y-2">
+                  <div className="text-sm text-muted-foreground space-y-2 w-full">
                     <p>Paste into Command field:</p>
                     {apiKey ? (
                       <div className="flex gap-2 items-center">
@@ -190,7 +202,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                         </div>
                       </div>
                     ) : (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground max-w-[600px] w-full">
                         Generate an API key first
                       </div>
                     )}
@@ -219,9 +231,9 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   1
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-3 w-full">
                   <h3 className="font-medium">Open MCP Configuration</h3>
-                  <div className="text-sm text-muted-foreground space-y-2">
+                  <div className="text-sm text-muted-foreground space-y-2 w-full">
                     <p>Find the toolbar above the Cascade input:</p>
                     <Image
                       src="https://mintlify.s3.us-west-1.amazonaws.com/codeium/assets/windsurf/cascade/evergreen-toolbar-mcp.png"
@@ -252,9 +264,9 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   2
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-3 w-full">
                   <h3 className="font-medium">Add Magic MCP Configuration</h3>
-                  <div className="text-sm text-muted-foreground space-y-2">
+                  <div className="text-sm text-muted-foreground space-y-2 w-full max-w-[600px]">
                     <p>
                       Add the following configuration to your MCP config file:
                     </p>
@@ -279,6 +291,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
   }
 }`}
                         language="json"
+                        className="max-w-[600px]"
                       />
                     ) : (
                       <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
@@ -339,9 +352,9 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   2
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-3 w-full">
                   <h3 className="font-medium">Edit MCP Settings</h3>
-                  <div className="text-sm text-muted-foreground space-y-2">
+                  <div className="text-sm text-muted-foreground space-y-2 w-full max-w-[600px]">
                     <p>
                       Click the Edit MCP Settings button to open the
                       configuration file.
@@ -367,6 +380,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
   }
 }`}
                         language="json"
+                        className="max-w-[600px]"
                       />
                     ) : (
                       <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">

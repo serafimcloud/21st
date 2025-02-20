@@ -36,7 +36,7 @@ export function Onboarding({ apiKey, setApiKey, userId }: OnboardingProps) {
       description: "Try creating your first UI component with Magic",
       isCompleted: false,
       content: (
-        <div className="flex min-h-[100px] items-center justify-center rounded-lg border border-dashed">
+        <div className="flex min-h-[100px] max-w-[650px] items-center justify-center rounded-lg border border-dashed">
           <p className="text-sm text-muted-foreground">Coming soon...</p>
         </div>
       ),
