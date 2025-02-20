@@ -9,7 +9,7 @@ import { CursorDark } from "@/components/icons/cursor-dark"
 
 import Image from "next/image"
 
-import { Copy, Check, RefreshCw } from "lucide-react"
+import { Copy, Check, RefreshCw, AlertTriangle } from "lucide-react"
 import { useState } from "react"
 
 interface IdeInstructionsProps {
@@ -24,7 +24,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
     if (!apiKey) return ""
     switch (tab) {
       case "cursor":
-        return `npx -y @smithery/cli@latest run @21st-dev/magic-mcp --config "{\"TWENTY_FIRST_API_KEY\":\"${apiKey.key}\"}"`
+        return `npx -y @smithery/cli@latest run @21st-dev/magic-mcp --config "{\\\"TWENTY_FIRST_API_KEY\\\":\\\"${apiKey.key}\\\"}"` 
       case "windsurf":
         return `npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf`
       case "cline":
@@ -52,10 +52,10 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
         className="space-y-4"
         onValueChange={setActiveTab}
       >
-        <TabsList className="min-h-[52px] rounded-md px-0.5 h-[52px]">
+        <TabsList className="min-h-[52px] rounded-md p-0.5 h-auto flex-wrap gap-2 sm:h-[52px] w-full sm:w-auto">
           <TabsTrigger
             value="cursor"
-            className="gap-1 flex flex-col items-center min-h-12 text-[12px]"
+            className="gap-1 flex flex-col items-center min-h-12 text-[12px] w-full sm:w-auto px-4 py-3"
           >
             <div className="bg-black rounded-md h-6 w-6 p-0.5 flex items-center justify-center">
               <CursorDark className="h-4 w-4" />
@@ -64,7 +64,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
           </TabsTrigger>
           <TabsTrigger
             value="windsurf"
-            className="gap-1 flex flex-col items-center min-h-12 text-[12px]"
+            className="gap-1 flex flex-col items-center min-h-12 text-[12px] w-full sm:w-auto px-4 py-3"
           >
             <Icons.windsurfTealLogo className="min-h-6 w-10" />
             Windsurf
@@ -72,7 +72,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
 
           <TabsTrigger
             value="cline"
-            className="gap-1 flex flex-col items-center min-h-12 text-[12px]"
+            className="gap-1 flex flex-col items-center min-h-12 text-[12px] w-full sm:w-auto px-4 py-3"
           >
             <div className="flex items-center gap-3">
               <Icons.vscode className="w-5 h-5 mr-1" />
@@ -95,16 +95,18 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
           <div className="space-y-4">
             <div className="space-y-6">
               {/* Step 1 */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   1
                 </div>
-                <div className="space-y-3">
-                  <h3 className="font-medium">Open Cursor Settings</h3>
+                <div className="space-y-3 flex-1">
+                  <h3 className="font-medium text-base sm:text-lg">
+                    Open Cursor Settings
+                  </h3>
                   <div className="text-sm text-muted-foreground space-y-2">
                     <p>Use keyboard shortcut:</p>
-                    <div className="flex items-center gap-1">
-                      <div className="flex items-center gap-0.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
                           ⌘
                         </kbd>
@@ -115,7 +117,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                       </div>
                       <span className="text-xs">(Mac)</span>
                       <span className="mx-1">or</span>
-                      <div className="flex items-center gap-0.5">
+                      <div className="flex items-center gap-1">
                         <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
                           Ctrl
                         </kbd>
@@ -126,9 +128,9 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                       </div>
                       <span className="text-xs">(Windows)</span>
                     </div>
-                    <p className="mt-1">Navigate to:</p>
-                    <p className="text-primary font-medium">
-                      Cursor → Features → MCP
+                    <p className="mt-2">Navigate to:</p>
+                    <p className="text-primary font-medium break-words text-sm sm:text-base">
+                      Cursor → Full Settings → Features → MCP Servers
                     </p>
                   </div>
                 </div>
@@ -164,22 +166,22 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
               </div>
 
               {/* Step 3 */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   3
                 </div>
                 <div className="space-y-3 w-full">
                   <h3 className="font-medium">Add Magic Command</h3>
-                  <div className="text-sm text-muted-foreground space-y-2 w-full">
+                  <div className="text-sm text-muted-foreground space-y-2">
                     <p>Paste into Command field:</p>
                     {apiKey ? (
-                      <div className="flex gap-2 items-center">
-                        <div className="bg-muted rounded-md flex-1 flex items-center min-w-[400px] group relative">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="bg-muted rounded-md flex-1 flex items-center w-full group relative">
                           <input
                             type="text"
                             readOnly
                             value={getCommandForTab("cursor")}
-                            className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none"
+                            className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                           />
                           <button
                             className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors shrink-0 mr-1"
@@ -202,7 +204,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                         </div>
                       </div>
                     ) : (
-                      <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground max-w-[600px] w-full">
+                      <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground w-full">
                         Generate an API key first
                       </div>
                     )}
@@ -227,7 +229,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
           <div className="space-y-4">
             <div className="space-y-6">
               {/* Step 1 */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   1
                 </div>
@@ -238,7 +240,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                     <Image
                       src="https://mintlify.s3.us-west-1.amazonaws.com/codeium/assets/windsurf/cascade/evergreen-toolbar-mcp.png"
                       alt="Windsurf MCP toolbar"
-                      className="rounded-xl border my-2"
+                      className="rounded-xl border my-2 w-full"
                       width={600}
                       height={128}
                     />
@@ -251,7 +253,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                       </div>
                       <p className="mt-1">This will open:</p>
                       <Code
-                        className="text-primary bg-muted px-2 py-0.5 rounded text-xs"
+                        className="text-primary bg-muted px-2 py-0.5 rounded text-xs break-all"
                         code="~/.codeium/windsurf/mcp_config.json"
                       />
                     </div>
@@ -260,7 +262,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
               </div>
 
               {/* Step 2 */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   2
                 </div>
@@ -291,7 +293,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
   }
 }`}
                         language="json"
-                        className="max-w-[600px]"
+                        className=" overflow-x-auto bg-muted"
                       />
                     ) : (
                       <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
@@ -303,7 +305,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
               </div>
 
               {/* Step 3 */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   3
                 </div>
@@ -332,7 +334,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
           <div className="space-y-4">
             <div className="space-y-6">
               {/* Step 1 */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   1
                 </div>
@@ -343,12 +345,20 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                       In the Cline extension, locate and click the MCP Server
                       tab.
                     </p>
+                    <Image
+                      src="/cline-first-step.png"
+                      alt="Cline MCP Server Panel"
+                      width={0}
+                      height={0}
+                      sizes="100vw"
+                      className="rounded-lg border w-full h-auto"
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Step 2 */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   2
                 </div>
@@ -356,7 +366,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                   <h3 className="font-medium">Edit MCP Settings</h3>
                   <div className="text-sm text-muted-foreground space-y-2 w-full max-w-[600px]">
                     <p>
-                      Click the Edit MCP Settings button to open the
+                      Click the "Configure MCP Servers" button to open the
                       configuration file.
                     </p>
                     {apiKey ? (
@@ -380,7 +390,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
   }
 }`}
                         language="json"
-                        className="max-w-[600px]"
+                        className="overflow-x-auto bg-muted"
                       />
                     ) : (
                       <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
@@ -392,7 +402,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
               </div>
 
               {/* Step 3 */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
                   3
                 </div>
@@ -407,6 +417,16 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                           Cline will automatically detect the changes and start
                           the MCP server
                         </span>
+                      </div>
+                    </div>
+                    <div className="mt-4 rounded-md border border-yellow-500/20 bg-yellow-500/10 p-3 max-w-[600px]">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                        <div className="text-sm text-yellow-500">
+                          Note: Cline's MCP integration is currently in beta and
+                          may behave unexpectedly. We're actively working with
+                          the Cline team on improvements.
+                        </div>
                       </div>
                     </div>
                   </div>

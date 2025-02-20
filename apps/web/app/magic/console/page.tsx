@@ -2,6 +2,13 @@ import { ConsolePageClient } from "./page.client"
 import { auth } from "@clerk/nextjs/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { ApiKey } from "@/types/global"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Magic Console",
+  description: "Manage your Magic settings, usage, and team",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+}
 
 async function getApiKey(userId: string) {
   const supabase = supabaseWithAdminAccess
@@ -34,5 +41,9 @@ export default async function ConsolePage() {
   const userId = session?.userId
   const apiKey = userId ? await getApiKey(userId) : null
 
-  return <ConsolePageClient initialApiKey={apiKey} userId={userId} />
+  return (
+    <div className="min-h-screen w-full bg-background antialiased">
+      <ConsolePageClient initialApiKey={apiKey} userId={userId} />
+    </div>
+  )
 }
