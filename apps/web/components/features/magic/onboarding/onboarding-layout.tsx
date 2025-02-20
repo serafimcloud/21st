@@ -2,18 +2,39 @@
 
 import { ApiKeySection } from "./api-key-section"
 import { IdeInstructions } from "./ide-instructions"
+import { WelcomeOnboarding } from "./welcome-onboarding"
 import { ApiKey } from "@/types/global"
 import { cn } from "@/lib/utils"
 import { Check, Circle } from "lucide-react"
 import Image from "next/image"
+import { useState, useEffect } from "react"
 
 interface OnboardingProps {
   apiKey: ApiKey | null
   setApiKey: (key: ApiKey | null) => void
   userId: string | null
+  showWelcome?: boolean
+  onWelcomeComplete?: () => void
 }
 
-export function Onboarding({ apiKey, setApiKey, userId }: OnboardingProps) {
+export function Onboarding({
+  apiKey,
+  setApiKey,
+  userId,
+  showWelcome = true,
+  onWelcomeComplete,
+}: OnboardingProps) {
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(showWelcome)
+
+  useEffect(() => {
+    setShowWelcomeDialog(showWelcome)
+  }, [showWelcome])
+
+  const handleWelcomeComplete = () => {
+    setShowWelcomeDialog(false)
+    onWelcomeComplete?.()
+  }
+
   const steps = [
     {
       id: "api-key",
@@ -44,9 +65,7 @@ export function Onboarding({ apiKey, setApiKey, userId }: OnboardingProps) {
               1
             </div>
             <div className="space-y-3 flex-1">
-              <h3 className="font-medium">
-                Tell Agent What You Need
-              </h3>
+              <h3 className="font-medium">Tell Agent What You Need</h3>
               <div className="text-sm text-muted-foreground space-y-2">
                 <p>
                   In your AI Agent's chat, type /ui and describe the component
@@ -57,7 +76,7 @@ export function Onboarding({ apiKey, setApiKey, userId }: OnboardingProps) {
                     src="/how-it-works-1.png"
                     alt="Tell agent what you need"
                     fill
-                    className="object-cover object-left-top"
+                    className="object-cover object-left-top mix-blend-difference"
                   />
                 </div>
               </div>
@@ -70,9 +89,7 @@ export function Onboarding({ apiKey, setApiKey, userId }: OnboardingProps) {
               2
             </div>
             <div className="space-y-3 flex-1">
-              <h3 className="font-medium">
-                Let Magic Create It
-              </h3>
+              <h3 className="font-medium">Let Magic Create It</h3>
               <div className="text-sm text-muted-foreground space-y-2">
                 <p>
                   When prompted in Cursor, use Magic to instantly build your
@@ -83,7 +100,7 @@ export function Onboarding({ apiKey, setApiKey, userId }: OnboardingProps) {
                     src="/how-it-works-3.png"
                     alt="Let Magic create it"
                     fill
-                    className="object-cover object-left-top"
+                    className="object-cover object-left-top mix-blend-difference"
                   />
                 </div>
               </div>
@@ -101,6 +118,12 @@ export function Onboarding({ apiKey, setApiKey, userId }: OnboardingProps) {
           <h1 className="text-2xl sm:text-[32px] font-semibold tracking-tight pt-10">
             Onboarding
           </h1>
+          {showWelcomeDialog && (
+            <WelcomeOnboarding
+              onComplete={handleWelcomeComplete}
+              autoOpen={true}
+            />
+          )}
         </div>
         <div className="relative">
           <div className="absolute left-[15px] top-[40px] bottom-0 w-[2px] bg-border" />

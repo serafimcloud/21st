@@ -83,7 +83,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                   alt="Cline"
                   width={24}
                   height={24}
-                  className="mix-blend-hard-light"
+                  className="mix-blend-difference"
                 />
               </div>
             </div>
@@ -240,7 +240,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                     <Image
                       src="https://mintlify.s3.us-west-1.amazonaws.com/codeium/assets/windsurf/cascade/evergreen-toolbar-mcp.png"
                       alt="Windsurf MCP toolbar"
-                      className="rounded-xl border my-2 w-full"
+                      className="rounded-xl border my-2 w-full mix-blend-difference"
                       width={600}
                       height={128}
                     />
@@ -351,7 +351,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                       width={0}
                       height={0}
                       sizes="100vw"
-                      className="rounded-lg border w-full h-auto"
+                      className="rounded-lg border w-full h-auto mix-blend-difference"
                     />
                   </div>
                 </div>
