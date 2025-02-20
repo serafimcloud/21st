@@ -1083,6 +1083,7 @@ export default function ComponentPage({
                     onValueChange={(value) =>
                       setSelectedPromptType(value as PromptType | "v0-open")
                     }
+                    key={selectedPromptType}
                   >
                     <DropdownMenuLabel>Copy prompt</DropdownMenuLabel>
                     {promptOptions.map((option) => {

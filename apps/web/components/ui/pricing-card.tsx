@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Check } from "lucide-react"
 import NumberFlow from "@number-flow/react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"

@@ -1,6 +1,6 @@
 import { useAtom } from "jotai"
 import { Maximize2, Minimize2 } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { isFullScreenAtom } from "../../app/[username]/[component_slug]/page.client"
 import {
   Tooltip,

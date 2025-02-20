@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useAtom } from "jotai"
 import { sidebarHintDismissedAtom, sidebarOpenAtom } from "./main-layout"
 import { X } from "lucide-react"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion } from "motion/react"
 import { SVGCategory } from "@/types/global"
 
 const skeletonWidths = [

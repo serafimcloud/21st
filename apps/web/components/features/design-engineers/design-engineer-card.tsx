@@ -1,7 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Eye, Download } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { ComponentVideoPreview } from "../list-card/card-video"
 import { Database } from "@/types/supabase"
 import { DemoWithComponent } from "@/types/global"

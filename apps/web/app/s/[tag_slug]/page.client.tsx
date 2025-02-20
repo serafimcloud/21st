@@ -6,7 +6,7 @@ import { sortByAtom } from "@/components/features/main-page/main-page-header"
 import { SortOption } from "@/types/global"
 import { TagComponentsHeader } from "@/components/features/tag-page/tag-page-header"
 import { useLayoutEffect } from "react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 
 export function TagPageContent({
   tagName,

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { useAtom } from "jotai"
 import { useQueryClient } from "@tanstack/react-query"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 

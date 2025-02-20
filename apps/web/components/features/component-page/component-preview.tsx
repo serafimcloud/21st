@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
-import { useAnimation, motion, AnimatePresence } from "framer-motion"
+import { useAnimation, motion, AnimatePresence } from "motion/react"
 import { useAtom } from "jotai"
 import { useTheme } from "next-themes"
 import {

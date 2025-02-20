@@ -9,7 +9,7 @@ import { Onboarding } from "@/components/features/magic/onboarding/onboarding-la
 import { ApiKey } from "@/types/global"
 import { MessageSquare } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { toast } from "sonner"
 import { addToMagicWaitlist } from "@/lib/resend"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"

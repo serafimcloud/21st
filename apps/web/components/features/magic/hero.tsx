@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { toast } from "sonner"
 import NumberFlow from "@number-flow/react"
 import { Button } from "@/components/ui/button"
