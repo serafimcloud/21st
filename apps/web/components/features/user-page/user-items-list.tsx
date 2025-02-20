@@ -12,7 +12,7 @@ import { Icons } from "@/components/icons"
 import { useRouter } from "next/navigation"
 import { isMac } from "@/lib/utils"
 import { useHotkeys } from "react-hotkeys-hook"
-import { ComponentCardSkeleton } from "@/components/ui/skeletons"
+import { ComponentCardSkeleton, ProfileCardSkeleton } from "@/components/ui/skeletons"
 import { transformDemoResult } from "@/lib/utils/transformData"
 
 type UserTab = "components" | "demos" | "bookmarks"
@@ -224,7 +224,11 @@ export function UserItemsList({
       {showSkeleton ? (
         <>
           {Array.from({ length: skeletonCount }).map((_, i) => (
-            <ComponentCardSkeleton key={i} />
+            tab === "components" ? (
+              <ProfileCardSkeleton key={i} />
+            ) : (
+              <ComponentCardSkeleton key={i} />
+            )
           ))}
         </>
       ) : showEmptyState ? (
@@ -255,6 +259,7 @@ export function UserItemsList({
           <ComponentCard
             key={`${component.id}-${component.updated_at}`}
             demo={component}
+            hideUser={tab === "components"}
           />
         ))
       )}

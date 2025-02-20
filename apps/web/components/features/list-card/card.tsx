@@ -30,9 +30,11 @@ import { Button } from "@/components/ui/button"
 export function ComponentCard({
   demo,
   isLoading,
+  hideUser,
 }: {
   demo?: DemoWithComponent | (Component & { user: User })
   isLoading?: boolean
+  hideUser?: boolean
 }) {
   if (isLoading || !demo) {
     return <ComponentCardSkeleton />
@@ -199,17 +201,19 @@ export function ComponentCard({
               )}
             </div>
             <div className="flex space-x-3 items-center">
-              <UserAvatar
-                src={
-                  demo.user.display_image_url ||
-                  demo.user.image_url ||
-                  "/placeholder.svg"
-                }
-                alt={demo.user.display_name || demo.user.name || ""}
-                size={32}
-                user={demo.user}
-                isClickable
-              />
+              {!hideUser && (
+                <UserAvatar
+                  src={
+                    demo.user.display_image_url ||
+                    demo.user.image_url ||
+                    "/placeholder.svg"
+                  }
+                  alt={demo.user.display_name || demo.user.name || ""}
+                  size={32}
+                  user={demo.user}
+                  isClickable
+                />
+              )}
               <div className="flex items-center justify-between flex-grow min-w-0">
                 <div className="block min-w-0 flex-1 mr-3">
                   <div className="flex flex-col min-w-0">
