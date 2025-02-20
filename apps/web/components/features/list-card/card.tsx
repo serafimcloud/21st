@@ -70,6 +70,13 @@ export function ComponentCard({
 
   const viewCount = isDemo ? demo.view_count || 0 : 0
 
+  const formatNumber = (num: number) => {
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}k`
+    }
+    return num.toString()
+  }
+
   const previewUrl = demo.preview_url || "/placeholder.svg"
 
   const componentName = isDemo ? demo.component?.name || "" : demo.name || ""
@@ -220,13 +227,13 @@ export function ComponentCard({
                   {viewCount > 0 && (
                     <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
                       <Eye size={14} />
-                      <span>{viewCount}</span>
+                      <span>{formatNumber(viewCount)}</span>
                     </div>
                   )}
                   {likesCount > 0 && (
                     <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
                       <Bookmark size={14} className="text-muted-foreground" />
-                      <span>{likesCount}</span>
+                      <span>{formatNumber(likesCount)}</span>
                     </div>
                   )}
                 </div>

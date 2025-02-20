@@ -52,32 +52,32 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
         className="space-y-4"
         onValueChange={setActiveTab}
       >
-        <TabsList className="min-h-[52px] rounded-md p-0.5 h-auto flex-wrap gap-2 sm:h-[52px] w-full sm:w-auto">
+        <TabsList className="min-h-[56px] rounded-md p-0.5 h-auto flex-wrap gap-2 sm:h-[56px] w-full sm:w-auto">
           <TabsTrigger
             value="cursor"
-            className="gap-1 flex flex-col items-center min-h-12 text-[12px] w-full sm:w-auto px-4 py-3"
+            className="flex flex-col items-center justify-center min-h-[52px] text-[12px] w-full sm:w-auto px-4"
           >
-            <div className="bg-black rounded-md h-6 w-6 p-0.5 flex items-center justify-center">
+            <div className="bg-black rounded-md flex items-center justify-center p-1 mb-1">
               <CursorDark className="h-4 w-4" />
             </div>
-            Cursor
+            <span>Cursor</span>
           </TabsTrigger>
           <TabsTrigger
-            value="windsurf"
-            className="gap-1 flex flex-col items-center min-h-12 text-[12px] w-full sm:w-auto px-4 py-3"
+            value="windsurf" 
+            className="flex flex-col items-center justify-center min-h-[52px] text-[12px] w-full sm:w-auto px-4"
           >
-            <Icons.windsurfTealLogo className="min-h-6 w-10" />
-            Windsurf
+            <Icons.windsurfTealLogo className="h-6 w-10 mb-1" />
+            <span>Windsurf</span>
           </TabsTrigger>
 
           <TabsTrigger
             value="cline"
-            className="gap-1 flex flex-col items-center min-h-12 text-[12px] w-full sm:w-auto px-4 py-3"
+            className="flex flex-col items-center justify-center min-h-[52px] text-[12px] w-full sm:w-auto px-4"
           >
-            <div className="flex items-center gap-3">
-              <Icons.vscode className="w-5 h-5 mr-1" />
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <Icons.vscode className="w-5 h-5" />
               <span className="text-sm text-neutral-400">+</span>
-              <div className="flex items-center gap-2 bg-gradient-to-b from-[#0E0F0F] to-[#0C0C0C] overflow-hidden rounded border border-white/10 w-[24px] h-[24px]">
+              <div className="flex items-center justify-center bg-gradient-to-b from-[#0E0F0F] to-[#0C0C0C] overflow-hidden rounded border border-white/10 w-[24px] h-[24px]">
                 <Image
                   src="https://avatars.githubusercontent.com/u/184127137?s=200&v=4"
                   alt="Cline"
@@ -87,7 +87,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                 />
               </div>
             </div>
-            VSCode + Cline
+            <span>VSCode + Cline</span>
           </TabsTrigger>
         </TabsList>
 
