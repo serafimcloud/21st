@@ -148,7 +148,7 @@ export function Hero() {
     threshold: 0,
     rootMargin: "-80px",
   })
-  const [count, setCount] = useState(561)
+  const [count, setCount] = useState(1243)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

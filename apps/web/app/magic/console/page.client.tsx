@@ -29,13 +29,12 @@ export function ConsolePageClient({
   const [hasAccess, setHasAccess] = useState(false)
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [count, setCount] = useState(561)
+  const [count, setCount] = useState(1243)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(() => {
     if (typeof window === "undefined") return true
     return !!localStorage.getItem("magic_onboarding_completed")
   })
-  const emailtest = "test@example.com"
-  console.log(`https://21st.dev/magic/console?waitlist=${btoa(emailtest)}`)
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const encodedEmail = params.get("waitlist")
