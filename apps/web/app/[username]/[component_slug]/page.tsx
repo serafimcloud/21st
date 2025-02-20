@@ -1,6 +1,5 @@
 import React from "react"
 import { notFound, redirect } from "next/navigation"
-import dynamic from "next/dynamic"
 import ErrorPage from "@/components/ui/error-page"
 import {
   getComponent,
@@ -12,19 +11,12 @@ import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import { extractDemoComponentNames } from "@/lib/parsers"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
+import ComponentPage from "./page.client"
 
-const ComponentPage = dynamic(
-  () => import("@/components/features/component-page/component-page-layout"),
-  {
-    ssr: false,
-  },
-)
-
-export const generateMetadata = async ({
-  params,
-}: {
-  params: { username: string; component_slug: string }
+export const generateMetadata = async (props: {
+  params: Promise<{ username: string; component_slug: string }>
 }) => {
+  const params = await props.params
   const { data: component } = await getComponent(
     supabaseWithAdminAccess,
     params.username,
@@ -130,11 +122,14 @@ const fetchFileTextContent = async (url: string | null | undefined) => {
   }
 }
 
-export default async function ComponentPageServer({
-  params,
-}: {
-  params: { username: string; component_slug: string; demo_slug?: string }
+export default async function ComponentPageServer(props: {
+  params: Promise<{
+    username: string
+    component_slug: string
+    demo_slug?: string
+  }>
 }) {
+  const params = await props.params
   if (!validateRouteParams(params)) {
     redirect("/")
   }

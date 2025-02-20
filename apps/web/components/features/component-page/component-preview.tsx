@@ -17,7 +17,10 @@ import { ComponentPageInfo } from "./info-section"
 import { Icons } from "@/components/icons"
 import { LoadingSpinner } from "../../ui/loading-spinner"
 import { CopyCodeButton } from "../../ui/copy-code-card-button"
-import { isShowCodeAtom, isFullScreenAtom } from "./component-page-layout"
+import {
+  isShowCodeAtom,
+  isFullScreenAtom,
+} from "../../../app/[username]/[component_slug]/page.client"
 
 import {
   DropdownMenu,

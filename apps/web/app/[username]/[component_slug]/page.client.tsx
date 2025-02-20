@@ -49,12 +49,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
-import { UserAvatar } from "../../ui/user-avatar"
-import { LikeButton } from "../../ui/bookmark-button"
-import { ThemeToggle } from "../../ui/theme-toggle"
-import { ComponentPagePreview } from "./component-preview"
-import { EditComponentDialog } from "../../ui/edit-component-dialog"
-import { usePublishAs } from "../publish/hooks/use-publish-as"
+import { UserAvatar } from "../../../components/ui/user-avatar"
+import { LikeButton } from "../../../components/ui/bookmark-button"
+import { ThemeToggle } from "../../../components/ui/theme-toggle"
+import { ComponentPagePreview } from "../../../components/features/component-page/component-preview"
+import { EditComponentDialog } from "../../../components/ui/edit-component-dialog"
+import { usePublishAs } from "../../../components/features/publish/hooks/use-publish-as"
 import { Icons } from "@/components/icons"
 import Image from "next/image"
 
@@ -755,6 +755,7 @@ export default function ComponentPage({
                         <CommandGroup>
                           {componentDemos?.map((d) => (
                             <CommandItem
+                              key={d.id}
                               value={`${d.id}-${d.demo_slug}`}
                               data-demo-id={d.id}
                               onSelect={() =>

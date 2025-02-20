@@ -22,11 +22,12 @@ async function getUser(username: string) {
   return getCachedUser(username)
 }
 
-export const generateMetadata = async ({
-  params,
-}: {
-  params: { username: string }
-}) => {
+export const generateMetadata = async (
+  props: {
+    params: Promise<{ username: string }>
+  }
+) => {
+  const params = await props.params;
   const user = await getUser(params.username)
 
   if (!user) {
@@ -71,13 +72,14 @@ export const generateMetadata = async ({
   }
 }
 
-export default async function UserProfile({
-  params,
-  searchParams,
-}: {
-  params: { username: string }
-  searchParams: { tab?: string }
-}) {
+export default async function UserProfile(
+  props: {
+    params: Promise<{ username: string }>
+    searchParams: Promise<{ tab?: string }>
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   if (!validateRouteParams(params)) {
     redirect("/")
   }

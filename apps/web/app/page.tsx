@@ -70,7 +70,7 @@ export const generateMetadata = async (): Promise<Metadata> => {
 
 export default async function HomePage() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const shouldShowHero = !cookieStore.has("has_visited")
 
     if (shouldShowHero) {
