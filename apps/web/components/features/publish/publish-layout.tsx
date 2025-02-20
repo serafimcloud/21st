@@ -375,9 +375,13 @@ export default function PublishComponentForm({
     undefined,
   )
   const publishAsUsername = form.watch("publish_as_username")
-  if (publishAsUsername === undefined && user?.username) {
-    form.setValue("publish_as_username", user.username)
-  }
+
+  useEffect(() => {
+    if (publishAsUsername === undefined && user?.username) {
+      form.setValue("publish_as_username", user.username)
+    }
+  }, [publishAsUsername, user?.username, form])
+
   const { isAdmin, user: publishAsUser } = usePublishAs({
     username: publishAsUsername ?? "",
   })

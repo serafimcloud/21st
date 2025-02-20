@@ -88,7 +88,7 @@ export function UserComponentsHeader({
   const { data: counts, isLoading } = useUserComponentsCounts(userId)
 
   useTrackSearchQueries()
-  useSearchHotkeys(inputRef)
+  useSearchHotkeys(inputRef as React.RefObject<HTMLInputElement>)
 
   const handleClearInput = () => {
     setSearchQuery("")

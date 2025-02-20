@@ -2,7 +2,12 @@ export const editorThemes = {
   dark: {
     base: "vs-dark" as const,
     inherit: true,
-    rules: [],
+    rules: [
+      { token: "string", foreground: "#a5d6ff" },
+      { token: "keyword", foreground: "#ff7b72" },
+      { token: "identifier", foreground: "#c9d1d9" },
+      { token: "comment", foreground: "#8b949e" },
+    ],
     colors: {
       "editor.background": "#1c1c1c",
       "editor.foreground": "#c9d1d9",
@@ -17,7 +22,12 @@ export const editorThemes = {
   light: {
     base: "vs" as const,
     inherit: true,
-    rules: [],
+    rules: [
+      { token: "string", foreground: "#0a3069" },
+      { token: "keyword", foreground: "#cf222e" },
+      { token: "identifier", foreground: "#24292f" },
+      { token: "comment", foreground: "#6e7781" },
+    ],
     colors: {
       "editor.background": "#f5f5f5",
       "editor.foreground": "#24292f",

@@ -294,6 +294,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
 }`}
                         language="json"
                         className=" overflow-x-auto bg-muted"
+                        display="block"
                       />
                     ) : (
                       <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
@@ -391,6 +392,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
 }`}
                         language="json"
                         className="overflow-x-auto bg-muted"
+                        display="block"
                       />
                     ) : (
                       <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
