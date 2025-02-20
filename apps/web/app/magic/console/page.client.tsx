@@ -35,9 +35,17 @@ export function ConsolePageClient({
     return !!localStorage.getItem("magic_onboarding_completed")
   })
 
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const encodedEmail = params.get("waitlist")
+
+    if (!isMounted) return
 
     if (encodedEmail) {
       try {
@@ -49,14 +57,15 @@ export function ConsolePageClient({
           toast.error("Invalid invite link")
           console.error("Invalid email format in waitlist parameter")
         }
-      } catch (e) {
-        console.error("Invalid waitlist parameter")
+      } catch (error) {
+        console.error("Error decoding email:", error)
+        toast.error("Invalid invite link")
       }
     }
 
     const hasWaitlistAccess = !!localStorage.getItem("waitlist_email")
     setHasAccess(hasWaitlistAccess)
-  }, [])
+  }, [isMounted])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

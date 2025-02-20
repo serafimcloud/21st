@@ -5,7 +5,14 @@ import { Button } from "@/components/ui/button"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { ApiKey } from "@/types/global"
 import { toast } from "sonner"
-import { LoaderCircle, Lock, Check, Copy } from "lucide-react"
+import {
+  LoaderCircle,
+  Lock,
+  Check,
+  Copy,
+  Link,
+  AlertTriangle,
+} from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import { TermsDialog } from "@/components/features/api/terms-dialog"
@@ -124,11 +131,16 @@ export function ApiKeySection({
 
   if (!userId) {
     return (
-      <Alert>
-        <AlertDescription>
-          Sign in to create and manage your API keys
-        </AlertDescription>
-      </Alert>
+      <div className="flex justify-start">
+        <Button
+          onClick={() => {
+            window.location.href = `https://accounts.21st.dev/sign-in?redirect_url=${encodeURIComponent("https://21st.dev/magic/console")}`
+          }}
+          variant="default"
+        >
+          Sign In
+        </Button>
+      </div>
     )
   }
 
@@ -146,7 +158,7 @@ export function ApiKeySection({
           ) : (
             <Lock className="mr-2 h-4 w-4" />
           )}
-          Add API Key
+          Create API Key
         </Button>
 
         <TermsDialog
@@ -164,7 +176,6 @@ export function ApiKeySection({
   return (
     <div className="space-y-4">
       <div className="rounded-lg bg-card space-y-4">
-
         <div className="relative">
           <div className="flex items-center gap-2 bg-muted p-1 rounded-md w-full max-w-[650px]">
             <code className="flex-1 font-mono text-muted-foreground text-sm tracking-wider overflow-hidden pl-1">
