@@ -1,123 +1,118 @@
 "use client"
 
 import * as React from "react"
-import { Check } from "lucide-react"
-import NumberFlow from "@number-flow/react"
-import { motion } from "framer-motion"
-
+import { Check, Star } from "lucide-react"
+import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 
-export interface PricingTier {
+const pricingCardVariants = cva(
+  "relative overflow-hidden rounded-xl border bg-background transition-all duration-300",
+  {
+    variants: {
+      variant: {
+        default: "border-border",
+        featured: "border-primary border-2",
+      },
+      size: {
+        default: "p-6",
+        lg: "p-8",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  },
+)
+
+interface PricingPlan {
   name: string
-  price: Record<string, number | string>
   description: string
+  monthlyPrice: number
+  yearlyPrice: number
   features: string[]
-  cta: string
-  highlighted?: boolean
-  popular?: boolean
+  buttonText: string
+  href: string
+  isFeatured?: boolean
 }
 
-interface PricingCardProps {
-  tier: PricingTier
-  paymentFrequency: string
+interface PricingCardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof pricingCardVariants> {
+  plan: PricingPlan
+  isYearly?: boolean
+  onClick?: () => void
 }
 
-export function PricingCard({ tier, paymentFrequency }: PricingCardProps) {
-  const price = tier.price[paymentFrequency]
-  const isPopular = tier.popular
+export function PricingCard({
+  className,
+  plan,
+  variant,
+  size,
+  isYearly = false,
+  onClick,
+  ...props
+}: PricingCardProps) {
+  const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice
 
   return (
-    <Card
+    <div
       className={cn(
-        "relative flex flex-col overflow-hidden p-8 border-white/10 bg-white/5 min-h-[33rem]",
-        isPopular && "ring-2 ring-accent/50",
+        pricingCardVariants({
+          variant: plan.isFeatured ? "featured" : "default",
+          size,
+          className,
+        }),
       )}
+      {...props}
     >
-      <motion.div layout className="flex-1 space-y-8">
-        <motion.div layout className="text-center">
-          <motion.h3 layout className="text-lg font-semibold text-neutral-200">
-            {tier.name}
-          </motion.h3>
-          <motion.div
-            layout
-            className="mt-2 min-h-[54px] flex items-center justify-center "
-          >
-            {typeof price === "number" ? (
-              <div className="flex items-end justify-end">
-                <motion.span
-                  layout
-                  className="text-4xl font-bold text-neutral-200"
-                >
-                  <NumberFlow
-                    format={{
-                      style: "currency",
-                      currency: "USD",
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }}
-                    value={price}
-                  />
-                </motion.span>
-                <motion.span layout className="text-neutral-400 mb-2">
-                  {paymentFrequency === "yearly" ? "/year" : "/month"}
-                </motion.span>
-              </div>
-            ) : (
-              <motion.span
-                layout
-                className="text-4xl font-bold text-neutral-200"
-              >
-                ${price}
-              </motion.span>
-            )}
-          </motion.div>
-          {paymentFrequency === "yearly" && typeof price === "number" && (
-            <motion.p
-              layout
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mt-1 text-sm text-neutral-400"
-            >
-              ${Math.round(price / 12)}/month billed yearly
-            </motion.p>
-          )}
-          <motion.p layout className="mt-2 text-sm text-neutral-400">
-            {tier.description}
-          </motion.p>
-        </motion.div>
+      {plan.isFeatured && (
+        <div className="absolute right-0 top-0 bg-primary py-0.5 px-3 rounded-bl-xl rounded-tr-xl flex items-center">
+          <Star className="text-primary-foreground h-4 w-4 fill-current" />
+          <span className="text-primary-foreground ml-1 text-sm font-medium">
+            Popular
+          </span>
+        </div>
+      )}
 
-        <motion.ul layout className="space-y-4">
-          {tier.features.map((feature, featureIndex) => (
-            <motion.li
-              layout
-              key={featureIndex}
-              className="flex items-start gap-x-2 "
-            >
-              <Check className="h-5 w-5 min-w-5 min-h-5 text-neutral-200 mt-1" />
-              <span className="text-neutral-400">{feature}</span>
-            </motion.li>
+      <div className="space-y-6">
+        <div>
+          <h3 className="font-semibold text-xl">{plan.name}</h3>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {plan.description}
+          </p>
+        </div>
+
+        <div className="flex items-baseline">
+          <span className="text-3xl font-bold">$</span>
+          <span className="text-4xl font-bold">{price}</span>
+          <span className="text-muted-foreground ml-2">
+            /{isYearly ? "year" : "month"}
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          {plan.features.map((feature, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-sm text-muted-foreground">{feature}</span>
+            </div>
           ))}
-        </motion.ul>
-      </motion.div>
+        </div>
 
-      <motion.div layout className="mt-8">
         <Button
-          variant="default"
-          size="lg"
-          className="w-full bg-neutral-200 text-black hover:bg-white/90"
-          onClick={() => {
-            const element = document.getElementById("waitlist-form")
-            if (element) {
-              element.scrollIntoView({ behavior: "smooth" })
-            }
-          }}
+          className={cn(
+            "w-full",
+            plan.isFeatured
+              ? "bg-primary hover:bg-primary/90"
+              : "bg-primary hover:bg-primary/90",
+          )}
+          onClick={onClick}
         >
-          {tier.cta}
+          {plan.buttonText}
         </Button>
-      </motion.div>
-    </Card>
+      </div>
+    </div>
   )
 }
