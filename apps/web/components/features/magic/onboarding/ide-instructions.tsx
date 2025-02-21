@@ -9,7 +9,7 @@ import { CursorDark } from "@/components/icons/cursor-dark"
 
 import Image from "next/image"
 
-import { Copy, Check, RefreshCw, AlertTriangle } from "lucide-react"
+import { Copy, Check, RefreshCw, AlertTriangle, Hammer } from "lucide-react"
 import { useState, useEffect } from "react"
 
 interface IdeInstructionsProps {
@@ -242,7 +242,13 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                     />
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <span>1. Click the hammer icon</span>
+                        <span className="flex items-center gap-1">
+                          1. Click the hammer{" "}
+                          <span className="text-xs bg-primary/10 rounded-md p-1">
+                            <Hammer className="h-3.5 w-3.5 text-primary" />
+                          </span>
+                          icon
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span>2. Click "Configure" button</span>
