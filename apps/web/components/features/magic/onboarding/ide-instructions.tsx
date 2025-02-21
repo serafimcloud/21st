@@ -55,8 +55,10 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
 
   const handleCopyCommand = async () => {
     try {
+      const windowsPrefix =
+        selectedOS === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""
       await navigator.clipboard.writeText(
-        "npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline",
+        `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client ${activeTab === "windsurf" ? "windsurf" : "cline"}`,
       )
       setCopiedCommand(true)
       setTimeout(() => setCopiedCommand(false), 2000)
@@ -100,6 +102,13 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
     } catch (err) {
       console.error("Failed to copy config:", err)
     }
+  }
+
+  const getMaskedApiKey = (key: string) => {
+    return key
+      .split("")
+      .map(() => "•")
+      .join("")
   }
 
   return (
@@ -302,7 +311,7 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                             <input
                               type="text"
                               readOnly
-                              value="npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf"
+                              value={`${selectedOS === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf`}
                               className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                             />
                             <button
@@ -342,7 +351,10 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                               <input
                                 type="text"
                                 readOnly
-                                value={apiKey.key}
+                                value={apiKey.key
+                                  .split("")
+                                  .map(() => "•")
+                                  .join("")}
                                 className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                               />
                               <button
@@ -444,7 +456,7 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
         "windsurf"
       ],
       "env": {
-        "TWENTY_FIRST_API_KEY": "${apiKey.key}"
+        "TWENTY_FIRST_API_KEY": "${apiKey ? getMaskedApiKey(apiKey.key) : "YOUR_API_KEY"}"
       }
     }
   }
@@ -520,7 +532,7 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                             <input
                               type="text"
                               readOnly
-                              value="npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline"
+                              value={`${selectedOS === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline`}
                               className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                             />
                             <button
@@ -554,16 +566,16 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                       <div className="space-y-3 w-full">
                         <h3 className="font-medium">Add API Key</h3>
                         <div className="text-sm text-muted-foreground space-y-2">
-                          <p>
-                            When prompted for "The API key for the
-                            21st.dev/magic (required)", paste your API key:
-                          </p>
+                          <p>When prompted for API key, paste your API key:</p>
                           {apiKey ? (
                             <div className="bg-muted rounded-md flex items-center w-full group relative">
                               <input
                                 type="text"
                                 readOnly
-                                value={apiKey.key}
+                                value={apiKey.key
+                                  .split("")
+                                  .map(() => "•")
+                                  .join("")}
                                 className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                               />
                               <button
@@ -639,8 +651,10 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                             code={`{
   "mcpServers": {
     "@21st-dev-magic-mcp": {
-      "command": "npx",
+      "command": "${selectedOS === "windows" ? "C:\\\\Windows\\\\System32\\\\cmd.exe" : "npx"}",
       "args": [
+        ${selectedOS === "windows" ? '"/c",' : ""} 
+        ${selectedOS === "windows" ? '"npx",' : ""}
         "-y",
         "@smithery/cli@latest",
         "run",

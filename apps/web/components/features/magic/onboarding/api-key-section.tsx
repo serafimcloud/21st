@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { ApiKey } from "@/types/global"
@@ -9,11 +9,8 @@ import {
   LoaderCircle,
   Lock,
   Check,
-  Copy,
-  Link,
-  AlertTriangle,
+  Copy
 } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import { TermsDialog } from "@/components/features/api/terms-dialog"
 
