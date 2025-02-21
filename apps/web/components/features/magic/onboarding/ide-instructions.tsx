@@ -10,7 +10,7 @@ import { CursorDark } from "@/components/icons/cursor-dark"
 import Image from "next/image"
 
 import { Copy, Check, RefreshCw, AlertTriangle, Hammer } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 interface IdeInstructionsProps {
   apiKey: ApiKey | null
@@ -19,6 +19,9 @@ interface IdeInstructionsProps {
 
 export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
   const [copied, setCopied] = useState(false)
+  const [copiedCommand, setCopiedCommand] = useState(false)
+  const [copiedApiKey, setCopiedApiKey] = useState(false)
+  const [copiedConfig, setCopiedConfig] = useState(false)
   const [activeTab, setActiveTab] = useState("cursor")
 
   const getCommandForTab = (tab: string) => {
@@ -47,6 +50,55 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error("Failed to copy:", err)
+    }
+  }
+
+  const handleCopyCommand = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        "npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline",
+      )
+      setCopiedCommand(true)
+      setTimeout(() => setCopiedCommand(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy command:", err)
+    }
+  }
+
+  const handleCopyApiKey = async () => {
+    if (!apiKey) return
+    try {
+      await navigator.clipboard.writeText(apiKey.key)
+      setCopiedApiKey(true)
+      setTimeout(() => setCopiedApiKey(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy API key:", err)
+    }
+  }
+
+  const handleCopyConfig = async () => {
+    if (!apiKey) return
+    try {
+      const config = `{
+  "mcpServers": {
+    "@21st-dev-magic-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@21st-dev/magic-mcp",
+        "--config",
+        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey?.key || "YOUR_API_KEY"}\\\\"}\\"" 
+      ]
+    }
+  }
+}`
+      await navigator.clipboard.writeText(config)
+      setCopiedConfig(true)
+      setTimeout(() => setCopiedConfig(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy config:", err)
     }
   }
 
@@ -336,103 +388,208 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
         <TabsContent value="cline">
           <div className="space-y-4">
             <div className="space-y-6">
-              {/* Step 1 */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                  1
-                </div>
-                <div className="space-y-3">
-                  <h3 className="font-medium">Open MCP Server Panel</h3>
-                  <div className="text-sm text-muted-foreground space-y-2">
-                    <p>
-                      In the Cline extension, locate and click the MCP Server
-                      tab.
-                    </p>
-                    <Image
-                      src="/cline-first-step.png"
-                      alt="Cline MCP Server Panel"
-                      width={0}
-                      height={0}
-                      sizes="100vw"
-                      className="rounded-lg border w-full h-auto mix-blend-difference"
-                    />
-                  </div>
-                </div>
-              </div>
+              <Tabs defaultValue="terminal" className="w-[400px]">
+                <TabsList className="rounded-md h-7 p-0.5">
+                  <TabsTrigger value="terminal" className="text-xs h-6">
+                    Terminal
+                  </TabsTrigger>
+                  <TabsTrigger value="manual" className="text-xs h-6">
+                    Manual
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="terminal" className="mt-4">
+                  <div className="space-y-6">
+                    {/* Step 1 */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                        1
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="font-medium">
+                          Run Installation Command
+                        </h3>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                          <p>Run this command in your terminal:</p>
+                          <div className="bg-muted rounded-md flex items-center w-full group relative">
+                            <input
+                              type="text"
+                              readOnly
+                              value="npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline"
+                              className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
+                            />
+                            <button
+                              className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors shrink-0 mr-1"
+                              onClick={handleCopyCommand}
+                            >
+                              {copiedCommand ? (
+                                <>
+                                  <Check className="h-3.5 w-3.5 text-green-500" />
+                                  <span className="text-xs text-green-500">
+                                    Copied!
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3.5 w-3.5" />
+                                  <span className="text-xs">Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-              {/* Step 2 */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                  2
-                </div>
-                <div className="space-y-3 w-full">
-                  <h3 className="font-medium">Edit MCP Settings</h3>
-                  <div className="text-sm text-muted-foreground space-y-2 w-full max-w-[600px]">
-                    <p>
-                      Click the "Configure MCP Servers" button to open the
-                      configuration file.
-                    </p>
-                    {apiKey ? (
-                      <Code
-                        code={`{
+                    {/* Step 2 */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                        2
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="font-medium">Add API Key</h3>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                          <p>
+                            When prompted for "The API key for the
+                            21st.dev/magic (required)", paste your API key:
+                          </p>
+                          {apiKey ? (
+                            <div className="bg-muted rounded-md flex items-center w-full group relative">
+                              <input
+                                type="text"
+                                readOnly
+                                value={apiKey.key}
+                                className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
+                              />
+                              <button
+                                className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors shrink-0 mr-1"
+                                onClick={handleCopyApiKey}
+                              >
+                                {copiedApiKey ? (
+                                  <>
+                                    <Check className="h-3.5 w-3.5 text-green-500" />
+                                    <span className="text-xs text-green-500">
+                                      Copied!
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-3.5 w-3.5" />
+                                    <span className="text-xs">Copy</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+                              Generate an API key first
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                <TabsContent value="manual" className="mt-4">
+                  <div className="space-y-6">
+                    {/* Step 1 */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                        1
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="font-medium">Open MCP Server Panel</h3>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                          <p>
+                            In the Cline extension, locate and click the MCP
+                            Server tab.
+                          </p>
+                          <Image
+                            src="/cline-first-step.png"
+                            alt="Cline MCP Server Panel"
+                            width={0}
+                            height={0}
+                            sizes="100vw"
+                            className="rounded-lg border w-full h-auto mix-blend-difference"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                        2
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="font-medium">Configure MCP Server</h3>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                          <p>
+                            Click the "Configure MCP Servers" button and add
+                            this configuration:
+                          </p>
+                          <Code
+                            language="json"
+                            className="overflow-x-auto bg-muted text-xs"
+                            code={`{
   "mcpServers": {
-    "magic": {
+    "@21st-dev-magic-mcp": {
       "command": "npx",
       "args": [
         "-y",
         "@smithery/cli@latest",
-        "install",
+        "run",
         "@21st-dev/magic-mcp",
-        "--client",
-        "cline"
-      ],
-      "env": {
-        "TWENTY_FIRST_API_KEY": "${apiKey.key}"
-      }
+        "--config",
+        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey?.key || "YOUR_API_KEY"}\\\\"}\\"" 
+      ]
     }
   }
 }`}
-                        language="json"
-                        className="overflow-x-auto bg-muted"
-                        display="block"
-                      />
-                    ) : (
-                      <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-                        Generate an API key first
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                  3
-                </div>
-                <div className="space-y-3">
-                  <h3 className="font-medium">Save and Apply Settings</h3>
-                  <div className="text-sm text-muted-foreground space-y-2">
-                    <p>After saving the configuration:</p>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 text-sm">
-                        <RefreshCw className="h-3.5 w-3.5 text-primary" />
-                        <span>
-                          Cline will automatically detect the changes and start
-                          the MCP server
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-4 rounded-md border border-yellow-500/20 bg-yellow-500/10 p-3 max-w-[600px]">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
-                        <div className="text-sm text-yellow-500">
-                          Note: Cline's MCP integration is currently in beta and
-                          may behave unexpectedly. We're actively working with
-                          the Cline team on improvements.
+                          />
+                          <button
+                            className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors mt-2"
+                            onClick={handleCopyConfig}
+                          >
+                            {copiedConfig ? (
+                              <>
+                                <Check className="h-3.5 w-3.5 text-green-500" />
+                                <span className="text-xs text-green-500">
+                                  Copied!
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3.5 w-3.5" />
+                                <span className="text-xs">Copy</span>
+                              </>
+                            )}
+                          </button>
+                          <div className="space-y-1.5 mt-3">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Check className="h-3.5 w-3.5 text-green-500" />
+                              <span>Save the configuration</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <RefreshCw className="h-3.5 w-3.5 text-primary" />
+                              <span>
+                                Cline will automatically detect the changes and
+                                start the MCP server
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <div className="mt-4 rounded-md border border-yellow-500/20 bg-yellow-500/10 p-3 max-w-[600px]">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                  <div className="text-sm text-yellow-500">
+                    Note: MCP server list errors can be safely ignored. Cline's MCP
+                    integration is in beta and we're working on improvements.
                   </div>
                 </div>
               </div>
