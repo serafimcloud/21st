@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { Check, Circle } from "lucide-react"
 import Image from "next/image"
 import { useState, useEffect } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface OnboardingProps {
   apiKey: ApiKey | null
@@ -25,6 +26,13 @@ export function Onboarding({
   onWelcomeComplete,
 }: OnboardingProps) {
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(showWelcome)
+  const [selectedOS, setSelectedOS] = useState<"windows" | "mac">("mac")
+
+  useEffect(() => {
+    // Detect OS on mount
+    const userAgent = window.navigator.userAgent.toLowerCase()
+    setSelectedOS(userAgent.includes("windows") ? "windows" : "mac")
+  }, [])
 
   useEffect(() => {
     setShowWelcomeDialog(showWelcome)
@@ -47,10 +55,26 @@ export function Onboarding({
     },
     {
       id: "ide-setup",
-      title: "Setup your IDE",
+      title: (
+        <div className="flex items-center gap-4">
+          <span>Setup your IDE</span>
+          <div className="flex items-center gap-2 text-sm">
+            <Tabs defaultValue="mac" onValueChange={(value) => setSelectedOS(value as "mac" | "windows")}>
+              <TabsList className="rounded-md h-7 p-0.5">
+                <TabsTrigger value="mac" className="text-xs h-6">
+                  macOS
+                </TabsTrigger>
+                <TabsTrigger value="windows" className="text-xs h-6">
+                  Windows  
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+      ),
       description: "Install Magic in your preferred IDE",
       isCompleted: false,
-      content: <IdeInstructions apiKey={apiKey} />,
+      content: <IdeInstructions apiKey={apiKey} selectedOS={selectedOS} />,
     },
     {
       id: "first-component",

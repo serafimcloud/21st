@@ -10,25 +10,30 @@ import { CursorDark } from "@/components/icons/cursor-dark"
 import Image from "next/image"
 
 import { Copy, Check, RefreshCw, AlertTriangle } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface IdeInstructionsProps {
   apiKey: ApiKey | null
+  selectedOS: "windows" | "mac"
 }
 
-export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
+export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
   const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState("cursor")
 
   const getCommandForTab = (tab: string) => {
     if (!apiKey) return ""
+
+    const windowsPrefix =
+      selectedOS === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""
+
     switch (tab) {
       case "cursor":
-        return `npx -y @smithery/cli@latest run @21st-dev/magic-mcp --config "{\\\"TWENTY_FIRST_API_KEY\\\":\\\"${apiKey.key}\\\"}"` 
+        return `${windowsPrefix}npx -y @smithery/cli@latest run @21st-dev/magic-mcp --config "{\\\"TWENTY_FIRST_API_KEY\\\":\\\"${apiKey.key}\\\"}"`
       case "windsurf":
-        return `npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf`
+        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf`
       case "cline":
-        return `npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline`
+        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline`
       default:
         return ""
     }
@@ -63,7 +68,7 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
             <span>Cursor</span>
           </TabsTrigger>
           <TabsTrigger
-            value="windsurf" 
+            value="windsurf"
             className="flex flex-col items-center justify-center min-h-[52px] text-[12px] w-full sm:w-auto px-4"
           >
             <Icons.windsurfTealLogo className="h-6 w-10 mb-1" />
@@ -108,25 +113,16 @@ export function IdeInstructions({ apiKey }: IdeInstructionsProps) {
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="flex items-center gap-1">
                         <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
-                          ⌘
+                          {selectedOS === "windows" ? "Ctrl" : "⌘"}
                         </kbd>
                         +
                         <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[13px] leading-none font-sans">
                           ,
                         </kbd>
                       </div>
-                      <span className="text-xs">(Mac)</span>
-                      <span className="mx-1">or</span>
-                      <div className="flex items-center gap-1">
-                        <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
-                          Ctrl
-                        </kbd>
-                        +
-                        <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[13px] leading-none font-sans">
-                          ,
-                        </kbd>
-                      </div>
-                      <span className="text-xs">(Windows)</span>
+                      <span className="text-xs">
+                        ({selectedOS === "windows" ? "Windows" : "Mac"})
+                      </span>
                     </div>
                     <p className="mt-2">Navigate to:</p>
                     <p className="text-primary font-medium break-words text-sm sm:text-base">
