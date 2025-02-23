@@ -284,6 +284,23 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
 
         <TabsContent value="windsurf">
           <div className="space-y-4">
+            <div className="rounded-md border border-yellow-500/20 bg-yellow-500/10 p-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                <div className="text-sm text-yellow-500 flex-1">
+                  Note: MCP is only available in Windsurf Next (Beta){" "}
+                </div>
+                <a
+                  href="https://codeium.com/windsurf/download-next"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-yellow-500 underline hover:text-yellow-400"
+                >
+                  Download Windsurf Next
+                </a>
+              </div>
+            </div>
+
             <div className="space-y-6">
               <Tabs defaultValue="auto">
                 <TabsList className="rounded-md h-7 p-0.5">
