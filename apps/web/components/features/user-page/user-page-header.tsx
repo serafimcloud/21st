@@ -14,12 +14,10 @@ import { useClerkSupabaseClient } from "@/lib/clerk"
 export const userPageSearchAtom = atom("")
 export type UserComponentsTab = "components" | "demos" | "bookmarks"
 
-export const userComponentsTabAtom = atomWithStorage<UserComponentsTab>(
+export const userTabAtom = atomWithStorage<UserComponentsTab>(
   "user-components-tab",
   "components",
 )
-
-export const userTabAtom = atom<UserComponentsTab>("components")
 
 function useUserComponentsCounts(userId: string) {
   const supabase = useClerkSupabaseClient()
@@ -78,9 +76,11 @@ const useSearchHotkeys = (inputRef: React.RefObject<HTMLInputElement>) => {
 export function UserComponentsHeader({
   username,
   userId,
+  isOwnProfile,
 }: {
   username: string
   userId: string
+  isOwnProfile: boolean
 }) {
   const [activeTab, setActiveTab] = useAtom(userTabAtom)
   const [searchQuery, setSearchQuery] = useAtom(userPageSearchAtom)
@@ -128,17 +128,30 @@ export function UserComponentsHeader({
   useEffect(() => {
     if (!isLoading && counts) {
       const currentTabCount =
-        counts[`${activeTab}_count` as keyof typeof counts] ?? 0
-      if (currentTabCount === 0) {
-        const firstAvailableTab = tabs.find(
-          (tab) => counts[`${tab.value}_count` as keyof typeof counts] > 0,
-        )
+        counts[
+          `${activeTab.replace("components", "published").replace("bookmarks", "liked")}_count` as keyof typeof counts
+        ] ?? 0
+      if (currentTabCount === 0 && activeTab !== "components") {
+        const firstAvailableTab = tabs.find((tab) => {
+          if (tab.value === "components") return counts.published_count > 0
+          if (tab.value === "bookmarks") return isOwnProfile
+          return (
+            counts[
+              `${tab.value.replace("bookmarks", "liked")}_count` as keyof typeof counts
+            ] > 0
+          )
+        })
         if (firstAvailableTab) {
           setActiveTab(firstAvailableTab.value)
         }
       }
     }
-  }, [counts, isLoading, activeTab, setActiveTab])
+  }, [counts, isLoading, activeTab, setActiveTab, isOwnProfile])
+
+  const handleTabChange = (value: string) => {
+    console.log("Changing tab to:", value)
+    setActiveTab(value as UserComponentsTab)
+  }
 
   return (
     <div className="flex flex-col gap-4 mb-6">
@@ -146,7 +159,7 @@ export function UserComponentsHeader({
         <div className="flex items-center gap-4">
           <Tabs
             value={activeTab}
-            onValueChange={(value) => setActiveTab(value as UserComponentsTab)}
+            onValueChange={handleTabChange}
             className="w-full md:w-auto"
           >
             <TabsList className="w-full md:w-auto h-8 -space-x-px bg-background p-0 shadow-sm shadow-black/5 rtl:space-x-reverse">
@@ -154,7 +167,12 @@ export function UserComponentsHeader({
                 <TabsTrigger
                   key={value}
                   value={value}
-                  disabled={!isLoading && count === 0 && value !== "bookmarks"}
+                  disabled={
+                    !isLoading &&
+                    count === 0 &&
+                    value !== "components" &&
+                    !(value === "bookmarks" && isOwnProfile)
+                  }
                   className="flex-1 md:flex-initial relative overflow-hidden rounded-none border border-border h-8 px-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 first:rounded-s last:rounded-e data-[state=active]:bg-muted data-[state=active]:after:bg-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-2">

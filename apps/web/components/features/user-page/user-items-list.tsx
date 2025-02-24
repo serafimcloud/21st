@@ -6,13 +6,16 @@ import { useClerkSupabaseClient } from "@/lib/clerk"
 import { DemoWithComponent } from "@/types/global"
 import { useAtom } from "jotai"
 import { userPageSearchAtom } from "./user-page-header"
-import { Search, Bookmark } from "lucide-react"
+import { Search, Bookmark, Code, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
 import { useRouter } from "next/navigation"
 import { isMac } from "@/lib/utils"
 import { useHotkeys } from "react-hotkeys-hook"
-import { ComponentCardSkeleton, ProfileCardSkeleton } from "@/components/ui/skeletons"
+import {
+  ComponentCardSkeleton,
+  ProfileCardSkeleton,
+} from "@/components/ui/skeletons"
 import { transformDemoResult } from "@/lib/utils/transformData"
 
 type UserTab = "components" | "demos" | "bookmarks"
@@ -22,6 +25,7 @@ interface UserItemsListProps {
   skeletonCount?: number
   userId: string
   tab: UserTab
+  isOwnProfile: boolean
 }
 
 function useUserPublishedDemos(userId: string) {
@@ -29,13 +33,10 @@ function useUserPublishedDemos(userId: string) {
   return useQuery({
     queryKey: ["user-published-demos", userId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        "get_user_profile_demo_list",
-        {
-          p_user_id: userId,
-          p_include_private: false,
-        },
-      )
+      const { data, error } = await supabase.rpc("get_user_profile_demo_list", {
+        p_user_id: userId,
+        p_include_private: false,
+      })
       if (error) throw error
       return data.map(transformDemoResult)
     },
@@ -105,11 +106,40 @@ function EmptyLikedState() {
   )
 }
 
+function EmptyComponentsState({ isOwnProfile }: { isOwnProfile: boolean }) {
+  const router = useRouter()
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+        <Code className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <h3 className="text-lg font-medium">
+        {isOwnProfile
+          ? "No published components yet"
+          : "No components published yet"}
+      </h3>
+      <p className="text-sm text-muted-foreground mt-2 max-w-[420px]">
+        {isOwnProfile
+          ? "Start sharing your components with the community"
+          : "This user hasn't published any components yet"}
+      </p>
+      {isOwnProfile && (
+        <Button onClick={() => router.push("/publish")} className="mt-6 gap-2">
+          <Plus className="h-4 w-4" />
+          Publish Component
+        </Button>
+      )}
+    </div>
+  )
+}
+
 export function UserItemsList({
   className,
   skeletonCount = 12,
   userId,
   tab,
+  isOwnProfile,
 }: UserItemsListProps) {
   const [searchQuery, setSearchQuery] = useAtom(userPageSearchAtom)
   const router = useRouter()
@@ -214,6 +244,15 @@ export function UserItemsList({
     return <EmptyLikedState />
   }
 
+  if (
+    tab === "components" &&
+    !isLoading &&
+    components.length === 0 &&
+    !searchQuery
+  ) {
+    return <EmptyComponentsState isOwnProfile={isOwnProfile} />
+  }
+
   return (
     <div
       className={cn(
@@ -223,13 +262,13 @@ export function UserItemsList({
     >
       {showSkeleton ? (
         <>
-          {Array.from({ length: skeletonCount }).map((_, i) => (
+          {Array.from({ length: skeletonCount }).map((_, i) =>
             tab === "components" ? (
               <ProfileCardSkeleton key={i} />
             ) : (
               <ComponentCardSkeleton key={i} />
-            )
-          ))}
+            ),
+          )}
         </>
       ) : showEmptyState ? (
         <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
