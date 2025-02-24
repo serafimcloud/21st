@@ -1,10 +1,18 @@
 "use client"
 
-import { motion, AnimatePresence } from "motion/react"
-import { useState } from "react"
-import { ChevronDown } from "lucide-react"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 const faqs = [
+  {
+    question: "How does Magic AI Agent work?",
+    answer:
+      "Magic AI Agent searches for relevant components in the 21st.dev library based on your request. Using RAG technology, it finds the top 3 matching components and draws inspiration from them to create new, unique components tailored to your needs. The IDE agent understands your application context and seamlessly integrates the new components in the right place.",
+  },
   {
     question: "How does Magic AI Agent handle my codebase?",
     answer:
@@ -14,6 +22,16 @@ const faqs = [
     question: "Can I customize the generated components?",
     answer:
       "Yes! All generated components are fully editable and come with well-structured code. You can modify the styling, functionality, and behavior just like any other React component in your codebase.",
+  },
+  {
+    question: "Who owns the generated components?",
+    answer:
+      "You fully own all components generated for you by Magic AI Agent. There are no licensing restrictions - you're free to use, modify, and distribute the components however you want in your projects.",
+  },
+  {
+    question: "How does revenue sharing work with component authors?",
+    answer:
+      "For each generation, 50% covers AI costs while the remaining 50% is split between 21st.dev and the authors of components that inspired the generation. For example, with a $10/50 generations subscription ($0.20 per generation), half goes to AI costs and half is split between 21st.dev and component authors. Authors receive their share via PayPal monthly (after a 21-day holding period).",
   },
   {
     question: "What happens if I run out of generations?",
@@ -33,8 +51,6 @@ const faqs = [
 ]
 
 export function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
-
   return (
     <section className="py-10 lg:py-24 px-4">
       <div className="text-center">
@@ -46,43 +62,24 @@ export function FAQ() {
         </p>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        className="mx-auto mt-16 max-w-3xl divide-y divide-white/10"
-      >
-        {faqs.map((faq, index) => (
-          <div key={index} className="py-6">
-            <button
-              onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              className="flex w-full items-start justify-between text-left"
+      <div className="mx-auto mt-16 max-w-3xl space-y-4">
+        <Accordion type="single" collapsible className="w-full">
+          {faqs.map((faq, index) => (
+            <AccordionItem
+              key={index}
+              value={`item-${index}`}
+              className="rounded-lg border border-white/10 px-4 bg-background/5 mb-4 data-[state=open]:bg-background/10"
             >
-              <span className="text-lg font-semibold text-neutral-200">
+              <AccordionTrigger className="text-lg font-semibold text-neutral-200 hover:no-underline py-4">
                 {faq.question}
-              </span>
-              <ChevronDown
-                className={`h-6 w-6 transform text-neutral-400 transition-transform ${
-                  openIndex === index ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-            <AnimatePresence>
-              {openIndex === index && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <p className="mt-4 text-neutral-400">{faq.answer}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
-      </motion.div>
+              </AccordionTrigger>
+              <AccordionContent className="text-neutral-400 pb-4">
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </div>
     </section>
   )
 }
