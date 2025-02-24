@@ -171,7 +171,15 @@ export function ComponentCard({
       <ContextMenuTrigger className="block p-[1px]">
         <div
           className="block"
-          onClick={() => (window.location.href = componentUrl)}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) {
+              e.preventDefault()
+              window.open(componentUrl, "_blank")
+              toast.success(`${componentName} was opened in a new tab`)
+            } else {
+              window.location.href = componentUrl
+            }
+          }}
         >
           <div className="relative aspect-[4/3] mb-3 group">
             <div className="absolute inset-0">
