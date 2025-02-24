@@ -302,220 +302,128 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
             </div>
 
             <div className="space-y-6">
-              <Tabs defaultValue="auto">
-                <TabsList className="rounded-md h-7 p-0.5">
-                  <TabsTrigger value="auto" className="text-xs h-6">
-                    Auto
-                  </TabsTrigger>
-                  <TabsTrigger value="manual" className="text-xs h-6">
-                    Manual
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="auto" className="mt-4">
-                  <div className="space-y-6">
-                    {/* Step 1 */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                        1
+              {/* Step 1 */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                  1
+                </div>
+                <div className="space-y-3 w-full">
+                  <h3 className="font-medium">Open MCP Configuration</h3>
+                  <div className="text-sm text-muted-foreground space-y-2">
+                    <p>Find the toolbar above the Cascade input:</p>
+                    <Image
+                      src="https://mintlify.s3.us-west-1.amazonaws.com/codeium/assets/windsurf/cascade/evergreen-toolbar-mcp.png"
+                      alt="Windsurf MCP toolbar"
+                      className="rounded-xl border my-2 w-full mix-blend-difference"
+                      width={600}
+                      height={128}
+                    />
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1">
+                          1. Click the hammer{" "}
+                          <span className="text-xs bg-primary/10 rounded-md p-1">
+                            <Hammer className="h-3.5 w-3.5 text-primary" />
+                          </span>
+                          icon
+                        </span>
                       </div>
-                      <div className="space-y-3 w-full">
-                        <h3 className="font-medium">
-                          Run Installation Command
-                        </h3>
-                        <div className="text-sm text-muted-foreground space-y-2">
-                          <p>Run this command in your terminal:</p>
-                          <div className="bg-muted rounded-md flex items-center w-full group relative">
-                            <input
-                              type="text"
-                              readOnly
-                              value={`${selectedOS === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf`}
-                              className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
-                            />
-                            <button
-                              className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors shrink-0 mr-1"
-                              onClick={handleCopyCommand}
-                            >
-                              {copiedCommand ? (
-                                <>
-                                  <Check className="h-3.5 w-3.5 text-green-500" />
-                                  <span className="text-xs text-green-500">
-                                    Copied!
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="h-3.5 w-3.5" />
-                                  <span className="text-xs">Copy</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <span>2. Click "Configure" button</span>
                       </div>
-                    </div>
-
-                    {/* Step 2 */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                        2
-                      </div>
-                      <div className="space-y-3 w-full">
-                        <h3 className="font-medium">Add API Key</h3>
-                        <div className="text-sm text-muted-foreground space-y-2">
-                          <p>When prompted for API key, paste your API key:</p>
-                          {apiKey ? (
-                            <div className="bg-muted rounded-md flex items-center w-full group relative">
-                              <input
-                                type="text"
-                                readOnly
-                                value={apiKey.key
-                                  .split("")
-                                  .map(() => "•")
-                                  .join("")}
-                                className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
-                              />
-                              <button
-                                className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors shrink-0 mr-1"
-                                onClick={handleCopyApiKey}
-                              >
-                                {copiedApiKey ? (
-                                  <>
-                                    <Check className="h-3.5 w-3.5 text-green-500" />
-                                    <span className="text-xs text-green-500">
-                                      Copied!
-                                    </span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="h-3.5 w-3.5" />
-                                    <span className="text-xs">Copy</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-                              Generate an API key first
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <p className="mt-1">This will open:</p>
+                      <Code
+                        className="text-primary bg-muted px-2 py-0.5 rounded text-xs break-all"
+                        code="~/.codeium/windsurf-next/mcp_config.json"
+                      />
                     </div>
                   </div>
-                </TabsContent>
-                <TabsContent value="manual" className="mt-4">
-                  <div className="space-y-6">
-                    {/* Step 1 */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                        1
-                      </div>
-                      <div className="space-y-3 w-full">
-                        <h3 className="font-medium">Open MCP Configuration</h3>
-                        <div className="text-sm text-muted-foreground space-y-2">
-                          <p>Find the toolbar above the Cascade input:</p>
-                          <Image
-                            src="https://mintlify.s3.us-west-1.amazonaws.com/codeium/assets/windsurf/cascade/evergreen-toolbar-mcp.png"
-                            alt="Windsurf MCP toolbar"
-                            className="rounded-xl border my-2 w-full mix-blend-difference"
-                            width={600}
-                            height={128}
-                          />
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-2">
-                              <span className="flex items-center gap-1">
-                                1. Click the hammer{" "}
-                                <span className="text-xs bg-primary/10 rounded-md p-1">
-                                  <Hammer className="h-3.5 w-3.5 text-primary" />
-                                </span>
-                                icon
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span>2. Click "Configure" button</span>
-                            </div>
-                            <p className="mt-1">This will open:</p>
-                            <Code
-                              className="text-primary bg-muted px-2 py-0.5 rounded text-xs break-all"
-                              code="~/.codeium/windsurf/mcp_config.json"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                </div>
+              </div>
 
-                    {/* Step 2 */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                        2
-                      </div>
-                      <div className="space-y-3 w-full">
-                        <h3 className="font-medium">
-                          Add Magic MCP Configuration
-                        </h3>
-                        <div className="text-sm text-muted-foreground space-y-2 w-full max-w-[600px]">
-                          <p>
-                            Add the following configuration to your MCP config
-                            file:
-                          </p>
-                          {apiKey ? (
-                            <Code
-                              code={`{
+              {/* Step 2 */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                  2
+                </div>
+                <div className="space-y-3 w-full">
+                  <h3 className="font-medium">Add Magic MCP Configuration</h3>
+                  <div className="text-sm text-muted-foreground space-y-2 w-full max-w-[600px]">
+                    <p>
+                      Add the following configuration to your MCP config file:
+                    </p>
+                    {apiKey ? (
+                      <div className="relative">
+                        <Code
+                          code={`{
   "mcpServers": {
-    "magic": {
+    "@21st-dev-magic-mcp": {
       "command": "npx",
       "args": [
         "-y",
         "@smithery/cli@latest",
-        "install",
+        "run",
         "@21st-dev/magic-mcp",
-        "--client",
-        "windsurf"
-      ],
-      "env": {
-        "TWENTY_FIRST_API_KEY": "${apiKey ? getMaskedApiKey(apiKey.key) : "YOUR_API_KEY"}"
-      }
+        "--config",
+        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey.key}\\\\"}\\"" 
+      ]
     }
   }
 }`}
-                              language="json"
-                              className=" overflow-x-auto bg-muted"
-                              display="block"
-                            />
+                          language="json"
+                          className="overflow-x-auto bg-muted"
+                          display="block"
+                        />
+                        <button
+                          className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors"
+                          onClick={handleCopyConfig}
+                        >
+                          {copiedConfig ? (
+                            <>
+                              <Check className="h-3.5 w-3.5 text-green-500" />
+                              <span className="text-xs text-green-500">
+                                Copied!
+                              </span>
+                            </>
                           ) : (
-                            <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-                              Generate an API key first
-                            </div>
+                            <>
+                              <Copy className="h-3.5 w-3.5" />
+                              <span className="text-xs">Copy</span>
+                            </>
                           )}
-                        </div>
+                        </button>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+                        Generate an API key first
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-                    {/* Step 3 */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                        3
+              {/* Step 3 */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                  3
+                </div>
+                <div className="space-y-3 w-full">
+                  <h3 className="font-medium">Refresh MCP Servers</h3>
+                  <div className="text-sm text-muted-foreground space-y-2">
+                    <p>After saving the configuration:</p>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 text-sm">
+                        <RefreshCw className="h-3.5 w-3.5 text-primary" />
+                        <span>Click "Refresh" in the MCP toolbar</span>
                       </div>
-                      <div className="space-y-3 w-full">
-                        <h3 className="font-medium">Refresh MCP Servers</h3>
-                        <div className="text-sm text-muted-foreground space-y-2">
-                          <p>After saving the configuration:</p>
-                          <div className="space-y-1.5">
-                            <div className="flex items-center gap-2 text-sm">
-                              <RefreshCw className="h-3.5 w-3.5 text-primary" />
-                              <span>Click "Refresh" in the MCP toolbar</span>
-                            </div>
-                            <p className="text-muted-foreground mt-2">
-                              The toolbar should now show Magic MCP server as
-                              available
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <p className="text-muted-foreground mt-2">
+                        The toolbar should now show Magic MCP server as
+                        available
+                      </p>
                     </div>
                   </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+              </div>
             </div>
           </div>
         </TabsContent>
