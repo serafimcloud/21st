@@ -6,6 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import Link from "next/link"
 
 const faqs = [
   {
@@ -47,6 +48,16 @@ const faqs = [
     question: "Is there a limit to component complexity?",
     answer:
       "Magic AI Agent can handle components of varying complexity, from simple buttons to complex interactive forms. However, for best results, we recommend breaking down very complex UIs into smaller, manageable components.",
+  },
+  {
+    question: "How can I get help with Magic AI Agent?",
+    answer:
+      <>
+        If you need assistance, you can contact us via email at support@21st.dev or join our{" "}
+        <Link href="https://discord.gg/Qx4rFunHfm" target="_blank" className="underline underline-offset-4">
+          Discord community
+        </Link>. We're here to help you get the most out of Magic AI Agent.
+      </>
   },
 ]
 
