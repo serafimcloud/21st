@@ -6,7 +6,7 @@ import { FAQ } from "@/components/features/magic/faq"
 import { Footer } from "@/components/ui/footer"
 import { SupportedEditors } from "@/components/features/magic/supported-editors"
 import { Features } from "@/components/features/magic/features"
-import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs"
+import { SignInButton, SignedOut } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 
 export const metadata: Metadata = {
