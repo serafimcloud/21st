@@ -1,16 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { PricingCard } from "@/components/ui/pricing-card"
 import { Switch } from "@/components/ui/switch"
 import { CheckoutDialog } from "@/components/ui/checkout-dialog"
 
-type Plan = "growth" | "scale"
+type Plan = "standard" | "pro"
 
 export default function SubscriptionPage() {
   const [isYearly, setIsYearly] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<Plan>("growth")
+  const [selectedPlan, setSelectedPlan] = useState<Plan>("standard")
 
   const getStripeCheckout = async () => {
     try {
@@ -20,8 +19,8 @@ export default function SubscriptionPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          plan: selectedPlan,
-          option: isYearly ? "annual" : "monthly",
+          type: selectedPlan,
+          period: isYearly ? "yearly" : "monthly",
         }),
       })
 
@@ -53,8 +52,8 @@ export default function SubscriptionPage() {
 
   const plans = [
     {
-      name: "Growth Plan",
-      planId: "growth" as Plan,
+      name: "Standard Plan",
+      planId: "standard" as Plan,
       description: "Perfect for growing your social media presence",
       monthlyPrice: 29,
       yearlyPrice: 290,
@@ -68,8 +67,8 @@ export default function SubscriptionPage() {
       href: "#checkout",
     },
     {
-      name: "Scale Plan",
-      planId: "scale" as Plan,
+      name: "Pro Plan",
+      planId: "pro" as Plan,
       description: "For power users and teams",
       monthlyPrice: 99,
       yearlyPrice: 990,

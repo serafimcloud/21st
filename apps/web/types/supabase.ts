@@ -857,6 +857,33 @@ export type Database = {
         }
         Relationships: []
       }
+      plans: {
+        Row: {
+          id: number
+          stripe_plan_id: string
+          price: number
+          env: string
+          period: string
+          type: string
+        }
+        Insert: {
+          id?: number
+          stripe_plan_id: string
+          price: number
+          env: string
+          period: string
+          type: string
+        }
+        Update: {
+          id?: number
+          stripe_plan_id?: string
+          price?: number
+          env?: string
+          period?: string
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       component_dependencies_graph_view: {

@@ -1,4 +1,8 @@
 import Stripe from "stripe"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
+import { Database } from "@/types/supabase"
+
+type Plan = Database["public"]["Tables"]["plans"]["Row"]
 
 const stripeSecretKey =
   process.env.NODE_ENV === "development"
@@ -11,51 +15,58 @@ if (!stripeSecretKey) {
 
 const stripe = new Stripe(stripeSecretKey)
 
-const subscriptionPlanIdMapping: Record<
-  string,
-  { planType: string; planPeriod: string }
-> = {
-  price_1Qvtk0GzKO6Ssj01mJ6dN7fy: {
-    planType: "growth",
-    planPeriod: "annual",
-  },
-  price_1Qvtm4GzKO6Ssj01FJWVVc9A: {
-    planType: "growth",
-    planPeriod: "monthly",
-  },
-  price_1QvtjIGzKO6Ssj01PED9EAbH: {
-    planType: "scale",
-    planPeriod: "annual",
-  },
-  price_1QvtnXGzKO6Ssj016zFemxKy: {
-    planType: "scale",
-    planPeriod: "monthly",
-  },
-}
+// Cache for plans
+let plansCache: Plan[] | null = null
+let lastCacheTime = 0
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
-export const getIdBySubscriptionPlanDetails = (
-  plan: string,
-  option: string,
-): string => {
-  const priceId = Object.entries(subscriptionPlanIdMapping).find(
-    ([_, details]) =>
-      details.planType === plan && details.planPeriod === option,
-  )?.[0]
+// Fetches all plans from the plans table in Supabase
+export async function getAllPlans(forceRefresh = false): Promise<Plan[]> {
+  const currentTime = Date.now()
 
-  if (!priceId) {
-    throw new Error(`No price ID found for plan: ${plan} and option: ${option}`)
+  if (
+    !forceRefresh &&
+    plansCache !== null &&
+    currentTime - lastCacheTime < CACHE_TTL
+  ) {
+    return plansCache
   }
 
-  return priceId
-}
+  const environment = process.env.NODE_ENV === "development" ? "test" : "live"
 
-export const getSubscriptionPlanDetailsById = (planId: string) => {
-  const details = subscriptionPlanIdMapping[planId]
-  if (!details) {
-    throw new Error(`No subscription plan found for ID: ${planId}`)
+  const { data, error } = await supabaseWithAdminAccess
+    .from("plans")
+    .select("*")
+    .eq("env", environment)
+
+  if (error) {
+    console.error("Error fetching plans:", error)
+    throw new Error(`Failed to fetch plans: ${error.message}`)
   }
 
-  return details
+  plansCache = data || []
+  lastCacheTime = currentTime
+
+  return plansCache
+}
+
+// Gets a Stripe price ID for a subscription plan
+export async function getIdBySubscriptionPlanDetails(
+  type: string,
+  period: string,
+): Promise<string> {
+  const plans = await getAllPlans()
+  const environment = process.env.NODE_ENV === "development" ? "test" : "live"
+
+  const plan = plans.find(
+    (p) => p.type === type && p.period === period && p.env === environment,
+  )
+
+  if (!plan) {
+    throw new Error(`No plan found for type: ${type} and period: ${period}`)
+  }
+
+  return plan.stripe_plan_id
 }
 
 export default stripe

@@ -5,8 +5,8 @@ import { z } from "zod"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
 const checkoutSchema = z.object({
-  plan: z.enum(["growth", "scale"]),
-  option: z.enum(["annual", "monthly"]),
+  type: z.enum(["standard", "pro"]),
+  period: z.enum(["monthly", "yearly"]),
 })
 
 export async function POST(request: NextRequest) {
@@ -26,19 +26,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { plan, option } = validationResult.data
+    const { type, period } = validationResult.data
 
     // Check authentication
     const authSession = await auth()
-    console.log("authSession", authSession)
     let userId = authSession?.userId
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 })
     }
-
-    userId = "user_2nElBLvklOKlAURm6W1PTu6yYFh"
-
-    console.log("Authenticated user:", userId)
 
     // Get user email
     const { data: user } = await supabaseWithAdminAccess
@@ -50,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Get Stripe price ID
     let priceId: string
     try {
-      priceId = getIdBySubscriptionPlanDetails(plan, option)
+      priceId = await getIdBySubscriptionPlanDetails(type, period)
       console.log("Retrieved price ID:", priceId)
     } catch (error) {
       console.error("Error getting price ID:", error)
