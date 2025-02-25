@@ -378,6 +378,7 @@ export function CommandMenu() {
       <DialogContent
         className="p-0 max-w-3xl h-[470px] overflow-hidden"
         hideCloseButton
+        commandMenu
       >
         <DialogTitle className="sr-only">Command Menu</DialogTitle>
         <DialogDescription className="sr-only">
