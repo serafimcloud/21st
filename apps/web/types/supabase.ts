@@ -857,6 +857,86 @@ export type Database = {
         }
         Relationships: []
       }
+      users_to_plans: {
+        Row: {
+          id: number
+          created_at: string
+          updated_at: string
+          user_id: string
+          plan_id: number
+          status: string
+          meta: Json
+          last_paid_at: string
+        }
+        Insert: {
+          id?: number
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          plan_id: number
+          status: string
+          meta?: Json
+          last_paid_at?: string
+        }
+        Update: {
+          id?: number
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          plan_id?: number
+          status?: string
+          meta?: Json
+          last_paid_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_to_plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_to_plans_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usage: {
+        Row: {
+          id: number
+          created_at: string
+          user_id: string
+          limit: number
+          usage: number
+        }
+        Insert: {
+          id?: number
+          created_at?: string
+          user_id: string
+          limit: number
+          usage: number
+        }
+        Update: {
+          id?: number
+          created_at?: string
+          user_id?: string
+          limit?: number
+          usage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           id: number
