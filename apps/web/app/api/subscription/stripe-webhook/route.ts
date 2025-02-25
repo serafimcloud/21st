@@ -1,74 +1,108 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
-import prisma from "~/datasources/prisma"
-import stripe, { getSubscriptionPlanDetailsById } from "~/datasources/stripe"
-
-const isTestMode = false
+import { supabaseWithAdminAccess } from "@/lib/supabase"
+import stripe, { getAllPlans } from "@/lib/stripe"
+import { Database } from "@/types/supabase"
 
 const stripeWebhookSecret =
   process.env.NODE_ENV === "development"
-    ? process.env.STRIPE_WEBHOOK_SECRET_LOCAL
-    : isTestMode
-      ? process.env.STRIPE_WEBHOOK_SECRET_TEST
-      : process.env.STRIPE_WEBHOOK_SECRET_PROD
+    ? process.env.STRIPE_WEBHOOK_SECRET_TEST // process.env.STRIPE_WEBHOOK_SECRET_LOCAL
+    : process.env.STRIPE_WEBHOOK_SECRET_LIVE
+
+async function getSubscriptionPlanDetailsById(planId: string) {
+  const plans = await getAllPlans()
+  const plan = plans.find((p) => p.stripe_plan_id === planId)
+
+  if (!plan) {
+    throw new Error(`No plan found with ID: ${planId}`)
+  }
+
+  return {
+    planId: plan.id, // Actual plan ID in our database
+    planType: plan.type,
+    planPeriod: plan.period,
+  }
+}
 
 async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
   try {
     const subscription = event.data.object as Stripe.Subscription
-    const userId = subscription.metadata.userId
+    const userId = subscription.metadata.userId as string
     const subscriptionId = subscription.id
-    const planId = subscription.items.data[0]?.plan?.id
-    if (!planId) {
+    const stripePlanId = subscription.items.data[0]?.plan?.id
+
+    if (!stripePlanId) {
       throw new Error("No plan ID found in subscription")
     }
 
-    const { planType, planPeriod } = getSubscriptionPlanDetailsById(planId)
+    const { planId, planType, planPeriod } =
+      await getSubscriptionPlanDetailsById(stripePlanId)
     const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
+    // Set usage limit based on plan type
     let usageLimit = 10 // Default free limit
-    if (planType === "growth") {
+    if (planType === "standard") {
       usageLimit = 600
-    } else if (planType === "scale") {
+    } else if (planType === "pro") {
       usageLimit = 9999
     }
 
-    let userSubscription = await prisma.subscription.findUnique({
-      where: { userId: userId },
-    })
+    // Create metadata for the users_to_plans table
+    const meta = {
+      stripe_subscription_id: subscriptionId,
+      stripe_plan_id: stripePlanId,
+      period_end: currentPeriodEnd.toISOString(),
+    }
 
-    await prisma.$transaction([
-      prisma.usageLimit.upsert({
-        where: { userId: userId },
-        update: { limit: usageLimit },
-        create: {
-          userId: userId,
+    // Check if user already has a plan
+    const { data: existingUserPlan } = await (
+      supabaseWithAdminAccess.from("users_to_plans") as any
+    )
+      .select()
+      .eq("user_id", userId)
+      .single()
+
+    // Transaction for Supabase operations
+    if (existingUserPlan) {
+      // Update existing user plan
+      await (supabaseWithAdminAccess.from("usage") as any).upsert(
+        {
+          user_id: userId,
           limit: usageLimit,
+          // Preserve existing usage count if present
+          usage: existingUserPlan ? undefined : 0,
         },
-      }),
-      userSubscription
-        ? prisma.subscription.update({
-            where: { userId: userId },
-            data: {
-              isActive: true,
-              planId,
-              planType,
-              planPeriod,
-              stripeSubscriptionId: subscriptionId,
-              currentPeriodEnd: currentPeriodEnd,
-            },
-          })
-        : prisma.subscription.create({
-            data: {
-              userId: userId,
-              planId,
-              planType,
-              planPeriod,
-              stripeSubscriptionId: subscriptionId,
-              currentPeriodEnd: currentPeriodEnd,
-              isActive: true,
-            },
-          }),
-    ])
+        { onConflict: "user_id" },
+      )
+
+      await (supabaseWithAdminAccess.from("users_to_plans") as any)
+        .update({
+          status: "active",
+          plan_id: planId,
+          updated_at: new Date().toISOString(),
+          meta,
+          last_paid_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId)
+    } else {
+      // Create new user plan
+      await (supabaseWithAdminAccess.from("usage") as any).upsert(
+        {
+          user_id: userId,
+          limit: usageLimit,
+          usage: 0, // Start with 0 usage for new subscriptions
+        },
+        { onConflict: "user_id" },
+      )
+
+      await (supabaseWithAdminAccess.from("users_to_plans") as any).insert({
+        user_id: userId,
+        plan_id: planId,
+        status: "active",
+        meta,
+        last_paid_at: new Date().toISOString(),
+      })
+    }
   } catch (error) {
     console.error("Failed to process subscription creation or update:", error)
     throw error
@@ -78,12 +112,14 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
 async function handleSubscriptionDeleted(event: Stripe.Event) {
   try {
     const subscription = event.data.object as Stripe.Subscription
-    const userId = subscription.metadata.userId
+    const userId = subscription.metadata.userId as string
 
-    await prisma.subscription.update({
-      where: { userId: userId },
-      data: { isActive: false },
-    })
+    await (supabaseWithAdminAccess.from("users_to_plans") as any)
+      .update({
+        status: "inactive",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
   } catch (error) {
     console.error("Error handling subscription deletion:", error)
   }
@@ -112,6 +148,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
+  // Check if we have a userId in the metadata
   // @ts-ignore
   if (!event.data.object?.metadata?.userId) {
     return NextResponse.json(
