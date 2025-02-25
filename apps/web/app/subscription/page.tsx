@@ -6,13 +6,15 @@ import { PricingCard } from "@/components/ui/pricing-card"
 import { Switch } from "@/components/ui/switch"
 import { CheckoutDialog } from "@/components/ui/checkout-dialog"
 
+type Plan = "growth" | "scale"
+
 export default function SubscriptionPage() {
   const [isYearly, setIsYearly] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState("growth")
+  const [selectedPlan, setSelectedPlan] = useState<Plan>("growth")
 
   const getStripeCheckout = async () => {
     try {
-      const response = await fetch("/api/stripe-checkout", {
+      const response = await fetch("/api/subscription/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -22,6 +24,11 @@ export default function SubscriptionPage() {
           option: isYearly ? "annual" : "monthly",
         }),
       })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
       return response.json()
     } catch (error) {
       console.error("Error getting Stripe checkout session:", error)
@@ -47,6 +54,7 @@ export default function SubscriptionPage() {
   const plans = [
     {
       name: "Growth Plan",
+      planId: "growth" as Plan,
       description: "Perfect for growing your social media presence",
       monthlyPrice: 29,
       yearlyPrice: 290,
@@ -61,6 +69,7 @@ export default function SubscriptionPage() {
     },
     {
       name: "Scale Plan",
+      planId: "scale" as Plan,
       description: "For power users and teams",
       monthlyPrice: 99,
       yearlyPrice: 990,
@@ -98,7 +107,7 @@ export default function SubscriptionPage() {
             plan={plan}
             isYearly={isYearly}
             onClick={() => {
-              setSelectedPlan(plan.name.toLowerCase().split(" ")[0])
+              setSelectedPlan(plan.planId)
               handleCheckout()
             }}
           />

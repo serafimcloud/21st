@@ -3,30 +3,31 @@ import Stripe from "stripe"
 const stripeSecretKey =
   process.env.NODE_ENV === "development"
     ? process.env.STRIPE_SECRET_KEY_TEST
-    : process.env.STRIPE_SECRET_KEY_LIVE
+    : process.env.STRIPE_SECRET_KEY_LIVE || "KEK"
 
-const stripe = new Stripe(stripeSecretKey!)
-
-type PlanDetails = {
-  planType: string
-  planPeriod: string
+if (!stripeSecretKey) {
+  throw new Error("Stripe secret key is not set")
 }
 
-const subscriptionPlanIdMapping: Record<string, PlanDetails> = {
-  // A
-  price_1OiGAvC6xEbXLtEWaHhRVbNP: {
+const stripe = new Stripe(stripeSecretKey)
+
+const subscriptionPlanIdMapping: Record<
+  string,
+  { planType: string; planPeriod: string }
+> = {
+  price_1Qvtk0GzKO6Ssj01mJ6dN7fy: {
     planType: "growth",
     planPeriod: "annual",
   },
-  price_1OiGAvC6xEbXLtEWJVSgmvSo: {
+  price_1Qvtm4GzKO6Ssj01FJWVVc9A: {
     planType: "growth",
     planPeriod: "monthly",
   },
-  price_1OiGCjC6xEbXLtEWB5XhXf64: {
+  price_1QvtjIGzKO6Ssj01PED9EAbH: {
     planType: "scale",
     planPeriod: "annual",
   },
-  price_1OiGD6C6xEbXLtEWjae8gD80: {
+  price_1QvtnXGzKO6Ssj016zFemxKy: {
     planType: "scale",
     planPeriod: "monthly",
   },
@@ -35,18 +36,26 @@ const subscriptionPlanIdMapping: Record<string, PlanDetails> = {
 export const getIdBySubscriptionPlanDetails = (
   plan: string,
   option: string,
-) => {
-  const priceId = Object.keys(subscriptionPlanIdMapping).find((id) => {
-    const details = subscriptionPlanIdMapping[id]
-    if (!details) return false
-    return details.planType === plan && details.planPeriod === option
-  })
+): string => {
+  const priceId = Object.entries(subscriptionPlanIdMapping).find(
+    ([_, details]) =>
+      details.planType === plan && details.planPeriod === option,
+  )?.[0]
 
   if (!priceId) {
-    throw new Error("Invalid plan or option")
+    throw new Error(`No price ID found for plan: ${plan} and option: ${option}`)
   }
 
   return priceId
+}
+
+export const getSubscriptionPlanDetailsById = (planId: string) => {
+  const details = subscriptionPlanIdMapping[planId]
+  if (!details) {
+    throw new Error(`No subscription plan found for ID: ${planId}`)
+  }
+
+  return details
 }
 
 export default stripe
