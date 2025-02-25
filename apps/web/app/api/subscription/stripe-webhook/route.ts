@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import stripe, { getAllPlans } from "@/lib/stripe"
-import { Database } from "@/types/supabase"
+import stripe, { getPlanByStripeId } from "@/lib/stripe"
 
 const stripeWebhookSecret =
   process.env.NODE_ENV === "development"
@@ -10,12 +9,7 @@ const stripeWebhookSecret =
     : process.env.STRIPE_WEBHOOK_SECRET_LIVE
 
 async function getSubscriptionPlanDetailsById(planId: string) {
-  const plans = await getAllPlans()
-  const plan = plans.find((p) => p.stripe_plan_id === planId)
-
-  if (!plan) {
-    throw new Error(`No plan found with ID: ${planId}`)
-  }
+  const plan = await getPlanByStripeId(planId)
 
   return {
     planId: plan.id, // Actual plan ID in our database
