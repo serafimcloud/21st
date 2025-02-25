@@ -50,6 +50,22 @@ export async function getAllPlans(forceRefresh = false): Promise<Plan[]> {
   return plansCache
 }
 
+// Get a plan directly by its Stripe plan ID
+export async function getPlanByStripeId(stripePlanId: string): Promise<Plan> {
+  const { data, error } = await supabaseWithAdminAccess
+    .from("plans")
+    .select("*")
+    .eq("stripe_plan_id", stripePlanId)
+    .single()
+
+  if (error) {
+    console.error("Error fetching plan by Stripe ID:", error)
+    throw new Error(`No plan found with ID: ${stripePlanId}`)
+  }
+
+  return data
+}
+
 // Gets a Stripe price ID for a subscription plan
 export async function getIdBySubscriptionPlanDetails(
   type: string,
