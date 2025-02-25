@@ -3,7 +3,7 @@ import Stripe from "stripe"
 const stripeSecretKey =
   process.env.NODE_ENV === "development"
     ? process.env.STRIPE_SECRET_KEY_TEST
-    : process.env.STRIPE_SECRET_KEY_LIVE || "KEK"
+    : process.env.STRIPE_SECRET_KEY_LIVE
 
 if (!stripeSecretKey) {
   throw new Error("Stripe secret key is not set")
