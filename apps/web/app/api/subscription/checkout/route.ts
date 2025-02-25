@@ -28,6 +28,11 @@ export async function POST(request: NextRequest) {
 
     const { type, period } = validationResult.data
 
+    console.log("--------------------------------")
+    console.log("type", type)
+    console.log("period", period)
+    console.log("--------------------------------")
+
     // Check authentication
     const authSession = await auth()
     let userId = authSession?.userId

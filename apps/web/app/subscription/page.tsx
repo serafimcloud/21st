@@ -11,7 +11,7 @@ export default function SubscriptionPage() {
   const [isYearly, setIsYearly] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<Plan>("standard")
 
-  const getStripeCheckout = async () => {
+  const getStripeCheckout = async (planType: Plan) => {
     try {
       const response = await fetch("/api/subscription/checkout", {
         method: "POST",
@@ -19,7 +19,7 @@ export default function SubscriptionPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          type: selectedPlan,
+          type: planType,
           period: isYearly ? "yearly" : "monthly",
         }),
       })
@@ -35,9 +35,9 @@ export default function SubscriptionPage() {
     }
   }
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (planType: Plan = selectedPlan) => {
     try {
-      const checkoutSession = await getStripeCheckout()
+      const checkoutSession = await getStripeCheckout(planType)
       if (checkoutSession?.url) {
         window.location.href = checkoutSession.url
       } else {
@@ -53,10 +53,10 @@ export default function SubscriptionPage() {
   const plans = [
     {
       name: "Standard Plan",
-      planId: "standard" as Plan,
+      type: "standard" as Plan,
       description: "Perfect for growing your social media presence",
-      monthlyPrice: 29,
-      yearlyPrice: 290,
+      monthlyPrice: 10,
+      yearlyPrice: 98,
       features: [
         "600 replies per month",
         "Multi-language support",
@@ -68,10 +68,10 @@ export default function SubscriptionPage() {
     },
     {
       name: "Pro Plan",
-      planId: "pro" as Plan,
+      type: "pro" as Plan,
       description: "For power users and teams",
       monthlyPrice: 99,
-      yearlyPrice: 990,
+      yearlyPrice: 256,
       features: [
         "Unlimited replies",
         "Advanced analytics",
@@ -106,8 +106,8 @@ export default function SubscriptionPage() {
             plan={plan}
             isYearly={isYearly}
             onClick={() => {
-              setSelectedPlan(plan.planId)
-              handleCheckout()
+              setSelectedPlan(plan.type)
+              handleCheckout(plan.type)
             }}
           />
         ))}
@@ -116,7 +116,7 @@ export default function SubscriptionPage() {
       <CheckoutDialog
         selectedPlan={selectedPlan}
         isYearly={isYearly}
-        onCheckout={handleCheckout}
+        onCheckout={() => handleCheckout()}
       />
     </div>
   )
