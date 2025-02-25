@@ -12,9 +12,10 @@ async function getSubscriptionPlanDetailsById(planId: string) {
   const plan = await getPlanByStripeId(planId)
 
   return {
-    planId: plan.id, // Actual plan ID in our database
+    planId: plan.id,
     planType: plan.type,
     planPeriod: plan.period,
+    addUsage: plan.add_usage,
   }
 }
 
@@ -29,16 +30,14 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
       throw new Error("No plan ID found in subscription")
     }
 
-    const { planId, planType, planPeriod } =
+    const { planId, planType, planPeriod, addUsage } =
       await getSubscriptionPlanDetailsById(stripePlanId)
     const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
-    // Set usage limit based on plan type
+    // Set usage limit based on the add_usage value from the database
     let usageLimit = 10 // Default free limit
-    if (planType === "standard") {
-      usageLimit = 600
-    } else if (planType === "pro") {
-      usageLimit = 9999
+    if (addUsage) {
+      usageLimit = addUsage
     }
 
     // Create metadata for the users_to_plans table

@@ -945,6 +945,7 @@ export type Database = {
           env: string
           period: string
           type: string
+          add_usage: number
         }
         Insert: {
           id?: number
@@ -953,6 +954,7 @@ export type Database = {
           env: string
           period: string
           type: string
+          add_usage: number
         }
         Update: {
           id?: number
@@ -961,6 +963,7 @@ export type Database = {
           env?: string
           period?: string
           type?: string
+          add_usage?: number
         }
         Relationships: []
       }
