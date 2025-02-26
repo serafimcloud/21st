@@ -905,7 +905,7 @@ export type Database = {
           },
         ]
       }
-      usage: {
+      usages: {
         Row: {
           id: number
           created_at: string

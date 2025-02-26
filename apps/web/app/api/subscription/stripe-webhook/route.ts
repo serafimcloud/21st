@@ -5,7 +5,7 @@ import stripe, { getPlanByStripeId } from "@/lib/stripe"
 
 const stripeWebhookSecret =
   process.env.NODE_ENV === "development"
-    ? process.env.STRIPE_WEBHOOK_SECRET_TEST // process.env.STRIPE_WEBHOOK_SECRET_LOCAL
+    ? process.env.STRIPE_WEBHOOK_SECRET_TEST
     : process.env.STRIPE_WEBHOOK_SECRET_LIVE
 
 async function getSubscriptionPlanDetailsById(planId: string) {
@@ -30,7 +30,7 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
       throw new Error("No plan ID found in subscription")
     }
 
-    const { planId, planType, planPeriod, addUsage } =
+    const { planId, addUsage } =
       await getSubscriptionPlanDetailsById(stripePlanId)
     const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
@@ -48,9 +48,8 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
     }
 
     // Check if user already has a plan
-    const { data: existingUserPlan } = await (
-      supabaseWithAdminAccess.from("users_to_plans") as any
-    )
+    const { data: existingUserPlan } = await supabaseWithAdminAccess
+      .from("users_to_plans")
       .select()
       .eq("user_id", userId)
       .single()
@@ -58,17 +57,21 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
     // Transaction for Supabase operations
     if (existingUserPlan) {
       // Update existing user plan
-      await (supabaseWithAdminAccess.from("usage") as any).upsert(
-        {
-          user_id: userId,
-          limit: usageLimit,
-          // Preserve existing usage count if present
-          usage: existingUserPlan ? undefined : 0,
-        },
-        { onConflict: "user_id" },
-      )
 
-      await (supabaseWithAdminAccess.from("users_to_plans") as any)
+      await supabaseWithAdminAccess
+        .from("usages")
+        .upsert(
+          {
+            user_id: userId,
+            limit: usageLimit,
+            usage: 0, // Reset usage to 0 when subscription is updated
+          },
+          { onConflict: "user_id" },
+        )
+        .select()
+
+      await supabaseWithAdminAccess
+        .from("users_to_plans")
         .update({
           status: "active",
           plan_id: planId,
@@ -79,16 +82,19 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
         .eq("user_id", userId)
     } else {
       // Create new user plan
-      await (supabaseWithAdminAccess.from("usage") as any).upsert(
-        {
-          user_id: userId,
-          limit: usageLimit,
-          usage: 0, // Start with 0 usage for new subscriptions
-        },
-        { onConflict: "user_id" },
-      )
+      await supabaseWithAdminAccess
+        .from("usages")
+        .upsert(
+          {
+            user_id: userId,
+            limit: usageLimit,
+            usage: 0, // Start with 0 usage for new subscriptions
+          },
+          { onConflict: "user_id" },
+        )
+        .select()
 
-      await (supabaseWithAdminAccess.from("users_to_plans") as any).insert({
+      await supabaseWithAdminAccess.from("users_to_plans").insert({
         user_id: userId,
         plan_id: planId,
         status: "active",
@@ -107,7 +113,8 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
     const subscription = event.data.object as Stripe.Subscription
     const userId = subscription.metadata.userId as string
 
-    await (supabaseWithAdminAccess.from("users_to_plans") as any)
+    await supabaseWithAdminAccess
+      .from("users_to_plans")
       .update({
         status: "inactive",
         updated_at: new Date().toISOString(),
