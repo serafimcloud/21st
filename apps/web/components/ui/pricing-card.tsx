@@ -27,6 +27,8 @@ interface PricingCardProps {
   isYearly?: boolean
   isLoading?: boolean
   onClick?: () => void
+  isFeatured?: boolean
+  isActive?: boolean
 }
 
 export function PricingCard({
@@ -36,6 +38,8 @@ export function PricingCard({
   isYearly = false,
   isLoading = false,
   onClick,
+  isFeatured,
+  isActive,
 }: PricingCardProps) {
   // Определяем, какой интерфейс используется
   const usingTier = !!tier
@@ -45,7 +49,9 @@ export function PricingCard({
   const description = usingTier ? tier.description : plan?.description || ""
   const features = usingTier ? tier.features : plan?.features || []
   const buttonText = usingTier ? tier.cta : plan?.buttonText || "Get Started"
-  const isFeatured = usingTier ? tier.popular : plan?.isFeatured
+  const isPlanFeatured = usingTier
+    ? tier.popular
+    : isFeatured || plan?.isFeatured
 
   // Определяем цену в зависимости от интерфейса и периода оплаты
   let price: number | string = 0
@@ -74,7 +80,8 @@ export function PricingCard({
     <Card
       className={cn(
         "relative flex flex-col overflow-hidden p-8 border-white/10 bg-white/5 min-h-[33rem]",
-        isFeatured && "ring-2 ring-accent/50",
+        isPlanFeatured && "ring-2 ring-accent/50",
+        isActive && "ring-2 ring-primary/50",
       )}
     >
       <motion.div layout className="flex-1 space-y-8">
@@ -149,7 +156,11 @@ export function PricingCard({
         <Button
           variant="default"
           size="lg"
-          className="w-full bg-neutral-200 text-black hover:bg-white/90"
+          className={cn(
+            "w-full bg-neutral-200 text-black hover:bg-white/90",
+            isActive &&
+              "bg-primary text-primary-foreground hover:bg-primary/90",
+          )}
           onClick={onClick}
           disabled={isLoading}
         >

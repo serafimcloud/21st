@@ -1,7 +1,6 @@
 "use client"
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { BillingConsoleWrapper } from "@/components/features/magic/billing/billing-console-wrapper"
 import { OnboardingServerWrapper } from "@/components/features/magic/onboarding/onboarding-server-wrapper"
 import { ConsoleHeader } from "./console-header"
 import { WaitlistGate } from "./waitlist-gate"
@@ -70,13 +69,6 @@ export function ConsoleTabs({ initialApiKey, userId }: ConsoleTabsProps) {
                   </p>
                 </div>
               </div>
-            </TabsContent>
-
-            <TabsContent
-              value="billing"
-              className="h-full mt-0 border-0 p-3 sm:p-6"
-            >
-              <BillingConsoleWrapper userId={userId} />
             </TabsContent>
           </Tabs>
         </div>

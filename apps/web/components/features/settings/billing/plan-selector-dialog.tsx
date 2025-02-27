@@ -16,6 +16,7 @@ import {
   PLAN_LIMITS,
   getPricingCardPlans,
 } from "@/lib/subscription-limits"
+import { useAuth } from "@clerk/nextjs"
 
 interface PlanInfo {
   name: string
@@ -25,26 +26,37 @@ interface PlanInfo {
 }
 
 interface PlanSelectorDialogProps {
-  isOpen: boolean
+  isOpen?: boolean
+  open?: boolean
   onOpenChange: (open: boolean) => void
-  userId: string | null
+  userId?: string | null
+  currentPlan?: string
   onPlanUpdated?: (newPlan: PlanInfo) => void
 }
 
 export function PlanSelectorDialog({
   isOpen,
+  open,
   onOpenChange,
   userId,
+  currentPlan = "free",
   onPlanUpdated,
 }: PlanSelectorDialogProps) {
+  const { userId: authUserId } = useAuth()
   const [isYearly, setIsYearly] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<"standard" | "pro">(
     "standard",
   )
 
+  // Use open or isOpen to determine dialog state
+  const dialogOpen = open !== undefined ? open : isOpen
+
+  // Use userId from props or from auth
+  const effectiveUserId = userId || authUserId
+
   const handleCheckout = async (planType: "standard" | "pro") => {
-    if (!userId) {
+    if (!effectiveUserId) {
       toast.error("You must be logged in to subscribe")
       return
     }
@@ -89,14 +101,16 @@ export function PlanSelectorDialog({
     }
   }
 
-  // Получаем планы из конфигурации
+  // Get plans from configuration
   const plans = getPricingCardPlans({
     standardButtonText: "Select",
     proButtonText: "Select",
+    standardCheckoutLink: "#",
+    proCheckoutLink: "#",
   })
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>Choose a Subscription Plan</DialogTitle>
@@ -117,13 +131,15 @@ export function PlanSelectorDialog({
           {plans.map((plan) => (
             <PricingCard
               key={plan.name}
-              tier={plan}
-              paymentFrequency={isYearly ? "yearly" : "monthly"}
+              plan={plan}
+              isYearly={isYearly}
               isLoading={isLoading && selectedPlan === plan.type}
               onClick={() => {
                 setSelectedPlan(plan.type as "standard" | "pro")
                 handleCheckout(plan.type as "standard" | "pro")
               }}
+              isFeatured={plan.type === "pro"}
+              isActive={plan.type === currentPlan}
             />
           ))}
         </div>

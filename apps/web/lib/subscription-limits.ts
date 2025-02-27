@@ -10,6 +10,8 @@ export interface PlanLimits {
   generationsPerMonth: number
   /** Display name of the plan */
   displayName: string
+  /** Name of the plan (alias for displayName) */
+  name: string
   /** Description of the plan */
   description: string
   /** Features of the plan */
@@ -28,6 +30,7 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   free: {
     generationsPerMonth: 5,
     displayName: "Hobby Plan",
+    name: "Hobby Plan",
     description: "Basic features with limitations",
     features: [
       "5 generations per month",
@@ -38,6 +41,7 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   standard: {
     generationsPerMonth: 50,
     displayName: "Standard Plan",
+    name: "Standard Plan",
     description: "Enhanced features for growing projects",
     features: [
       "50 generations per month",
@@ -51,6 +55,7 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   pro: {
     generationsPerMonth: 200,
     displayName: "Pro Plan",
+    name: "Pro Plan",
     description: "Full access to all features",
     features: [
       "200 generations per month",
@@ -113,11 +118,15 @@ export function getPricingCardPlans(options?: {
   standardButtonText?: string
   proButtonText?: string
   href?: string
+  standardCheckoutLink?: string
+  proCheckoutLink?: string
 }): PricingCardPlan[] {
   const {
     standardButtonText = "Get Started",
     proButtonText = "Upgrade Now",
     href = "#checkout",
+    standardCheckoutLink,
+    proCheckoutLink,
   } = options || {}
 
   return [
@@ -129,7 +138,7 @@ export function getPricingCardPlans(options?: {
       yearlyPrice: PLAN_LIMITS.standard.yearlyPrice,
       features: PLAN_LIMITS.standard.features,
       buttonText: standardButtonText,
-      href,
+      href: standardCheckoutLink || href,
       price: {
         monthly: PLAN_LIMITS.standard.monthlyPrice || 0,
         yearly: PLAN_LIMITS.standard.yearlyPrice || 0,
@@ -144,7 +153,7 @@ export function getPricingCardPlans(options?: {
       yearlyPrice: PLAN_LIMITS.pro.yearlyPrice,
       features: PLAN_LIMITS.pro.features,
       buttonText: proButtonText,
-      href,
+      href: proCheckoutLink || href,
       isFeatured: true,
       price: {
         monthly: PLAN_LIMITS.pro.monthlyPrice || 0,

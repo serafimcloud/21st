@@ -259,6 +259,13 @@ export function Header({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-sm px-3 py-2 cursor-pointer flex items-center justify-between"
+                    onSelect={() => router.push("/settings")}
+                  >
+                    Settings
+                    <Icons.settings className="h-4 w-4" />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer flex items-center justify-between"
                     onSelect={() => (window.location.href = "/subscription")}
                   >
                     Subscription

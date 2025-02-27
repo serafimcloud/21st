@@ -76,8 +76,8 @@ export default function SubscriptionPage() {
         {plans.map((plan) => (
           <PricingCard
             key={plan.name}
-            tier={plan}
-            paymentFrequency={isYearly ? "yearly" : "monthly"}
+            plan={plan}
+            isYearly={isYearly}
             onClick={() => {
               setSelectedPlan(plan.type as Plan)
               handleCheckout(plan.type as Plan)
