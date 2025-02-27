@@ -568,6 +568,39 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          add_usage: number | null
+          created_at: string
+          env: string | null
+          id: number
+          period: string | null
+          price: number | null
+          stripe_plan_id: string | null
+          type: string | null
+        }
+        Insert: {
+          add_usage?: number | null
+          created_at?: string
+          env?: string | null
+          id?: number
+          period?: string | null
+          price?: number | null
+          stripe_plan_id?: string | null
+          type?: string | null
+        }
+        Update: {
+          add_usage?: number | null
+          created_at?: string
+          env?: string | null
+          id?: number
+          period?: string | null
+          price?: number | null
+          stripe_plan_id?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
       referral_payments: {
         Row: {
           amount: number
@@ -791,6 +824,45 @@ export type Database = {
           },
         ]
       }
+      usages: {
+        Row: {
+          created_at: string
+          id: number
+          limit: number | null
+          usage: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          limit?: number | null
+          usage?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          limit?: number | null
+          usage?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           bio: string | null
@@ -859,43 +931,36 @@ export type Database = {
       }
       users_to_plans: {
         Row: {
-          id: number
           created_at: string
+          id: number
+          last_paid_at: string | null
+          meta: Json | null
+          plan_id: number | null
+          status: string | null
           updated_at: string
-          user_id: string
-          plan_id: number
-          status: string
-          meta: Json
-          last_paid_at: string
+          user_id: string | null
         }
         Insert: {
-          id?: number
           created_at?: string
+          id?: number
+          last_paid_at?: string | null
+          meta?: Json | null
+          plan_id?: number | null
+          status?: string | null
           updated_at?: string
-          user_id: string
-          plan_id: number
-          status: string
-          meta?: Json
-          last_paid_at?: string
+          user_id?: string | null
         }
         Update: {
-          id?: number
           created_at?: string
+          id?: number
+          last_paid_at?: string | null
+          meta?: Json | null
+          plan_id?: number | null
+          status?: string | null
           updated_at?: string
-          user_id?: string
-          plan_id?: number
-          status?: string
-          meta?: Json
-          last_paid_at?: string
+          user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "users_to_plans_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "users_to_plans_plan_id_fkey"
             columns: ["plan_id"]
@@ -903,69 +968,21 @@ export type Database = {
             referencedRelation: "plans"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      usages: {
-        Row: {
-          id: number
-          created_at: string
-          user_id: string
-          limit: number
-          usage: number
-        }
-        Insert: {
-          id?: number
-          created_at?: string
-          user_id: string
-          limit: number
-          usage: number
-        }
-        Update: {
-          id?: number
-          created_at?: string
-          user_id?: string
-          limit?: number
-          usage?: number
-        }
-        Relationships: [
           {
-            foreignKeyName: "usage_user_id_fkey"
+            foreignKeyName: "users_to_plans_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
+            isOneToOne: true
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "users_to_plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
-      }
-      plans: {
-        Row: {
-          id: number
-          stripe_plan_id: string
-          price: number
-          env: string
-          period: string
-          type: string
-          add_usage: number
-        }
-        Insert: {
-          id?: number
-          stripe_plan_id: string
-          price: number
-          env: string
-          period: string
-          type: string
-          add_usage: number
-        }
-        Update: {
-          id?: number
-          stripe_plan_id?: string
-          price?: number
-          env?: string
-          period?: string
-          type?: string
-          add_usage?: number
-        }
-        Relationships: []
       }
     }
     Views: {

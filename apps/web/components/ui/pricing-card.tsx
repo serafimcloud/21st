@@ -8,6 +8,7 @@ import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { PricingCardPlan } from "@/lib/subscription-limits"
 
 export interface PricingTier {
   name: string
@@ -20,25 +21,73 @@ export interface PricingTier {
 }
 
 interface PricingCardProps {
-  tier: PricingTier
-  paymentFrequency: string
+  tier?: PricingTier
+  paymentFrequency?: string
+  plan?: PricingCardPlan
+  isYearly?: boolean
+  isLoading?: boolean
+  onClick?: () => void
+  isFeatured?: boolean
+  isActive?: boolean
 }
 
-export function PricingCard({ tier, paymentFrequency }: PricingCardProps) {
-  const price = tier.price[paymentFrequency]
-  const isPopular = tier.popular
+export function PricingCard({
+  tier,
+  paymentFrequency = "monthly",
+  plan,
+  isYearly = false,
+  isLoading = false,
+  onClick,
+  isFeatured,
+  isActive,
+}: PricingCardProps) {
+  // Определяем, какой интерфейс используется
+  const usingTier = !!tier
+
+  // Извлекаем данные в зависимости от используемого интерфейса
+  const name = usingTier ? tier.name : plan?.name || ""
+  const description = usingTier ? tier.description : plan?.description || ""
+  const features = usingTier ? tier.features : plan?.features || []
+  const buttonText = usingTier ? tier.cta : plan?.buttonText || "Get Started"
+  const isPlanFeatured = usingTier
+    ? tier.popular
+    : isFeatured || plan?.isFeatured
+
+  // Определяем цену в зависимости от интерфейса и периода оплаты
+  let price: number | string = 0
+  let pricePeriod = "/month"
+
+  if (usingTier && tier) {
+    price = tier.price[paymentFrequency] || 0
+    pricePeriod = paymentFrequency === "yearly" ? "/year" : "/month"
+  } else if (plan) {
+    if (isYearly && plan.yearlyPrice !== undefined) {
+      price = plan.yearlyPrice
+      pricePeriod = "/year"
+    } else if (plan.monthlyPrice !== undefined) {
+      price = plan.monthlyPrice
+      pricePeriod = "/month"
+    }
+  }
+
+  // Вычисляем месячную цену при годовой оплате
+  const monthlyPrice =
+    typeof price === "number" && pricePeriod === "/year"
+      ? Math.round(price / 12)
+      : null
 
   return (
     <Card
       className={cn(
         "relative flex flex-col overflow-hidden p-8 border-white/10 bg-white/5 min-h-[33rem]",
-        isPopular && "ring-2 ring-accent/50",
+        isPlanFeatured && "ring-2 ring-accent/50",
+        isActive && "ring-2 ring-primary/50",
       )}
     >
       <motion.div layout className="flex-1 space-y-8">
         <motion.div layout className="text-center">
           <motion.h3 layout className="text-lg font-semibold text-neutral-200">
-            {tier.name}
+            {name}
           </motion.h3>
           <motion.div
             layout
@@ -61,7 +110,7 @@ export function PricingCard({ tier, paymentFrequency }: PricingCardProps) {
                   />
                 </motion.span>
                 <motion.span layout className="text-neutral-400 mb-2">
-                  {paymentFrequency === "yearly" ? "/year" : "/month"}
+                  {pricePeriod}
                 </motion.span>
               </div>
             ) : (
@@ -73,7 +122,7 @@ export function PricingCard({ tier, paymentFrequency }: PricingCardProps) {
               </motion.span>
             )}
           </motion.div>
-          {paymentFrequency === "yearly" && typeof price === "number" && (
+          {monthlyPrice && (
             <motion.p
               layout
               initial={{ opacity: 0, y: -10 }}
@@ -81,16 +130,16 @@ export function PricingCard({ tier, paymentFrequency }: PricingCardProps) {
               exit={{ opacity: 0, y: -10 }}
               className="mt-1 text-sm text-neutral-400"
             >
-              ${Math.round(price / 12)}/month billed yearly
+              ${monthlyPrice}/month billed yearly
             </motion.p>
           )}
           <motion.p layout className="mt-2 text-sm text-neutral-400">
-            {tier.description}
+            {description}
           </motion.p>
         </motion.div>
 
         <motion.ul layout className="space-y-4">
-          {tier.features.map((feature, featureIndex) => (
+          {features.map((feature, featureIndex) => (
             <motion.li
               layout
               key={featureIndex}
@@ -107,15 +156,15 @@ export function PricingCard({ tier, paymentFrequency }: PricingCardProps) {
         <Button
           variant="default"
           size="lg"
-          className="w-full bg-neutral-200 text-black hover:bg-white/90"
-          onClick={() => {
-            const element = document.getElementById("waitlist-form")
-            if (element) {
-              element.scrollIntoView({ behavior: "smooth" })
-            }
-          }}
+          className={cn(
+            "w-full bg-neutral-200 text-black hover:bg-white/90",
+            isActive &&
+              "bg-primary text-primary-foreground hover:bg-primary/90",
+          )}
+          onClick={onClick}
+          disabled={isLoading}
         >
-          {tier.cta}
+          {isLoading ? "Loading..." : buttonText}
         </Button>
       </motion.div>
     </Card>
