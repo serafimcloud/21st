@@ -8,7 +8,7 @@ import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { PricingCardPlan } from "@/lib/subscription-limits"
+import { PricingCardPlan } from "@/lib/config/subscription-plans"
 
 export interface PricingTier {
   name: string
@@ -41,10 +41,8 @@ export function PricingCard({
   isFeatured,
   isActive,
 }: PricingCardProps) {
-  // Определяем, какой интерфейс используется
   const usingTier = !!tier
 
-  // Извлекаем данные в зависимости от используемого интерфейса
   const name = usingTier ? tier.name : plan?.name || ""
   const description = usingTier ? tier.description : plan?.description || ""
   const features = usingTier ? tier.features : plan?.features || []
@@ -53,7 +51,6 @@ export function PricingCard({
     ? tier.popular
     : isFeatured || plan?.isFeatured
 
-  // Определяем цену в зависимости от интерфейса и периода оплаты
   let price: number | string = 0
   let pricePeriod = "/month"
 
@@ -70,7 +67,6 @@ export function PricingCard({
     }
   }
 
-  // Вычисляем месячную цену при годовой оплате
   const monthlyPrice =
     typeof price === "number" && pricePeriod === "/year"
       ? Math.round(price / 12)

@@ -1,10 +1,12 @@
 "use client"
 
+import Link from "next/link"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { OnboardingServerWrapper } from "@/components/features/magic/onboarding/onboarding-server-wrapper"
 import { ConsoleHeader } from "./console-header"
 import { WaitlistGate } from "./waitlist-gate"
 import { ApiKey } from "@/types/global"
+import { ArrowUpRight } from "lucide-react"
 
 interface ConsoleTabsProps {
   initialApiKey: ApiKey | null
@@ -29,18 +31,15 @@ export function ConsoleTabs({ initialApiKey, userId }: ConsoleTabsProps) {
                 >
                   Onboarding
                 </TabsTrigger>
-                <TabsTrigger
-                  value="usage"
-                  className="relative min-w-[60px] after:absolute after:inset-x-0 after:bottom-[-3px] after:-mb-px after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
-                >
-                  Usage
-                </TabsTrigger>
-                <TabsTrigger
-                  value="billing"
-                  className="relative min-w-[60px] after:absolute after:inset-x-0 after:bottom-[-3px] after:-mb-px after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
-                >
-                  Billing
-                </TabsTrigger>
+                <Link href="/settings/billing">
+                  <TabsTrigger
+                    value="billing-usage"
+                    className="relative min-w-[120px] after:absolute after:inset-x-0 after:bottom-[-3px] after:-mb-px after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                  >
+                    Billing & Usage 
+                    <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                  </TabsTrigger>
+                </Link>
               </TabsList>
             </div>
 
@@ -52,23 +51,6 @@ export function ConsoleTabs({ initialApiKey, userId }: ConsoleTabsProps) {
                 initialApiKey={initialApiKey}
                 userId={userId}
               />
-            </TabsContent>
-
-            <TabsContent
-              value="usage"
-              className="h-full mt-0 border-0 p-3 sm:p-6"
-            >
-              <div className="flex min-h-[400px] items-center justify-center">
-                <div className="flex flex-col items-center gap-2 text-center max-w-md px-4">
-                  <p className="text-base sm:text-lg font-medium">
-                    Usage Statistics
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Track your Magic usage and performance metrics. Coming
-                    soon...
-                  </p>
-                </div>
-              </div>
             </TabsContent>
           </Tabs>
         </div>

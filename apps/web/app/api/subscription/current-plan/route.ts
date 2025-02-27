@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Базовые данные о плане, которые будут возвращены при отсутствии других данных
+    // Default plan info to return when no other data is available
     const defaultPlanInfo = {
       name: "Free Plan",
       type: "free" as const,
@@ -64,19 +64,16 @@ export async function GET(request: NextRequest) {
     // Format response
     const typedUserPlan = userPlan as unknown as UserPlanData
 
-    // Статистика использования плана - простое решение
+    // Usage statistics
     const usageCount = typedUserPlan.meta?.usage_count || 0
 
-    // URL портала Stripe (в реальном приложении нужно создавать через Stripe API)
-    // Для демонстрации используем заглушку
+    // Stripe portal URL
     let portalUrl = null
     if (typedUserPlan.meta?.stripe_customer_id) {
-      // В реальном приложении здесь был бы вызов Stripe API
-      // или специальной функции в Supabase для создания сессии портала
       portalUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/stripe/portal`
     }
 
-    // Формируем ответ, используя данные из базы
+    // Format the response using database data
     const planInfo = {
       ...defaultPlanInfo,
       name: typedUserPlan.plans?.name || defaultPlanInfo.name,

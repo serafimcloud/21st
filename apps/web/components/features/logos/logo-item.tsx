@@ -6,7 +6,6 @@ import { SVGLogo } from "@/types/global"
 import { useTheme } from "next-themes"
 import { toast } from "sonner"
 import { Copy, Download, Link, MoreHorizontal } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 interface LogoItemProps {
   logo: SVGLogo
@@ -49,18 +48,15 @@ export function LogoItem({ logo, onCategoryClick }: LogoItemProps) {
       }
       const svgText = await response.text()
 
-      // Создаем Blob из SVG
       const blob = new Blob([svgText], { type: "image/svg+xml" })
       const url = URL.createObjectURL(blob)
 
-      // Создаем временную ссылку для скачивания
       const link = document.createElement("a")
       link.href = url
       link.download = `${logo.title.toLowerCase()}.svg`
       document.body.appendChild(link)
       link.click()
 
-      // Очищаем
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
 

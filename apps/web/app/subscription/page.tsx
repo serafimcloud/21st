@@ -5,10 +5,9 @@ import { PricingCard } from "@/components/ui/pricing-card"
 import { Switch } from "@/components/ui/switch"
 import { CheckoutDialog } from "@/components/ui/checkout-dialog"
 import {
-  PLAN_LIMITS,
   getPricingCardPlans,
   PricingCardPlan,
-} from "@/lib/subscription-limits"
+} from "@/lib/config/subscription-plans"
 
 type Plan = "standard" | "pro"
 
@@ -55,7 +54,6 @@ export default function SubscriptionPage() {
     }
   }
 
-  // Получаем планы из конфигурации
   const plans = getPricingCardPlans() as PricingCardPlan[]
 
   return (

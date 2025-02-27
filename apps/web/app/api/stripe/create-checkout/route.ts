@@ -3,19 +3,19 @@ import { auth } from "@clerk/nextjs/server"
 import stripe, { getIdBySubscriptionPlanDetails } from "@/lib/stripe"
 import { z } from "zod"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { PlanType } from "@/lib/subscription-limits"
 
-// Схема для валидации данных запроса
 const checkoutSchema = z.object({
   planId: z.enum(["standard", "pro"]),
   successUrl: z.string().url(),
   cancelUrl: z.string().url(),
   period: z.enum(["monthly", "yearly"]).optional().default("monthly"),
+  isUpgrade: z.boolean().optional(),
+  currentPlanId: z.enum(["free", "standard", "pro"]).optional(),
+  subscriptionId: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
   try {
-    // Валидация тела запроса
     const body = await request.json()
 
     const validationResult = checkoutSchema.safeParse(body)
@@ -30,18 +30,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { planId, successUrl, cancelUrl, period } = validationResult.data
+    const {
+      planId,
+      successUrl,
+      cancelUrl,
+      period,
+      isUpgrade,
+      currentPlanId,
+      subscriptionId,
+    } = validationResult.data
 
-    console.log("Creating checkout for plan:", planId, "period:", period)
+    console.log(
+      "Creating checkout for plan:",
+      planId,
+      "period:",
+      period,
+      isUpgrade ? "upgrade" : "new subscription",
+    )
 
-    // Проверка авторизации
     const authSession = await auth()
     const userId = authSession?.userId
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Получаем email пользователя
     const { data: user, error: userError } = await supabaseWithAdminAccess
       .from("users")
       .select("email")
@@ -52,7 +64,6 @@ export async function POST(request: NextRequest) {
       console.error("Error fetching user:", userError)
     }
 
-    // Получаем ID Stripe Price для указанного плана и периода
     let priceId: string
     try {
       priceId = await getIdBySubscriptionPlanDetails(planId, period)
@@ -65,8 +76,70 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Создаем сессию Stripe Checkout
     try {
+      if (isUpgrade && currentPlanId !== "free" && subscriptionId) {
+        console.log("Processing direct subscription upgrade for user:", userId)
+
+        try {
+          const subscription =
+            await stripe.subscriptions.retrieve(subscriptionId)
+
+          if (subscription.metadata.userId === userId) {
+            const subscriptionItemId = subscription.items.data[0]?.id
+
+            if (!subscriptionItemId) {
+              console.error("Subscription item not found")
+              throw new Error("Subscription item not found")
+            }
+
+            if (!planId) {
+              console.error("Plan ID is undefined")
+              throw new Error("Plan ID is undefined")
+            }
+
+            const updatedMetadata: Record<string, string> = {}
+
+            for (const [key, value] of Object.entries(
+              subscription.metadata || {},
+            )) {
+              if (value) updatedMetadata[key] = value
+            }
+
+            updatedMetadata.upgraded_from = currentPlanId || "free"
+            updatedMetadata.upgraded_to = planId
+            updatedMetadata.upgraded_at = new Date().toISOString()
+
+            const updatedSubscription = await stripe.subscriptions.update(
+              subscription.id,
+              {
+                items: [
+                  {
+                    id: subscriptionItemId,
+                    price: priceId,
+                  },
+                ],
+                proration_behavior: "create_prorations",
+                metadata: updatedMetadata,
+              },
+            )
+
+            console.log("Subscription directly upgraded:", subscription.id)
+
+            return NextResponse.json({
+              url: successUrl,
+              directly_upgraded: true,
+            })
+          } else {
+            console.error("Subscription does not belong to the current user")
+          }
+        } catch (subscriptionError) {
+          console.error(
+            "Error retrieving or updating subscription:",
+            subscriptionError,
+          )
+        }
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
@@ -78,6 +151,7 @@ export async function POST(request: NextRequest) {
         mode: "subscription",
         metadata: {
           userId,
+          ...(isUpgrade && { isUpgrade: "true", oldPlanId: currentPlanId }),
         },
         ...(user?.email && { customer_email: user.email }),
         allow_promotion_codes: true,
@@ -86,6 +160,7 @@ export async function POST(request: NextRequest) {
         subscription_data: {
           metadata: {
             userId,
+            ...(isUpgrade && { upgraded_from: currentPlanId }),
           },
         },
       })
@@ -106,4 +181,4 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     )
   }
-} 
+}

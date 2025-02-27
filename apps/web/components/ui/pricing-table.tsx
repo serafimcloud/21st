@@ -3,7 +3,15 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Check, ArrowRight, ArrowLeft } from "lucide-react"
+import { Check, ArrowLeft, LoaderCircle } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export type PlanLevel = "free" | "standard" | "pro" | "all" | string
 
@@ -28,7 +36,7 @@ export interface PricingTableProps
   extends React.HTMLAttributes<HTMLDivElement> {
   features: PricingFeature[]
   plans: PricingPlan[]
-  onPlanSelect?: (plan: PlanLevel) => void
+  onPlanSelect?: (plan: PlanLevel, isYearly: boolean) => void
   onBack?: () => void
   defaultPlan?: PlanLevel
   defaultInterval?: "monthly" | "yearly"
@@ -46,27 +54,70 @@ export function PricingTable({
   defaultInterval = "monthly",
   className,
   containerClassName,
-  buttonClassName,
   showBackButton = true,
   ...props
 }: PricingTableProps) {
   const [isYearly, setIsYearly] = React.useState(defaultInterval === "yearly")
   const [selectedPlan, setSelectedPlan] = React.useState<PlanLevel>(defaultPlan)
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = React.useState(false)
+  const [initialIsYearly] = React.useState(defaultInterval === "yearly")
 
   const handlePlanSelect = (plan: PlanLevel) => {
     setSelectedPlan(plan)
-    onPlanSelect?.(plan)
+  }
+
+  const handleApplyPlan = async () => {
+    if (selectedPlan === defaultPlan && isYearly !== initialIsYearly) {
+      setIsLoading(true)
+      try {
+        await onPlanSelect?.(selectedPlan, isYearly)
+      } finally {
+        setIsLoading(false)
+      }
+      return
+    }
+
+    const isDowngrade = !isPlanUpgrade(selectedPlan, defaultPlan)
+
+    if (isDowngrade) {
+      setShowConfirmDialog(true)
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await onPlanSelect?.(selectedPlan, isYearly)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleConfirmDowngrade = async () => {
+    setIsLoading(true)
+    try {
+      await onPlanSelect?.(selectedPlan, isYearly)
+    } finally {
+      setIsLoading(false)
+      setShowConfirmDialog(false)
+    }
   }
 
   const getButtonText = () => {
     const planName = plans.find((p) => p.level === selectedPlan)?.name
 
-    if (selectedPlan === defaultPlan) {
+    if (selectedPlan === defaultPlan && isYearly === initialIsYearly) {
       return `Current plan: ${planName}`
     } else if (isPlanUpgrade(selectedPlan, defaultPlan)) {
-      return `Upgrade to ${planName}`
+      return isLoading ? "Processing..." : "Upgrade"
+    } else if (selectedPlan === defaultPlan && isYearly !== initialIsYearly) {
+      return isLoading
+        ? "Processing..."
+        : isYearly
+          ? "Switch to yearly billing"
+          : "Switch to monthly billing"
     } else {
-      return `Downgrade to ${planName}`
+      return isLoading ? "Processing..." : "Downgrade"
     }
   }
 
@@ -79,7 +130,7 @@ export function PricingTable({
     <section
       className={cn(
         "bg-background text-foreground",
-        "py-6 px-4",
+        "px-1",
         "fade-bottom overflow-hidden pb-0",
         className,
       )}
@@ -88,8 +139,8 @@ export function PricingTable({
         className={cn("w-full max-w-3xl mx-auto", containerClassName)}
         {...props}
       >
-        <div className="flex justify-between items-center mb-4 sm:mb-8">
-          {showBackButton && (
+        {showBackButton && (
+          <div className="mb-6">
             <Button
               variant="ghost"
               size="sm"
@@ -99,8 +150,10 @@ export function PricingTable({
               <ArrowLeft size={16} />
               Back to billing
             </Button>
-          )}
+          </div>
+        )}
 
+        <div className="flex justify-between items-center mb-8">
           <div className="inline-flex items-center gap-2 text-xs sm:text-sm">
             <button
               type="button"
@@ -123,6 +176,19 @@ export function PricingTable({
               Yearly
             </button>
           </div>
+
+          {(selectedPlan !== defaultPlan || isYearly !== initialIsYearly) && (
+            <Button
+              onClick={handleApplyPlan}
+              variant={getButtonText() === "Downgrade" ? "outline" : "default"}
+              disabled={isLoading}
+            >
+              {isLoading && (
+                <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
+              )}
+              {getButtonText()}
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -140,9 +206,9 @@ export function PricingTable({
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">{plan.name}</span>
-                {plan.popular && (
+                {plan.level === defaultPlan && isYearly === initialIsYearly && (
                   <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                    Popular
+                    Current
                   </span>
                 )}
               </div>
@@ -159,15 +225,18 @@ export function PricingTable({
         </div>
 
         <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <div className="min-w-[640px] divide-y divide-zinc-200 dark:divide-zinc-800">
-              <div className="flex items-center p-4 bg-zinc-50 dark:bg-zinc-900">
-                <div className="flex-1 text-sm font-medium">Features</div>
-                <div className="flex items-center gap-8 text-sm">
+          <div className="overflow-x-auto sm:overflow-x-visible">
+            <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              {/* Desktop Header - hidden on mobile */}
+              <div className="hidden sm:flex items-center p-4 bg-zinc-50 dark:bg-zinc-900">
+                <div className="flex-1 min-w-[150px] text-sm font-medium">
+                  Features
+                </div>
+                <div className="flex items-center gap-4 text-sm shrink-0">
                   {plans.map((plan) => (
                     <div
                       key={plan.level}
-                      className="w-16 text-center font-medium"
+                      className="w-[100px] text-center font-medium"
                     >
                       {plan.name}
                     </div>
@@ -178,21 +247,26 @@ export function PricingTable({
                 <div
                   key={feature.name}
                   className={cn(
-                    "flex items-center p-4 transition-colors",
+                    "flex flex-col sm:flex-row sm:items-center p-4 transition-colors",
                     feature.included === selectedPlan &&
                       "bg-blue-50/50 dark:bg-blue-900/20",
                   )}
                 >
-                  <div className="flex-1 text-sm">{feature.name}</div>
-                  <div className="flex items-center gap-8 text-sm">
+                  <div className="flex-1 min-w-[150px] text-sm font-medium sm:font-normal mb-2 sm:mb-0">
+                    {feature.name}
+                  </div>
+                  <div className="flex items-center gap-4 text-sm shrink-0">
                     {plans.map((plan) => (
                       <div
                         key={plan.level}
                         className={cn(
-                          "w-16 flex justify-center",
+                          "w-[100px] flex items-center gap-2 sm:justify-center",
                           plan.level === selectedPlan && "font-medium",
                         )}
                       >
+                        <span className="sm:hidden text-xs text-zinc-500">
+                          {plan.name}:
+                        </span>
                         {getFeatureValue(feature, plan.level)}
                       </div>
                     ))}
@@ -202,23 +276,43 @@ export function PricingTable({
             </div>
           </div>
         </div>
-
-        <div className="mt-8 text-center">
-          <Button
-            className={cn(
-              "w-full sm:w-auto px-8 py-2 rounded-xl",
-              buttonClassName,
-            )}
-            onClick={() => onPlanSelect?.(selectedPlan)}
-            disabled={selectedPlan === defaultPlan}
-          >
-            {getButtonText()}
-            {selectedPlan !== defaultPlan && (
-              <ArrowRight className="w-4 h-4 ml-2" />
-            )}
-          </Button>
-        </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Downgrade</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to downgrade your plan? You will lose access
+              to premium features immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDowngrade}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
+                  Processing
+                </>
+              ) : (
+                "Confirm Downgrade"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }
@@ -228,7 +322,11 @@ function getFeatureValue(
   planLevel: string,
 ): React.ReactNode {
   if (feature.valueByPlan && feature.valueByPlan[planLevel as PlanLevel]) {
-    return feature.valueByPlan[planLevel as PlanLevel]
+    const value = feature.valueByPlan[planLevel as PlanLevel]
+    if (value === "✓") {
+      return <Check className="h-4 w-4 text-blue-500" />
+    }
+    return value
   }
 
   if (feature.value && shouldShowCheck(feature.included, planLevel)) {
@@ -236,7 +334,7 @@ function getFeatureValue(
   }
 
   if (shouldShowCheck(feature.included, planLevel)) {
-    return <span className="text-blue-500">✓</span>
+    return <Check className="h-4 w-4 text-blue-500" />
   } else {
     return <span className="text-zinc-300 dark:text-zinc-700">-</span>
   }

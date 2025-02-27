@@ -4,8 +4,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const category = searchParams.get("category")
   const search = searchParams.get("search")
-  const type = searchParams.get("type") // 'logos' or 'categories'
-  const svgUrl = searchParams.get("svg") // URL for fetching SVG content
+  const type = searchParams.get("type")
+  const svgUrl = searchParams.get("svg")
 
   if (svgUrl) {
     try {
@@ -30,7 +30,6 @@ export async function GET(request: Request) {
     url += "/categories"
   } else {
     if (category && category !== "all") {
-      // Преобразуем категорию в правильный формат для API
       const formattedCategory = category.toLowerCase()
       url = `https://api.svgl.app/category/${formattedCategory}`
     }

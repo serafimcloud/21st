@@ -7,7 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import Link from "next/link"
-import { PLAN_LIMITS } from "@/lib/subscription-limits"
+import { PLAN_LIMITS } from "@/lib/config/subscription-plans"
 
 const faqs = [
   {

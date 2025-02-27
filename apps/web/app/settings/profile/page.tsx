@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -201,7 +201,7 @@ export default function ProfileSettingsPage() {
   return (
     <div
       className={cn(
-        "container pb-10",
+        "container pb-4 px-0",
         isDragging && "ring-2 ring-primary ring-offset-2",
       )}
       onDragEnter={handleDragEnter}
@@ -226,7 +226,7 @@ export default function ProfileSettingsPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-6">
-            <div className="flex justify-between mb-4">
+            <div className="flex justify-between mb-4 gap-4">
               <div>
                 <h2 className="text-sm font-medium">Profile</h2>
                 <p className="text-xs text-muted-foreground mt-1">

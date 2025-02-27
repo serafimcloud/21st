@@ -2,12 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import stripe, { getPlanByStripeId } from "@/lib/stripe"
-import { getGenerationLimit } from "@/lib/subscription-limits"
+import { getGenerationLimit } from "@/lib/config/subscription-plans"
 
-const stripeWebhookSecret =
-  process.env.NODE_ENV === "development"
-    ? process.env.STRIPE_WEBHOOK_SECRET_TEST
-    : process.env.STRIPE_WEBHOOK_SECRET_LIVE
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 async function getSubscriptionPlanDetailsById(planId: string) {
   const plan = await getPlanByStripeId(planId)
@@ -31,8 +28,84 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
       throw new Error("No plan ID found in subscription")
     }
 
-    const { planId, planType, addUsage } =
-      await getSubscriptionPlanDetailsById(stripePlanId)
+    console.log(
+      `Processing subscription ${subscriptionId} for user ${userId} with plan ${stripePlanId}`,
+    )
+
+    // Check cancel_at_period_end for scheduled cancellations
+    if (subscription.cancel_at_period_end) {
+      console.log(
+        `Subscription ${subscriptionId} scheduled for cancellation at period end`,
+      )
+      const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
+
+      // Get existing user plan
+      const { data: existingUserPlan } = await supabaseWithAdminAccess
+        .from("users_to_plans")
+        .select("meta")
+        .eq("user_id", userId)
+        .single()
+
+      if (existingUserPlan) {
+        // Update metadata with cancellation information
+        const updatedMeta = {
+          ...(existingUserPlan.meta
+            ? JSON.parse(JSON.stringify(existingUserPlan.meta))
+            : {}),
+          will_cancel_at_end: true,
+          cancel_at: subscription.cancel_at
+            ? new Date(subscription.cancel_at * 1000).toISOString()
+            : null,
+        }
+
+        await supabaseWithAdminAccess
+          .from("users_to_plans")
+          .update({
+            meta: updatedMeta,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId)
+
+        console.log(
+          `Updated subscription metadata for ${userId} with cancellation info`,
+        )
+      }
+    }
+
+    // Try to get plan details
+    let planDetails
+    try {
+      planDetails = await getSubscriptionPlanDetailsById(stripePlanId)
+    } catch (error) {
+      console.error(`Error getting plan details for ${stripePlanId}:`, error)
+
+      // Manual search for plan in Supabase if not found via getPlanByStripeId
+      const { data: planData } = await supabaseWithAdminAccess
+        .from("plans")
+        .select("*")
+        .eq("stripe_plan_id", stripePlanId)
+        .maybeSingle()
+
+      if (!planData) {
+        console.error(`Plan with ID ${stripePlanId} not found in database`)
+        // Use fallback value
+        planDetails = {
+          planId: 1, // Use standard plan as fallback
+          planType: "standard",
+          planPeriod: "monthly",
+          addUsage: 500,
+        }
+      } else {
+        planDetails = {
+          planId: planData.id,
+          planType: planData.type,
+          planPeriod: planData.period,
+          addUsage: planData.add_usage,
+        }
+      }
+    }
+
+    const { planId, planType, addUsage } = planDetails
     const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
     // Set usage limit based on the plan type
@@ -46,9 +119,14 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
 
     // Create metadata for the users_to_plans table
     const meta = {
+      stripe_customer_id: subscription.customer as string,
       stripe_subscription_id: subscriptionId,
       stripe_plan_id: stripePlanId,
       period_end: currentPeriodEnd.toISOString(),
+      will_cancel_at_end: subscription.cancel_at_period_end || false,
+      cancel_at: subscription.cancel_at
+        ? new Date(subscription.cancel_at * 1000).toISOString()
+        : null,
     }
 
     // Check if user already has a plan
@@ -61,6 +139,7 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
     // Transaction for Supabase operations
     if (existingUserPlan) {
       // Update existing user plan
+      console.log(`Updating existing plan for user ${userId}`)
 
       await supabaseWithAdminAccess
         .from("usages")
@@ -86,6 +165,7 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
         .eq("user_id", userId)
     } else {
       // Create new user plan
+      console.log(`Creating new plan for user ${userId}`)
       await supabaseWithAdminAccess
         .from("usages")
         .upsert(
@@ -108,6 +188,7 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
     }
   } catch (error) {
     console.error("Failed to process subscription creation or update:", error)
+    // Rethrow error for handling in the main try-catch block
     throw error
   }
 }
@@ -116,16 +197,45 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
   try {
     const subscription = event.data.object as Stripe.Subscription
     const userId = subscription.metadata.userId as string
+    const subscriptionId = subscription.id
 
-    await supabaseWithAdminAccess
+    console.log(
+      `Processing subscription deletion for ${userId}, subscription ID: ${subscriptionId}`,
+    )
+
+    // Get free plan limit
+    const freeUsageLimit = getGenerationLimit("free")
+
+    // Update usages table - set free usage limit
+    const usageResult = await supabaseWithAdminAccess
+      .from("usages")
+      .update({
+        limit: freeUsageLimit,
+      })
+      .eq("user_id", userId)
+
+    console.log("Usage update result:", usageResult.status, usageResult.error)
+
+    // Update plan status to inactive
+    const planResult = await supabaseWithAdminAccess
       .from("users_to_plans")
       .update({
         status: "inactive",
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId)
+
+    console.log("Plan update result:", planResult.status, planResult.error)
+
+    if (planResult.error || usageResult.error) {
+      throw new Error(
+        `Failed to update database: ${planResult.error || usageResult.error}`,
+      )
+    }
   } catch (error) {
     console.error("Error handling subscription deletion:", error)
+    // Rethrow error for handling in the main try-catch block
+    throw error
   }
 }
 
@@ -134,18 +244,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const sig = req.headers.get("stripe-signature")
 
   if (!sig) {
+    console.error("No Stripe signature found")
     return NextResponse.json(
       { error: "No Stripe signature found" },
       { status: 400 },
     )
   }
 
+  console.log("Received webhook with signature:", sig)
+  console.log("Webhook secret:", stripeWebhookSecret ? "Present" : "Missing")
+
   let event: Stripe.Event
 
   try {
     event = stripe.webhooks.constructEvent(body, sig, stripeWebhookSecret!)
   } catch (err: any) {
-    console.error(`Webhook Error: ${err.message}`)
+    console.error(`Webhook Error: ${err.message}`, err)
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },
       { status: 400 },
@@ -155,13 +269,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Check if we have a userId in the metadata
   // @ts-ignore
   if (!event.data.object?.metadata?.userId) {
+    console.error("No userId found in subscription metadata", event.data.object)
     return NextResponse.json(
       { error: "No userId found in subscription metadata" },
       { status: 400 },
     )
   }
 
-  console.log("Event", event.data.object)
+  console.log("Event type:", event.type)
+  console.log("Event data:", event.data.object)
 
   try {
     switch (event.type) {

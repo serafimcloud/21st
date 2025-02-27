@@ -46,13 +46,11 @@ export function LogosList({ category, onCategoryChange }: LogosListProps) {
     retry: 1,
   })
 
-  // Локальная фильтрация по категории и поисковому запросу
   const filteredLogos = React.useMemo(() => {
     if (!logos) return []
 
     let filtered = logos
 
-    // Фильтрация по категории
     if (category && category !== "all") {
       filtered = filtered.filter((logo) => {
         const logoCategories = Array.isArray(logo.category)
@@ -64,7 +62,6 @@ export function LogosList({ category, onCategoryChange }: LogosListProps) {
       })
     }
 
-    // Фильтрация по поисковому запросу
     if (searchQuery) {
       const search = searchQuery.toLowerCase()
       filtered = filtered.filter((logo) => {

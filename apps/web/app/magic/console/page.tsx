@@ -1,14 +1,6 @@
 import { auth } from "@clerk/nextjs/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { ApiKey } from "@/types/global"
-import { Metadata } from "next"
 import { ConsoleTabs } from "./console-tabs"
-
-export const metadata: Metadata = {
-  title: "Magic Console",
-  description: "Manage your Magic settings, usage, and team",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
-}
 
 async function getApiKey(userId: string) {
   const supabase = supabaseWithAdminAccess

@@ -4,10 +4,7 @@ import { Database } from "@/types/supabase"
 
 type Plan = Database["public"]["Tables"]["plans"]["Row"]
 
-const stripeSecretKey =
-  process.env.NODE_ENV === "development"
-    ? process.env.STRIPE_SECRET_KEY_TEST
-    : process.env.STRIPE_SECRET_KEY_LIVE
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY
 
 if (!stripeSecretKey) {
   throw new Error("Stripe secret key is not set")
@@ -52,18 +49,34 @@ export async function getAllPlans(forceRefresh = false): Promise<Plan[]> {
 
 // Get a plan directly by its Stripe plan ID
 export async function getPlanByStripeId(stripePlanId: string): Promise<Plan> {
-  const { data, error } = await supabaseWithAdminAccess
-    .from("plans")
-    .select("*")
-    .eq("stripe_plan_id", stripePlanId)
-    .single()
+  try {
+    // Try to use cached data first
+    const plans = await getAllPlans()
+    const cachedPlan = plans.find(
+      (plan) => plan.stripe_plan_id === stripePlanId,
+    )
 
-  if (error) {
-    console.error("Error fetching plan by Stripe ID:", error)
-    throw new Error(`No plan found with ID: ${stripePlanId}`)
+    if (cachedPlan) {
+      return cachedPlan
+    }
+
+    // If not found in cache, make a direct request
+    const { data, error } = await supabaseWithAdminAccess
+      .from("plans")
+      .select("*")
+      .eq("stripe_plan_id", stripePlanId)
+      .single()
+
+    if (error) {
+      console.error("Error fetching plan by Stripe ID:", error)
+      throw new Error(`No plan found with ID: ${stripePlanId}`)
+    }
+
+    return data
+  } catch (error) {
+    console.error("Error in getPlanByStripeId:", error)
+    throw new Error(`Failed to find plan with ID: ${stripePlanId}`)
   }
-
-  return data
 }
 
 // Gets a Stripe price ID for a subscription plan

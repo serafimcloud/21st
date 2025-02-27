@@ -15,7 +15,7 @@ import {
   PlanType,
   PLAN_LIMITS,
   getPricingCardPlans,
-} from "@/lib/subscription-limits"
+} from "@/lib/config/subscription-plans"
 import { useAuth } from "@clerk/nextjs"
 
 interface PlanInfo {
@@ -63,23 +63,26 @@ export function PlanSelectorDialog({
 
     setIsLoading(true)
     try {
-      const response = await fetch("/api/subscription/checkout", {
+      const response = await fetch("/api/stripe/create-checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          type: planType,
+          planId: planType,
           period: isYearly ? "yearly" : "monthly",
+          successUrl: `${window.location.origin}/settings/billing?success=true`,
+          cancelUrl: `${window.location.origin}/settings/billing?canceled=true`,
         }),
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const error = await response.json()
+        throw new Error(error.message || "Failed to create checkout session")
       }
 
-      const checkoutSession = await response.json()
-      if (checkoutSession?.url) {
+      const { url } = await response.json()
+      if (url) {
         if (onPlanUpdated) {
           const newPlan: PlanInfo = {
             name: PLAN_LIMITS[planType].displayName,
@@ -89,13 +92,17 @@ export function PlanSelectorDialog({
           onPlanUpdated(newPlan)
         }
 
-        window.location.href = checkoutSession.url
+        window.location.href = url
       } else {
         throw new Error("No checkout URL received")
       }
     } catch (error) {
-      toast.error("Error processing subscription. Please try again later.")
-      console.error("Checkout error:", error)
+      console.error("Error creating checkout session:", error)
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to initiate upgrade process. Please try again later.",
+      )
     } finally {
       setIsLoading(false)
     }
