@@ -9,6 +9,87 @@ import fs from "fs/promises"
 import path from "path"
 import os from "os"
 
+// Setup storage directory for bundled files
+const STORAGE_DIR = path.join(process.cwd(), "bundled-pages")
+
+// Ensure storage directory exists
+await fs.mkdir(STORAGE_DIR, { recursive: true })
+
+const isValidId = (id: string) => {
+  // Only allow alphanumeric characters, hyphens, and underscores
+  return /^[a-zA-Z0-9-_]+$/.test(id)
+}
+
+const saveBundledFiles = async (
+  id: string,
+  { js, css }: { js: string; css: string },
+): Promise<void> => {
+  if (!isValidId(id)) {
+    throw new Error(
+      "Invalid ID format. Only alphanumeric characters, hyphens, and underscores are allowed.",
+    )
+  }
+
+  const htmlFilePath = path.join(STORAGE_DIR, `${id}.html`)
+  const jsFilePath = path.join(STORAGE_DIR, `${id}.js`)
+  const cssFilePath = path.join(STORAGE_DIR, `${id}.css`)
+
+  // Check if files already exist
+  try {
+    await fs.access(htmlFilePath)
+    // if the file exists, delete all the files
+    await fs.unlink(htmlFilePath)
+    await fs.unlink(jsFilePath)
+    await fs.unlink(cssFilePath)
+  } catch (error) {
+    // Files don't exist, we can proceed
+    if ((error as any).code === "ENOENT") {
+      const html = generateHTML({ id })
+      await Promise.all([
+        fs.writeFile(htmlFilePath, html),
+        fs.writeFile(jsFilePath, js),
+        fs.writeFile(cssFilePath, css),
+      ])
+    } else {
+      throw error
+    }
+  }
+}
+
+const getBundledPage = async (id: string): Promise<string | null> => {
+  if (!isValidId(id)) {
+    return null
+  }
+
+  try {
+    const htmlFilePath = path.join(STORAGE_DIR, `${id}.html`)
+    // Validate the file is within STORAGE_DIR to prevent directory traversal
+    if (!htmlFilePath.startsWith(STORAGE_DIR)) {
+      return null
+    }
+    const html = await fs.readFile(htmlFilePath, "utf-8")
+    return html
+  } catch (error) {
+    return null
+  }
+}
+
+const generateHTML = ({ id }: { id: string }) => endent`
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>React + Tailwind App</title>
+      <link rel="stylesheet" href="/static/${id}.css">
+    </head>
+    <body>
+      <div id="root"></div>
+      <script type="text/javascript" src="/static/${id}.js"></script>
+    </body>
+  </html>
+`
+
 export const compileCSS = async ({
   jsx,
   baseTailwindConfig,
@@ -55,7 +136,9 @@ export const compileCSS = async ({
         )
 
         if (!matches) {
-          throw new Error("Invalid Tailwind config format: Could not parse configuration object")
+          throw new Error(
+            "Invalid Tailwind config format: Could not parse configuration object",
+          )
         }
 
         const [_, beforeConfig, __, configObject, afterConfig] = matches
@@ -129,13 +212,19 @@ export const compileCSS = async ({
 
             return await processCSS(jsx, evaluatedFinalConfig, globalCss)
           } catch (evalError) {
-            throw new Error(`Error evaluating final Tailwind config: ${evalError instanceof Error ? evalError.message : String(evalError)}`)
+            throw new Error(
+              `Error evaluating final Tailwind config: ${evalError instanceof Error ? evalError.message : String(evalError)}`,
+            )
           }
         } catch (functionError) {
-          throw new Error(`Error processing custom Tailwind config: ${functionError instanceof Error ? functionError.message : String(functionError)}`)
+          throw new Error(
+            `Error processing custom Tailwind config: ${functionError instanceof Error ? functionError.message : String(functionError)}`,
+          )
         }
       } catch (transpileError) {
-        throw new Error(`Error transpiling custom Tailwind config: ${transpileError instanceof Error ? transpileError.message : String(transpileError)}`)
+        throw new Error(
+          `Error transpiling custom Tailwind config: ${transpileError instanceof Error ? transpileError.message : String(transpileError)}`,
+        )
       }
     }
 
@@ -151,16 +240,18 @@ export const compileCSS = async ({
 
       return await processCSS(jsx, evaluatedBaseConfig, globalCss)
     } catch (baseConfigError) {
-      throw new Error(`Error processing base Tailwind config: ${baseConfigError instanceof Error ? baseConfigError.message : String(baseConfigError)}`)
+      throw new Error(
+        `Error processing base Tailwind config: ${baseConfigError instanceof Error ? baseConfigError.message : String(baseConfigError)}`,
+      )
     }
   } catch (error) {
     console.error("Detailed CSS compilation error:", {
       error,
       jsx: jsx.slice(0, 200) + "...",
       customTailwindConfig: customTailwindConfig?.slice(0, 200) + "...",
-      customGlobalCss: customGlobalCss?.slice(0, 200) + "..."
-    });
-    throw error;
+      customGlobalCss: customGlobalCss?.slice(0, 200) + "...",
+    })
+    throw error
   }
 }
 
@@ -176,7 +267,9 @@ const processCSS = async (jsx: string, config: object, globalCss: string) => {
     })
     return result.css
   } catch (error) {
-    throw new Error(`PostCSS processing error: ${error instanceof Error ? error.message : String(error)}`)
+    throw new Error(
+      `PostCSS processing error: ${error instanceof Error ? error.message : String(error)}`,
+    )
   }
 }
 
@@ -193,6 +286,286 @@ function convertVideo(inputPath: string, outputPath: string): Promise<void> {
   })
 }
 
+interface BundleOptions {
+  code: string
+  dependencies?: Record<string, string> // package name -> version
+}
+
+const createTempProject = async (options: BundleOptions) => {
+  const tempDir = path.join(".", `react-bundle-${Date.now()}`)
+  await fs.mkdir(tempDir, { recursive: true })
+
+  try {
+    // Create package.json
+    const packageJson = {
+      name: "temp-bundle",
+      private: true,
+      type: "module",
+      dependencies: {
+        react: "^18.2.0",
+        "react-dom": "^18.2.0",
+        ...(options.dependencies || {}),
+      },
+    }
+
+    // Write package.json
+    await fs.writeFile(
+      path.join(tempDir, "package.json"),
+      JSON.stringify(packageJson, null, 2),
+    )
+
+    // Write the App component file
+    await fs.writeFile(path.join(tempDir, "App.tsx"), options.code)
+
+    // Write the entry file
+    await fs.writeFile(
+      path.join(tempDir, "index.js"),
+      endent`
+        import { createRoot } from "react-dom/client";
+        import App from "./App";
+
+        const rootElement = document.getElementById("root");
+        const root = createRoot(rootElement);
+
+        root.render(
+          <App />
+        );
+      `,
+    )
+
+    // Install dependencies
+    const installProcess = Bun.spawn(["bun", "install"], {
+      cwd: tempDir,
+      stderr: "pipe",
+    })
+
+    const exitCode = await installProcess.exited
+    const output = await new Response(installProcess.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`Failed to install dependencies: ${output}`)
+    }
+
+    return tempDir
+  } catch (error) {
+    // Clean up on error
+    await fs.rm(tempDir, { recursive: true, force: true })
+    throw error
+  }
+}
+
+const bundleReact = async (
+  code: string,
+  dependencies?: Record<string, string>,
+) => {
+  let tempDir: string | null = null
+
+  try {
+    tempDir = await createTempProject({ code, dependencies })
+    const outDir = path.join(tempDir, "dist")
+
+    // Bundle the code
+    const result = await Bun.build({
+      entrypoints: [path.join(tempDir, "index.js")],
+      target: "browser",
+      minify: true,
+      root: tempDir,
+      outdir: outDir,
+    })
+
+    if (!result.success) {
+      throw new Error("Bundle failed: " + result.logs.join("\n"))
+    }
+
+    // Read the bundled file
+    const bundledJs = await fs.readFile(path.join(outDir, "index.js"), "utf-8")
+    return bundledJs
+  } finally {
+    // Clean up temp directory
+    if (tempDir) {
+      await fs.rm(tempDir, { recursive: true, force: true })
+    }
+  }
+}
+
+const editorHTML = endent`
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>React + Tailwind Bundler</title>
+      <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+      <style>
+        body {
+          margin: 0;
+          padding: 20px;
+          font-family: system-ui, -apple-system, sans-serif;
+          background: #f5f5f5;
+        }
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+        .editor-container {
+          background: white;
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .preview-container {
+          background: white;
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #editor, #dependencies {
+          height: 400px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          margin-bottom: 1rem;
+        }
+        #dependencies {
+          height: 100px;
+        }
+        .form-group {
+          margin-bottom: 1rem;
+        }
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
+        }
+        input[type="text"] {
+          width: 100%;
+          padding: 0.5rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 1rem;
+        }
+        button {
+          background: #0070f3;
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 4px;
+          font-size: 1rem;
+          cursor: pointer;
+          margin-top: 1rem;
+        }
+        button:hover {
+          background: #0051cc;
+        }
+        iframe {
+          width: 100%;
+          height: 500px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+        .error {
+          color: #dc2626;
+          margin-top: 0.5rem;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="editor-container">
+          <div class="form-group">
+            <label for="id">Page ID:</label>
+            <input type="text" id="id" placeholder="Enter a unique ID (alphanumeric, hyphens, underscores)">
+          </div>
+          <div class="form-group">
+            <label for="editor">React Component:</label>
+            <div id="editor"></div>
+          </div>
+          <div class="form-group">
+            <label for="dependencies">Dependencies (JSON format):</label>
+            <div id="dependencies"></div>
+          </div>
+          <button onclick="handleSubmit()">Bundle & Preview</button>
+          <div id="error" class="error"></div>
+        </div>
+        <div class="preview-container">
+          <h2>Preview:</h2>
+          <iframe id="preview"></iframe>
+        </div>
+      </div>
+      
+      <script>
+        // Setup Monaco Editor
+        require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@latest/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+          window.editor = monaco.editor.create(document.getElementById('editor'), {
+            value: \`export default function App() {
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold text-blue-600">
+        Hello World!
+      </h1>
+    </div>
+  )
+}\`,
+            language: 'typescript',
+            theme: 'vs-light',
+            minimap: { enabled: false }
+          });
+
+          window.dependenciesEditor = monaco.editor.create(document.getElementById('dependencies'), {
+            value: \`{
+  // Add your npm dependencies here
+  // "package-name": "version"
+}\`,
+            language: 'json',
+            theme: 'vs-light',
+            minimap: { enabled: false }
+          });
+        });
+
+        async function handleSubmit() {
+          const code = window.editor.getValue();
+          const id = document.getElementById('id').value;
+          const dependenciesStr = window.dependenciesEditor.getValue();
+          const errorDiv = document.getElementById('error');
+          const preview = document.getElementById('preview');
+          
+          let dependencies;
+          try {
+            // Parse dependencies, removing comments
+            const cleanJson = dependenciesStr.replace(/\\s*\\/\\/.*$/gm, '');
+            dependencies = JSON.parse(cleanJson);
+          } catch (error) {
+            errorDiv.textContent = 'Invalid dependencies JSON: ' + error.message;
+            return;
+          }
+          
+          try {
+            const response = await fetch('/bundle', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code, id, dependencies })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              preview.src = '/bundled-page?id=' + id;
+              errorDiv.textContent = '';
+            } else {
+              errorDiv.textContent = result.details || result.error;
+            }
+          } catch (error) {
+            errorDiv.textContent = 'Failed to bundle: ' + error.message;
+          }
+        }
+      </script>
+    </body>
+  </html>
+`
+
 const server = serve({
   port: 80,
   async fetch(req) {
@@ -202,7 +575,7 @@ const server = serve({
       "Access-Control-Allow-Origin": allowedOrigins.includes(origin ?? "")
         ? (origin ?? "")
         : "",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
       "Access-Control-Allow-Headers": "Content-Type",
     }
 
@@ -211,6 +584,15 @@ const server = serve({
     }
 
     const url = new URL(req.url)
+
+    if (url.pathname === "/" && req.method === "GET") {
+      return new Response(editorHTML, {
+        headers: {
+          ...headers,
+          "Content-Type": "text/html",
+        },
+      })
+    }
 
     if (url.pathname === "/compile-css" && req.method === "POST") {
       try {
@@ -261,14 +643,15 @@ const server = serve({
             code: filteredCode.slice(0, 200) + "...", // First 200 chars for debugging
             demoCode: filteredDemoCode.slice(0, 200) + "...",
             customTailwindConfig: customTailwindConfig?.slice(0, 200) + "...",
-            customGlobalCss: customGlobalCss?.slice(0, 200) + "..."
+            customGlobalCss: customGlobalCss?.slice(0, 200) + "...",
           })
-          
+
           return Response.json(
-            { 
+            {
               error: "Failed to compile CSS",
-              details: cssError instanceof Error ? cssError.message : String(cssError),
-              code: "CSS_COMPILATION_ERROR"
+              details:
+                cssError instanceof Error ? cssError.message : String(cssError),
+              code: "CSS_COMPILATION_ERROR",
             },
             { status: 500, headers },
           )
@@ -276,10 +659,62 @@ const server = serve({
       } catch (error) {
         console.error("Request processing error:", error)
         return Response.json(
-          { 
+          {
             error: "Failed to process request",
             details: error instanceof Error ? error.message : String(error),
-            code: "REQUEST_PROCESSING_ERROR"
+            code: "REQUEST_PROCESSING_ERROR",
+          },
+          { status: 500, headers },
+        )
+      }
+    }
+
+    if (url.pathname === "/bundle" && req.method === "POST") {
+      try {
+        const { code, id, baseTailwindConfig, dependencies } = await req.json()
+
+        if (!code) {
+          throw new Error("No code provided")
+        }
+
+        if (!id) {
+          throw new Error("No ID provided")
+        }
+
+        // Bundle React code with optional dependencies
+        const bundledJs = await bundleReact(code, dependencies)
+
+        // Compile CSS
+        const css = await compileCSS({
+          jsx: code,
+          baseTailwindConfig:
+            baseTailwindConfig ||
+            `
+            module.exports = {
+              content: ["./src/**/*.{js,ts,jsx,tsx}"],
+              theme: {
+                extend: {},
+              },
+              plugins: [],
+            }
+          `,
+          baseGlobalCss: `
+            @tailwind base;
+            @tailwind components;
+            @tailwind utilities;
+          `,
+        })
+
+        // Save the bundled files
+        await saveBundledFiles(id, { js: bundledJs, css })
+        return Response.json({ success: true, id }, { headers })
+      } catch (error) {
+        console.error("Bundling error:", error)
+        return Response.json(
+          {
+            error: "Failed to bundle code",
+            details: error instanceof Error ? error.message : String(error),
+            code: "BUNDLE_ERROR",
           },
           { status: 500, headers },
         )
@@ -304,12 +739,13 @@ const server = serve({
         await fs.mkdir(tempDir, { recursive: true })
 
         // Sanitize the filename
-        const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-        
+        const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
+
         const tempInputPath = path.join(tempDir, sanitizedFilename)
         const tempOutputPath = path.join(
           tempDir,
-          sanitizedFilename.replace(/\.[^/.]+$/, "") + `_converted_${Date.now()}.mp4`,
+          sanitizedFilename.replace(/\.[^/.]+$/, "") +
+            `_converted_${Date.now()}.mp4`,
         )
 
         const bytes = await file.arrayBuffer()
@@ -322,10 +758,12 @@ const server = serve({
         await Promise.all([fs.unlink(tempInputPath), fs.unlink(tempOutputPath)])
 
         // Encode the filename for the Content-Disposition header
-        const encodedFilename = encodeURIComponent(path.basename(tempOutputPath))
+        const encodedFilename = encodeURIComponent(
+          path.basename(tempOutputPath),
+        )
 
         console.log("successfuly converted video")
-        
+
         return new Response(processedVideo, {
           headers: {
             ...headers,
@@ -339,6 +777,66 @@ const server = serve({
           { error: "Error processing video" },
           { status: 500, headers },
         )
+      }
+    }
+
+    if (url.pathname === "/bundled-page" && req.method === "GET") {
+      try {
+        const id = url.searchParams.get("id")
+        if (!id) {
+          throw new Error("No ID provided")
+        }
+
+        const html = await getBundledPage(id)
+        if (!html) {
+          throw new Error("Page not found")
+        }
+
+        return new Response(html, {
+          headers: {
+            ...headers,
+            "Content-Type": "text/html",
+          },
+        })
+      } catch (error) {
+        console.error("Error fetching bundled page:", error)
+        return Response.json(
+          {
+            error: "Failed to fetch bundled page",
+            details: error instanceof Error ? error.message : String(error),
+            code: "BUNDLED_PAGE_FETCH_ERROR",
+          },
+          { status: 500, headers },
+        )
+      }
+    }
+
+    // Add a new route to serve static files
+    if (url.pathname.startsWith("/static/") && req.method === "GET") {
+      try {
+        const filename = url.pathname.replace("/static/", "")
+        const filePath = path.join(STORAGE_DIR, filename)
+
+        // Validate the file is within STORAGE_DIR to prevent directory traversal
+        if (!filePath.startsWith(STORAGE_DIR)) {
+          return new Response("Not Found", { status: 404, headers })
+        }
+
+        const file = await fs.readFile(filePath)
+        const contentType = filename.endsWith(".js")
+          ? "application/javascript"
+          : filename.endsWith(".css")
+            ? "text/css"
+            : "text/plain"
+
+        return new Response(file, {
+          headers: {
+            ...headers,
+            "Content-Type": contentType,
+          },
+        })
+      } catch (error) {
+        return new Response("Not Found", { status: 404, headers })
       }
     }
 
