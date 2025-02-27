@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
-import { useAnimation, motion, AnimatePresence } from "framer-motion"
+import { useAnimation, motion, AnimatePresence } from "motion/react"
 import { useAtom } from "jotai"
 import { useTheme } from "next-themes"
 import {
@@ -17,7 +17,10 @@ import { ComponentPageInfo } from "./info-section"
 import { Icons } from "@/components/icons"
 import { LoadingSpinner } from "../../ui/loading-spinner"
 import { CopyCodeButton } from "../../ui/copy-code-card-button"
-import { isShowCodeAtom, isFullScreenAtom } from "./component-page-layout"
+import {
+  isShowCodeAtom,
+  isFullScreenAtom,
+} from "../../../app/[username]/[component_slug]/page.client"
 
 import {
   DropdownMenu,

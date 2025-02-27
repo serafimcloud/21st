@@ -1,4 +1,4 @@
-import { motion } from "framer-motion"
+import { motion, useAnimation } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card"
 import { ComponentDetailsForm } from "./forms/component-form"
 import { Icons } from "@/components/icons"
 import { LinkPreview } from "@/components/ui/link-preview"
-import { useAnimation } from "framer-motion"
 import { Info, ArrowRight } from "lucide-react"
 
 interface NameSlugStepProps {

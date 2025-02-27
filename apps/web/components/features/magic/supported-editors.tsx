@@ -23,7 +23,7 @@ export function SupportedEditors() {
             className="flex flex-col items-center gap-3"
           >
             <div className="flex items-center gap-2">
-              <Icons.cursorLogo className="h-4 w-auto text-white" />
+              <Icons.cursorDark className="h-9 w-auto text-white" />
             </div>
             <span className="text-sm text-neutral-400">Cursor</span>
           </Link>

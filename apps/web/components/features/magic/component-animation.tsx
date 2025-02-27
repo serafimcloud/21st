@@ -1,6 +1,5 @@
-import { motion } from "framer-motion"
 import { useState } from "react"
-
+import { motion } from "motion/react"
 export function BaseComponent() {
   return (
     <div className="w-full h-full p-4 bg-white rounded-lg shadow-md flex flex-col items-center justify-center">

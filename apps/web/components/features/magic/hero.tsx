@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { toast } from "sonner"
 import NumberFlow from "@number-flow/react"
 import { Button } from "@/components/ui/button"
@@ -148,7 +148,7 @@ export function Hero() {
     threshold: 0,
     rootMargin: "-80px",
   })
-  const [count, setCount] = useState(561)
+  const [count, setCount] = useState(2165)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

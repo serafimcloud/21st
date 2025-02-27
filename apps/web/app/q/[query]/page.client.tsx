@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react"
 import { useAtom } from "jotai"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { searchQueryAtom } from "@/components/ui/header.client"
 import { sortByAtom } from "@/components/features/main-page/main-page-header"
 import { SortOption } from "@/types/global"

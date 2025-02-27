@@ -16,6 +16,7 @@ import { useEffect } from "react"
 import { AMPLITUDE_EVENTS } from "@/lib/amplitude"
 import { userTabAtom } from "@/components/features/user-page/user-page-header"
 import { User } from "@/types/global"
+import { useUser } from "@clerk/nextjs"
 
 const useProfileAnalytics = ({
   username,
@@ -39,6 +40,8 @@ interface UserPageClientProps {
 
 export function UserPageClient({ user, initialTab }: UserPageClientProps) {
   const [tab, setTab] = useAtom(userTabAtom)
+  const { user: currentUser } = useUser()
+  const isOwnProfile = currentUser?.id === user.id
 
   useEffect(() => {
     setTab(initialTab)
@@ -167,8 +170,13 @@ export function UserPageClient({ user, initialTab }: UserPageClientProps) {
             <UserComponentsHeader
               username={user.display_username || user.username || ""}
               userId={user.id}
+              isOwnProfile={isOwnProfile}
             />
-            <UserItemsList userId={user.id} tab={tab || initialTab} />
+            <UserItemsList
+              userId={user.id}
+              tab={tab || initialTab}
+              isOwnProfile={isOwnProfile}
+            />
           </div>
         </div>
       </div>

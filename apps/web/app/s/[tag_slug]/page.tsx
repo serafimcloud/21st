@@ -12,9 +12,9 @@ import { unstable_cache } from "next/cache"
 import { Logo } from "@/components/ui/logo"
 
 interface TagPageProps {
-  params: {
+  params: Promise<{
     tag_slug: string
-  }
+  }>
 }
 
 const getCachedTagInfo = unstable_cache(
@@ -42,12 +42,13 @@ async function getTagInfo(tagSlug: string) {
   return getCachedTagInfo(tagSlug)
 }
 
-export default async function TagPage({ params }: TagPageProps) {
+export default async function TagPage(props: TagPageProps) {
+  const params = await props.params;
   if (!validateRouteParams(params)) {
     redirect("/")
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const tagSlug = params.tag_slug
 
   try {
@@ -85,9 +86,8 @@ export default async function TagPage({ params }: TagPageProps) {
   }
 }
 
-export async function generateMetadata({
-  params,
-}: TagPageProps): Promise<Metadata> {
+export async function generateMetadata(props: TagPageProps): Promise<Metadata> {
+  const params = await props.params;
   try {
     const tagInfo = await getTagInfo(params.tag_slug)
     if (!tagInfo) {

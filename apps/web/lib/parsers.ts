@@ -109,6 +109,8 @@ export function extractNPMDependencies(code: string): Record<string, string> {
         "objectRestSpread",
         "dynamicImport",
       ],
+      errorRecovery: true,
+      tokens: true,
     })
 
     const defaultDependencies = ["react", "react-dom", "tailwindcss"]

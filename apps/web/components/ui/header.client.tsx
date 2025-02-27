@@ -16,7 +16,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { NavigationMenuLink } from "@/components/ui/navigation-menu"
 
@@ -27,7 +26,7 @@ import { UserAvatar } from "./user-avatar"
 import { Icons } from "@/components/icons"
 import { EditProfileDialog } from "@/components/features/profile/edit-profile-dialog"
 import { useUserProfile } from "@/components/hooks/use-user-profile"
-import { useAnimation } from "framer-motion"
+import { useAnimation } from "motion/react"
 import { useAtom } from "jotai"
 import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 import { useTheme } from "next-themes"

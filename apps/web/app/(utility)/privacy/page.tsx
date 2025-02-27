@@ -76,7 +76,7 @@ export default function PrivacyPolicy() {
           <br />
           United Kingdom
           <br />
-          Email: serafimcloud@gmail.com
+          Email: support@21st.dev
         </p>
       </div>
     </div>

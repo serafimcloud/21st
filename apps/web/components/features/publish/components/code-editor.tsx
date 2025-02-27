@@ -5,6 +5,7 @@ import { FormField, FormItem, FormControl } from "@/components/ui/form"
 import { UseFormReturn } from "react-hook-form"
 import { FormData } from "../config/utils"
 import { editorOptions } from "../config/editor-themes"
+import { editorThemes } from "../config/editor-themes"
 
 type EditorFieldName =
   | keyof Pick<FormData, "code" | "tailwind_config" | "globals_css">
@@ -41,7 +42,7 @@ export function EditorStep({
                 onChange(value || "")
                 field.onChange(value || "")
               }}
-              theme={isDarkTheme ? "vs-dark" : "light"}
+              theme={isDarkTheme ? "github-dark" : "github-light"}
               options={{
                 ...editorOptions,
                 roundedSelection: false,
@@ -62,22 +63,8 @@ export function EditorStep({
               }}
               className="h-full w-full bg-muted"
               beforeMount={(monaco) => {
-                monaco.editor.defineTheme("vs-dark", {
-                  base: "vs-dark",
-                  inherit: true,
-                  rules: [],
-                  colors: {
-                    "editor.background": "#1c1c1c",
-                  },
-                })
-                monaco.editor.defineTheme("light", {
-                  base: "vs",
-                  inherit: true,
-                  rules: [],
-                  colors: {
-                    "editor.background": "#f5f5f5",
-                  },
-                })
+                monaco.editor.defineTheme("github-dark", editorThemes.dark)
+                monaco.editor.defineTheme("github-light", editorThemes.light)
               }}
             />
           </FormControl>

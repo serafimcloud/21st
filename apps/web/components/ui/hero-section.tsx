@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import Link from "next/link"
 
 import { useIsMobile } from "@/hooks/use-media-query"
@@ -10,7 +10,7 @@ import { setCookie } from "@/lib/cookies"
 import { AuroraBackground } from "./aurora-background"
 import { Button } from "./button"
 import { Icons } from "../icons"
-import { GitHubStars, GitHubStarsBasic } from "./github-stars-number"
+import { GitHubStarsBasic } from "./github-stars-number"
 
 export function HeroSection() {
   const router = useRouter()

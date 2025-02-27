@@ -6,6 +6,8 @@ import { FAQ } from "@/components/features/magic/faq"
 import { Footer } from "@/components/ui/footer"
 import { SupportedEditors } from "@/components/features/magic/supported-editors"
 import { Features } from "@/components/features/magic/features"
+import { SignInButton, SignedOut } from "@clerk/nextjs"
+import { Button } from "@/components/ui/button"
 
 export const metadata: Metadata = {
   title:
@@ -54,6 +56,20 @@ export const metadata: Metadata = {
 export default function MagicPage() {
   return (
     <div className="absolute inset-0 min-h-screen w-full overflow-auto bg-black">
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        {/* <SignedIn >
+          <Button asChild>
+            <a href="/magic/console" className="text-sm">
+              Open Console
+            </a>
+          </Button>
+        </SignedIn> */}
+        <SignedOut>
+          <SignInButton>
+            <Button>Sign up</Button>
+          </SignInButton>
+        </SignedOut>
+      </div>
       <main className="relative w-full">
         <Hero />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

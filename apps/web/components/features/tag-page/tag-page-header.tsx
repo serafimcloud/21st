@@ -59,7 +59,7 @@ export function TagComponentsHeader({
     }
   }, [setSearchQuery])
 
-  useSearchHotkeys(inputRef)
+  useSearchHotkeys(inputRef as React.RefObject<HTMLInputElement>)
 
   const getSearchPlaceholder = () => {
     const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1200px)")

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { useUser } from "@clerk/nextjs"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Trash2 } from "lucide-react"
@@ -375,9 +375,13 @@ export default function PublishComponentForm({
     undefined,
   )
   const publishAsUsername = form.watch("publish_as_username")
-  if (publishAsUsername === undefined && user?.username) {
-    form.setValue("publish_as_username", user.username)
-  }
+
+  useEffect(() => {
+    if (publishAsUsername === undefined && user?.username) {
+      form.setValue("publish_as_username", user.username)
+    }
+  }, [publishAsUsername, user?.username, form])
+
   const { isAdmin, user: publishAsUser } = usePublishAs({
     username: publishAsUsername ?? "",
   })

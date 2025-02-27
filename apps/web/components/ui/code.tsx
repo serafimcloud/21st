@@ -1,14 +1,50 @@
 "use client"
 
-import {
-  Prism as SyntaxHighlighter,
-  SyntaxHighlighterProps,
-} from "react-syntax-highlighter"
-import * as highlightThemes from "react-syntax-highlighter/dist/esm/styles/prism"
+import * as shiki from "shiki"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useTheme } from "next-themes"
+
+// Create a highlighter instance that can be reused
+let highlighterPromise: Promise<shiki.Highlighter> | null = null
+
+const getHighlighter = async () => {
+  if (!highlighterPromise) {
+    highlighterPromise = shiki.createHighlighter({
+      themes: ["github-dark", "github-light"],
+      langs: [
+        "json",
+        "typescript",
+        "javascript",
+        "tsx",
+        "jsx",
+        "html",
+        "css",
+        "bash",
+        "markdown",
+        "plaintext",
+      ],
+    })
+  }
+  return highlighterPromise
+}
+
+// Add custom styles for shiki container
+const customShikiStyles = `
+.code-wrapper .shiki,
+.code-wrapper .shiki pre {
+  background-color: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-family: inherit !important;
+}
+.code-wrapper .shiki code {
+  display: inline-block;
+  min-width: 100%;
+}
+`
 
 const codeVariants = cva(
   "font-mono rounded-md cursor-pointer overflow-auto transition-all duration-200 relative",
@@ -32,26 +68,56 @@ const codeVariants = cva(
   },
 )
 
-type HighlightThemeKey = keyof typeof highlightThemes
-
 interface CodeProps
-  extends React.HTMLAttributes<HTMLPreElement>,
+  extends Omit<
+      React.HTMLAttributes<HTMLDivElement>,
+      keyof VariantProps<typeof codeVariants>
+    >,
     VariantProps<typeof codeVariants> {
   code: string
   fontSize?: "xs" | "sm" | "md" | "lg"
-  language?: SyntaxHighlighterProps["language"] | "pseudo"
-  highlightTheme?: HighlightThemeKey
+  language?: string
+  background?: string
 }
 
 const Code = ({
   code,
-  language = "jsx",
+  language = "tsx",
   display,
   fontSize,
-  highlightTheme = "darcula",
   className,
+  background,
+  style,
+  ...props
 }: CodeProps) => {
   const [isCopied, setIsCopied] = useState(false)
+  const [highlightedCode, setHighlightedCode] = useState("")
+  const { resolvedTheme } = useTheme()
+
+  const highlight = useCallback(async () => {
+    try {
+      const highlighter = await getHighlighter()
+      const supportedLanguages = await highlighter.getLoadedLanguages()
+      const langToUse = supportedLanguages.includes(
+        language as shiki.BundledLanguage,
+      )
+        ? language
+        : "plaintext"
+
+      const html = await highlighter.codeToHtml(code, {
+        lang: langToUse as shiki.BundledLanguage,
+        theme: resolvedTheme === "dark" ? "github-dark" : "github-light",
+      })
+      setHighlightedCode(html)
+    } catch (error) {
+      console.error("Failed to highlight code:", error)
+      setHighlightedCode(`<pre><code>${code}</code></pre>`)
+    }
+  }, [code, language, resolvedTheme])
+
+  useEffect(() => {
+    highlight()
+  }, [highlight])
 
   const handleCopyClick = async () => {
     if (isCopied) return
@@ -68,34 +134,37 @@ const Code = ({
   }
 
   return (
-    <SyntaxHighlighter
-      language={language}
-      style={highlightThemes[highlightTheme]}
-      PreTag={({ children }) => (
-        <pre
-          style={highlightThemes[highlightTheme]}
-          className={cn(
-            codeVariants({ fontSize, display }),
-            className,
-            "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-            "before:absolute before:inset-0 before:rounded-md before:pointer-events-none",
-            isCopied &&
-              "before:bg-emerald-400/5 before:border before:border-emerald-400/20 before:animate-copy-success",
-          )}
-          onClick={handleCopyClick}
-          role="button"
-          tabIndex={0}
-          aria-label="Click to copy code"
-        >
-          {children}
-        </pre>
-      )}
-      CodeTag={({ children }) => <code>{children}</code>}
-    >
-      {code}
-    </SyntaxHighlighter>
+    <>
+      <style>{customShikiStyles}</style>
+      <div
+        onClick={handleCopyClick}
+        role="button"
+        tabIndex={0}
+        aria-label="Click to copy code"
+        className={cn(
+          "code-wrapper",
+          codeVariants({ fontSize, display }),
+          className,
+          "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+          "relative",
+          isCopied &&
+            "before:absolute before:inset-0 before:rounded-md before:pointer-events-none before:bg-emerald-400/5 before:border before:border-emerald-400/20 before:animate-copy-success",
+        )}
+        style={{
+          backgroundColor: background,
+          ...style,
+        }}
+        {...props}
+      >
+        <div
+          className="shiki-wrapper"
+          dangerouslySetInnerHTML={{ __html: highlightedCode }}
+        />
+      </div>
+    </>
   )
 }
+
 Code.displayName = "Code"
 
 export { Code }

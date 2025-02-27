@@ -1,4 +1,4 @@
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { ChevronLeft } from "lucide-react"
 import { Code } from "@/components/ui/code"
 import { Label } from "@radix-ui/react-label"

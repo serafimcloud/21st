@@ -22,8 +22,9 @@ const getShadcnRegistrySlug = (registryName: string) => {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { username: string; component_slug: string } },
+  props: { params: Promise<{ username: string; component_slug: string }> }
 ) {
+  const params = await props.params;
   const { username, component_slug } = params
   console.log("🔍 Fetching component:", { username, component_slug })
 

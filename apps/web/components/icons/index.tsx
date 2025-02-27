@@ -14,6 +14,8 @@ import { ClapIcon } from "./clap"
 import { WorkflowIcon } from "./workslow"
 import { LogoutIcon } from "./logout-icon"
 import { MagicPatternsLogo } from "./magic-patterns"
+import { CursorLight } from "./cursor-light"
+import { CursorDark } from "./cursor-dark"
 import WindsurfTealLogo from "./WindsurfTealLogo"
 import { VSCodeLogo } from "./vscode"
 import svgl from "./svgl"
@@ -106,6 +108,8 @@ export const Icons = {
   sitebrewLogo: SitebrewLogo,
   workflowIcon: WorkflowIcon,
   windsurfTealLogo: WindsurfTealLogo,
+  cursorLight: CursorLight,
+  cursorDark: CursorDark,
   boltLogo: (props: LucideProps) => (
     <svg
       {...props}
