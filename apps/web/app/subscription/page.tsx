@@ -4,6 +4,11 @@ import { useState } from "react"
 import { PricingCard } from "@/components/ui/pricing-card"
 import { Switch } from "@/components/ui/switch"
 import { CheckoutDialog } from "@/components/ui/checkout-dialog"
+import {
+  PLAN_LIMITS,
+  getPricingCardPlans,
+  PricingCardPlan,
+} from "@/lib/subscription-limits"
 
 type Plan = "standard" | "pro"
 
@@ -50,40 +55,8 @@ export default function SubscriptionPage() {
     }
   }
 
-  const plans = [
-    {
-      name: "Standard Plan",
-      type: "standard" as Plan,
-      description: "Perfect for growing your social media presence",
-      monthlyPrice: 10,
-      yearlyPrice: 98,
-      features: [
-        "600 replies per month",
-        "Multi-language support",
-        "Twitter & LinkedIn integration",
-        "Basic analytics",
-      ],
-      buttonText: "Get Started",
-      href: "#checkout",
-    },
-    {
-      name: "Pro Plan",
-      type: "pro" as Plan,
-      description: "For power users and teams",
-      monthlyPrice: 99,
-      yearlyPrice: 256,
-      features: [
-        "Unlimited replies",
-        "Advanced analytics",
-        "Priority support",
-        "Custom integrations",
-        "Team collaboration",
-      ],
-      buttonText: "Upgrade Now",
-      href: "#checkout",
-      isFeatured: true,
-    },
-  ]
+  // Получаем планы из конфигурации
+  const plans = getPricingCardPlans() as PricingCardPlan[]
 
   return (
     <div className="container max-w-6xl py-20">
@@ -103,11 +76,11 @@ export default function SubscriptionPage() {
         {plans.map((plan) => (
           <PricingCard
             key={plan.name}
-            plan={plan}
-            isYearly={isYearly}
+            tier={plan}
+            paymentFrequency={isYearly ? "yearly" : "monthly"}
             onClick={() => {
-              setSelectedPlan(plan.type)
-              handleCheckout(plan.type)
+              setSelectedPlan(plan.type as Plan)
+              handleCheckout(plan.type as Plan)
             }}
           />
         ))}

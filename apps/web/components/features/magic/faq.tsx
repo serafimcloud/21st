@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import Link from "next/link"
+import { PLAN_LIMITS } from "@/lib/subscription-limits"
 
 const faqs = [
   {
@@ -36,8 +37,7 @@ const faqs = [
   },
   {
     question: "What happens if I run out of generations?",
-    answer:
-      "If you exceed your monthly generation limit, you'll be prompted to upgrade your plan. You can upgrade at any time to continue generating components. Your existing components will remain fully functional.",
+    answer: `If you exceed your monthly generation limit, you'll be prompted to upgrade your plan. The Hobby plan includes ${PLAN_LIMITS.free.generationsPerMonth} generations per month, Standard plan includes ${PLAN_LIMITS.standard.generationsPerMonth} generations, and Pro plan includes ${PLAN_LIMITS.pro.generationsPerMonth} generations. You can upgrade at any time to continue generating components.`,
   },
   {
     question: "How soon do new components get added to 21st.dev's library?",
@@ -51,13 +51,20 @@ const faqs = [
   },
   {
     question: "How can I get help with Magic AI Agent?",
-    answer:
+    answer: (
       <>
-        If you need assistance, you can contact us via email at support@21st.dev or join our{" "}
-        <Link href="https://discord.gg/Qx4rFunHfm" target="_blank" className="underline underline-offset-4">
+        If you need assistance, you can contact us via email at support@21st.dev
+        or join our{" "}
+        <Link
+          href="https://discord.gg/Qx4rFunHfm"
+          target="_blank"
+          className="underline underline-offset-4"
+        >
           Discord community
-        </Link>. We're here to help you get the most out of Magic AI Agent.
+        </Link>
+        . We're here to help you get the most out of Magic AI Agent.
       </>
+    ),
   },
 ]
 

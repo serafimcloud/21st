@@ -6,6 +6,7 @@ import {
   Search,
   type LucideIcon,
   CreditCardIcon,
+  CalendarIcon,
 } from "lucide-react"
 import { LovableLogo } from "./lovable"
 import { SitebrewLogo } from "./sitebrew"
@@ -284,4 +285,5 @@ export const Icons = {
     </svg>
   ),
   creditCard: CreditCardIcon,
+  calendar: CalendarIcon,
 }

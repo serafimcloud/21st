@@ -1,8 +1,8 @@
-import { ConsolePageClient } from "./page.client"
 import { auth } from "@clerk/nextjs/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { ApiKey } from "@/types/global"
 import { Metadata } from "next"
+import { ConsoleTabs } from "./console-tabs"
 
 export const metadata: Metadata = {
   title: "Magic Console",
@@ -43,7 +43,7 @@ export default async function ConsolePage() {
 
   return (
     <div className="min-h-screen w-full bg-background antialiased">
-      <ConsolePageClient initialApiKey={apiKey} userId={userId} />
+      <ConsoleTabs initialApiKey={apiKey} userId={userId} />
     </div>
   )
 }

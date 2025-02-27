@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import stripe, { getPlanByStripeId } from "@/lib/stripe"
+import { getGenerationLimit } from "@/lib/subscription-limits"
 
 const stripeWebhookSecret =
   process.env.NODE_ENV === "development"
@@ -30,13 +31,16 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
       throw new Error("No plan ID found in subscription")
     }
 
-    const { planId, addUsage } =
+    const { planId, planType, addUsage } =
       await getSubscriptionPlanDetailsById(stripePlanId)
     const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
-    // Set usage limit based on the add_usage value from the database
-    let usageLimit = 10 // Default free limit
-    if (addUsage) {
+    // Set usage limit based on the plan type
+    let usageLimit = getGenerationLimit("free") // Default free limit
+    if (planType) {
+      usageLimit = getGenerationLimit(planType as any)
+    } else if (addUsage) {
+      // Fallback to the old method if planType is not available
       usageLimit = addUsage
     }
 

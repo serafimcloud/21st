@@ -1,118 +1,161 @@
 "use client"
 
 import * as React from "react"
-import { Check, Star } from "lucide-react"
-import { cva, type VariantProps } from "class-variance-authority"
+import { Check } from "lucide-react"
+import NumberFlow from "@number-flow/react"
+import { motion } from "motion/react"
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { PricingCardPlan } from "@/lib/subscription-limits"
 
-const pricingCardVariants = cva(
-  "relative overflow-hidden rounded-xl border bg-background transition-all duration-300",
-  {
-    variants: {
-      variant: {
-        default: "border-border",
-        featured: "border-primary border-2",
-      },
-      size: {
-        default: "p-6",
-        lg: "p-8",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  },
-)
-
-interface PricingPlan {
+export interface PricingTier {
   name: string
+  price: Record<string, number | string>
   description: string
-  monthlyPrice: number
-  yearlyPrice: number
   features: string[]
-  buttonText: string
-  href: string
-  isFeatured?: boolean
+  cta: string
+  highlighted?: boolean
+  popular?: boolean
 }
 
-interface PricingCardProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof pricingCardVariants> {
-  plan: PricingPlan
+interface PricingCardProps {
+  tier?: PricingTier
+  paymentFrequency?: string
+  plan?: PricingCardPlan
   isYearly?: boolean
+  isLoading?: boolean
   onClick?: () => void
 }
 
 export function PricingCard({
-  className,
+  tier,
+  paymentFrequency = "monthly",
   plan,
-  variant,
-  size,
   isYearly = false,
+  isLoading = false,
   onClick,
-  ...props
 }: PricingCardProps) {
-  const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice
+  // Определяем, какой интерфейс используется
+  const usingTier = !!tier
+
+  // Извлекаем данные в зависимости от используемого интерфейса
+  const name = usingTier ? tier.name : plan?.name || ""
+  const description = usingTier ? tier.description : plan?.description || ""
+  const features = usingTier ? tier.features : plan?.features || []
+  const buttonText = usingTier ? tier.cta : plan?.buttonText || "Get Started"
+  const isFeatured = usingTier ? tier.popular : plan?.isFeatured
+
+  // Определяем цену в зависимости от интерфейса и периода оплаты
+  let price: number | string = 0
+  let pricePeriod = "/month"
+
+  if (usingTier && tier) {
+    price = tier.price[paymentFrequency] || 0
+    pricePeriod = paymentFrequency === "yearly" ? "/year" : "/month"
+  } else if (plan) {
+    if (isYearly && plan.yearlyPrice !== undefined) {
+      price = plan.yearlyPrice
+      pricePeriod = "/year"
+    } else if (plan.monthlyPrice !== undefined) {
+      price = plan.monthlyPrice
+      pricePeriod = "/month"
+    }
+  }
+
+  // Вычисляем месячную цену при годовой оплате
+  const monthlyPrice =
+    typeof price === "number" && pricePeriod === "/year"
+      ? Math.round(price / 12)
+      : null
 
   return (
-    <div
+    <Card
       className={cn(
-        pricingCardVariants({
-          variant: plan.isFeatured ? "featured" : "default",
-          size,
-          className,
-        }),
+        "relative flex flex-col overflow-hidden p-8 border-white/10 bg-white/5 min-h-[33rem]",
+        isFeatured && "ring-2 ring-accent/50",
       )}
-      {...props}
     >
-      {plan.isFeatured && (
-        <div className="absolute right-0 top-0 bg-primary py-0.5 px-3 rounded-bl-xl rounded-tr-xl flex items-center">
-          <Star className="text-primary-foreground h-4 w-4 fill-current" />
-          <span className="text-primary-foreground ml-1 text-sm font-medium">
-            Popular
-          </span>
-        </div>
-      )}
-
-      <div className="space-y-6">
-        <div>
-          <h3 className="font-semibold text-xl">{plan.name}</h3>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {plan.description}
-          </p>
-        </div>
-
-        <div className="flex items-baseline">
-          <span className="text-3xl font-bold">$</span>
-          <span className="text-4xl font-bold">{price}</span>
-          <span className="text-muted-foreground ml-2">
-            /{isYearly ? "year" : "month"}
-          </span>
-        </div>
-
-        <div className="space-y-2">
-          {plan.features.map((feature, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary flex-shrink-0" />
-              <span className="text-sm text-muted-foreground">{feature}</span>
-            </div>
-          ))}
-        </div>
-
-        <Button
-          className={cn(
-            "w-full",
-            plan.isFeatured
-              ? "bg-primary hover:bg-primary/90"
-              : "bg-primary hover:bg-primary/90",
+      <motion.div layout className="flex-1 space-y-8">
+        <motion.div layout className="text-center">
+          <motion.h3 layout className="text-lg font-semibold text-neutral-200">
+            {name}
+          </motion.h3>
+          <motion.div
+            layout
+            className="mt-2 min-h-[54px] flex items-center justify-center "
+          >
+            {typeof price === "number" ? (
+              <div className="flex items-end justify-end">
+                <motion.span
+                  layout
+                  className="text-4xl font-bold text-neutral-200"
+                >
+                  <NumberFlow
+                    format={{
+                      style: "currency",
+                      currency: "USD",
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    }}
+                    value={price}
+                  />
+                </motion.span>
+                <motion.span layout className="text-neutral-400 mb-2">
+                  {pricePeriod}
+                </motion.span>
+              </div>
+            ) : (
+              <motion.span
+                layout
+                className="text-4xl font-bold text-neutral-200"
+              >
+                ${price}
+              </motion.span>
+            )}
+          </motion.div>
+          {monthlyPrice && (
+            <motion.p
+              layout
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mt-1 text-sm text-neutral-400"
+            >
+              ${monthlyPrice}/month billed yearly
+            </motion.p>
           )}
+          <motion.p layout className="mt-2 text-sm text-neutral-400">
+            {description}
+          </motion.p>
+        </motion.div>
+
+        <motion.ul layout className="space-y-4">
+          {features.map((feature, featureIndex) => (
+            <motion.li
+              layout
+              key={featureIndex}
+              className="flex items-start gap-x-2 "
+            >
+              <Check className="h-5 w-5 min-w-5 min-h-5 text-neutral-200 mt-1" />
+              <span className="text-neutral-400">{feature}</span>
+            </motion.li>
+          ))}
+        </motion.ul>
+      </motion.div>
+
+      <motion.div layout className="mt-8">
+        <Button
+          variant="default"
+          size="lg"
+          className="w-full bg-neutral-200 text-black hover:bg-white/90"
           onClick={onClick}
+          disabled={isLoading}
         >
-          {plan.buttonText}
+          {isLoading ? "Loading..." : buttonText}
         </Button>
-      </div>
-    </div>
+      </motion.div>
+    </Card>
   )
 }
