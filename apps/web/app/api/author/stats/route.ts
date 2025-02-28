@@ -10,22 +10,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { data, error } = await (supabaseWithAdminAccess.rpc as any)(
-      "get_author_payout_stats",
-      {
-        p_author_id: userId,
-      },
-    )
+    const { data: payoutStats, error: payoutError } = await (
+      supabaseWithAdminAccess.rpc as any
+    )("get_author_payout_stats", {
+      p_author_id: userId,
+    })
 
-    if (error) {
-      console.error("Error fetching author stats:", error)
+    if (payoutError) {
+      console.error("Error fetching author payout stats:", payoutError)
       return NextResponse.json(
         { error: "Failed to fetch author statistics" },
         { status: 500 },
       )
     }
 
-    return NextResponse.json(data)
+    const { count: publishedComponentsCount, error: componentsError } =
+      await supabaseWithAdminAccess
+        .from("components")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_public", true)
+
+    if (componentsError) {
+      console.error("Error counting published components:", componentsError)
+      return NextResponse.json(
+        { error: "Failed to count published components" },
+        { status: 500 },
+      )
+    }
+
+    const responseData = {
+      ...payoutStats,
+      published_components: publishedComponentsCount || 0,
+    }
+
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error("Author stats error:", error)
     return NextResponse.json(
