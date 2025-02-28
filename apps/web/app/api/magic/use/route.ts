@@ -1,7 +1,5 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
-import type { Database } from "@/types/supabase"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { FREE_USAGE_LIMIT } from "@/lib/config/subscription-plans"
 
 export async function GET(request: NextRequest) {
@@ -18,20 +16,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Initialize Supabase client
-    const cookieStore = await cookies()
-    const supabase = createRouteHandlerClient<Database>({
-      cookies: () => cookieStore,
-    })
-
     try {
       // Check API key in api_keys table
-      const { data: apiKeyData, error: apiKeyError } = await supabase
-        .from("api_keys")
-        .select("*")
-        .eq("key", apiKey)
-        .eq("is_active", true)
-        .single()
+      const { data: apiKeyData, error: apiKeyError } =
+        await supabaseWithAdminAccess
+          .from("api_keys")
+          .select("*")
+          .eq("key", apiKey)
+          .eq("is_active", true)
+          .single()
 
       // If key is not found or inactive
       if (apiKeyError || !apiKeyData) {
@@ -44,7 +37,7 @@ export async function GET(request: NextRequest) {
       const userId = apiKeyData.user_id
 
       // Check available requests in usages table
-      let { data: usageData, error: usageError } = await supabase
+      let { data: usageData, error: usageError } = await supabaseWithAdminAccess
         .from("usages")
         .select("*")
         .eq("user_id", userId)
@@ -60,15 +53,16 @@ export async function GET(request: NextRequest) {
 
       // If no record exists, create one with default values
       if (!usageData) {
-        const { data: newUsage, error: insertError } = await supabase
-          .from("usages")
-          .insert({
-            user_id: userId,
-            usage: 0,
-            limit: FREE_USAGE_LIMIT,
-          })
-          .select()
-          .single()
+        const { data: newUsage, error: insertError } =
+          await supabaseWithAdminAccess
+            .from("usages")
+            .insert({
+              user_id: userId,
+              usage: 0,
+              limit: FREE_USAGE_LIMIT,
+            })
+            .select()
+            .single()
 
         if (insertError) {
           return NextResponse.json(
@@ -100,7 +94,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Update usage counter
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseWithAdminAccess
         .from("usages")
         .update({
           usage: currentUsage + 1,
@@ -115,7 +109,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Update last_used_at for API key
-      await supabase
+      await supabaseWithAdminAccess
         .from("api_keys")
         .update({
           last_used_at: new Date().toISOString(),
