@@ -28,15 +28,8 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
       throw new Error("No plan ID found in subscription")
     }
 
-    console.log(
-      `Processing subscription ${subscriptionId} for user ${userId} with plan ${stripePlanId}`,
-    )
-
     // Check cancel_at_period_end for scheduled cancellations
     if (subscription.cancel_at_period_end) {
-      console.log(
-        `Subscription ${subscriptionId} scheduled for cancellation at period end`,
-      )
       const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
       // Get existing user plan
@@ -65,10 +58,6 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
             updated_at: new Date().toISOString(),
           })
           .eq("user_id", userId)
-
-        console.log(
-          `Updated subscription metadata for ${userId} with cancellation info`,
-        )
       }
     }
 
@@ -102,8 +91,6 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
     // Transaction for Supabase operations
     if (existingUserPlan) {
       // Update existing user plan
-      console.log(`Updating existing plan for user ${userId}`)
-
       await supabaseWithAdminAccess
         .from("usages")
         .upsert(
@@ -128,7 +115,6 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
         .eq("user_id", userId)
     } else {
       // Create new user plan
-      console.log(`Creating new plan for user ${userId}`)
       await supabaseWithAdminAccess
         .from("usages")
         .upsert(
@@ -150,8 +136,6 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
       })
     }
   } catch (error) {
-    console.error("Failed to process subscription creation or update:", error)
-    // Rethrow error for handling in the main try-catch block
     throw error
   }
 }
@@ -161,10 +145,6 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
     const subscription = event.data.object as Stripe.Subscription
     const userId = subscription.metadata.userId as string
     const subscriptionId = subscription.id
-
-    console.log(
-      `Processing subscription deletion for ${userId}, subscription ID: ${subscriptionId}`,
-    )
 
     // Get free plan limit
     const freeUsageLimit = getGenerationLimit("free")
@@ -177,8 +157,6 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
       })
       .eq("user_id", userId)
 
-    console.log("Usage update result:", usageResult.status, usageResult.error)
-
     // Update plan status to inactive
     const planResult = await supabaseWithAdminAccess
       .from("users_to_plans")
@@ -188,16 +166,12 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
       })
       .eq("user_id", userId)
 
-    console.log("Plan update result:", planResult.status, planResult.error)
-
     if (planResult.error || usageResult.error) {
       throw new Error(
         `Failed to update database: ${planResult.error || usageResult.error}`,
       )
     }
   } catch (error) {
-    console.error("Error handling subscription deletion:", error)
-    // Rethrow error for handling in the main try-catch block
     throw error
   }
 }
@@ -207,22 +181,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const sig = req.headers.get("stripe-signature")
 
   if (!sig) {
-    console.error("No Stripe signature found")
     return NextResponse.json(
       { error: "No Stripe signature found" },
       { status: 400 },
     )
   }
 
-  console.log("Received webhook with signature:", sig)
-  console.log("Webhook secret:", stripeWebhookSecret ? "Present" : "Missing")
-
   let event: Stripe.Event
 
   try {
     event = stripe.webhooks.constructEvent(body, sig, stripeWebhookSecret!)
   } catch (err: any) {
-    console.error(`Webhook Error: ${err.message}`, err)
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },
       { status: 400 },
@@ -232,15 +201,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Check if we have a userId in the metadata
   // @ts-ignore
   if (!event.data.object?.metadata?.userId) {
-    console.error("No userId found in subscription metadata", event.data.object)
     return NextResponse.json(
       { error: "No userId found in subscription metadata" },
       { status: 400 },
     )
   }
-
-  console.log("Event type:", event.type)
-  console.log("Event data:", event.data.object)
 
   try {
     switch (event.type) {
@@ -255,7 +220,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error("Error processing webhook:", error)
     return NextResponse.json(
       { error: "Error processing webhook" },
       { status: 500 },

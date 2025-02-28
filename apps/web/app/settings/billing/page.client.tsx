@@ -130,14 +130,6 @@ export function BillingSettingsClient({
   successParam = false,
   canceledParam = false,
 }: BillingSettingsClientProps) {
-  useEffect(() => {
-    console.log("Subscription data:", {
-      subscription,
-      usageCount: subscription?.usage_count,
-      type: subscription?.type,
-    })
-  }, [subscription])
-
   const [isLoading, setIsLoading] = useState(false)
   const [isUpgradeLoading, setIsUpgradeLoading] = useState(false)
   const [showPricingTable, setShowPricingTable] = useState(
@@ -213,28 +205,18 @@ export function BillingSettingsClient({
   }, [subscription])
 
   const fetchInvoices = async () => {
-    console.log("Starting to fetch invoices")
     setIsLoadingInvoices(true)
     try {
-      console.log("Sending request to /api/stripe/get-invoices")
       const response = await fetch("/api/stripe/get-invoices")
-
-      console.log("Response status:", response.status)
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error("API error response:", errorData)
         throw new Error(errorData.error || "Failed to fetch invoices")
       }
 
       const data = await response.json()
-      console.log(
-        "Invoices data received:",
-        data.invoices ? `${data.invoices.length} invoices` : "No invoices",
-      )
       setInvoices(data.invoices || [])
     } catch (error) {
-      console.error("Error fetching invoices:", error)
       toast.error("Failed to load payment history. Please try again later.")
     } finally {
       setIsLoadingInvoices(false)
@@ -261,7 +243,6 @@ export function BillingSettingsClient({
         window.location.reload()
       }, 1000)
     } catch (error) {
-      console.error("Error cancelling subscription:", error)
       toast.error(
         error instanceof Error
           ? error.message
@@ -313,7 +294,6 @@ export function BillingSettingsClient({
         window.location.href = data.url
       }
     } catch (error) {
-      console.error("Error creating checkout session:", error)
       toast.error(
         error instanceof Error
           ? error.message
@@ -346,22 +326,8 @@ export function BillingSettingsClient({
         .eq("user_id", userId)
         .single()
 
-      console.log("Data from Supabase:", data)
-      console.log("User ID:", userId)
-      console.log(
-        "Comparison - from subscription:",
-        subscription?.usage_count,
-        "from Supabase:",
-        data?.usage,
-      )
-
-      if (error) {
-        console.error("Error loading usage data:", error)
-      } else if (data) {
-        console.log("Usage detected from database:", data.usage)
-      }
     } catch (error) {
-      console.error("Error loading usage data:", error)
+      // Error handling
     } finally {
       setIsUsageLoading(false)
     }

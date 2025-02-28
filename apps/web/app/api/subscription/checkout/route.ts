@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
 
     const validationResult = checkoutSchema.safeParse(body)
     if (!validationResult.success) {
-      console.error("Validation error:", validationResult.error)
       return NextResponse.json(
         {
           error: "Invalid request data",
@@ -27,11 +26,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { type, period } = validationResult.data
-
-    console.log("--------------------------------")
-    console.log("type", type)
-    console.log("period", period)
-    console.log("--------------------------------")
 
     // Check authentication
     const authSession = await auth()
@@ -51,9 +45,7 @@ export async function POST(request: NextRequest) {
     let priceId: string
     try {
       priceId = await getIdBySubscriptionPlanDetails(type, period)
-      console.log("Retrieved price ID:", priceId)
     } catch (error) {
-      console.error("Error getting price ID:", error)
       return NextResponse.json(
         { error: "Invalid subscription plan configuration" },
         { status: 400 },
@@ -85,17 +77,14 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      console.log("Created checkout session:", session.id)
       return NextResponse.json({ url: session.url })
     } catch (error) {
-      console.error("Stripe session creation error:", error)
       return NextResponse.json(
         { error: "Failed to create checkout session" },
         { status: 500 },
       )
     }
   } catch (error) {
-    console.error("Stripe checkout error:", error)
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

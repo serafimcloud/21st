@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
 
     const validationResult = checkoutSchema.safeParse(body)
     if (!validationResult.success) {
-      console.error("Validation error:", validationResult.error)
       return NextResponse.json(
         {
           error: "Invalid request data",
@@ -40,14 +39,6 @@ export async function POST(request: NextRequest) {
       subscriptionId,
     } = validationResult.data
 
-    console.log(
-      "Creating checkout for plan:",
-      planId,
-      "period:",
-      period,
-      isUpgrade ? "upgrade" : "new subscription",
-    )
-
     const authSession = await auth()
     const userId = authSession?.userId
     if (!userId) {
@@ -60,16 +51,10 @@ export async function POST(request: NextRequest) {
       .eq("id", userId)
       .maybeSingle()
 
-    if (userError) {
-      console.error("Error fetching user:", userError)
-    }
-
     let priceId: string
     try {
       priceId = await getIdBySubscriptionPlanDetails(planId, period)
-      console.log("Retrieved price ID:", priceId)
     } catch (error) {
-      console.error("Error getting price ID:", error)
       return NextResponse.json(
         { error: "Invalid subscription plan configuration" },
         { status: 400 },
@@ -78,8 +63,6 @@ export async function POST(request: NextRequest) {
 
     try {
       if (isUpgrade && currentPlanId !== "free" && subscriptionId) {
-        console.log("Processing direct subscription upgrade for user:", userId)
-
         try {
           const subscription =
             await stripe.subscriptions.retrieve(subscriptionId)
@@ -88,12 +71,10 @@ export async function POST(request: NextRequest) {
             const subscriptionItemId = subscription.items.data[0]?.id
 
             if (!subscriptionItemId) {
-              console.error("Subscription item not found")
               throw new Error("Subscription item not found")
             }
 
             if (!planId) {
-              console.error("Plan ID is undefined")
               throw new Error("Plan ID is undefined")
             }
 
@@ -123,20 +104,13 @@ export async function POST(request: NextRequest) {
               },
             )
 
-            console.log("Subscription directly upgraded:", subscription.id)
-
             return NextResponse.json({
               url: successUrl,
               directly_upgraded: true,
             })
-          } else {
-            console.error("Subscription does not belong to the current user")
           }
         } catch (subscriptionError) {
-          console.error(
-            "Error retrieving or updating subscription:",
-            subscriptionError,
-          )
+          // Subscription error handled silently, will fall back to creating new checkout
         }
       }
 
@@ -165,17 +139,14 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      console.log("Created checkout session:", session.id)
       return NextResponse.json({ url: session.url })
     } catch (error) {
-      console.error("Stripe session creation error:", error)
       return NextResponse.json(
         { error: "Failed to create checkout session" },
         { status: 500 },
       )
     }
   } catch (error) {
-    console.error("Stripe checkout error:", error)
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
