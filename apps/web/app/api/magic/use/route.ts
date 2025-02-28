@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
 import type { Database } from "@/types/supabase"
+import { FREE_USAGE_LIMIT } from "@/lib/config/subscription-plans"
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,26 +44,41 @@ export async function GET(request: NextRequest) {
       const userId = apiKeyData.user_id as string
 
       // Check available requests in usages table
-      const { data: usageData, error: usageError } = await supabase
+      let { data: usageData, error: usageError } = await supabase
         .from("usages")
         .select("*")
         .eq("user_id", userId)
         .single()
 
-      // If record not found or error occurred
-      if (usageError) {
+      // If error is not "record not found", it's a genuine error
+      if (usageError && usageError.code !== "PGRST116") {
         return NextResponse.json(
           { success: false, error: "Failed to check usage limits" },
           { status: 500 },
         )
       }
 
-      // If no record exists, user has no limits (until we create a record)
+      // If no record exists, create one with default values
       if (!usageData) {
-        return NextResponse.json(
-          { success: false, error: "No usage record found for this user" },
-          { status: 404 },
-        )
+        const { data: newUsage, error: insertError } = await supabase
+          .from("usages")
+          .insert({
+            user_id: userId,
+            usage: 0,
+            limit: FREE_USAGE_LIMIT,
+          } as any)
+          .select()
+          .single()
+
+        if (insertError) {
+          return NextResponse.json(
+            { success: false, error: "Failed to create usage record" },
+            { status: 500 },
+          )
+        }
+
+        // Use the newly created record
+        usageData = newUsage
       }
 
       // Current usage values and limit

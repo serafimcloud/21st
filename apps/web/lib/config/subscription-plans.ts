@@ -34,13 +34,15 @@ export interface PlanLimits {
   yearlyPrice?: number
 }
 
+export const FREE_USAGE_LIMIT = 5
+
 // Core features configuration that will be used in pricing table
 export const PLAN_FEATURES: PlanFeature[] = [
   {
     name: "Monthly generations",
     included: "free",
     valueByPlan: {
-      free: "5",
+      free: FREE_USAGE_LIMIT.toString(),
       standard: "50",
       pro: "200",
     },
@@ -104,7 +106,7 @@ export const PLAN_FEATURES: PlanFeature[] = [
 // Plan limits and basic information
 export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   free: {
-    generationsPerMonth: 5,
+    generationsPerMonth: FREE_USAGE_LIMIT,
     displayName: "Hobby",
     name: "Hobby",
     description: "Perfect for trying out",

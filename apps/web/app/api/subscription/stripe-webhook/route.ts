@@ -73,49 +73,12 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
     }
 
     // Try to get plan details
-    let planDetails
-    try {
-      planDetails = await getSubscriptionPlanDetailsById(stripePlanId)
-    } catch (error) {
-      console.error(`Error getting plan details for ${stripePlanId}:`, error)
+    const planDetails = await getSubscriptionPlanDetailsById(stripePlanId)
 
-      // Manual search for plan in Supabase if not found via getPlanByStripeId
-      const { data: planData } = await supabaseWithAdminAccess
-        .from("plans")
-        .select("*")
-        .eq("stripe_plan_id", stripePlanId)
-        .maybeSingle()
-
-      if (!planData) {
-        console.error(`Plan with ID ${stripePlanId} not found in database`)
-        // Use fallback value
-        planDetails = {
-          planId: 1, // Use standard plan as fallback
-          planType: "standard",
-          planPeriod: "monthly",
-          addUsage: 500,
-        }
-      } else {
-        planDetails = {
-          planId: planData.id,
-          planType: planData.type,
-          planPeriod: planData.period,
-          addUsage: planData.add_usage,
-        }
-      }
-    }
-
-    const { planId, planType, addUsage } = planDetails
+    const { planId, addUsage } = planDetails
     const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
 
-    // Set usage limit based on the plan type
-    let usageLimit = getGenerationLimit("free") // Default free limit
-    if (planType) {
-      usageLimit = getGenerationLimit(planType as any)
-    } else if (addUsage) {
-      // Fallback to the old method if planType is not available
-      usageLimit = addUsage
-    }
+    let usageLimit = addUsage
 
     // Create metadata for the users_to_plans table
     const meta = {
