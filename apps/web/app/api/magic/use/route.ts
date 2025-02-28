@@ -4,12 +4,17 @@ import { NextRequest, NextResponse } from "next/server"
 import type { Database } from "@/types/supabase"
 import { FREE_USAGE_LIMIT } from "@/lib/config/subscription-plans"
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ apikey: string }> },
+) {
   try {
-    // Get API key from query parameters or headers
-    const { searchParams } = new URL(request.url)
-    const apiKey =
-      searchParams.get("apikey") || request.headers.get("x-api-key")
+    const { apikey } = await params
+
+    // Get API key from params or headers
+    let apiKey = apikey || request.headers.get("x-api-key")
+
+    console.log("apikey", apiKey)
 
     if (!apiKey) {
       return NextResponse.json(
