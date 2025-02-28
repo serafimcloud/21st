@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronLeft, User, CreditCard } from "lucide-react"
+import { ChevronLeft, User, CreditCard, Wallet } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,11 @@ export function SettingsSidebar() {
       href: "/settings/billing",
       title: "Billing",
       icon: <CreditCard className="h-3.5 w-3.5" />,
+    },
+    {
+      href: "/settings/payouts",
+      title: "Payouts",
+      icon: <Wallet className="h-3.5 w-3.5" />,
     },
   ]
 

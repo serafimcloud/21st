@@ -22,7 +22,11 @@ const settingsLinks = [
   {
     title: "Billing",
     href: "/settings/billing",
-  }
+  },
+  {
+    title: "Payouts",
+    href: "/settings/payouts",
+  },
 ]
 
 export function SettingsMobileNav() {

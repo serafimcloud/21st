@@ -877,6 +877,7 @@ export type Database = {
           is_admin: boolean
           manually_added: boolean
           name: string | null
+          paypal_email: string | null
           pro_banner_url: string | null
           pro_referral_url: string | null
           ref: string | null
@@ -898,6 +899,7 @@ export type Database = {
           is_admin?: boolean
           manually_added?: boolean
           name?: string | null
+          paypal_email?: string | null
           pro_banner_url?: string | null
           pro_referral_url?: string | null
           ref?: string | null
@@ -919,6 +921,7 @@ export type Database = {
           is_admin?: boolean
           manually_added?: boolean
           name?: string | null
+          paypal_email?: string | null
           pro_banner_url?: string | null
           pro_referral_url?: string | null
           ref?: string | null
