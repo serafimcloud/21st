@@ -31,7 +31,7 @@ export function ConsoleTabs({ initialApiKey, userId }: ConsoleTabsProps) {
                 >
                   Onboarding
                 </TabsTrigger>
-                <Link href="/settings/billing">
+                <Link href="/settings/billing" aria-disabled="true" className="pointer-events-none opacity-50">
                   <TabsTrigger
                     value="billing-usage"
                     className="relative min-w-[120px] after:absolute after:inset-x-0 after:bottom-[-3px] after:-mb-px after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
