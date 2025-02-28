@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, KeyboardEvent } from "react"
+import { useState, KeyboardEvent, useEffect } from "react"
 import { toast } from "sonner"
 import { LoaderCircle } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
@@ -56,20 +56,20 @@ export function PayoutsSettingsClient() {
   const [isValidEmail, setIsValidEmail] = useState(true)
   const supabase = useClerkSupabaseClient()
 
-  const { data: userPaypalEmail } = useQuery({
+  const { data: userPaypalEmail, isLoading: isLoadingEmail } = useQuery({
     queryKey: ["userPaypalEmail", clerkUser?.username],
     queryFn: async () => {
-      const email = await fetchUserPaypalEmail(
-        clerkUser?.username || "serafimcloud",
-      )
-      if (email) {
-        setPaypalEmail(email)
-      }
-      return email
+      return await fetchUserPaypalEmail(clerkUser?.username || "serafimcloud")
     },
     enabled: !!clerkUser,
     staleTime: 5 * 60 * 1000,
   })
+
+  useEffect(() => {
+    if (userPaypalEmail) {
+      setPaypalEmail(userPaypalEmail)
+    }
+  }, [userPaypalEmail])
 
   const { data: authorStats, isLoading: isLoadingStats } = useQuery({
     queryKey: ["authorStats", userId],
@@ -118,7 +118,7 @@ export function PayoutsSettingsClient() {
 
     setIsLoading(true)
     try {
-      const targetUsername = clerkUser?.username || "serafimcloud"
+      const targetUsername = clerkUser?.username
 
       const requestBody = {
         paypal_email: paypalEmail,
