@@ -16,6 +16,7 @@ export interface PricingTier {
   description: string
   features: string[]
   cta: string
+  href?: string
   highlighted?: boolean
   popular?: boolean
 }
@@ -50,6 +51,7 @@ export function PricingCard({
   const isPlanFeatured = usingTier
     ? tier.popular
     : isFeatured || plan?.isFeatured
+  const href = usingTier ? tier.href : undefined
 
   let price: number | string = 0
   let pricePeriod = "/month"
@@ -159,8 +161,15 @@ export function PricingCard({
           )}
           onClick={onClick}
           disabled={isLoading}
+          asChild={!!href}
         >
-          {isLoading ? "Loading..." : buttonText}
+          {href ? (
+            <a href={href}>{isLoading ? "Loading..." : buttonText}</a>
+          ) : isLoading ? (
+            "Loading..."
+          ) : (
+            buttonText
+          )}
         </Button>
       </motion.div>
     </Card>

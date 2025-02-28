@@ -242,6 +242,12 @@ export function HomePageClient() {
                   duration: 0.2,
                 },
               }}
+              className="hidden md:block"
+              style={
+                {
+                  "--sidebar-width": sidebarOpen ? "280px" : "0px",
+                } as React.CSSProperties
+              }
             >
               <MagicBanner />
             </motion.div>
@@ -250,7 +256,8 @@ export function HomePageClient() {
         <div
           className={cn(
             "container mx-auto px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px] transition-[margin] duration-200 ease-in-out",
-            shouldShowBanner && isBannerVisible ? "mt-[144px]" : "mt-20",
+            "mt-20",
+            shouldShowBanner && isBannerVisible ? "md:mt-[144px]" : "",
           )}
         >
           <MainContent

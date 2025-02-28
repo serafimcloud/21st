@@ -18,7 +18,8 @@ const TIERS = [
       "Access to SVGL logo library",
       "Community support",
     ],
-    cta: "Join waitlist",
+    cta: "Get Started",
+    href: "/magic/get-started",
   },
   {
     name: "Standard",
@@ -28,13 +29,14 @@ const TIERS = [
     },
     description: "For professional developers",
     features: [
-      "50 generations per month", 
+      "50 generations per month",
       "Access to all components",
       "Access to SVGL logo library",
       "Priority support",
-      "50% of revenue goes to component authors"
+      "50% of revenue goes to component authors",
     ],
-    cta: "Join waitlist",
+    cta: "Get Started",
+    href: "/magic/get-started",
     popular: true,
   },
   {
@@ -46,12 +48,13 @@ const TIERS = [
     description: "For power users",
     features: [
       "200 generations per month",
-      "Access to all components", 
+      "Access to all components",
       "Access to SVGL logo library",
       "Priority support",
-      "50% of revenue goes to component authors"
+      "50% of revenue goes to component authors",
     ],
-    cta: "Join waitlist",
+    cta: "Get Started",
+    href: "/magic/get-started",
     highlighted: true,
   },
 ]

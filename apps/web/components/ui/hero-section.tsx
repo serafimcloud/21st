@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "motion/react"
 import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-media-query"
 import { setCookie } from "@/lib/cookies"
@@ -79,11 +80,20 @@ export function HeroSection() {
                 API
               </Link>
               <Link
-                href="https://accounts.21st.dev/sign-in"
+                href="/magic"
                 onClick={onEnterWebsite}
                 className="text-sm text-foreground/90 hover:text-foreground transition-colors"
               >
-                Log in
+                Magic MCP
+              </Link>
+              <Link
+                href="https://github.com/serafimcloud/21st"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-sm text-foreground/90 hover:text-foreground transition-colors"
+              >
+                <Icons.gitHub className="h-3.5 w-3.5" aria-hidden="true" />
+                <GitHubStarsBasic className="inline-flex" />
               </Link>
             </div>
           </motion.nav>
@@ -125,20 +135,10 @@ export function HeroSection() {
                 className="gap-2 border-border hover:bg-transparent text-foreground opacity-60 hover:opacity-90 transition-opacity duration-200"
                 asChild
               >
-                <a
-                  href="https://github.com/serafimcloud/21st"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Icons.gitHub
-                    className="h-4 w-4"
-                    aria-hidden="true"
-                  />
-                  <span className="">
-                    <GitHubStarsBasic className="mr-1" />
-                    Stars
-                  </span>
-                </a>
+                <Link href="/magic" onClick={onEnterWebsite}>
+                  Integrate in IDE AI Agent
+                  <ArrowRight className="h-4 w-4 ml-1.5" />
+                </Link>
               </Button>
             </div>
 

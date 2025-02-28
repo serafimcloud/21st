@@ -6,7 +6,7 @@ import { FAQ } from "@/components/features/magic/faq"
 import { Footer } from "@/components/ui/footer"
 import { SupportedEditors } from "@/components/features/magic/supported-editors"
 import { Features } from "@/components/features/magic/features"
-import { SignInButton, SignedOut } from "@clerk/nextjs"
+import { SignInButton, SignedOut, SignedIn } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 
 export const metadata: Metadata = {
@@ -57,13 +57,13 @@ export default function MagicPage() {
   return (
     <div className="absolute inset-0 min-h-screen w-full overflow-auto bg-black">
       <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-        {/* <SignedIn >
+        <SignedIn>
           <Button asChild>
-            <a href="/magic/console" className="text-sm">
-              Open Console
+            <a href="/magic/get-started" className="text-sm">
+              Get Started
             </a>
           </Button>
-        </SignedIn> */}
+        </SignedIn>
         <SignedOut>
           <SignInButton>
             <Button>Sign up</Button>

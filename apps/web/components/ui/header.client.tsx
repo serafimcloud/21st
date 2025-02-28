@@ -252,25 +252,19 @@ export function Header({
                     View Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-sm px-3 py-2 cursor-pointer"
-                    onSelect={() => setShowEditProfile(true)}
-                  >
-                    Edit Profile
-                  </DropdownMenuItem>
-                  {/* <DropdownMenuItem
                     className="text-sm px-3 py-2 cursor-pointer flex items-center justify-between"
-                    onSelect={() => router.push("/settings")}
+                    onSelect={() => router.push("/settings/profile")}
                   >
                     Settings
                     <Icons.settings className="h-4 w-4" />
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-sm px-3 py-2 cursor-pointer flex items-center justify-between"
-                    onSelect={() => (window.location.href = "/subscription")}
+                    onSelect={() => (window.location.href = "/settings/billing")}
                   >
                     Subscription
                     <Icons.creditCard className="h-4 w-4" />
-                  </DropdownMenuItem> */}
+                  </DropdownMenuItem>
                 </div>
 
                 <div className="border-t border-border p-1">

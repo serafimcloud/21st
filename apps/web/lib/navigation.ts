@@ -1,4 +1,4 @@
-import { Dock, Box } from "lucide-react"
+import { Dock, Box, Wand2 } from "lucide-react"
 
 type NavigationItem = {
   title: string
@@ -6,6 +6,7 @@ type NavigationItem = {
   isNew?: boolean
   demoId?: number
   demosCount?: number
+  externalLink?: boolean
 }
 
 type NavigationCategory = {
@@ -171,6 +172,26 @@ const ui: NavigationItem[] = [
 ].sort((a, b) => a.title.localeCompare(b.title))
 
 export const categories: NavigationCategory[] = [
+  {
+    title: "Magic AI Agent",
+    icon: Wand2,
+    isNew: true,
+    items: [
+      {
+        title: "Introduction",
+        href: "/magic",
+        externalLink: true,
+      },
+      {
+        title: "Get Started",
+        href: "/magic/get-started",
+      },
+      {
+        title: "Manage Subscription",
+        href: "/settings/billing",
+      },
+    ],
+  },
   {
     title: "Marketing Blocks",
     icon: Dock,

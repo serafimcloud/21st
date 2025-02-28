@@ -22,7 +22,13 @@ const MagicBannerContent = memo(function MagicBannerContent() {
   }
 
   return (
-    <div className="fixed inset-x-0 top-14 z-50 border-b border-border bg-muted">
+    <div
+      className="fixed top-14 z-50 border-b border-border bg-muted transition-[left] duration-200 ease-in-out"
+      style={{
+        left: "calc(var(--sidebar-width, 0px) - 24px)",
+        right: "0",
+      }}
+    >
       <Banner variant="muted" className="dark text-foreground">
         <div className="flex w-full gap-2 md:items-center">
           <div className="flex grow gap-3 md:items-center">
@@ -35,11 +41,12 @@ const MagicBannerContent = memo(function MagicBannerContent() {
             <div className="flex grow flex-col justify-between gap-3 md:flex-row md:items-center">
               <div className="space-y-0.5">
                 <p className="text-sm font-medium">
-                  Introducing Magic - The AI Agent That Builds Beautiful UI Components
+                  Introducing Magic - The AI Agent That Builds Beautiful UI
+                  Components
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Empower your IDE with an AI extension that creates stunning, production-ready components 
-                  with AI precision.
+                  Empower your IDE with an AI extension that creates stunning,
+                  production-ready components with AI precision.
                 </p>
               </div>
               <div className="flex gap-2 max-md:flex-wrap">
