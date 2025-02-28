@@ -13,11 +13,11 @@ import {
 } from "@/lib/config/subscription-plans"
 import { PricingTable, PlanLevel } from "@/components/ui/pricing-table"
 import { BillingHeader } from "@/components/features/settings/billing/billing-header"
-import { createClient } from "@supabase/supabase-js"
 import { ConfirmationDialog } from "@/components/features/settings/billing/confirmation-dialog"
 import { UpgradeConfirmationDialog } from "@/components/features/settings/billing/upgrade-confirmation-dialog"
 import { InvoicesList } from "@/components/features/settings/billing/invoices-list"
 import { useSubscription, PlanInfo } from "@/hooks/use-subscription"
+import { useAuth } from "@clerk/nextjs"
 
 interface Invoice {
   id: string
@@ -61,6 +61,7 @@ export function BillingSettingsClient({
   successParam = false,
   canceledParam = false,
 }: BillingSettingsClientProps) {
+  const { userId } = useAuth()
   const [subscription, setSubscription] = useState(initialSubscription)
   const { fetchSubscription } = useSubscription()
   const [isLoading, setIsLoading] = useState(false)
@@ -90,8 +91,11 @@ export function BillingSettingsClient({
   })
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(false)
-  const [isUsageLoading, setIsUsageLoading] = useState(false)
-  const [userId, setUserId] = useState<string | null>(null)
+
+  const currentPlanId = (subscription?.type as PlanType) || "free"
+  const usageCount = subscription?.usage || 0
+  const usageLimit =
+    subscription?.limit || PLAN_LIMITS[currentPlanId].generationsPerMonth
 
   // Set global state
   setShowPricingTableGlobal = setShowPricingTable
@@ -269,27 +273,6 @@ export function BillingSettingsClient({
     })
   }
 
-  const fetchUsageData = useCallback(async () => {
-    if (!userId) return
-
-    setIsUsageLoading(true)
-    try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        process.env.NEXT_PUBLIC_SUPABASE_KEY || "",
-      )
-      const { data, error } = await supabase
-        .from("usages")
-        .select("usage, limit")
-        .eq("user_id", userId)
-        .single()
-    } catch (error) {
-      // Error handling
-    } finally {
-      setIsUsageLoading(false)
-    }
-  }, [userId, subscription])
-
   // Show loading state while subscription data is being fetched
   if (!subscription) {
     return (
@@ -300,9 +283,6 @@ export function BillingSettingsClient({
       </div>
     )
   }
-
-  const currentPlanId: PlanType = (subscription?.type as PlanType) || "free"
-  const usageCount = subscription?.usage_count || 0
 
   const handlePlanSelect = async (plan: PlanLevel, isYearly = false) => {
     const selectedPlanId = plan as PlanType
@@ -391,6 +371,10 @@ export function BillingSettingsClient({
     )
   }
 
+  const displayLimit = usageLimit
+  console.log("Displaying limit:", displayLimit)
+  console.log("Usage count:", usageCount)
+
   return (
     <div className="space-y-6">
       <BillingHeader />
@@ -435,16 +419,20 @@ export function BillingSettingsClient({
                   strokeDasharray={`${2 * Math.PI * 8}`}
                   strokeLinecap="round"
                   strokeWidth="3"
-                  strokeDashoffset={`${2 * Math.PI * 8 * (1 - usageCount / PLAN_LIMITS[currentPlanId].generationsPerMonth)}`}
+                  strokeDashoffset={`${2 * Math.PI * 8 * (1 - usageCount / displayLimit)}`}
                 />
               </svg>
               <div className="text-sm">
-                {usageCount.toLocaleString()} /{" "}
-                {PLAN_LIMITS[
-                  currentPlanId
-                ].generationsPerMonth.toLocaleString()}
+                {usageCount.toLocaleString()} / {displayLimit.toLocaleString()}
               </div>
             </div>
+            {usageLimit !== PLAN_LIMITS[currentPlanId].generationsPerMonth && (
+              <div className="text-xs text-muted-foreground mt-1 max-w-[200px] text-right">
+                {subscription?.cancel_at_period_end
+                  ? "Your higher limit will remain active until the end of the billing period"
+                  : "Your limit differs from the standard plan limit due to a recent plan change"}
+              </div>
+            )}
           </div>
         </div>
 

@@ -2,12 +2,15 @@ import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { auth } from "@clerk/nextjs/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { PostgrestError } from "@supabase/supabase-js"
+import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 
 interface SubscriptionMeta {
   stripe_subscription_id?: string
   stripe_customer_id?: string
   current_period_end?: string
+  cancel_at_period_end?: boolean
+  portal_url?: string
+  period_end?: string
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -18,80 +21,93 @@ export async function GET() {
   try {
     const { userId } = await auth()
 
+    // Данные плана по умолчанию
+    const defaultPlanInfo = {
+      name: PLAN_LIMITS.free.displayName,
+      type: "free" as PlanType,
+      usage: 0,
+      limit: PLAN_LIMITS.free.generationsPerMonth,
+      current_period_end: undefined,
+      cancel_at_period_end: false,
+      portal_url: undefined,
+    }
+
     if (!userId) {
-      return NextResponse.json(
-        {
-          name: "Free Plan",
-          type: "free",
-          usage_count: 0,
-        },
-        { status: 200 },
-      )
+      return NextResponse.json(defaultPlanInfo, { status: 200 })
     }
 
     console.log("Fetching subscription for user:", userId)
 
-    // Get subscription from Supabase
-    const { data: subscription, error } = await supabaseWithAdminAccess
+    // 1. Получаем активную подписку пользователя
+    const { data: userPlan, error: planError } = await supabaseWithAdminAccess
       .from("users_to_plans")
       .select(
         `
         id,
-        user_id,
-        plan_id,
         status,
+        plan_id,
         meta,
         last_paid_at,
-        created_at,
-        updated_at
+        plans:plan_id (
+          id,
+          stripe_plan_id,
+          price,
+          env,
+          period,
+          type,
+          add_usage
+        )
       `,
       )
       .eq("user_id", userId)
-      .single()
+      .eq("status", "active")
+      .maybeSingle()
 
-    console.log("Subscription query result:", { subscription, error })
+    // 2. Получаем информацию об использовании
+    const { data: usageData, error: usageError } = await supabaseWithAdminAccess
+      .from("usages")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle()
 
-    // If no subscription found or error is PGRST116 (no rows), return free plan
-    if (
-      !subscription ||
-      (error as PostgrestError | null)?.code === "PGRST116"
-    ) {
+    // Если произошла ошибка при запросе плана, возвращаем план по умолчанию
+    if (planError) {
+      console.error("Error fetching plan:", planError)
+      return NextResponse.json(defaultPlanInfo, { status: 200 })
+    }
+
+    // Если нет активного плана, возвращаем бесплатный план
+    if (!userPlan) {
       return NextResponse.json(
         {
-          name: "Free Plan",
-          type: "free",
-          usage_count: 0,
+          ...defaultPlanInfo,
+          // Если есть данные об использовании, используем их
+          usage: usageData?.usage || 0,
+          limit: usageData?.limit || PLAN_LIMITS.free.generationsPerMonth,
         },
         { status: 200 },
       )
     }
 
-    // If other error occurred
-    if (error) {
-      console.error("Error fetching subscription:", error)
-      return NextResponse.json(
-        { error: "Failed to fetch subscription" },
-        { status: 500 },
-      )
-    }
+    // Получаем информацию о плане
+    const plansData = userPlan.plans as any
+    const planType = (plansData?.type || "free") as PlanType
 
-    // Get plan details
-    const { data: plan } = await supabaseWithAdminAccess
-      .from("plans")
-      .select("*")
-      .eq("id", subscription.plan_id)
-      .single()
+    // Данные из meta
+    const meta = (userPlan.meta as SubscriptionMeta) || {}
 
-    // Get usage count
-    const { data: usage } = await supabaseWithAdminAccess
-      .from("usages")
-      .select("usage, limit")
-      .eq("user_id", userId)
-      .single()
+    // Определяем лимит использования
+    // 1. Сначала проверяем, есть ли специфичный лимит в таблице usages
+    // 2. Если нет, используем лимит из плана + add_usage
+    // 3. Если ничего не определено, используем дефолтный лимит для типа плана
+    const planLimit =
+      usageData?.limit ||
+      PLAN_LIMITS[planType].generationsPerMonth + (plansData?.add_usage || 0) ||
+      PLAN_LIMITS[planType].generationsPerMonth
 
-    // If subscription has Stripe ID, get additional info from Stripe
+    // Если есть Stripe ID подписки, получаем дополнительную информацию из Stripe
     let stripeSubscription = null
-    const meta = subscription.meta as SubscriptionMeta
+    let portal_url = meta?.portal_url || null
 
     if (meta?.stripe_subscription_id) {
       try {
@@ -103,9 +119,8 @@ export async function GET() {
       }
     }
 
-    // Get portal URL only if customer ID exists
-    let portal_url = null
-    if (meta?.stripe_customer_id) {
+    // Получаем URL портала только если существует ID клиента
+    if (meta?.stripe_customer_id && !portal_url) {
       try {
         const { url } = await stripe.billingPortal.sessions.create({
           customer: meta.stripe_customer_id,
@@ -117,23 +132,41 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
-      id: subscription.id,
+    // Подготавливаем информацию о плане
+    const planInfo = {
+      id: userPlan.id.toString(),
       name:
-        plan?.type === "free"
-          ? "Free Plan"
-          : `${plan?.type?.toUpperCase()} Plan`,
-      type: plan?.type || "free",
-      period: plan?.period || null,
-      periodEnd: meta?.current_period_end || null,
-      usage_count: usage?.usage || 0,
+        PLAN_LIMITS[planType]?.displayName ||
+        plansData?.stripe_plan_id ||
+        defaultPlanInfo.name,
+      type: planType,
+      period: plansData?.period || null,
+      periodEnd: meta?.period_end || null,
       current_period_end: stripeSubscription?.current_period_end
         ? new Date(stripeSubscription.current_period_end * 1000).toISOString()
-        : null,
-      cancel_at_period_end: stripeSubscription?.cancel_at_period_end || false,
+        : meta?.current_period_end || null,
+      cancel_at_period_end:
+        stripeSubscription?.cancel_at_period_end ||
+        meta?.cancel_at_period_end ||
+        false,
+      usage: usageData?.usage || 0,
+      limit: planLimit,
       portal_url,
       stripe_subscription_id: meta?.stripe_subscription_id,
-    })
+      planData: plansData
+        ? {
+            id: plansData.id,
+            stripe_plan_id: plansData.stripe_plan_id,
+            price: plansData.price,
+            env: plansData.env,
+            period: plansData.period,
+            type: plansData.type,
+            add_usage: plansData.add_usage,
+          }
+        : undefined,
+    }
+
+    return NextResponse.json(planInfo, { status: 200 })
   } catch (error) {
     console.error("Error in get-subscription route:", error)
     return NextResponse.json(
