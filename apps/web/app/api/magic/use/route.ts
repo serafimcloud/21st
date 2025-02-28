@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Initialize Supabase client
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createRouteHandlerClient<Database>({
       cookies: () => cookieStore,
     })
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      const userId = apiKeyData.user_id as string
+      const userId = apiKeyData.user_id
 
       // Check available requests in usages table
       let { data: usageData, error: usageError } = await supabase
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
             user_id: userId,
             usage: 0,
             limit: FREE_USAGE_LIMIT,
-          } as any)
+          })
           .select()
           .single()
 
@@ -82,8 +82,8 @@ export async function GET(request: NextRequest) {
       }
 
       // Current usage values and limit
-      const currentUsage = (usageData.usage as number) || 0
-      const usageLimit = (usageData.limit as number) || 0
+      const currentUsage = usageData?.usage || 0
+      const usageLimit = usageData?.limit || 0
 
       // Check if user has exceeded the limit
       if (currentUsage >= usageLimit) {
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         .from("usages")
         .update({
           usage: currentUsage + 1,
-        } as any)
+        })
         .eq("user_id", userId)
 
       if (updateError) {
@@ -119,9 +119,9 @@ export async function GET(request: NextRequest) {
         .from("api_keys")
         .update({
           last_used_at: new Date().toISOString(),
-          requests_count: ((apiKeyData.requests_count as number) || 0) + 1,
-        } as any)
-        .eq("id", apiKeyData.id as string)
+          requests_count: (apiKeyData.requests_count || 0) + 1,
+        })
+        .eq("id", apiKeyData.id)
 
       // Return successful response
       return NextResponse.json({

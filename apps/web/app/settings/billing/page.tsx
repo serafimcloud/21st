@@ -146,22 +146,25 @@ async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
   }
 }
 
-interface PageProps {
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
 // Always fetch fresh data on page load
 export const dynamic = "force-dynamic"
 
-export default async function BillingSettingsPage({ searchParams }: PageProps) {
+export default async function BillingSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    [key: string]: string | string[] | undefined
+  }>
+}) {
+  const resolvedSearchParams = await searchParams
   const { userId } = await auth()
 
   // Get subscription data
   const subscription = await getCurrentPlan(userId)
 
-  // Await searchParams before accessing properties
-  const success = (await searchParams)?.success === "true"
-  const canceled = (await searchParams)?.canceled === "true"
+  // Access searchParams after resolving the promise
+  const success = resolvedSearchParams?.success === "true"
+  const canceled = resolvedSearchParams?.canceled === "true"
 
   return (
     <div className="container pb-4 px-0">

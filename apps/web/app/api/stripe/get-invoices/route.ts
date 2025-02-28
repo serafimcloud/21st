@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { auth, currentUser } from "@clerk/nextjs/server"
 import stripe from "@/lib/stripe"
 import type Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
@@ -7,8 +7,9 @@ import { supabaseWithAdminAccess } from "@/lib/supabase"
 export async function GET() {
   try {
     const authSession = await auth()
+    const user = await currentUser()
     const userId = authSession?.userId
-    
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -38,8 +39,8 @@ export async function GET() {
     }
 
     if (!customerId) {
-      // Try to get email from session
-      const email = authSession.userId ? authSession.emailAddresses?.[0]?.emailAddress : null
+      // Try to get email from user object
+      const email = user?.emailAddresses?.[0]?.emailAddress || null
 
       // Approach 1: Try to find customer by email if available
       let stripeCustomers: Stripe.ApiList<Stripe.Customer> | null = null
