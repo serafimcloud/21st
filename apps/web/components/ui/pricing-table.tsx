@@ -78,13 +78,6 @@ export function PricingTable({
       return
     }
 
-    const isDowngrade = !isPlanUpgrade(selectedPlan, defaultPlan)
-
-    if (isDowngrade) {
-      setShowConfirmDialog(true)
-      return
-    }
-
     setIsLoading(true)
     try {
       await onPlanSelect?.(selectedPlan, isYearly)

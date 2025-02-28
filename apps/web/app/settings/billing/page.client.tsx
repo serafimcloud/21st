@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
-import {
-  LoaderCircle,
-  ExternalLink,
-  ArrowRight,
-  Check
-} from "lucide-react"
+import { LoaderCircle, ExternalLink, ArrowRight, Check } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +17,7 @@ import { createClient } from "@supabase/supabase-js"
 import { ConfirmationDialog } from "@/components/features/settings/billing/confirmation-dialog"
 import { UpgradeConfirmationDialog } from "@/components/features/settings/billing/upgrade-confirmation-dialog"
 import { InvoicesList } from "@/components/features/settings/billing/invoices-list"
+import { useSubscription, PlanInfo } from "@/hooks/use-subscription"
 
 interface Invoice {
   id: string
@@ -33,19 +29,6 @@ interface Invoice {
   period_end: number
   invoice_pdf: string | null
   currency: string
-}
-
-interface PlanInfo {
-  id?: string
-  name: string
-  type: "free" | "standard" | "pro"
-  period?: string | null
-  periodEnd?: string | null
-  usage_count?: number
-  current_period_end?: string
-  cancel_at_period_end?: boolean
-  portal_url?: string
-  stripe_subscription_id?: string
 }
 
 interface BillingSettingsClientProps {
@@ -74,10 +57,12 @@ export function AllPlansButton({ onClick }: { onClick?: () => void }) {
 }
 
 export function BillingSettingsClient({
-  subscription,
+  subscription: initialSubscription,
   successParam = false,
   canceledParam = false,
 }: BillingSettingsClientProps) {
+  const [subscription, setSubscription] = useState(initialSubscription)
+  const { fetchSubscription } = useSubscription()
   const [isLoading, setIsLoading] = useState(false)
   const [isUpgradeLoading, setIsUpgradeLoading] = useState(false)
   const [showPricingTable, setShowPricingTable] = useState(
@@ -88,11 +73,13 @@ export function BillingSettingsClient({
     title: string
     description: string
     onConfirm: () => void
+    isLoading: boolean
   }>({
     open: false,
     title: "",
     description: "",
     onConfirm: () => {},
+    isLoading: false,
   })
   const [upgradeConfirmation, setUpgradeConfirmation] = useState<{
     open: boolean
@@ -123,10 +110,12 @@ export function BillingSettingsClient({
       window.history.replaceState({}, "", url)
 
       // Add delay to allow Stripe webhook to process
-      const timer = setTimeout(() => {
-        window.location.reload()
+      const timer = setTimeout(async () => {
+        const newSubscription = await fetchSubscription()
+        if (newSubscription) {
+          setSubscription(newSubscription)
+        }
       }, 2000)
-
       return () => clearTimeout(timer)
     }
 
@@ -140,11 +129,8 @@ export function BillingSettingsClient({
       const url = new URL(window.location.href)
       url.searchParams.delete("canceled")
       window.history.replaceState({}, "", url)
-
-      // Refresh to get the current plan status
-      window.location.reload()
     }
-  }, [successParam, canceledParam])
+  }, [successParam, canceledParam, fetchSubscription])
 
   useEffect(() => {
     if (subscription && currentPlanId !== "free") {
@@ -180,22 +166,30 @@ export function BillingSettingsClient({
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || "Failed to cancel subscription")
+        throw new Error(error.message || "Failed to downgrade subscription")
       }
 
-      setIsLoading(false)
-      toast.success("Subscription successfully canceled")
+      toast.success("Plan successfully downgraded", {
+        description:
+          "Your subscription will be downgraded to Free plan at the end of the billing period",
+        duration: 5000,
+      })
       setConfirmationDialog((prev) => ({ ...prev, open: false }))
 
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000)
+      // Оптимистично обновляем состояние подписки
+      if (subscription) {
+        setSubscription({
+          ...subscription,
+          cancel_at_period_end: true,
+        })
+      }
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to cancel subscription. Please try again later.",
+          : "Failed to downgrade subscription. Please try again later.",
       )
+    } finally {
       setIsLoading(false)
     }
   }
@@ -230,14 +224,30 @@ export function BillingSettingsClient({
       const data = await response.json()
 
       if (data.directly_upgraded) {
-        toast.success("Subscription successfully upgraded", {
-          description: "Your subscription has been upgraded to the new plan",
-          duration: 5000,
-        })
+        const planOrder = { pro: 3, standard: 2, free: 1 }
+        const isDowngrade = planOrder[planId] < planOrder[currentPlanId]
 
-        setTimeout(() => {
-          window.location.reload()
-        }, 1500)
+        toast.success(
+          isDowngrade
+            ? "Plan successfully downgraded"
+            : "Plan successfully upgraded",
+          {
+            description: isDowngrade
+              ? "Your subscription will be changed at the end of your current billing period"
+              : "Your subscription has been upgraded to the new plan",
+            duration: 5000,
+          },
+        )
+
+        // Оптимистично обновляем состояние подписки
+        if (subscription) {
+          setSubscription({
+            ...subscription,
+            type: planId,
+            period: period,
+            cancel_at_period_end: false,
+          })
+        }
       } else {
         window.location.href = data.url
       }
@@ -245,7 +255,7 @@ export function BillingSettingsClient({
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to initiate upgrade process. Please try again later.",
+          : "Failed to initiate plan change process. Please try again later.",
       )
     } finally {
       setIsUpgradeLoading(false)
@@ -280,6 +290,7 @@ export function BillingSettingsClient({
     }
   }, [userId, subscription])
 
+  // Show loading state while subscription data is being fetched
   if (!subscription) {
     return (
       <div className="space-y-6">
@@ -315,17 +326,39 @@ export function BillingSettingsClient({
       return
     }
 
-    if (selectedPlanId === "free" && currentPlanId !== "free") {
-      // Show confirmation dialog for downgrade to free plan
+    // Check if it's a downgrade (moving to a lower tier plan)
+    const planOrder = { pro: 3, standard: 2, free: 1 }
+    const isDowngrade = planOrder[selectedPlanId] < planOrder[currentPlanId]
+
+    if (isDowngrade) {
+      // Show confirmation dialog for downgrade
       setConfirmationDialog({
         open: true,
-        title: "Confirm Downgrade",
-        description:
-          "Are you sure you want to downgrade to the Free plan? You will lose access to premium features immediately.",
-        onConfirm: () => handleCancelSubscription(),
+        title: "Confirm Plan Downgrade",
+        description: `Are you sure you want to downgrade to the ${PLAN_LIMITS[selectedPlanId].displayName} plan? You will lose access to some features at the end of your current billing period.`,
+        isLoading: false,
+        onConfirm: async () => {
+          try {
+            setConfirmationDialog((prev) => ({ ...prev, isLoading: true }))
+            if (selectedPlanId === "free") {
+              await handleCancelSubscription()
+            } else {
+              await handleUpgradePlan(
+                selectedPlanId,
+                isYearly ? "yearly" : "monthly",
+              )
+            }
+          } finally {
+            setConfirmationDialog((prev) => ({
+              ...prev,
+              isLoading: false,
+              open: false,
+            }))
+          }
+        },
       })
     } else if (selectedPlanId !== "free") {
-      // Upgrade to paid plan
+      // Upgrade to higher plan
       await handleUpgradePlan(selectedPlanId, isYearly ? "yearly" : "monthly")
     }
 
@@ -526,7 +559,7 @@ export function BillingSettingsClient({
         title={confirmationDialog.title}
         description={confirmationDialog.description}
         onConfirm={confirmationDialog.onConfirm}
-        isLoading={isLoading}
+        isLoading={confirmationDialog.isLoading}
       />
 
       {/* Upgrade confirmation dialog */}
