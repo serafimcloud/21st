@@ -39,6 +39,42 @@ import { useClerkSupabaseClient } from "@/lib/clerk"
 import { atom, useAtom } from "jotai"
 import { useR2Upload } from "../features/publish/hooks/use-r2-upload"
 
+// Helper function to safely fetch file content
+const safeFetchFile = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from ${url}`)
+    }
+    return await response.text()
+  } catch (error) {
+    console.error(`Error fetching from ${url}:`, error)
+
+    // Try alternative R2 domain if CDN URL fails
+    if (url.includes("cdn.21st.dev")) {
+      try {
+        const r2Url = url.replace(
+          "https://cdn.21st.dev/",
+          "https://pub-d2a7943f757e46d59fd4e364dbae76ae.r2.dev/",
+        )
+        console.log(`Trying alternative R2 URL: ${r2Url}`)
+        const r2Response = await fetch(r2Url)
+        if (!r2Response.ok) {
+          throw new Error(`Failed to fetch from ${r2Url}`)
+        }
+        return await r2Response.text()
+      } catch (r2Error) {
+        console.error(`Error fetching from R2:`, r2Error)
+        throw new Error(
+          `Failed to fetch file content from both CDN and R2 URLs`,
+        )
+      }
+    }
+
+    throw error
+  }
+}
+
 const cleanInitialUrl = (url: string | null) => {
   if (!url) return ""
   return url.replace(/^(https?:\/\/)+(www\.)?/, "")
@@ -309,28 +345,22 @@ export function EditComponentDialog({
 
   const handleEditCode = async () => {
     try {
-      const [
-        codeResponse,
-        demoResponse,
-        tailwindConfigResponse,
-        globalCssResponse,
-      ] = await Promise.all([
-        fetch(componentData.code),
-        fetch(demo.demo_code),
-        componentData.tailwind_config_extension
-          ? fetch(componentData.tailwind_config_extension)
-          : Promise.resolve(undefined),
-        componentData.global_css_extension
-          ? fetch(componentData.global_css_extension)
-          : Promise.resolve(undefined),
-      ])
+      // Use the safe fetch helper for all URLs
+      const code = await safeFetchFile(componentData.code)
+      const demoCode = await safeFetchFile(demo.demo_code)
 
-      const [code, demoCode, tailwindConfig, globalCss] = await Promise.all([
-        codeResponse.text(),
-        demoResponse.text(),
-        tailwindConfigResponse?.text() || "",
-        globalCssResponse?.text() || "",
-      ])
+      let tailwindConfig = ""
+      let globalCss = ""
+
+      if (componentData.tailwind_config_extension) {
+        tailwindConfig = await safeFetchFile(
+          componentData.tailwind_config_extension,
+        )
+      }
+
+      if (componentData.global_css_extension) {
+        globalCss = await safeFetchFile(componentData.global_css_extension)
+      }
 
       setComponentCode(code)
       setDemoCode(demoCode)
@@ -346,29 +376,22 @@ export function EditComponentDialog({
 
   const handleEditDemo = async () => {
     try {
-      const [
-        componentResponse,
-        demoResponse,
-        tailwindConfigResponse,
-        globalCssResponse,
-      ] = await Promise.all([
-        fetch(componentData.code),
-        fetch(demo.demo_code),
-        componentData.tailwind_config_extension
-          ? fetch(componentData.tailwind_config_extension)
-          : Promise.resolve(undefined),
-        componentData.global_css_extension
-          ? fetch(componentData.global_css_extension)
-          : Promise.resolve(undefined),
-      ])
+      // Use the safe fetch helper for all URLs
+      const componentCode = await safeFetchFile(componentData.code)
+      const demoCode = await safeFetchFile(demo.demo_code)
 
-      const [componentCode, demoCode, tailwindConfig, globalCss] =
-        await Promise.all([
-          componentResponse.text(),
-          demoResponse.text(),
-          tailwindConfigResponse?.text() || "",
-          globalCssResponse?.text() || "",
-        ])
+      let tailwindConfig = ""
+      let globalCss = ""
+
+      if (componentData.tailwind_config_extension) {
+        tailwindConfig = await safeFetchFile(
+          componentData.tailwind_config_extension,
+        )
+      }
+
+      if (componentData.global_css_extension) {
+        globalCss = await safeFetchFile(componentData.global_css_extension)
+      }
 
       setComponentCode(componentCode)
       setDemoCode(demoCode)
@@ -384,19 +407,18 @@ export function EditComponentDialog({
 
   const handleEditStyles = async () => {
     try {
-      const [tailwindConfigResponse, globalCssResponse] = await Promise.all([
-        componentData.tailwind_config_extension
-          ? fetch(componentData.tailwind_config_extension)
-          : Promise.resolve(undefined),
-        componentData.global_css_extension
-          ? fetch(componentData.global_css_extension)
-          : Promise.resolve(undefined),
-      ])
+      let tailwindConfig = ""
+      let globalCss = ""
 
-      const [tailwindConfig, globalCss] = await Promise.all([
-        tailwindConfigResponse?.text() || "",
-        globalCssResponse?.text() || "",
-      ])
+      if (componentData.tailwind_config_extension) {
+        tailwindConfig = await safeFetchFile(
+          componentData.tailwind_config_extension,
+        )
+      }
+
+      if (componentData.global_css_extension) {
+        globalCss = await safeFetchFile(componentData.global_css_extension)
+      }
 
       setTailwindConfig(tailwindConfig)
       setGlobalCss(globalCss)
