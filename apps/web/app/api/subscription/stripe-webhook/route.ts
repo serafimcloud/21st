@@ -144,18 +144,6 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
   try {
     const subscription = event.data.object as Stripe.Subscription
     const userId = subscription.metadata.userId as string
-    const subscriptionId = subscription.id
-
-    // Get free plan limit
-    const freeUsageLimit = getGenerationLimit("free")
-
-    // Update usages table - set free usage limit
-    const usageResult = await supabaseWithAdminAccess
-      .from("usages")
-      .update({
-        limit: freeUsageLimit,
-      })
-      .eq("user_id", userId)
 
     // Update plan status to inactive
     const planResult = await supabaseWithAdminAccess
@@ -166,10 +154,8 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
       })
       .eq("user_id", userId)
 
-    if (planResult.error || usageResult.error) {
-      throw new Error(
-        `Failed to update database: ${planResult.error || usageResult.error}`,
-      )
+    if (planResult.error) {
+      throw new Error(`Failed to update database: ${planResult.error}`)
     }
   } catch (error) {
     throw error
