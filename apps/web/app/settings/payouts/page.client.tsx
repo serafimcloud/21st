@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, KeyboardEvent } from "react"
+import { useState, KeyboardEvent } from "react"
 import { toast } from "sonner"
 import { LoaderCircle, Info } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,9 +21,38 @@ import { useClerkSupabaseClient } from "@/lib/clerk"
 interface PayoutRecord {
   id: string
   period: string
-  usage: number
   amount: number
   status: string
+  created_at: string
+  updated_at: string
+}
+
+interface AuthorStats {
+  published_components: number
+  last_month_usage: number
+  last_month_share: number
+  estimated_payout: number
+  payouts: PayoutRecord[]
+  current_month: string
+  last_month: string
+}
+
+async function fetchUserPaypalEmail(username: string): Promise<string> {
+  const response = await fetch(`/api/user/profile?username=${username}`)
+  if (!response.ok) {
+    throw new Error("Failed to fetch user profile")
+  }
+  const userData = await response.json()
+  return userData.paypal_email || ""
+}
+
+async function fetchAuthorStats(): Promise<AuthorStats> {
+  const response = await fetch("/api/author/stats")
+  if (!response.ok) {
+    const errorData = await response.json()
+    throw new Error(errorData.error || "Failed to load payout statistics")
+  }
+  return (await response.json()) as AuthorStats
 }
 
 export function PayoutsSettingsClient() {
@@ -33,35 +63,35 @@ export function PayoutsSettingsClient() {
   const [isValidEmail, setIsValidEmail] = useState(true)
   const supabase = useClerkSupabaseClient()
 
-  const publishedComponents = 0
-  const usageLastMonth = 0
-  const estimatedPayout = 0
-
-  const payoutHistory: PayoutRecord[] = []
-
-  useEffect(() => {
-    const fetchUserPaypalEmail = async () => {
-      try {
-        const targetUsername = "serafimcloud"
-        console.log("Fetching user data for username:", targetUsername)
-
-        const response = await fetch(
-          `/api/user/profile?username=${targetUsername}`,
-        )
-        const userData = await response.json()
-        console.log("Received user data:", userData)
-
-        if (response.ok && userData.paypal_email) {
-          console.log("Setting paypal email:", userData.paypal_email)
-          setPaypalEmail(userData.paypal_email)
-        }
-      } catch (error) {
-        console.error("Failed to fetch user PayPal email:", error)
+  const { data: userPaypalEmail } = useQuery({
+    queryKey: ["userPaypalEmail", clerkUser?.username],
+    queryFn: async () => {
+      const email = await fetchUserPaypalEmail(
+        clerkUser?.username || "serafimcloud",
+      )
+      if (email) {
+        setPaypalEmail(email)
       }
-    }
+      return email
+    },
+    enabled: !!clerkUser,
+    staleTime: 5 * 60 * 1000,
+  })
 
-    fetchUserPaypalEmail()
-  }, [clerkUser])
+  const { data: authorStats, isLoading: isLoadingStats } = useQuery({
+    queryKey: ["authorStats", userId],
+    queryFn: async () => {
+      try {
+        return await fetchAuthorStats()
+      } catch (error) {
+        console.error("Error fetching author stats:", error)
+        toast.error("Failed to load payout statistics")
+        throw error
+      }
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  })
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -95,16 +125,12 @@ export function PayoutsSettingsClient() {
 
     setIsLoading(true)
     try {
-      console.log("Saving PayPal email:", paypalEmail)
-
-      const targetUsername = "serafimcloud"
-      console.log("Target username for update:", targetUsername)
+      const targetUsername = clerkUser?.username || "serafimcloud"
 
       const requestBody = {
         paypal_email: paypalEmail,
         target_username: targetUsername,
       }
-      console.log("Request body:", requestBody)
 
       const response = await fetch("/api/user/profile", {
         method: "PATCH",
@@ -115,19 +141,12 @@ export function PayoutsSettingsClient() {
       })
 
       const result = await response.json()
-      console.log("API response:", result)
 
       if (!response.ok) {
         throw new Error(result.error || "Failed to save PayPal email")
       }
 
       toast.success("PayPal email saved successfully")
-
-      const verifyResponse = await fetch(
-        `/api/user/profile?username=${targetUsername}`,
-      )
-      const verifyData = await verifyResponse.json()
-      console.log("Verification data after save:", verifyData)
     } catch (error) {
       console.error("Error saving PayPal email:", error)
       toast.error("Failed to save PayPal email. Please try again later.")
@@ -144,14 +163,31 @@ export function PayoutsSettingsClient() {
             <div className="text-xs text-muted-foreground">
               Published components
             </div>
-            <div className="text-2xl font-semibold">{publishedComponents}</div>
+            <div className="text-2xl font-semibold">
+              {isLoadingStats ? (
+                <LoaderCircle className="h-5 w-5 animate-spin" />
+              ) : (
+                authorStats?.published_components || 0
+              )}
+            </div>
           </div>
 
           <div className="space-y-1">
             <div className="text-xs text-muted-foreground">
-              Usage (last 30 days)
+              Usage (last month)
             </div>
-            <div className="text-2xl font-semibold">{usageLastMonth}</div>
+            <div className="text-2xl font-semibold">
+              {isLoadingStats ? (
+                <LoaderCircle className="h-5 w-5 animate-spin" />
+              ) : (
+                authorStats?.last_month_usage || 0
+              )}
+            </div>
+            {authorStats?.last_month && (
+              <div className="text-xs text-muted-foreground">
+                {authorStats.last_month}
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -159,8 +195,17 @@ export function PayoutsSettingsClient() {
               Estimated payout
             </div>
             <div className="text-2xl font-semibold">
-              ${estimatedPayout.toFixed(2)}
+              {isLoadingStats ? (
+                <LoaderCircle className="h-5 w-5 animate-spin" />
+              ) : (
+                `$${(authorStats?.estimated_payout || 0).toFixed(2)}`
+              )}
             </div>
+            {authorStats?.current_month && (
+              <div className="text-xs text-muted-foreground">
+                {authorStats.current_month}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -221,21 +266,42 @@ export function PayoutsSettingsClient() {
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead className="h-9 py-2">Period</TableHead>
-                  <TableHead className="h-9 py-2">Usage</TableHead>
                   <TableHead className="h-9 py-2">Amount</TableHead>
                   <TableHead className="h-9 py-2">Status</TableHead>
+                  <TableHead className="h-9 py-2">Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payoutHistory.length > 0 ? (
-                  payoutHistory.map((payout, index) => (
-                    <TableRow key={index}>
+                {isLoadingStats ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      <LoaderCircle className="h-8 w-8 animate-spin mx-auto" />
+                    </TableCell>
+                  </TableRow>
+                ) : authorStats?.payouts && authorStats.payouts.length > 0 ? (
+                  authorStats.payouts.map((payout) => (
+                    <TableRow key={payout.id}>
                       <TableCell className="py-2">{payout.period}</TableCell>
-                      <TableCell className="py-2">{payout.usage}</TableCell>
                       <TableCell className="py-2">
                         ${payout.amount.toFixed(2)}
                       </TableCell>
-                      <TableCell className="py-2">{payout.status}</TableCell>
+                      <TableCell className="py-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            payout.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : payout.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {payout.status.charAt(0).toUpperCase() +
+                            payout.status.slice(1)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        {new Date(payout.created_at).toLocaleDateString()}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (

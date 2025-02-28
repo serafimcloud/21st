@@ -568,6 +568,184 @@ export type Database = {
           },
         ]
       }
+      mcp_author_payouts: {
+        Row: {
+          author_id: string
+          created_at: string | null
+          id: number
+          paypal_email: string
+          period_end: string
+          period_start: string
+          processed_at: string | null
+          status: string
+          total_amount: number
+          total_usage: number
+          transaction_id: string | null
+        }
+        Insert: {
+          author_id: string
+          created_at?: string | null
+          id?: never
+          paypal_email: string
+          period_end: string
+          period_start: string
+          processed_at?: string | null
+          status?: string
+          total_amount: number
+          total_usage: number
+          transaction_id?: string | null
+        }
+        Update: {
+          author_id?: string
+          created_at?: string | null
+          id?: never
+          paypal_email?: string
+          period_end?: string
+          period_start?: string
+          processed_at?: string | null
+          status?: string
+          total_amount?: number
+          total_usage?: number
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcp_component_usage: {
+        Row: {
+          author_id: string
+          author_share: number
+          component_id: number
+          created_at: string | null
+          generation_request_id: number
+          id: number
+          payout_id: number | null
+          payout_status: string
+        }
+        Insert: {
+          author_id: string
+          author_share: number
+          component_id: number
+          created_at?: string | null
+          generation_request_id: number
+          id?: never
+          payout_id?: number | null
+          payout_status?: string
+        }
+        Update: {
+          author_id?: string
+          author_share?: number
+          component_id?: number
+          created_at?: string | null
+          generation_request_id?: number
+          id?: never
+          payout_id?: number | null
+          payout_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_component"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_component"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_component"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_generation_request"
+            columns: ["generation_request_id"]
+            isOneToOne: false
+            referencedRelation: "mcp_generation_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcp_generation_requests: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          generation_cost: number
+          id: number
+          search_query: string
+          subscription_plan: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string | null
+          generation_cost: number
+          id?: never
+          search_query: string
+          subscription_plan: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          generation_cost?: number
+          id?: never
+          search_query?: string
+          subscription_plan?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           add_usage: number | null
@@ -1257,6 +1435,12 @@ export type Database = {
           total_count: number
         }[]
       }
+      get_author_payout_stats: {
+        Args: {
+          p_author_id: string
+        }
+        Returns: Json
+      }
       get_demos_list: {
         Args: {
           p_sort_by: string
@@ -1413,6 +1597,28 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_mcp_component_usage:
+        | {
+            Args: {
+              p_user_id: string
+              p_api_key: string
+              p_search_query: string
+              p_component_ids: number[]
+              p_author_ids: string[]
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_user_id: string
+              p_api_key: string
+              p_search_query: string
+              p_component_ids: number[]
+              p_component_names: string[]
+              p_author_ids: string[]
+            }
+            Returns: Json
+          }
       requesting_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string
