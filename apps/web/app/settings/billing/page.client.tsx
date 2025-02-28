@@ -6,19 +6,10 @@ import {
   LoaderCircle,
   ExternalLink,
   ArrowRight,
-  Check,
-  Download,
+  Check
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   PLAN_LIMITS,
   PlanType,
@@ -28,6 +19,9 @@ import {
 import { PricingTable, PlanLevel } from "@/components/ui/pricing-table"
 import { BillingHeader } from "@/components/features/settings/billing/billing-header"
 import { createClient } from "@supabase/supabase-js"
+import { ConfirmationDialog } from "@/components/features/settings/billing/confirmation-dialog"
+import { UpgradeConfirmationDialog } from "@/components/features/settings/billing/upgrade-confirmation-dialog"
+import { InvoicesList } from "@/components/features/settings/billing/invoices-list"
 
 interface Invoice {
   id: string
@@ -76,52 +70,6 @@ export function AllPlansButton({ onClick }: { onClick?: () => void }) {
     >
       All plans <ArrowRight size={12} className="ml-1" />
     </Button>
-  )
-}
-
-function ConfirmationDialog({
-  open,
-  onOpenChange,
-  title,
-  description,
-  onConfirm,
-  isLoading,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  title: string
-  description: string
-  onConfirm: () => void
-  isLoading: boolean
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={onConfirm}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
-                Processing
-              </>
-            ) : (
-              "Confirm"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   )
 }
 
@@ -325,7 +273,6 @@ export function BillingSettingsClient({
         .select("usage, limit")
         .eq("user_id", userId)
         .single()
-
     } catch (error) {
       // Error handling
     } finally {
@@ -409,54 +356,6 @@ export function BillingSettingsClient({
         />
       </div>
     )
-  }
-
-  // Format date
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString()
-  }
-
-  // Format currency
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency.toUpperCase(),
-    }).format(amount)
-  }
-
-  // Get invoice status text
-  const getInvoiceStatusText = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "Paid"
-      case "open":
-        return "Pending"
-      case "void":
-        return "Voided"
-      case "draft":
-        return "Draft"
-      case "uncollectible":
-        return "Uncollectible"
-      default:
-        return status
-    }
-  }
-
-  // Get invoice status color
-  const getInvoiceStatusColor = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "text-green-700 bg-green-100 border border-green-200 shadow-inner"
-      case "open":
-        return "text-yellow-700 bg-yellow-100 border border-yellow-200 shadow-inner"
-      case "void":
-      case "uncollectible":
-        return "text-red-700 bg-red-100 border border-red-200 shadow-inner"
-      case "draft":
-        return "text-gray-700 bg-gray-100 border border-gray-200 shadow-inner"
-      default:
-        return "text-gray-700 bg-gray-100 border border-gray-200 shadow-inner"
-    }
   }
 
   return (
@@ -595,75 +494,7 @@ export function BillingSettingsClient({
       {/* Invoices Section */}
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Payment history</h3>
-        <div className="bg-background rounded-lg border border-border overflow-hidden">
-          {isLoadingInvoices ? (
-            <div className="min-h-24 flex items-center justify-center p-6">
-              <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : invoices.length === 0 ? (
-            <div className="min-h-24 flex items-center justify-center p-6">
-              <p className="text-xs text-muted-foreground">No invoices yet</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-xs text-muted-foreground">
-                    <th className="px-4 py-2 font-normal">№</th>
-                    <th className="px-4 py-2 font-normal">Date</th>
-                    <th className="px-4 py-2 font-normal">Amount</th>
-                    <th className="px-4 py-2 font-normal">Period</th>
-                    <th className="px-4 py-2 font-normal">Status</th>
-                    <th className="px-4 py-2 font-normal"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {invoices.map((invoice) => (
-                    <tr key={invoice.id} className="text-xs">
-                      <td className="px-4 py-2">{invoice.number}</td>
-                      <td className="px-4 py-2">
-                        {formatDate(invoice.created)}
-                      </td>
-                      <td className="px-4 py-2">
-                        {formatCurrency(invoice.amount_paid, invoice.currency)}
-                      </td>
-                      <td className="px-4 py-2">
-                        {formatDate(invoice.period_start)} -{" "}
-                        {formatDate(invoice.period_end)}
-                      </td>
-                      <td className="px-4 py-2">
-                        <span
-                          className={`px-2 py-1 rounded-full ${getInvoiceStatusColor(invoice.status)}`}
-                        >
-                          {getInvoiceStatusText(invoice.status)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        {invoice.invoice_pdf && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              window.open(
-                                invoice.invoice_pdf as string,
-                                "_blank",
-                              )
-                            }
-                            className="h-8 w-8 p-0"
-                            title="Download PDF"
-                          >
-                            <Download className="h-4 w-4" />
-                            <span className="sr-only">Download PDF</span>
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        <InvoicesList invoices={invoices} isLoading={isLoadingInvoices} />
       </div>
 
       {/* Stripe Portal */}
@@ -699,63 +530,19 @@ export function BillingSettingsClient({
       />
 
       {/* Upgrade confirmation dialog */}
-      <Dialog
+      <UpgradeConfirmationDialog
         open={upgradeConfirmation.open}
         onOpenChange={(open) =>
           setUpgradeConfirmation((prev) => ({ ...prev, open }))
         }
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Plan Upgrade</DialogTitle>
-            <DialogDescription>
-              {currentPlanId === "free" ? (
-                <>
-                  You're about to upgrade to the{" "}
-                  {PLAN_LIMITS[upgradeConfirmation.planId].displayName} plan.
-                  You will be charged $
-                  {upgradeConfirmation.planId === "standard" ? "10" : "30"} for
-                  the first month.
-                </>
-              ) : (
-                <>
-                  You're about to upgrade from{" "}
-                  {PLAN_LIMITS[currentPlanId].displayName} to{" "}
-                  {PLAN_LIMITS[upgradeConfirmation.planId].displayName}. This
-                  will update your existing subscription and you'll be charged
-                  the price difference for the current billing period.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() =>
-                setUpgradeConfirmation((prev) => ({ ...prev, open: false }))
-              }
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                setUpgradeConfirmation((prev) => ({ ...prev, open: false }))
-                handleUpgradePlan(upgradeConfirmation.planId)
-              }}
-              disabled={isUpgradeLoading}
-            >
-              {isUpgradeLoading ? (
-                <>
-                  <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
-                  Processing
-                </>
-              ) : (
-                "Confirm Upgrade"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        currentPlanId={currentPlanId}
+        upgradePlanId={upgradeConfirmation.planId}
+        onConfirm={() => {
+          setUpgradeConfirmation((prev) => ({ ...prev, open: false }))
+          handleUpgradePlan(upgradeConfirmation.planId)
+        }}
+        isLoading={isUpgradeLoading}
+      />
     </div>
   )
 }
