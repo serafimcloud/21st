@@ -1,14 +1,15 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
-const isProtectedRoute = createRouteMatcher([
-  "/publish(.*)",
-  "/settings(.*)",
-])
+const isProtectedRoute = createRouteMatcher(["/publish(.*)", "/settings(.*)"])
 
 export default clerkMiddleware(async (auth, request) => {
   if (process.env.MAINTENANCE_MODE === "true") {
     return NextResponse.rewrite(new URL("/maintenance", request.url))
+  }
+
+  if (request.nextUrl.pathname === "/magic/console") {
+    return NextResponse.redirect(new URL("/magic/get-started", request.url))
   }
 
   if (request.nextUrl.pathname.startsWith("/api/")) {
