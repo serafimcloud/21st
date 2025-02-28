@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import stripe, { getPlanByStripeId } from "@/lib/stripe"
-import { getGenerationLimit } from "@/lib/config/subscription-plans"
 
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
@@ -28,11 +27,7 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
       throw new Error("No plan ID found in subscription")
     }
 
-    // Check cancel_at_period_end for scheduled cancellations
     if (subscription.cancel_at_period_end) {
-      const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
-
-      // Get existing user plan
       const { data: existingUserPlan } = await supabaseWithAdminAccess
         .from("users_to_plans")
         .select("meta")
@@ -40,7 +35,6 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
         .single()
 
       if (existingUserPlan) {
-        // Update metadata with cancellation information
         const updatedMeta = {
           ...(existingUserPlan.meta
             ? JSON.parse(JSON.stringify(existingUserPlan.meta))
@@ -61,7 +55,6 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
       }
     }
 
-    // Try to get plan details
     const planDetails = await getSubscriptionPlanDetailsById(stripePlanId)
 
     const { planId, addUsage } = planDetails
@@ -69,7 +62,6 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
 
     let usageLimit = addUsage
 
-    // Create metadata for the users_to_plans table
     const meta = {
       stripe_customer_id: subscription.customer as string,
       stripe_subscription_id: subscriptionId,
@@ -81,47 +73,98 @@ async function handleSubscriptionCreatedOrUpdate(event: Stripe.Event) {
         : null,
     }
 
-    // Check if user already has a plan
     const { data: existingUserPlan } = await supabaseWithAdminAccess
       .from("users_to_plans")
       .select()
       .eq("user_id", userId)
       .single()
 
-    // Transaction for Supabase operations
     if (existingUserPlan) {
-      // Update existing user plan
-      await supabaseWithAdminAccess
+      const { data: currentUsageData } = await supabaseWithAdminAccess
         .from("usages")
-        .upsert(
-          {
-            user_id: userId,
-            limit: usageLimit,
-            usage: 0, // Reset usage to 0 when subscription is updated
-          },
-          { onConflict: "user_id" },
-        )
-        .select()
-
-      await supabaseWithAdminAccess
-        .from("users_to_plans")
-        .update({
-          status: "active",
-          plan_id: planId,
-          updated_at: new Date().toISOString(),
-          meta,
-          last_paid_at: new Date().toISOString(),
-        })
+        .select("limit, usage")
         .eq("user_id", userId)
+        .single()
+
+      const currentUsage = currentUsageData?.usage || 0
+
+      const { data: currentPlanData } = await supabaseWithAdminAccess
+        .from("users_to_plans")
+        .select(
+          `
+          plans:plan_id (
+            id,
+            stripe_plan_id,
+            price,
+            type
+          )
+        `,
+        )
+        .eq("user_id", userId)
+        .single()
+
+      const { data: newPlanData } = await supabaseWithAdminAccess
+        .from("plans")
+        .select("price, type")
+        .eq("id", planId)
+        .single()
+
+      const currentPlanPrice = currentPlanData?.plans
+        ? (currentPlanData.plans as any).price || 0
+        : 0
+      const newPlanPrice = newPlanData ? (newPlanData as any).price || 0 : 0
+
+      const isDowngrade = newPlanPrice < currentPlanPrice
+
+      if (!isDowngrade) {
+        await supabaseWithAdminAccess
+          .from("usages")
+          .upsert(
+            {
+              user_id: userId,
+              limit: usageLimit,
+              usage: currentUsage,
+            },
+            { onConflict: "user_id" },
+          )
+          .select()
+
+        await supabaseWithAdminAccess
+          .from("users_to_plans")
+          .update({
+            status: "active",
+            plan_id: planId,
+            updated_at: new Date().toISOString(),
+            meta,
+            last_paid_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId)
+      } else {
+        const updatedMetaWithFutureLimit = {
+          ...meta,
+          future_limit: usageLimit,
+          is_downgrade: true,
+        }
+
+        await supabaseWithAdminAccess
+          .from("users_to_plans")
+          .update({
+            status: "active",
+            plan_id: planId,
+            updated_at: new Date().toISOString(),
+            meta: updatedMetaWithFutureLimit,
+            last_paid_at: new Date().toISOString(),
+          })
+          .eq("user_id", userId)
+      }
     } else {
-      // Create new user plan
       await supabaseWithAdminAccess
         .from("usages")
         .upsert(
           {
             user_id: userId,
             limit: usageLimit,
-            usage: 0, // Start with 0 usage for new subscriptions
+            usage: 0,
           },
           { onConflict: "user_id" },
         )
@@ -145,7 +188,6 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
     const subscription = event.data.object as Stripe.Subscription
     const userId = subscription.metadata.userId as string
 
-    // Update plan status to inactive
     const planResult = await supabaseWithAdminAccess
       .from("users_to_plans")
       .update({
@@ -184,11 +226,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  // Check if we have a userId in the metadata
-  // @ts-ignore
-  if (!event.data.object?.metadata?.userId) {
+  const eventObject = event.data.object;
+  let userId;
+  
+  if ('metadata' in eventObject && eventObject.metadata?.userId) {
+    userId = eventObject.metadata.userId;
+  } else {
     return NextResponse.json(
-      { error: "No userId found in subscription metadata" },
+      { error: "No userId found in event object metadata" },
       { status: 400 },
     )
   }
