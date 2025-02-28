@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/subscription/stripe-cron",
+      "schedule": "0 0 1 * *"
+    }
+  ]
+}
