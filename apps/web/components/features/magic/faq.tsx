@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/accordion"
 import Link from "next/link"
 import { PLAN_LIMITS } from "@/lib/config/subscription-plans"
+import { cn } from "@/lib/utils"
 
 const faqs = [
   {
@@ -68,36 +69,61 @@ const faqs = [
   },
 ]
 
-export function FAQ() {
-  return (
-    <section className="py-10 lg:py-24 px-4">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-neutral-200 sm:text-4xl">
-          Frequently Asked Questions
-        </h2>
-        <p className="mt-4 text-lg text-neutral-400">
-          Everything you need to know about Magic AI Agent
-        </p>
-      </div>
+interface FAQProps {
+  simplified?: boolean
+}
 
-      <div className="mx-auto mt-16 max-w-3xl space-y-4">
+export function FAQ({ simplified = false }: FAQProps) {
+  // Выбираем наиболее важные вопросы для simplified режима
+  const displayFaqs = simplified
+    ? faqs.slice(0, 5) // Показываем только первые 5 вопросов в simplified режиме
+    : faqs
+
+  return (
+    <section className={simplified ? "" : "py-10 lg:py-24 px-4"}>
+      {!simplified && (
+        <div className="text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-neutral-200 sm:text-4xl">
+            Frequently Asked Questions
+          </h2>
+          <p className="mt-4 text-lg text-neutral-400">
+            Everything you need to know about Magic AI Agent
+          </p>
+        </div>
+      )}
+
+      <div
+        className={cn("mx-auto space-y-4", simplified ? "" : "mt-16 max-w-3xl")}
+      >
         <Accordion type="single" collapsible className="w-full">
-          {faqs.map((faq, index) => (
+          {displayFaqs.map((faq, index) => (
             <AccordionItem
               key={index}
               value={`item-${index}`}
               className="rounded-lg border border-white/10 px-4 bg-background/5 mb-4 data-[state=open]:bg-background/10"
             >
-              <AccordionTrigger className="text-lg font-semibold text-neutral-200 hover:no-underline py-4">
+              <AccordionTrigger className="text-lg font-semibold text-neutral-200 hover:no-underline py-4 text-left w-full flex justify-between">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-neutral-400 pb-4">
-                {faq.answer}
+              <AccordionContent className="text-neutral-400 pb-4 !text-left">
+                <div className="text-left">{faq.answer}</div>
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
       </div>
+
+      <style jsx global>{`
+        .accordion-content {
+          text-align: left !important;
+        }
+        [data-radix-accordion-content] {
+          text-align: left !important;
+        }
+        [data-radix-accordion-content] p {
+          text-align: left !important;
+        }
+      `}</style>
     </section>
   )
 }

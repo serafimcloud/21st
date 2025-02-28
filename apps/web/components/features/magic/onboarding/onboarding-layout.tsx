@@ -138,8 +138,8 @@ export function Onboarding({
   return (
     <div className="relative">
       <div className="mx-auto max-w-[1200px] px-2 sm:px-4">
-        <div className="border-b pb-4 mb-8">
-          <h1 className="text-2xl sm:text-[32px] font-semibold tracking-tight">
+        <div className="border-b pb-4 mb-4">
+          <h1 className="font-semibold tracking-tight">
             Get Started
           </h1>
           {showWelcomeDialog && (
