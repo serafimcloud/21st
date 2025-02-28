@@ -1,5 +1,14 @@
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Invoice {
   id: string
@@ -66,36 +75,28 @@ const getInvoiceStatusColor = (status: string) => {
   }
 }
 
-function InvoicesSkeleton() {
+function InvoiceRowSkeleton() {
   return (
-    <div className="animate-pulse">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="text-left text-xs text-muted-foreground">
-              <th className="px-4 py-2 font-normal">№</th>
-              <th className="px-4 py-2 font-normal">Date</th>
-              <th className="px-4 py-2 font-normal">Amount</th>
-              <th className="px-4 py-2 font-normal">Period</th>
-              <th className="px-4 py-2 font-normal">Status</th>
-              <th className="px-4 py-2 font-normal"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {[...Array(1)].map((_, i) => (
-              <tr key={i} className="text-xs">
-                <td className="px-4 py-2"><div className="h-4 bg-muted rounded"></div></td>
-                <td className="px-4 py-2"><div className="h-4 bg-muted rounded"></div></td>
-                <td className="px-4 py-2"><div className="h-4 bg-muted rounded"></div></td>
-                <td className="px-4 py-2"><div className="h-4 bg-muted rounded"></div></td>
-                <td className="px-4 py-2"><div className="h-4 bg-muted rounded w-20"></div></td>
-                <td className="px-4 py-2 text-right"><div className="h-4 bg-muted rounded w-8 ml-auto"></div></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <TableRow>
+      <TableCell className="py-2">
+        <Skeleton className="h-4 w-16" />
+      </TableCell>
+      <TableCell className="py-2">
+        <Skeleton className="h-4 w-24" />
+      </TableCell>
+      <TableCell className="py-2">
+        <Skeleton className="h-4 w-20" />
+      </TableCell>
+      <TableCell className="py-2">
+        <Skeleton className="h-4 w-32" />
+      </TableCell>
+      <TableCell className="py-2">
+        <Skeleton className="h-6 w-20 rounded-full" />
+      </TableCell>
+      <TableCell className="py-2 text-right">
+        <Skeleton className="h-8 w-8 rounded-md ml-auto" />
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -103,7 +104,25 @@ export function InvoicesList({ invoices, isLoading }: InvoicesListProps) {
   if (isLoading) {
     return (
       <div className="bg-background rounded-lg border border-border overflow-hidden">
-        <InvoicesSkeleton />
+        <div className="w-full overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="h-9 py-2">№</TableHead>
+                <TableHead className="h-9 py-2">Date</TableHead>
+                <TableHead className="h-9 py-2">Amount</TableHead>
+                <TableHead className="h-9 py-2">Period</TableHead>
+                <TableHead className="h-9 py-2">Status</TableHead>
+                <TableHead className="h-9 py-2"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <InvoiceRowSkeleton />
+              <InvoiceRowSkeleton />
+              <InvoiceRowSkeleton />
+            </TableBody>
+          </Table>
+        </div>
       </div>
     )
   }
@@ -120,40 +139,42 @@ export function InvoicesList({ invoices, isLoading }: InvoicesListProps) {
 
   return (
     <div className="bg-background rounded-lg border border-border overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="text-left text-xs text-muted-foreground">
-              <th className="px-4 py-2 font-normal">№</th>
-              <th className="px-4 py-2 font-normal">Date</th>
-              <th className="px-4 py-2 font-normal">Amount</th>
-              <th className="px-4 py-2 font-normal">Period</th>
-              <th className="px-4 py-2 font-normal">Status</th>
-              <th className="px-4 py-2 font-normal"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
+      <div className="w-full overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="h-9 py-2">№</TableHead>
+              <TableHead className="h-9 py-2">Date</TableHead>
+              <TableHead className="h-9 py-2">Amount</TableHead>
+              <TableHead className="h-9 py-2">Period</TableHead>
+              <TableHead className="h-9 py-2">Status</TableHead>
+              <TableHead className="h-9 py-2"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {invoices.map((invoice) => (
-              <tr key={invoice.id} className="text-xs">
-                <td className="px-4 py-2">{invoice.number}</td>
-                <td className="px-4 py-2">{formatDate(invoice.created)}</td>
-                <td className="px-4 py-2">
+              <TableRow key={invoice.id}>
+                <TableCell className="py-2">{invoice.number}</TableCell>
+                <TableCell className="py-2">
+                  {formatDate(invoice.created)}
+                </TableCell>
+                <TableCell className="py-2">
                   {formatCurrency(invoice.amount_paid, invoice.currency)}
-                </td>
-                <td className="px-4 py-2">
+                </TableCell>
+                <TableCell className="py-2">
                   {formatDate(invoice.period_start)} -{" "}
                   {formatDate(invoice.period_end)}
-                </td>
-                <td className="px-4 py-2">
+                </TableCell>
+                <TableCell className="py-2">
                   <span
-                    className={`px-2 py-1 rounded-full ${getInvoiceStatusColor(
+                    className={`px-2 py-1 rounded-full text-xs ${getInvoiceStatusColor(
                       invoice.status,
                     )}`}
                   >
                     {getInvoiceStatusText(invoice.status)}
                   </span>
-                </td>
-                <td className="px-4 py-2 text-right">
+                </TableCell>
+                <TableCell className="py-2 text-right">
                   {invoice.invoice_pdf && (
                     <Button
                       variant="ghost"
@@ -168,11 +189,11 @@ export function InvoicesList({ invoices, isLoading }: InvoicesListProps) {
                       <span className="sr-only">Download PDF</span>
                     </Button>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

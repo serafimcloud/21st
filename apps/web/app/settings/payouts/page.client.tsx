@@ -2,22 +2,15 @@
 
 import { useState, KeyboardEvent } from "react"
 import { toast } from "sonner"
-import { LoaderCircle, Info } from "lucide-react"
+import { LoaderCircle } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth, useUser } from "@clerk/nextjs"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-
+import { Skeleton } from "@/components/ui/skeleton"
+import { PayoutHistoryTable } from "@/components/features/settings/payouts/payout-history-table"
 interface PayoutRecord {
   id: string
   period: string
@@ -165,7 +158,7 @@ export function PayoutsSettingsClient() {
             </div>
             <div className="text-2xl font-semibold">
               {isLoadingStats ? (
-                <LoaderCircle className="h-5 w-5 animate-spin" />
+                <Skeleton className="h-8 w-16" />
               ) : (
                 authorStats?.published_components || 0
               )}
@@ -178,12 +171,12 @@ export function PayoutsSettingsClient() {
             </div>
             <div className="text-2xl font-semibold">
               {isLoadingStats ? (
-                <LoaderCircle className="h-5 w-5 animate-spin" />
+                <Skeleton className="h-8 w-16" />
               ) : (
                 authorStats?.last_month_usage || 0
               )}
             </div>
-            {authorStats?.last_month && (
+            {!isLoadingStats && authorStats?.last_month && (
               <div className="text-xs text-muted-foreground">
                 {authorStats.last_month}
               </div>
@@ -196,12 +189,12 @@ export function PayoutsSettingsClient() {
             </div>
             <div className="text-2xl font-semibold">
               {isLoadingStats ? (
-                <LoaderCircle className="h-5 w-5 animate-spin" />
+                <Skeleton className="h-8 w-16" />
               ) : (
                 `$${(authorStats?.estimated_payout || 0).toFixed(2)}`
               )}
             </div>
-            {authorStats?.current_month && (
+            {!isLoadingStats && authorStats?.current_month && (
               <div className="text-xs text-muted-foreground">
                 {authorStats.current_month}
               </div>
@@ -223,14 +216,18 @@ export function PayoutsSettingsClient() {
             </div>
 
             <div className="w-full sm:w-1/2 sm:max-w-xs">
-              <Input
-                type="email"
-                placeholder="your-email@example.com"
-                value={paypalEmail}
-                onChange={handleEmailChange}
-                onKeyDown={handleKeyDown}
-                className={!isValidEmail ? "border-red-500" : ""}
-              />
+              {userPaypalEmail === undefined ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <Input
+                  type="email"
+                  placeholder="your-email@example.com"
+                  value={paypalEmail}
+                  onChange={handleEmailChange}
+                  onKeyDown={handleKeyDown}
+                  className={!isValidEmail ? "border-red-500" : ""}
+                />
+              )}
               {!isValidEmail && (
                 <p className="text-xs text-red-500 mt-1">
                   Please enter a valid email address
@@ -241,7 +238,12 @@ export function PayoutsSettingsClient() {
 
           <div className="bg-muted p-3 rounded-b-lg flex justify-end border-t">
             <Button
-              disabled={isLoading || !isValidEmail || !paypalEmail}
+              disabled={
+                isLoading ||
+                !isValidEmail ||
+                !paypalEmail ||
+                userPaypalEmail === undefined
+              }
               onClick={savePaypalEmail}
             >
               {isLoading ? (
@@ -259,69 +261,10 @@ export function PayoutsSettingsClient() {
 
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Payout History</h3>
-
-        <div className="w-full overflow-auto">
-          <div className="overflow-hidden rounded-lg border border-border bg-background">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="h-9 py-2">Period</TableHead>
-                  <TableHead className="h-9 py-2">Amount</TableHead>
-                  <TableHead className="h-9 py-2">Status</TableHead>
-                  <TableHead className="h-9 py-2">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoadingStats ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      <LoaderCircle className="h-8 w-8 animate-spin mx-auto" />
-                    </TableCell>
-                  </TableRow>
-                ) : authorStats?.payouts && authorStats.payouts.length > 0 ? (
-                  authorStats.payouts.map((payout) => (
-                    <TableRow key={payout.id}>
-                      <TableCell className="py-2">{payout.period}</TableCell>
-                      <TableCell className="py-2">
-                        ${payout.amount.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            payout.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : payout.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {payout.status.charAt(0).toUpperCase() +
-                            payout.status.slice(1)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-2">
-                        {new Date(payout.created_at).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      <div className="flex flex-col items-center justify-center text-muted-foreground">
-                        <Info className="h-8 w-8 mb-2" />
-                        <p>No payout history yet</p>
-                        <p className="text-xs max-w-md text-center mt-1">
-                          Payouts are processed at the end of each billing
-                          period for component creators
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+        <PayoutHistoryTable
+          payouts={authorStats?.payouts}
+          isLoading={isLoadingStats}
+        />
       </div>
     </div>
   )
