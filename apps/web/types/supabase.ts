@@ -436,6 +436,32 @@ export type Database = {
           },
         ]
       }
+      demo_bookmarks: {
+        Row: {
+          bookmarked_at: string | null
+          demo_id: number
+          user_id: string
+        }
+        Insert: {
+          bookmarked_at?: string | null
+          demo_id: number
+          user_id: string
+        }
+        Update: {
+          bookmarked_at?: string | null
+          demo_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_demo"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "demos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_tags: {
         Row: {
           created_at: string | null
@@ -474,6 +500,7 @@ export type Database = {
       }
       demos: {
         Row: {
+          bookmarks_count: number | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -493,6 +520,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          bookmarks_count?: number | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -512,6 +540,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          bookmarks_count?: number | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -567,6 +596,217 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mcp_author_payouts: {
+        Row: {
+          author_id: string
+          created_at: string | null
+          id: number
+          paypal_email: string
+          period_end: string
+          period_start: string
+          processed_at: string | null
+          status: string
+          total_amount: number
+          total_usage: number
+          transaction_id: string | null
+        }
+        Insert: {
+          author_id: string
+          created_at?: string | null
+          id?: never
+          paypal_email: string
+          period_end: string
+          period_start: string
+          processed_at?: string | null
+          status?: string
+          total_amount: number
+          total_usage: number
+          transaction_id?: string | null
+        }
+        Update: {
+          author_id?: string
+          created_at?: string | null
+          id?: never
+          paypal_email?: string
+          period_end?: string
+          period_start?: string
+          processed_at?: string | null
+          status?: string
+          total_amount?: number
+          total_usage?: number
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcp_component_usage: {
+        Row: {
+          author_id: string
+          author_share: number
+          component_id: number
+          created_at: string | null
+          generation_request_id: number
+          id: number
+          payout_id: number | null
+          payout_status: string
+        }
+        Insert: {
+          author_id: string
+          author_share: number
+          component_id: number
+          created_at?: string | null
+          generation_request_id: number
+          id?: never
+          payout_id?: number | null
+          payout_status?: string
+        }
+        Update: {
+          author_id?: string
+          author_share?: number
+          component_id?: number
+          created_at?: string | null
+          generation_request_id?: number
+          id?: never
+          payout_id?: number | null
+          payout_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_component"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_component"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_component"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_generation_request"
+            columns: ["generation_request_id"]
+            isOneToOne: false
+            referencedRelation: "mcp_generation_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mcp_generation_requests: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          generation_cost: number
+          id: number
+          search_query: string
+          subscription_plan: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string | null
+          generation_cost: number
+          id?: never
+          search_query: string
+          subscription_plan: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          generation_cost?: number
+          id?: never
+          search_query?: string
+          subscription_plan?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          add_usage: number | null
+          created_at: string
+          env: string | null
+          id: number
+          period: string | null
+          price: number | null
+          stripe_plan_id: string | null
+          type: string | null
+        }
+        Insert: {
+          add_usage?: number | null
+          created_at?: string
+          env?: string | null
+          id?: number
+          period?: string | null
+          price?: number | null
+          stripe_plan_id?: string | null
+          type?: string | null
+        }
+        Update: {
+          add_usage?: number | null
+          created_at?: string
+          env?: string | null
+          id?: number
+          period?: string | null
+          price?: number | null
+          stripe_plan_id?: string | null
+          type?: string | null
+        }
+        Relationships: []
       }
       referral_payments: {
         Row: {
@@ -791,6 +1031,45 @@ export type Database = {
           },
         ]
       }
+      usages: {
+        Row: {
+          created_at: string
+          id: number
+          limit: number | null
+          usage: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          limit?: number | null
+          usage?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          limit?: number | null
+          usage?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           bio: string | null
@@ -805,6 +1084,7 @@ export type Database = {
           is_admin: boolean
           manually_added: boolean
           name: string | null
+          paypal_email: string | null
           pro_banner_url: string | null
           pro_referral_url: string | null
           ref: string | null
@@ -826,6 +1106,7 @@ export type Database = {
           is_admin?: boolean
           manually_added?: boolean
           name?: string | null
+          paypal_email?: string | null
           pro_banner_url?: string | null
           pro_referral_url?: string | null
           ref?: string | null
@@ -847,6 +1128,7 @@ export type Database = {
           is_admin?: boolean
           manually_added?: boolean
           name?: string | null
+          paypal_email?: string | null
           pro_banner_url?: string | null
           pro_referral_url?: string | null
           ref?: string | null
@@ -859,43 +1141,36 @@ export type Database = {
       }
       users_to_plans: {
         Row: {
-          id: number
           created_at: string
+          id: number
+          last_paid_at: string | null
+          meta: Json | null
+          plan_id: number | null
+          status: string | null
           updated_at: string
-          user_id: string
-          plan_id: number
-          status: string
-          meta: Json
-          last_paid_at: string
+          user_id: string | null
         }
         Insert: {
-          id?: number
           created_at?: string
+          id?: number
+          last_paid_at?: string | null
+          meta?: Json | null
+          plan_id?: number | null
+          status?: string | null
           updated_at?: string
-          user_id: string
-          plan_id: number
-          status: string
-          meta?: Json
-          last_paid_at?: string
+          user_id?: string | null
         }
         Update: {
-          id?: number
           created_at?: string
+          id?: number
+          last_paid_at?: string | null
+          meta?: Json | null
+          plan_id?: number | null
+          status?: string | null
           updated_at?: string
-          user_id?: string
-          plan_id?: number
-          status?: string
-          meta?: Json
-          last_paid_at?: string
+          user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "users_to_plans_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "users_to_plans_plan_id_fkey"
             columns: ["plan_id"]
@@ -903,69 +1178,21 @@ export type Database = {
             referencedRelation: "plans"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      usages: {
-        Row: {
-          id: number
-          created_at: string
-          user_id: string
-          limit: number
-          usage: number
-        }
-        Insert: {
-          id?: number
-          created_at?: string
-          user_id: string
-          limit: number
-          usage: number
-        }
-        Update: {
-          id?: number
-          created_at?: string
-          user_id?: string
-          limit?: number
-          usage?: number
-        }
-        Relationships: [
           {
-            foreignKeyName: "usage_user_id_fkey"
+            foreignKeyName: "users_to_plans_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
+            isOneToOne: true
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "users_to_plans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
-      }
-      plans: {
-        Row: {
-          id: number
-          stripe_plan_id: string
-          price: number
-          env: string
-          period: string
-          type: string
-          add_usage: number
-        }
-        Insert: {
-          id?: number
-          stripe_plan_id: string
-          price: number
-          env: string
-          period: string
-          type: string
-          add_usage: number
-        }
-        Update: {
-          id?: number
-          stripe_plan_id?: string
-          price?: number
-          env?: string
-          period?: string
-          type?: string
-          add_usage?: number
-        }
-        Relationships: []
       }
     }
     Views: {
@@ -1237,6 +1464,12 @@ export type Database = {
           total_count: number
         }[]
       }
+      get_author_payout_stats: {
+        Args: {
+          p_author_id: string
+        }
+        Returns: Json
+      }
       get_demos_list: {
         Args: {
           p_sort_by: string
@@ -1393,6 +1626,28 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_mcp_component_usage:
+        | {
+            Args: {
+              p_user_id: string
+              p_api_key: string
+              p_search_query: string
+              p_component_ids: number[]
+              p_author_ids: string[]
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_user_id: string
+              p_api_key: string
+              p_search_query: string
+              p_component_ids: number[]
+              p_component_names: string[]
+              p_author_ids: string[]
+            }
+            Returns: Json
+          }
       requesting_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string

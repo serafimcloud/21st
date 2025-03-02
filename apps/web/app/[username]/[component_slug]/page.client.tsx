@@ -18,7 +18,11 @@ import {
 } from "@/types/global"
 import { PromptType, PROMPT_TYPES } from "@/types/global"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { addTagsToDemo, useUpdateComponentWithTags } from "@/lib/queries"
+import {
+  addTagsToDemo,
+  useUpdateComponentWithTags,
+  useHasUserBookmarkedDemo,
+} from "@/lib/queries"
 import {
   identifyUser,
   trackPageProperties,
@@ -50,7 +54,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import { UserAvatar } from "../../../components/ui/user-avatar"
-import { LikeButton } from "../../../components/ui/bookmark-button"
+import { BookmarkButton } from "@/components/ui/bookmark-button"
 import { ThemeToggle } from "../../../components/ui/theme-toggle"
 import { ComponentPagePreview } from "../../../components/features/component-page/component-preview"
 import { EditComponentDialog } from "../../../components/ui/edit-component-dialog"
@@ -379,22 +383,11 @@ export default function ComponentPage({
   const canEdit = user?.id === component.user_id || isAdmin
   const router = useRouter()
 
-  const { data: liked } = useQuery({
-    queryKey: ["hasUserLikedComponent", component.id, user?.id],
-    queryFn: async () => {
-      if (!user || !supabase) return null
-      const { data, error } = await supabase
-        .from("component_likes")
-        .select("*")
-        .eq("component_id", component.id)
-        .eq("user_id", user?.id)
-      if (error) {
-        console.error("Error checking if user liked component:", error)
-        throw error
-      }
-      return data.length > 0
-    },
-  })
+  const { data: bookmarked } = useHasUserBookmarkedDemo(
+    supabase,
+    demo?.id,
+    user?.id,
+  )
 
   const [isShowCode, setIsShowCode] = useAtom(isShowCodeAtom)
 
@@ -942,21 +935,21 @@ export default function ComponentPage({
             </Tooltip>
           )}
           <SignedIn>
-            <LikeButton
-              componentId={component.id}
-              componentLikesCount={component.likes_count}
+            <BookmarkButton
+              demoId={demo.id}
+              bookmarksCount={demo.bookmarks_count || 0}
               size={18}
               showTooltip={true}
-              liked={liked ?? false}
+              bookmarked={bookmarked ?? false}
             />
           </SignedIn>
           <SignedOut>
             <SignInButton>
-              <LikeButton
-                componentId={component.id}
-                componentLikesCount={component.likes_count}
+              <BookmarkButton
+                demoId={demo.id}
+                bookmarksCount={demo.bookmarks_count || 0}
                 size={18}
-                liked={false}
+                bookmarked={false}
               />
             </SignInButton>
           </SignedOut>

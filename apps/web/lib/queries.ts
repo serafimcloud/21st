@@ -77,74 +77,6 @@ export async function getUserData(
   }
 }
 
-export async function likeComponent(
-  supabase: SupabaseClient<Database>,
-  userId: string,
-  componentId: number,
-) {
-  const { error } = await supabase.from("component_likes").insert({
-    user_id: userId,
-    component_id: componentId,
-  })
-
-  if (error) {
-    console.error("Error liking component:", error)
-    throw error
-  }
-}
-
-export async function unlikeComponent(
-  supabase: SupabaseClient<Database>,
-  userId: string,
-  componentId: number,
-) {
-  const { error } = await supabase
-    .from("component_likes")
-    .delete()
-    .eq("user_id", userId)
-    .eq("component_id", componentId)
-
-  if (error) {
-    console.error("Error unliking component:", error)
-    throw error
-  }
-}
-
-export function useLikeMutation(
-  supabase: SupabaseClient<Database>,
-  userId: string | undefined,
-): UseMutationResult<void, Error, { componentId: number; liked: boolean }> {
-  const queryClient = useQueryClient()
-  return useMutation<void, Error, { componentId: number; liked: boolean }>({
-    mutationFn: async ({
-      componentId,
-      liked,
-    }: {
-      componentId: number
-      liked: boolean
-    }) => {
-      if (!userId) {
-        throw new Error("User is not logged in")
-      }
-      if (liked) {
-        await unlikeComponent(supabase, userId, componentId)
-      } else {
-        await likeComponent(supabase, userId, componentId)
-      }
-    },
-    onSuccess: (_, { componentId }) => {
-      queryClient.invalidateQueries({
-        queryKey: ["hasUserLikedComponent", componentId, userId],
-      })
-      queryClient.invalidateQueries({
-        queryKey: ["component", componentId],
-      })
-      queryClient.invalidateQueries({
-        queryKey: ["components"],
-      })
-    },
-  })
-}
 
 export async function addTagsToDemo(
   supabase: SupabaseClient<Database>,
@@ -608,4 +540,101 @@ export async function getUserComponentsCounts(
   }
 
   return data
+}
+
+export async function bookmarkDemo(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  demoId: number,
+) {
+  const { error } = await supabase.from("demo_bookmarks").insert({
+    user_id: userId,
+    demo_id: demoId,
+  })
+
+  if (error) {
+    console.error("Error bookmarking demo:", error)
+    throw error
+  }
+}
+
+export async function unbookmarkDemo(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  demoId: number,
+) {
+  const { error } = await supabase
+    .from("demo_bookmarks")
+    .delete()
+    .eq("user_id", userId)
+    .eq("demo_id", demoId)
+
+  if (error) {
+    console.error("Error removing demo bookmark:", error)
+    throw error
+  }
+}
+
+export function useBookmarkMutation(
+  supabase: SupabaseClient<Database>,
+  userId: string | undefined,
+): UseMutationResult<void, Error, { demoId: number; bookmarked: boolean }> {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, { demoId: number; bookmarked: boolean }>({
+    mutationFn: async ({
+      demoId,
+      bookmarked,
+    }: {
+      demoId: number
+      bookmarked: boolean
+    }) => {
+      if (!userId) {
+        throw new Error("User is not logged in")
+      }
+      if (bookmarked) {
+        await unbookmarkDemo(supabase, userId, demoId)
+      } else {
+        await bookmarkDemo(supabase, userId, demoId)
+      }
+    },
+    onSuccess: (_, { demoId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["hasUserBookmarkedDemo", demoId, userId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["demo", demoId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ["demos"],
+      })
+    },
+  })
+}
+
+export function useHasUserBookmarkedDemo(
+  supabase: SupabaseClient<Database>,
+  demoId: number | undefined,
+  userId: string | undefined,
+) {
+  return useQuery({
+    queryKey: ["hasUserBookmarkedDemo", demoId, userId],
+    queryFn: async () => {
+      if (!demoId || !userId) return false
+
+      const { data, error } = await supabase
+        .from("demo_bookmarks")
+        .select("*")
+        .eq("demo_id", demoId)
+        .eq("user_id", userId)
+        .limit(1)
+        .single()
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error checking if user bookmarked demo:", error)
+      }
+
+      return !!data
+    },
+    enabled: !!demoId && !!userId,
+  })
 }

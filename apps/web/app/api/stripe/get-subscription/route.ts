@@ -21,7 +21,6 @@ export async function GET() {
   try {
     const { userId } = await auth()
 
-    // Данные плана по умолчанию
     const defaultPlanInfo = {
       name: PLAN_LIMITS.free.displayName,
       type: "free" as PlanType,
@@ -38,7 +37,6 @@ export async function GET() {
 
     console.log("Fetching subscription for user:", userId)
 
-    // 1. Получаем активную подписку пользователя
     const { data: userPlan, error: planError } = await supabaseWithAdminAccess
       .from("users_to_plans")
       .select(
@@ -63,25 +61,21 @@ export async function GET() {
       .eq("status", "active")
       .maybeSingle()
 
-    // 2. Получаем информацию об использовании
     const { data: usageData, error: usageError } = await supabaseWithAdminAccess
       .from("usages")
       .select("*")
       .eq("user_id", userId)
       .maybeSingle()
 
-    // Если произошла ошибка при запросе плана, возвращаем план по умолчанию
     if (planError) {
       console.error("Error fetching plan:", planError)
       return NextResponse.json(defaultPlanInfo, { status: 200 })
     }
 
-    // Если нет активного плана, возвращаем бесплатный план
     if (!userPlan) {
       return NextResponse.json(
         {
           ...defaultPlanInfo,
-          // Если есть данные об использовании, используем их
           usage: usageData?.usage || 0,
           limit: usageData?.limit || PLAN_LIMITS.free.generationsPerMonth,
         },
@@ -89,23 +83,16 @@ export async function GET() {
       )
     }
 
-    // Получаем информацию о плане
     const plansData = userPlan.plans as any
     const planType = (plansData?.type || "free") as PlanType
 
-    // Данные из meta
     const meta = (userPlan.meta as SubscriptionMeta) || {}
 
-    // Определяем лимит использования
-    // 1. Сначала проверяем, есть ли специфичный лимит в таблице usages
-    // 2. Если нет, используем лимит из плана + add_usage
-    // 3. Если ничего не определено, используем дефолтный лимит для типа плана
     const planLimit =
       usageData?.limit ||
       PLAN_LIMITS[planType].generationsPerMonth + (plansData?.add_usage || 0) ||
       PLAN_LIMITS[planType].generationsPerMonth
 
-    // Если есть Stripe ID подписки, получаем дополнительную информацию из Stripe
     let stripeSubscription = null
     let portal_url = meta?.portal_url || null
 
@@ -119,7 +106,6 @@ export async function GET() {
       }
     }
 
-    // Получаем URL портала только если существует ID клиента
     if (meta?.stripe_customer_id && !portal_url) {
       try {
         const { url } = await stripe.billingPortal.sessions.create({
@@ -132,7 +118,6 @@ export async function GET() {
       }
     }
 
-    // Подготавливаем информацию о плане
     const planInfo = {
       id: userPlan.id.toString(),
       name:
