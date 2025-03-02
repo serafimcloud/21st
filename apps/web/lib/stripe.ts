@@ -95,6 +95,11 @@ export async function getIdBySubscriptionPlanDetails(
     throw new Error(`No plan found for type: ${type} and period: ${period}`)
   }
 
+  // Ensure stripe_plan_id is not null before returning
+  if (!plan.stripe_plan_id) {
+    throw new Error(`Plan found but has no Stripe ID for type: ${type} and period: ${period}`)
+  }
+
   return plan.stripe_plan_id
 }
 

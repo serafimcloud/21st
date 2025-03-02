@@ -61,6 +61,9 @@ async function updateSubscriptionStatuses() {
     // Process each subscription
     for (const subscription of activeSubscriptions || []) {
       try {
+        // Skip if user_id is null
+        if (!subscription.user_id) continue
+
         // Parse meta object with proper typing
         const meta = (
           typeof subscription.meta === "object" ? subscription.meta : {}
