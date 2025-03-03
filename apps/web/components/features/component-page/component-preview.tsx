@@ -48,7 +48,7 @@ import { useCompileCss } from "@/hooks/use-compile-css"
 import { useIsMobile } from "@/hooks/use-media-query"
 
 import { Component, Tag, User, Demo } from "@/types/global"
-import { generateSandpackFiles } from "@/lib/sandpack"
+import { generateBundleFiles, generateSandpackFiles } from "@/lib/sandpack"
 import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
 import { getPackageRunner, cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -56,6 +56,7 @@ import { useUser } from "@clerk/nextjs"
 
 import styles from "./component-preview.module.css"
 import { FullScreenButton } from "../../ui/full-screen-button"
+import { useBundleDemo } from "@/hooks/use-bundle-demo"
 
 export function ComponentPagePreview({
   component,
@@ -143,6 +144,40 @@ export function ComponentPagePreview({
       customGlobalCss: globalCss,
     }),
   }
+
+  const bundleFiles = {
+    ...registryDependencies,
+    ...generateBundleFiles({
+      demoComponentNames,
+      componentSlug: component.component_slug,
+      relativeImportPath: `/components/${component.registry}`,
+      code,
+      demoCode,
+      theme: isDarkTheme ? "dark" : "light",
+      css: css || "",
+      customTailwindConfig: tailwindConfig,
+      customGlobalCss: globalCss,
+    }),
+  }
+
+  const bundle = useBundleDemo(
+    bundleFiles,
+    {
+      "@radix-ui/react-select": "^1.0.0",
+      "lucide-react": "latest",
+      "tailwind-merge": "latest",
+      "clsx": "latest",
+      ...dependencies,
+      ...demoDependencies,
+      ...npmDependenciesOfRegistryDependencies,
+    },
+    component,
+    shellCode,
+    demo.id,
+    demo.demo_slug,
+    tailwindConfig,
+    globalCss
+  )
 
   const mainComponentFile = Object.keys(files).find((file) =>
     file.endsWith(`${component.component_slug}.tsx`),
@@ -241,7 +276,7 @@ export function ComponentPagePreview({
         },
       }}
     >
-      <SandpackProviderUnstyled {...providerProps}>
+      {/* <SandpackProviderUnstyled {...providerProps}>
         <motion.div
           layout="position"
           className="flex-grow h-full relative rounded-lg overflow-hidden"
@@ -286,7 +321,14 @@ export function ComponentPagePreview({
             </div>
           )}
         </motion.div>
-      </SandpackProviderUnstyled>
+      </SandpackProviderUnstyled> */}
+
+      <div className="h-full w-full">
+        <h1>Testing Iframe</h1>
+        <iframe
+          src={bundle?.html}
+        />
+      </div>
 
       <AnimatePresence mode="popLayout">
         {!isFullScreen && (
