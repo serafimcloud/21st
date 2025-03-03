@@ -8,7 +8,7 @@ async function convertVideoToMP4(file: File): Promise<File> {
   videoFormData.append("video", file)
 
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/convert`,
+    `${process.env.NEXT_PUBLIC_BACKEND_CONVERT_URL}/convert`,
     {
       method: "POST",
       body: videoFormData,

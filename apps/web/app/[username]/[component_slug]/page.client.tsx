@@ -684,27 +684,28 @@ export default function ComponentPage({
           <div className="flex items-center gap-2">
             <Icons.slash className="text-border w-[22px] h-[22px]" />
             <div className="flex items-center gap-2 min-w-0">
-              <Link
-                href={`/${component.user.display_username || component.user.username}`}
-                className="cursor-pointer"
-              >
-                <UserAvatar
-                  src={
-                    component.user.display_image_url ||
-                    component.user.image_url ||
-                    "/placeholder.svg"
-                  }
-                  alt={
-                    component.user.display_name ||
-                    component.user.name ||
-                    component.user.username ||
-                    ""
-                  }
-                  size={22}
-                  isClickable={true}
-                  user={component.user}
-                />
-              </Link>
+              <div className="cursor-pointer">
+                <Link
+                  href={`/${component.user.display_username || component.user.username}`}
+                >
+                  <UserAvatar
+                    src={
+                      component.user.display_image_url ||
+                      component.user.image_url ||
+                      "/placeholder.svg"
+                    }
+                    alt={
+                      component.user.display_name ||
+                      component.user.name ||
+                      component.user.username ||
+                      ""
+                    }
+                    size={22}
+                    isClickable={true}
+                    user={component.user}
+                  />
+                </Link>
+              </div>
               <p className="text-[14px] font-medium whitespace-nowrap">
                 {component.name}
               </p>
@@ -1083,20 +1084,19 @@ export default function ComponentPage({
                     onValueChange={(value) =>
                       setSelectedPromptType(value as PromptType | "v0-open")
                     }
-                    key={selectedPromptType}
                   >
                     <DropdownMenuLabel>Copy prompt</DropdownMenuLabel>
                     {promptOptions.map((option) => {
                       if (option.type === "separator") {
                         return (
-                          <>
-                            <DropdownMenuSeparator key={option.id} />
+                          <React.Fragment key={option.id}>
+                            <DropdownMenuSeparator />
                             <DropdownMenuLabel>
                               {option.id === "separator1"
                                 ? "Copy optimized prompt"
                                 : "Open in AI editor"}
                             </DropdownMenuLabel>
-                          </>
+                          </React.Fragment>
                         )
                       }
 

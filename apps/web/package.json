@@ -83,6 +83,7 @@
     "react-dropzone": "^14.2.9",
     "react-hook-form": "^7.53.0",
     "react-hotkeys-hook": "^4.6.1",
+    "react-resizable-panels": "^2.1.7",
     "resend": "^4.1.2",
     "shiki": "^3.0.0",
     "sonner": "^1.5.0",

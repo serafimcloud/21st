@@ -15,9 +15,81 @@ const STORAGE_DIR = path.join(process.cwd(), "bundled-pages")
 // Ensure storage directory exists
 await fs.mkdir(STORAGE_DIR, { recursive: true })
 
+// R2 client config for external integrations (new)
+interface R2Credentials {
+  accessKeyId: string
+  secretAccessKey: string
+  endpoint: string
+  cdnUrl: string
+}
+
 const isValidId = (id: string) => {
   // Only allow alphanumeric characters, hyphens, and underscores
   return /^[a-zA-Z0-9-_]+$/.test(id)
+}
+
+// New function to save bundled files to R2
+const saveBundledFilesToR2 = async (
+  componentSlug: string,
+  demoSlug: string,
+  { js, css, html }: { js: string; css: string; html: string },
+  r2Credentials: R2Credentials,
+): Promise<{ jsUrl: string; cssUrl: string; htmlUrl: string }> => {
+  try {
+    // Create S3 client for R2
+    const r2Client = new (await import("@aws-sdk/client-s3")).S3Client({
+      region: "auto",
+      endpoint: r2Credentials.endpoint,
+      credentials: {
+        accessKeyId: r2Credentials.accessKeyId,
+        secretAccessKey: r2Credentials.secretAccessKey,
+      },
+    })
+
+    // Create folder path using component and demo slugs
+    const folderPath = `${componentSlug}/${demoSlug}/bundle`
+
+    // Upload files
+    const [jsUpload, cssUpload, htmlUpload] = await Promise.all([
+      // Upload JS
+      r2Client.send(
+        new (await import("@aws-sdk/client-s3")).PutObjectCommand({
+          Bucket: "components-code", // Using the same bucket as for other assets
+          Key: `${folderPath}/bundle.js`,
+          Body: js,
+          ContentType: "text/javascript",
+        }),
+      ),
+      // Upload CSS
+      r2Client.send(
+        new (await import("@aws-sdk/client-s3")).PutObjectCommand({
+          Bucket: "components-code",
+          Key: `${folderPath}/bundle.css`,
+          Body: css,
+          ContentType: "text/css",
+        }),
+      ),
+      // Upload HTML
+      r2Client.send(
+        new (await import("@aws-sdk/client-s3")).PutObjectCommand({
+          Bucket: "components-code",
+          Key: `${folderPath}/index.html`,
+          Body: html,
+          ContentType: "text/html",
+        }),
+      ),
+    ])
+
+    // Return CDN URLs for the files
+    return {
+      jsUrl: `${r2Credentials.cdnUrl}/${folderPath}/bundle.js`,
+      cssUrl: `${r2Credentials.cdnUrl}/${folderPath}/bundle.css`,
+      htmlUrl: `${r2Credentials.cdnUrl}/${folderPath}/index.html`,
+    }
+  } catch (error) {
+    console.error("Error uploading to R2:", error)
+    throw error
+  }
 }
 
 const saveBundledFiles = async (
@@ -74,18 +146,26 @@ const getBundledPage = async (id: string): Promise<string | null> => {
   }
 }
 
-const generateHTML = ({ id }: { id: string }) => endent`
+const generateHTML = ({
+  id,
+  jsUrl,
+  cssUrl,
+}: {
+  id: string
+  jsUrl?: string
+  cssUrl?: string
+}) => endent`
   <!DOCTYPE html>
   <html>
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>React + Tailwind App</title>
-      <link rel="stylesheet" href="/static/${id}.css">
+      <link rel="stylesheet" href="${cssUrl || `/static/${id}.css`}">
     </head>
     <body>
       <div id="root"></div>
-      <script type="text/javascript" src="/static/${id}.js"></script>
+      <script type="text/javascript" src="${jsUrl || `/static/${id}.js`}"></script>
     </body>
   </html>
 `
@@ -289,6 +369,8 @@ function convertVideo(inputPath: string, outputPath: string): Promise<void> {
 interface BundleOptions {
   code: string
   dependencies?: Record<string, string> // package name -> version
+  uiComponentFiles?: Record<string, string> // path -> content
+  aliases?: Record<string, string> // alias -> target path
 }
 
 const createTempProject = async (options: BundleOptions) => {
@@ -296,54 +378,197 @@ const createTempProject = async (options: BundleOptions) => {
   await fs.mkdir(tempDir, { recursive: true })
 
   try {
-    // Create package.json
+    // Write package.json with dependencies
     const packageJson = {
-      name: "temp-bundle",
+      name: "react-bundle",
+      version: "1.0.0",
       private: true,
-      type: "module",
       dependencies: {
         react: "^18.2.0",
         "react-dom": "^18.2.0",
+        "framer-motion": "^10.16.4",
         ...(options.dependencies || {}),
+      },
+      devDependencies: {
+        typescript: "^5.0.4",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
       },
     }
 
-    // Write package.json
     await fs.writeFile(
       path.join(tempDir, "package.json"),
       JSON.stringify(packageJson, null, 2),
     )
+    console.log(
+      `[createTempProject] Created package.json with dependencies: ${Object.keys(packageJson.dependencies).join(", ")}`,
+    )
 
     // Write the App component file
     await fs.writeFile(path.join(tempDir, "App.tsx"), options.code)
+    console.log(
+      `[createTempProject] Created App.tsx file at ${path.join(tempDir, "App.tsx")}`,
+    )
 
-    // Write the entry file
+    // Проверим, что файл был создан
+    try {
+      const appContent = await fs.readFile(
+        path.join(tempDir, "App.tsx"),
+        "utf-8",
+      )
+      console.log(
+        `[createTempProject] App.tsx content length: ${appContent.length} bytes`,
+      )
+    } catch (error) {
+      console.error(`[createTempProject] Failed to read App.tsx:`, error)
+    }
+
+    // Create UI components directory if needed
+    if (
+      options.uiComponentFiles &&
+      Object.keys(options.uiComponentFiles).length > 0
+    ) {
+      // Create components directory structure
+      await fs.mkdir(path.join(tempDir, "components", "ui"), {
+        recursive: true,
+      })
+
+      // Write UI component files
+      for (const [filePath, content] of Object.entries(
+        options.uiComponentFiles,
+      )) {
+        // Create nested directories if they exist in the path
+        const fullPath = path.join(tempDir, filePath)
+        const dir = path.dirname(fullPath)
+
+        console.log(
+          `[createTempProject] Creating UI component: ${filePath} -> ${fullPath}`,
+        )
+
+        await fs.mkdir(dir, { recursive: true })
+
+        // Write component file
+        await fs.writeFile(fullPath, content)
+        console.log(
+          `[createTempProject] UI component file written: ${fullPath}`,
+        )
+      }
+    }
+
+    // Write the entry file with aliases for components
     await fs.writeFile(
       path.join(tempDir, "index.js"),
       endent`
+        import React from "react";
         import { createRoot } from "react-dom/client";
         import App from "./App";
 
+        // Убедимся что элемент root существует
+        document.body.innerHTML = '<div id="root"></div>';
         const rootElement = document.getElementById("root");
+        
+        // Создаем корень React
         const root = createRoot(rootElement);
 
+        // Рендерим приложение
         root.render(
-          <App />
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>
         );
       `,
     )
+    console.log(`[createTempProject] Created index.js file`)
+
+    // Write tsconfig.json with paths for @ alias
+    await fs.writeFile(
+      path.join(tempDir, "tsconfig.json"),
+      JSON.stringify(
+        {
+          compilerOptions: {
+            jsx: "react-jsx",
+            paths: {
+              "@/*": ["./*"],
+            },
+            baseUrl: ".",
+          },
+        },
+        null,
+        2,
+      ),
+    )
 
     // Install dependencies
-    const installProcess = Bun.spawn(["bun", "install"], {
+    console.log("Installing dependencies with pnpm...")
+
+    // Проверяем сначала, есть ли pnpm
+    try {
+      const pnpmVersion = Bun.spawn(["pnpm", "--version"], {
+        stdout: "pipe",
+      })
+      const stdout = await new Response(pnpmVersion.stdout).text()
+      console.log(`[createTempProject] Using pnpm version: ${stdout.trim()}`)
+    } catch (error) {
+      console.error(
+        `[createTempProject] pnpm not found, trying to install with npm...`,
+      )
+      // Если pnpm нет, установим его с помощью npm
+      const npmInstall = Bun.spawn(["npm", "install", "-g", "pnpm"])
+      await npmInstall.exited
+    }
+
+    // Устанавливаем зависимости с помощью pnpm
+    const install = Bun.spawn(["pnpm", "install", "--no-frozen-lockfile"], {
       cwd: tempDir,
+      stdout: "pipe",
       stderr: "pipe",
     })
 
-    const exitCode = await installProcess.exited
-    const output = await new Response(installProcess.stderr).text()
+    const stderr = await new Response(install.stderr).text()
+    const exitCode = await install.exited
+
+    console.log(`[createTempProject] pnpm install stderr: ${stderr}`)
+    console.log(`[createTempProject] pnpm install exit code: ${exitCode}`)
+
+    // Проверяем, что node_modules создана и что основные пакеты установлены
+    try {
+      const nodeModulesExists = await fs
+        .stat(path.join(tempDir, "node_modules"))
+        .then(
+          (stat) => stat.isDirectory(),
+          () => false,
+        )
+
+      console.log(
+        `[createTempProject] node_modules exists: ${nodeModulesExists}`,
+      )
+
+      if (nodeModulesExists) {
+        // Проверяем что есть основные пакеты
+        const reactExists = await fs
+          .stat(path.join(tempDir, "node_modules/react"))
+          .then(
+            (stat) => stat.isDirectory(),
+            () => false,
+          )
+        const reactDomExists = await fs
+          .stat(path.join(tempDir, "node_modules/react-dom"))
+          .then(
+            (stat) => stat.isDirectory(),
+            () => false,
+          )
+
+        console.log(`[createTempProject] react package exists: ${reactExists}`)
+        console.log(
+          `[createTempProject] react-dom package exists: ${reactDomExists}`,
+        )
+      }
+    } catch (error) {
+      console.error(`[createTempProject] Error checking node_modules:`, error)
+    }
 
     if (exitCode !== 0) {
-      throw new Error(`Failed to install dependencies: ${output}`)
+      throw new Error(`Failed to install dependencies: ${stderr}`)
     }
 
     return tempDir
@@ -357,32 +582,182 @@ const createTempProject = async (options: BundleOptions) => {
 const bundleReact = async (
   code: string,
   dependencies?: Record<string, string>,
+  uiComponentFiles?: Record<string, string>,
 ) => {
   let tempDir: string | null = null
 
   try {
-    tempDir = await createTempProject({ code, dependencies })
+    console.log("Starting bundling process...")
+
+    // Логируем зависимости для отладки
+    console.log("Dependencies:", dependencies)
+
+    // Логируем UI компоненты для отладки
+    console.log(
+      `UI Components count: ${Object.keys(uiComponentFiles || {}).length}`,
+    )
+    if (uiComponentFiles) {
+      console.log("UI Component paths:", Object.keys(uiComponentFiles))
+    }
+
+    tempDir = await createTempProject({
+      code,
+      dependencies,
+      uiComponentFiles,
+    })
+    console.log("Temp project created at:", tempDir)
+
     const outDir = path.join(tempDir, "dist")
 
     // Bundle the code
+    console.log("Running Bun.build...")
     const result = await Bun.build({
       entrypoints: [path.join(tempDir, "index.js")],
       target: "browser",
       minify: true,
       root: tempDir,
       outdir: outDir,
+      loader: {
+        ".tsx": "tsx",
+        ".ts": "ts",
+        ".jsx": "jsx",
+        ".js": "js",
+      },
+      sourcemap: "external",
+      // Указываем внешние модули как пакеты npm
+      external: ["react", "react-dom", "framer-motion"],
+      // Определяем правильные пути для разрешения
+      define: {
+        "process.env.NODE_ENV": JSON.stringify("production"),
+      },
+      plugins: [
+        {
+          name: "alias-resolver",
+          setup(build) {
+            // Handle @ alias
+            build.onResolve({ filter: /^@\// }, (args) => {
+              const resolvedPath = args.path.replace(/^@\//, "")
+              // Убедимся, что tempDir не null
+              if (tempDir) {
+                console.log(
+                  `[alias-resolver] Resolving @/ alias: ${args.path} -> ${path.join(tempDir, resolvedPath)}`,
+                )
+                return {
+                  path: path.join(tempDir, resolvedPath),
+                  namespace: "file",
+                }
+              }
+              return undefined
+            })
+
+            // Handle React modules
+            build.onResolve(
+              { filter: /^react$|^react\/|^react-dom\/|^react-dom$/ },
+              (args) => {
+                console.log(
+                  `[alias-resolver] Resolving React module: ${args.path}`,
+                )
+                return {
+                  path: args.path,
+                  external: true,
+                }
+              },
+            )
+
+            // Handle motion/react -> framer-motion alias
+            build.onResolve({ filter: /^motion\/react$/ }, (args) => {
+              console.log(
+                `[alias-resolver] Resolving motion/react -> framer-motion`,
+              )
+              return {
+                path: "framer-motion",
+                external: true,
+              }
+            })
+
+            // Обработка путей в namespace "file"
+            build.onResolve({ filter: /.*/, namespace: "file" }, (args) => {
+              // Если путь не абсолютный, сделаем его абсолютным
+              if (!path.isAbsolute(args.path)) {
+                const absPath = path.resolve(
+                  path.dirname(args.importer),
+                  args.path,
+                )
+                console.log(
+                  `[alias-resolver] Converting relative path to absolute: ${args.path} -> ${absPath}`,
+                )
+                return {
+                  path: absPath,
+                  namespace: "file",
+                }
+              }
+              return undefined
+            })
+          },
+        },
+      ],
     })
 
+    // Проверяем результат сборки
     if (!result.success) {
+      console.error("Bundle failed. Logs:")
+
+      // Подробно логируем каждую ошибку
+      for (const log of result.logs) {
+        console.error(`- ${log}`)
+      }
+
+      // Проверяем существование входных файлов
+      try {
+        const indexExists = await fs.stat(path.join(tempDir, "index.js")).then(
+          () => true,
+          () => false,
+        )
+        const appExists = await fs.stat(path.join(tempDir, "App.tsx")).then(
+          () => true,
+          () => false,
+        )
+
+        console.error(`Index.js exists: ${indexExists}`)
+        console.error(`App.tsx exists: ${appExists}`)
+
+        // Посмотрим, что за файлы в директории
+        const tempDirFiles = await fs.readdir(tempDir)
+        console.error(`Files in temp dir: ${tempDirFiles.join(", ")}`)
+
+        // Проверим node_modules
+        const nodeModulesExists = await fs
+          .stat(path.join(tempDir, "node_modules"))
+          .then(
+            () => true,
+            () => false,
+          )
+
+        if (nodeModulesExists) {
+          const nodeModulesFiles = await fs.readdir(
+            path.join(tempDir, "node_modules"),
+          )
+          console.error(`Files in node_modules: ${nodeModulesFiles.join(", ")}`)
+        }
+      } catch (error) {
+        console.error("Error checking files:", error)
+      }
+
       throw new Error("Bundle failed: " + result.logs.join("\n"))
     }
 
     // Read the bundled file
+    console.log("Reading bundled file...")
     const bundledJs = await fs.readFile(path.join(outDir, "index.js"), "utf-8")
+    console.log("Bundling completed successfully!")
     return bundledJs
+  } catch (error) {
+    console.error("Error in bundleReact:", error)
+    throw error
   } finally {
     // Clean up temp directory
     if (tempDir) {
+      console.log("Cleaning up temp directory:", tempDir)
       await fs.rm(tempDir, { recursive: true, force: true })
     }
   }
@@ -805,6 +1180,129 @@ const server = serve({
             error: "Failed to fetch bundled page",
             details: error instanceof Error ? error.message : String(error),
             code: "BUNDLED_PAGE_FETCH_ERROR",
+          },
+          { status: 500, headers },
+        )
+      }
+    }
+
+    if (url.pathname === "/bundle-demo" && req.method === "POST") {
+      try {
+        const {
+          code,
+          demoCode,
+          componentSlug,
+          demoSlug,
+          dependencies,
+          demoDependencies,
+          baseTailwindConfig,
+          globalCss,
+          uiComponents = {}, // New parameter to pass UI components
+        } = await req.json()
+
+        if (!code || !demoCode) {
+          throw new Error("Component code and demo code are required")
+        }
+
+        if (!componentSlug || !demoSlug) {
+          throw new Error("Component slug and demo slug are required")
+        }
+
+        // Bundle React code with dependencies and UI components
+        const bundledJs = await bundleReact(
+          // Combine component code and demo code
+          demoCode,
+          { ...dependencies, ...demoDependencies },
+          uiComponents, // Pass UI components
+        )
+
+        // Compile CSS
+        const css = await compileCSS({
+          jsx: code + "\n" + demoCode,
+          baseTailwindConfig:
+            baseTailwindConfig ||
+            `
+            module.exports = {
+              content: ["./src/**/*.{js,ts,jsx,tsx}"],
+              theme: {
+                extend: {},
+              },
+              plugins: [],
+            }
+          `,
+          baseGlobalCss:
+            globalCss ||
+            `
+            @tailwind base;
+            @tailwind components;
+            @tailwind utilities;
+          `,
+        })
+
+        // Check if R2 credentials are provided
+        if (
+          process.env.R2_ACCESS_KEY_ID &&
+          process.env.R2_SECRET_ACCESS_KEY &&
+          process.env.R2_ENDPOINT &&
+          process.env.NEXT_PUBLIC_CDN_URL
+        ) {
+          // Generate HTML with the bundled files
+          const html = generateHTML({
+            id: demoSlug,
+            jsUrl: "", // Will be replaced with actual URLs later
+            cssUrl: "",
+          })
+
+          // Save the bundled files to R2
+          const r2Credentials: R2Credentials = {
+            accessKeyId: process.env.R2_ACCESS_KEY_ID,
+            secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+            endpoint: process.env.R2_ENDPOINT,
+            cdnUrl: process.env.NEXT_PUBLIC_CDN_URL,
+          }
+
+          const urls = await saveBundledFilesToR2(
+            componentSlug,
+            demoSlug,
+            { js: bundledJs, css, html },
+            r2Credentials,
+          )
+
+          return Response.json(
+            {
+              success: true,
+              urls,
+              bundleReady: true,
+            },
+            { headers },
+          )
+        } else {
+          console.warn(
+            "R2 credentials not provided, using local storage instead",
+          )
+          // Save the bundled files locally if R2 is not configured
+          await saveBundledFiles(demoSlug, { js: bundledJs, css })
+
+          return Response.json(
+            {
+              success: true,
+              urls: {
+                jsUrl: `/static/${demoSlug}.js`,
+                cssUrl: `/static/${demoSlug}.css`,
+                htmlUrl: `/bundled-page?id=${demoSlug}`,
+              },
+              bundleReady: true,
+            },
+            { headers },
+          )
+        }
+      } catch (error) {
+        console.error("Bundling error:", error)
+        return Response.json(
+          {
+            error: "Failed to bundle demo",
+            details: error instanceof Error ? error.message : String(error),
+            code: "BUNDLE_DEMO_ERROR",
           },
           { status: 500, headers },
         )

@@ -11,6 +11,13 @@ import {
   CodeXml,
   Info,
   ChevronDown,
+  Loader2,
+  RocketIcon,
+  AlignVerticalJustifyEnd,
+  Copy,
+  Download,
+  ExternalLink,
+  Rocket,
 } from "lucide-react"
 
 import { ComponentPageInfo } from "./info-section"
@@ -28,7 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { TextMorph } from "@/components/ui/text-morph"
 
 import {
@@ -56,6 +63,35 @@ import { useUser } from "@clerk/nextjs"
 
 import styles from "./component-preview.module.css"
 import { FullScreenButton } from "../../ui/full-screen-button"
+import { Button } from "../../ui/button"
+import {
+  useBundleDemo,
+  getBundleStatus,
+  BundleStatus,
+} from "@/hooks/use-bundle-demo"
+import BundlePreview from "./bundle-preview"
+import { ResizablePanelGroup, ResizablePanel } from "@/components/ui/resizable"
+import { useBundleGenerator } from "@/hooks/use-bundle-generator"
+
+const BundleIframePreview = ({ url }: { url: string }) => {
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  return (
+    <div className="relative w-full h-full rounded-md overflow-hidden border border-border">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+        </div>
+      )}
+      <iframe
+        src={url}
+        className="w-full h-full"
+        onLoad={() => setIsLoading(false)}
+        allowFullScreen
+      />
+    </div>
+  )
+}
 
 export function ComponentPagePreview({
   component,
@@ -94,7 +130,14 @@ export function ComponentPagePreview({
   const isDarkTheme = resolvedTheme === "dark"
   const [isShowCode, setIsShowCode] = useAtom(isShowCodeAtom)
   const isDebug = useDebugMode()
-  const [isFullScreen] = useAtom(isFullScreenAtom)
+  const [isFullScreen, setIsFullScreen] = useAtom(isFullScreenAtom)
+  const [bundleStatus, setBundleStatus] = useState<BundleStatus>({
+    hasBundle: false,
+  })
+  const [isFetchingBundleStatus, setIsFetchingBundleStatus] = useState(true)
+  const { bundleDemo, isBundling } = useBundleDemo()
+  const { generateBundle, isGenerating, bundleResult } = useBundleGenerator()
+  const [cdnUrl, setCDNUrl] = useState<string | null>(null)
 
   const dumySandpackFiles = generateSandpackFiles({
     demoComponentNames,
@@ -172,6 +215,144 @@ export function ComponentPagePreview({
     }
   }, [isLoading])
 
+  // Fetching bundle status
+  useEffect(() => {
+    const fetchBundleStatus = async () => {
+      try {
+        setIsFetchingBundleStatus(true)
+        const status = await getBundleStatus(demo.id)
+        setBundleStatus(status)
+      } catch (error) {
+        console.error("Failed to fetch bundle status:", error)
+      } finally {
+        setIsFetchingBundleStatus(false)
+      }
+    }
+
+    fetchBundleStatus()
+  }, [demo.id])
+
+  const handleGenerateBundleClick = async () => {
+    try {
+      // Упрощенная функция загрузки UI компонентов - без лишних API запросов
+      const loadUIComponents = async (): Promise<Record<string, string>> => {
+        // Сразу используем registryDependencies, которые уже содержат все нужные компоненты
+        console.log(
+          `Количество компонентов в registryDependencies: ${Object.keys(registryDependencies).length}`,
+        )
+
+        const loadedComponents: Record<string, string> = {}
+
+        // Просто копируем компоненты из registryDependencies в нужный формат для бэкенда
+        for (const [path, content] of Object.entries(registryDependencies)) {
+          // Определяем имя компонента из пути
+          // Для простоты можно сохранить оригинальные пути, если бэкенд может с ними работать
+          // Или привести к нужному формату
+
+          // Получаем имя файла из пути
+          const fileName = path.split("/").pop() || "unknown"
+
+          // Получаем имя компонента (без расширения)
+          const componentName = fileName.replace(/\.(tsx|jsx)$/, "")
+
+          // Формируем путь, который ожидает бэкенд
+          const backendPath = `components/ui/${componentName}.tsx`
+
+          // Добавляем компонент в список загруженных
+          loadedComponents[backendPath] = content
+          console.log(
+            `Добавлен компонент: ${componentName} (${path} -> ${backendPath})`,
+          )
+        }
+
+        console.log(
+          `Итого подготовлено ${Object.keys(loadedComponents).length} компонентов`,
+        )
+        return loadedComponents
+      }
+
+      toast.info("Создаем бандл компонента...", { id: "bundle-toast" })
+
+      // Загружаем UI компоненты
+      const uiComponents = await loadUIComponents()
+
+      // @ts-ignore - игнорируем ошибку типа для dependencies
+      const demoDependenciesStr = demo?.dependencies
+      const demoDependencies = demoDependenciesStr
+        ? JSON.parse(demoDependenciesStr as string)
+        : {}
+
+      // Логируем что отправляем на бэкенд
+      console.log("Отправка на бэкенд:")
+      console.log(
+        "- UI Components:",
+        Object.keys(uiComponents).length,
+        "компонентов",
+      )
+      console.log("- Paths:", Object.keys(uiComponents))
+      console.log(
+        "- registryDependencies:",
+        Object.keys(registryDependencies).length,
+        "компонентов",
+      )
+      console.log("- Component Slug:", component.component_slug)
+      console.log("- Demo Slug:", demo.demo_slug || `demo-${demo.id}`)
+
+      // Проверяем, что у нас есть UI компоненты
+      if (
+        Object.keys(uiComponents).length === 0 &&
+        Object.keys(registryDependencies).length > 0
+      ) {
+        toast.error(
+          "Ошибка при подготовке бандла: не удалось загрузить UI компоненты",
+          { id: "bundle-toast" },
+        )
+        return
+      }
+
+      // Генерируем бандл
+      const result = await generateBundle({
+        name: component.component_slug,
+        code,
+        demoCode,
+        componentSlug: component.component_slug,
+        demoSlug: demo.demo_slug || `demo-${demo.id}`,
+        registryDependencies: {
+          ...registryDependencies,
+          ...uiComponents,
+        },
+        packageJson: {
+          dependencies: {
+            react: "^18.2.0",
+            "react-dom": "^18.2.0",
+            "framer-motion": "^10.12.4",
+            motion: "^10.12.4",
+            ...demoDependencies,
+          },
+        },
+      })
+
+      if (result.status === "error") {
+        toast.error(`Ошибка при создании бандла: ${result.error}`, {
+          id: "bundle-toast",
+        })
+        return
+      }
+
+      toast.success("Бандл успешно создан!", { id: "bundle-toast" })
+
+      if (result.cdnUrl) {
+        setCDNUrl(result.cdnUrl)
+      }
+    } catch (error) {
+      console.error("Ошибка генерации бандла:", error)
+      toast.error(
+        `Ошибка при создании бандла: ${error instanceof Error ? error.message : String(error)}`,
+        { id: "bundle-toast" },
+      )
+    }
+  }
+
   if (!css)
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 w-full">
@@ -191,7 +372,7 @@ export function ComponentPagePreview({
     ...(tailwindConfig ? ["tailwind.config.js"] : []),
     ...(globalCss ? ["globals.css"] : []),
     ...Object.keys(registryDependencies).filter(
-      (file) => file !== mainComponentFile,
+      (file): file is string => file !== mainComponentFile,
     ),
   ].filter((file): file is string => file !== undefined)
 
@@ -241,135 +422,259 @@ export function ComponentPagePreview({
         },
       }}
     >
-      <SandpackProviderUnstyled {...providerProps}>
-        <motion.div
-          layout="position"
-          className="flex-grow h-full relative rounded-lg overflow-hidden"
-          transition={{
-            layout: {
-              duration: 0.4,
-              ease: [0.4, 0, 0.2, 1],
-            },
-          }}
-        >
-          <FullScreenButton />
-          {previewError ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3">
-              <p className="text-muted-foreground text-sm">
-                Failed to load preview
-              </p>
-              <button
-                onClick={() => {
-                  setPreviewError(false)
-                  setIsLoading(true)
-                }}
-                className="text-sm underline text-muted-foreground hover:text-foreground"
+      {isFetchingBundleStatus ? (
+        <div className="flex flex-col items-center justify-center h-full w-full gap-3">
+          <LoadingSpinner />
+          <p className="text-muted-foreground text-sm">
+            Проверяем наличие бандла...
+          </p>
+        </div>
+      ) : cdnUrl ? (
+        <BundleIframeComponent url={cdnUrl} />
+      ) : bundleStatus.hasBundle ? (
+        <BundlePreview
+          bundleStatus={bundleStatus}
+          isFullScreen={isFullScreen}
+        />
+      ) : (
+        <SandpackProviderUnstyled {...providerProps}>
+          <>
+            <SandpackPreview />
+            <div className="absolute bottom-4 right-4 z-10">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleGenerateBundleClick}
+                disabled={isGenerating}
               >
-                Try again
-              </button>
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Генерация бандла...
+                  </>
+                ) : (
+                  <>
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Сгенерировать бандл
+                  </>
+                )}
+              </Button>
             </div>
-          ) : (
-            <SandpackPreview
-              showSandpackErrorOverlay={false}
-              showOpenInCodeSandbox={process.env.NODE_ENV === "development"}
-              showRefreshButton={false}
-              onLoad={() => setIsLoading(false)}
-              onError={() => {
-                setPreviewError(true)
-                setIsLoading(false)
-              }}
-            />
-          )}
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-              <LoadingSpinner text={loadingText} />
-            </div>
-          )}
-        </motion.div>
-      </SandpackProviderUnstyled>
+          </>
+        </SandpackProviderUnstyled>
+      )}
 
       <AnimatePresence mode="popLayout">
-        {!isFullScreen && (
-          <motion.div
-            layout="position"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{
-              duration: 0.3,
-              opacity: { duration: 0.2 },
-              x: {
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-              },
-            }}
-            className="h-full w-full md:max-w-[30%] mi overflow-hidden rounded-lg border border-border min-w-[350px] dark:bg-[#151515]"
+        <Tabs
+          defaultValue="preview"
+          className="relative mt-6 w-full"
+          onValueChange={(value) => {
+            if (value !== "preview") setIsFullScreen(false)
+          }}
+        >
+          <TabsContent
+            value="preview"
+            className={cn(
+              "relative rounded-md border",
+              isFullScreen ? "fixed inset-0 z-50 m-0" : "m-0",
+            )}
           >
-            <SandpackProvider {...providerProps}>
-              <div ref={sandpackRef} className="h-full w-full flex relative">
-                <SandpackLayout className="flex w-full flex-row gap-4">
-                  <div
-                    className={`flex flex-col w-full ${styles.customScroller}`}
-                  >
-                    <MobileControls
-                      isShowCode={isShowCode}
-                      setIsShowCode={setIsShowCode}
-                      canEdit={canEdit}
-                      setIsEditDialogOpen={setIsEditDialogOpen}
-                    />
-                    <div className="flex w-full h-full flex-col">
-                      {isShowCode ? (
-                        <>
-                          <CopyCommandSection component={component} />
-                          {isDebug && <SandpackFileExplorer />}
-                          <div
-                            className={`overflow-auto ${styles.codeViewerWrapper} relative`}
-                          >
-                            <CopyCodeButton
-                              component_id={component.id}
-                              user_id={user?.id}
-                            />
-                            <Tabs
-                              value={activeFile}
-                              onValueChange={setActiveFile}
-                            >
-                              <TabsList className="h-9 relative bg-muted dark:bg-background justify-start w-full gap-0.5 pb-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-border px-4 overflow-x-auto flex-nowrap hide-scrollbar">
-                                {visibleFiles.map((file) => (
-                                  <TabsTrigger
-                                    key={file}
-                                    value={file}
-                                    className="overflow-hidden data-[state=active]:rounded-b-none data-[state=active]:bg-white dark:data-[state=active]:bg-[#151515] data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
-                                  >
-                                    {file.split("/").pop()}
-                                  </TabsTrigger>
-                                ))}
-                              </TabsList>
-                              <div className="">
-                                <SandpackCodeViewer
-                                  wrapContent={true}
-                                  showTabs={false}
-                                />
-                              </div>
-                            </Tabs>
-                          </div>
-                        </>
-                      ) : (
-                        <ComponentPageInfo component={component} />
-                      )}
+            <div
+              className={cn(
+                "preview-wrapper h-[480px]",
+                isFullScreen && "h-screen",
+              )}
+            >
+              <ResizablePanelGroup
+                direction={isFullScreen ? "horizontal" : "vertical"}
+                className="h-full w-full"
+              >
+                <ResizablePanel defaultSize={50}>
+                  {isFetchingBundleStatus ? (
+                    <div className="flex h-full items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
+                  ) : bundleStatus.hasBundle && cdnUrl ? (
+                    <BundleIframePreview url={cdnUrl} />
+                  ) : (
+                    <>
+                      <SandpackProviderUnstyled {...providerProps}>
+                        <motion.div
+                          layout="position"
+                          className="flex-grow h-full relative rounded-lg overflow-hidden"
+                          transition={{
+                            layout: {
+                              duration: 0.4,
+                              ease: [0.4, 0, 0.2, 1],
+                            },
+                          }}
+                        >
+                          <FullScreenButton />
+                          {previewError ? (
+                            <div className="flex flex-col items-center justify-center h-full gap-3">
+                              <p className="text-muted-foreground text-sm">
+                                Failed to load preview
+                              </p>
+                              <button
+                                onClick={() => {
+                                  setPreviewError(false)
+                                  setIsLoading(true)
+                                }}
+                                className="text-sm underline text-muted-foreground hover:text-foreground"
+                              >
+                                Try again
+                              </button>
+                              <Button
+                                variant="outline"
+                                onClick={handleGenerateBundleClick}
+                                disabled={isBundling}
+                                className="mt-4"
+                              >
+                                {isBundling ? (
+                                  <>
+                                    <LoadingSpinner className="w-4 h-4 mr-2" />
+                                    Генерация бандла...
+                                  </>
+                                ) : (
+                                  "Сгенерировать бандл"
+                                )}
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <SandpackProviderUnstyled {...providerProps}>
+                                <SandpackPreview
+                                  showSandpackErrorOverlay={false}
+                                  showOpenInCodeSandbox={
+                                    process.env.NODE_ENV === "development"
+                                  }
+                                  showRefreshButton={false}
+                                  onLoad={() => setIsLoading(false)}
+                                  onError={() => {
+                                    setPreviewError(true)
+                                    setIsLoading(false)
+                                  }}
+                                />
+                              </SandpackProviderUnstyled>
+                              {!isLoading && !isFullScreen && (
+                                <div className="absolute bottom-4 right-4">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleGenerateBundleClick}
+                                    disabled={isBundling}
+                                    className="bg-background/80 backdrop-blur-sm"
+                                  >
+                                    {isBundling ? (
+                                      <>
+                                        <LoadingSpinner className="w-4 h-4 mr-2" />
+                                        Генерация бандла...
+                                      </>
+                                    ) : (
+                                      "Сгенерировать бандл"
+                                    )}
+                                  </Button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                          {isLoading && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+                              <LoadingSpinner text={loadingText} />
+                            </div>
+                          )}
+                        </motion.div>
+                      </SandpackProviderUnstyled>
+                    </>
+                  )}
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </div>
+          </TabsContent>
+
+          <TabsContent
+            value="code"
+            className={cn(
+              "relative rounded-md border",
+              isFullScreen ? "fixed inset-0 z-50 m-0" : "m-0",
+            )}
+          >
+            <div
+              className={cn(
+                "code-wrapper h-[480px]",
+                isFullScreen && "h-screen",
+              )}
+            >
+              <ResizablePanelGroup
+                direction={isFullScreen ? "horizontal" : "vertical"}
+                className="h-full w-full"
+              >
+                <ResizablePanel defaultSize={50}>
+                  <div
+                    ref={sandpackRef}
+                    className="h-full w-full flex relative"
+                  >
+                    <SandpackProvider
+                      files={files}
+                      theme={isDarkTheme ? "dark" : "light"}
+                      template="react"
+                    >
+                      <SandpackLayout className="flex w-full flex-row gap-4">
+                        <div
+                          className={`flex flex-col w-full ${styles.customScroller}`}
+                        >
+                          <MobileControls
+                            isShowCode={isShowCode}
+                            setIsShowCode={setIsShowCode}
+                            canEdit={canEdit}
+                            setIsEditDialogOpen={setIsEditDialogOpen}
+                          />
+                          <div className="flex w-full h-full flex-col">
+                            {isShowCode ? (
+                              <>
+                                <CopyCommandSection component={component} />
+                                {isDebug && <SandpackFileExplorer />}
+                                <div
+                                  className={`overflow-auto ${styles.codeViewerWrapper} relative`}
+                                >
+                                  <Tabs
+                                    value={activeFile}
+                                    onValueChange={setActiveFile}
+                                  >
+                                    <TabsList className="h-9 relative bg-muted dark:bg-background justify-start w-full gap-0.5 pb-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-border px-4 overflow-x-auto flex-nowrap hide-scrollbar">
+                                      {visibleFiles.map((file) => (
+                                        <TabsTrigger
+                                          key={file}
+                                          value={file}
+                                          className="overflow-hidden data-[state=active]:rounded-b-none data-[state=active]:bg-white dark:data-[state=active]:bg-[#151515] data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
+                                        >
+                                          {file.split("/").pop()}
+                                        </TabsTrigger>
+                                      ))}
+                                    </TabsList>
+                                    <div className="">
+                                      <SandpackCodeViewer
+                                        wrapContent={true}
+                                        showTabs={false}
+                                      />
+                                    </div>
+                                  </Tabs>
+                                </div>
+                              </>
+                            ) : (
+                              <ComponentPageInfo component={component} />
+                            )}
+                          </div>
+                        </div>
+                      </SandpackLayout>
+                    </SandpackProvider>
                   </div>
-                </SandpackLayout>
-              </div>
-            </SandpackProvider>
-          </motion.div>
-        )}
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </div>
+          </TabsContent>
+        </Tabs>
       </AnimatePresence>
-      {isDebug && (
-        <div className="absolute top-0 left-0 bg-background text-foreground p-2 z-50">
-          Debug Mode
-        </div>
-      )}
     </motion.div>
   )
 }
@@ -546,6 +851,27 @@ const MobileControls = ({
           </div>
         </button>
       )}
+    </div>
+  )
+}
+
+// Добавляем компонент отображения бандла в iframe в конец файла
+export function BundleIframeComponent({ url }: { url: string }) {
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  return (
+    <div className="relative w-full h-full rounded-md overflow-hidden border border-border">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+        </div>
+      )}
+      <iframe
+        src={url}
+        className="w-full h-full"
+        onLoad={() => setIsLoading(false)}
+        allowFullScreen
+      />
     </div>
   )
 }

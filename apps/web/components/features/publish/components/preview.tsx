@@ -108,7 +108,7 @@ export function PublishComponentPreview({
   useEffect(() => {
     if (isLoading) return
 
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/compile-css`, {
+    fetch(`${process.env.NEXT_PUBLIC_COMPILE_CSS_URL}/compile-css`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
