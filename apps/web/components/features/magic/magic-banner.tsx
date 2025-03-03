@@ -7,6 +7,7 @@ import { useAtom } from "jotai"
 import { useRouter } from "next/navigation"
 import { memo } from "react"
 import { atomWithStorage } from "jotai/utils"
+import { sidebarOpenAtom } from "../main-page/main-layout"
 
 export const magicBannerVisibleAtom = atomWithStorage(
   "magic-banner-visible",
@@ -16,7 +17,7 @@ export const magicBannerVisibleAtom = atomWithStorage(
 const MagicBannerContent = memo(function MagicBannerContent() {
   const [isVisible, setIsVisible] = useAtom(magicBannerVisibleAtom)
   const router = useRouter()
-
+  const [isSidebarOpen] = useAtom(sidebarOpenAtom)
   if (!isVisible) {
     return null
   }
@@ -25,7 +26,7 @@ const MagicBannerContent = memo(function MagicBannerContent() {
     <div
       className="fixed top-14 z-50 border-b border-border bg-muted transition-[left] duration-200 ease-in-out"
       style={{
-        left: "calc(var(--sidebar-width, 0px) - 24px)",
+        left: isSidebarOpen ? "calc(var(--sidebar-width, 0px) - 24px)" : "0",
         right: "0",
       }}
     >
