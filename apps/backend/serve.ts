@@ -75,9 +75,9 @@ const saveBundledFilesToR2 = async (
   ])
 
   return {
-    htmlUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${bucketName}/${baseKey}.html`,
-    jsUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${bucketName}/${baseKey}.js`,
-    cssUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${bucketName}/${baseKey}.css`,
+    htmlUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.html`,
+    jsUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.js`,
+    cssUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.css`,
   }
 }
 
