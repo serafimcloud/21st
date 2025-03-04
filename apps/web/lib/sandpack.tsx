@@ -1031,7 +1031,7 @@ export function generateBundleFiles({
   const appTsxContent = isBlocksRegistry
     ? `
 import React, { useState, useEffect } from 'react';
-import { ThemeProvider } from './next-themes';
+import { ThemeProvider, useTheme } from './next-themes';
 import { RouterProvider } from 'next/router';
 import './styles.css';
 import { ${demoComponentNames.join(", ")} } from './demo';
@@ -1044,10 +1044,22 @@ const DemoComponents = {
   },
 };
 
+
 export default function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const CurrentComponent = Object.values(DemoComponents)[currentIndex];
   const showSelect = demoComponentNames.length > 1;
+  const { setTheme, resolvedTheme } = useTheme();
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDarkMode = urlParams.get('dark') === 'true';
+    console.log("isDarkMode", isDarkMode)
+    console.log("window.location.search", window.location.search)
+    if (isDarkMode) {
+      setTheme("dark");
+    }
+  }, []);
 
   const handleSelect = (value) => {
     const index = demoComponentNames.indexOf(value);
@@ -1075,7 +1087,6 @@ export default function App() {
   }, []);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="${theme}" enableSystem={false}>
       <RouterProvider>
         <div className="bg-background text-foreground">
           {showSelect && (
@@ -1105,13 +1116,12 @@ export default function App() {
           </div>
         </div>
       </RouterProvider>
-    </ThemeProvider>
   );
 }
 `
     : `
 import React, { useState, useEffect } from 'react';
-import { ThemeProvider } from './next-themes';
+import { ThemeProvider, useTheme } from './next-themes';
 import { RouterProvider } from 'next/router';
 import './styles.css';  // Import the compiled CSS
 import { ${demoComponentNames.join(", ")} } from './demo';
@@ -1131,6 +1141,17 @@ export default function App() {
   const CurrentComponent = Object.values(DemoComponents)[currentIndex];
 
   const showSelect = demoComponentNames.length > 1;
+  const { setTheme, resolvedTheme } = useTheme();
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDarkMode = urlParams.get('dark') === 'true';
+    console.log("isDarkMode", isDarkMode)
+    console.log("window.location.search", window.location.search)
+    if (isDarkMode) {
+      setTheme("dark");
+    }
+  }, []);
 
   const handleSelect = (value) => {
     const index = demoComponentNames.indexOf(value);
@@ -1158,7 +1179,6 @@ export default function App() {
   }, []);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="${theme}" enableSystem={false}>
       <RouterProvider>
           <div className="relative flex items-center justify-center h-screen w-full m-auto p-16 bg-background text-foreground">
             <div className="absolute lab-bg inset-0 size-full">
@@ -1191,7 +1211,6 @@ export default function App() {
             </div>
           </div>
         </RouterProvider>
-    </ThemeProvider>
   );
 }
 `

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
-import { uploadToR2 } from "@/lib/r2"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { Component, Tag, User } from "@/types/global"
 import { defaultTailwindConfig } from "@/lib/sandpack"
 import { defaultGlobalCss } from "@/lib/sandpack"
+
 
 interface BundleUrls {
   html: string
@@ -37,8 +37,10 @@ export const useBundleDemo = (
         files,
         id: demoId,
         dependencies,
-        tailwindConfig,
-        globalCss,
+        baseTailwindConfig: defaultTailwindConfig,
+        baseGlobalCss: defaultGlobalCss,
+        customTailwindConfig: tailwindConfig,
+        customGlobalCss: globalCss,
       }),
     })
       .then((res) => res.json())

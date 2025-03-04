@@ -396,12 +396,21 @@ const createTempProject = async (options: BundleOptions) => {
   }
 }
 
-const bundleReact = async (
+const bundleReact = async ({
+  files,
+  baseTailwindConfig,
+  baseGlobalCss,
+  customTailwindConfig,
+  customGlobalCss,
+  dependencies,
+}: {
   files: Record<string, string>,
+  baseTailwindConfig: string,
+  baseGlobalCss: string,
+  customTailwindConfig?: string,
+  customGlobalCss?: string,
   dependencies?: Record<string, string>,
-  tailwindConfig?: string,
-  globalCss?: string,
-): Promise<{ js: string; css: string }> => {
+}): Promise<{ js: string; css: string }> => {
   let tempDir: string | null = null
 
   try {
@@ -411,19 +420,22 @@ const bundleReact = async (
         "index.js": endent`
           import { createRoot } from "react-dom/client";
           import App from "./App";
+          import { ThemeProvider } from "next-themes";
           import "./globals.css";
 
           const rootElement = document.getElementById("root");
           const root = createRoot(rootElement);
 
           root.render(
-            <App />
+            <ThemeProvider attribute="class" enableSystem={false}>
+              <App />
+            </ThemeProvider>
           );
         `,
       },
       dependencies,
-      tailwindConfig,
-      globalCss,
+      tailwindConfig: baseTailwindConfig,
+      globalCss: baseGlobalCss,
     })
     const outDir = path.join(tempDir, "dist")
 
@@ -443,7 +455,13 @@ const bundleReact = async (
     // Read the bundled files
     const [bundledJs, bundledCss] = await Promise.all([
       fs.readFile(path.join(outDir, "index.js"), "utf-8"),
-      fs.readFile(path.join(outDir, "index.css"), "utf-8").catch(() => ""),
+      compileCSS({
+        jsx: Object.values(files).join("\n"),
+        baseTailwindConfig: baseTailwindConfig,
+        customTailwindConfig: customTailwindConfig,
+        baseGlobalCss: baseGlobalCss,
+        customGlobalCss: customGlobalCss,
+      }),
     ])
 
     return { js: bundledJs, css: bundledCss }
@@ -771,7 +789,7 @@ const server = serve({
 
     if (url.pathname === "/bundle" && req.method === "POST") {
       try {
-        const { files, id, dependencies, tailwindConfig, globalCss } =
+        const { files, id, dependencies, baseTailwindConfig, baseGlobalCss, customTailwindConfig, customGlobalCss } =
           await req.json()
 
         if (!files || !Object.keys(files).length) {
@@ -783,12 +801,14 @@ const server = serve({
         }
 
         // Bundle React code with optional dependencies
-        const { js, css: bundledCss } = await bundleReact(
+        const { js, css: bundledCss } = await bundleReact({
           files,
+          baseTailwindConfig,
+          baseGlobalCss,
+          customTailwindConfig,
+          customGlobalCss,
           dependencies,
-          tailwindConfig,
-          globalCss,
-        )
+        })
 
         // Save the bundled files
         const { htmlUrl, jsUrl, cssUrl } = await saveBundledFilesToR2(id, {

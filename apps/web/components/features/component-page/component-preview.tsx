@@ -324,9 +324,9 @@ export function ComponentPagePreview({
       </SandpackProviderUnstyled> */}
 
       <div className="h-full w-full">
-        <h1>Testing Iframe</h1>
         <iframe
-          src={bundle?.html}
+          src={isDarkTheme ? `${bundle?.html}?dark=true` : bundle?.html}
+          className="w-full h-full"
         />
       </div>
 
