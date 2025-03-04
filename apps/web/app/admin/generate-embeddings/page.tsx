@@ -60,71 +60,83 @@ export default function GenerateEmbeddingsPage() {
     addLog("Начинаю генерацию эмбедингов для компонентов...")
 
     try {
-      // Для тестирования обрабатываем только компонент Accordion с ID 124
-      const componentId = 124
-      const { data: component, error: componentError } = await supabase
+      // Получаем все компоненты
+      const { data: components, error: componentsError } = await supabase
         .from("components")
         .select("id, name, code")
-        .eq("id", componentId)
-        .single()
+        .order("id")
 
-      if (componentError) throw componentError
-
-      // Выводим полный код компонента для отладки
-      addLog(
-        `[КОД] Код компонента ${component.name} (ID: ${component.id}):\n${component.code || "Код не найден"}`,
-      )
-
-      addLog(`[Компонент] Обработка ${component.name} (ID: ${component.id})...`)
-
-      // Небольшая задержка для избежания лимитов API
-      await sleep(500)
-
-      const { data: response, error: invokeError } =
-        await supabase.functions.invoke("generate-embeddings", {
-          body: { type: "component_capability", componentId: component.id },
-        })
-
-      if (invokeError) {
-        addLog(
-          `[Компонент] Ошибка при генерации для ${component.name}: ${invokeError.message}`,
-        )
-      } else {
-        addLog(
-          `[Компонент] Успешно сгенерирован эмбединг для ${component.name} (ID: ${component.id})`,
-        )
-
-        // Выводим весь объект ответа в консоль и логи
-        console.log("Полный ответ от функции generate-embeddings:", response)
-        addLog(`[ОТЛАДКА] Полный ответ: ${formatObjectForLog(response)}`)
-
-        // Используем response.data
-        const result = response.data
-
-        if (result && result.description) {
-          addLog(
-            `[Компонент] Сгенерировано описание (полностью):\n"${result.description}"`,
-          )
-        }
-
-        // Показываем полный промпт
-        if (result && result.prompt_preview) {
-          addLog(
-            `[Компонент] Промпт для AI (полностью):\n${result.prompt_preview}`,
-          )
-        }
-
-        // Показываем полный текст для эмбединга
-        if (result && result.embedding_text_preview) {
-          addLog(
-            `[Компонент] Текст для эмбединга (полностью):\n${result.embedding_text_preview}`,
-          )
-        }
+      if (componentsError) throw componentsError
+      
+      if (!components || components.length === 0) {
+        addLog("Не найдено компонентов для генерации эмбедингов")
+        return
       }
 
-      setComponentsProgress(100)
-      addLog(`Завершена тестовая генерация для компонента ${component.name}`)
-      toast.success(`Успешно сгенерирован эмбединг для тестового компонента`)
+      addLog(`Найдено ${components.length} компонентов для обработки`)
+      setComponentsTotal(components.length)
+      
+      let processed = 0
+      
+      for (const component of components) {
+        addLog(`[Компонент] Обработка ${component.name} (ID: ${component.id})...`)
+        
+        // Выводим полный код компонента для отладки
+        addLog(
+          `[КОД] Код компонента ${component.name} (ID: ${component.id}):\n${component.code || "Код не найден"}`,
+        )
+
+        // Небольшая задержка для избежания лимитов API
+        await sleep(500)
+
+        const { data: response, error: invokeError } =
+          await supabase.functions.invoke("generate-embeddings", {
+            body: { type: "component_capability", componentId: component.id },
+          })
+
+        if (invokeError) {
+          addLog(
+            `[Компонент] Ошибка при генерации для ${component.name}: ${invokeError.message}`,
+          )
+        } else {
+          addLog(
+            `[Компонент] Успешно сгенерирован эмбединг для ${component.name} (ID: ${component.id})`,
+          )
+
+          // Выводим весь объект ответа в консоль и логи
+          console.log("Полный ответ от функции generate-embeddings:", response)
+          addLog(`[ОТЛАДКА] Полный ответ: ${formatObjectForLog(response)}`)
+
+          // Используем response.data
+          const result = response.data
+
+          if (result && result.description) {
+            addLog(
+              `[Компонент] Сгенерировано описание (полностью):\n"${result.description}"`,
+            )
+          }
+
+          // Показываем полный промпт
+          if (result && result.prompt_preview) {
+            addLog(
+              `[Компонент] Промпт для AI (полностью):\n${result.prompt_preview}`,
+            )
+          }
+
+          // Показываем полный текст для эмбединга
+          if (result && result.embedding_text_preview) {
+            addLog(
+              `[Компонент] Текст для эмбединга (полностью):\n${result.embedding_text_preview}`,
+            )
+          }
+        }
+        
+        processed++
+        setComponentsProgress(Math.floor((processed / components.length) * 100))
+      }
+
+      addLog(`Завершена генерация эмбедингов для ${processed} компонентов`)
+      toast.success(`Успешно сгенерированы эмбединги для ${processed} компонентов`)
     } catch (error) {
       console.error("Error generating component embeddings:", error)
       const errorMessage =
@@ -144,11 +156,12 @@ export default function GenerateEmbeddingsPage() {
     addLog("Начинаю генерацию эмбедингов для демо...")
 
     try {
-      // Fetch all demos that need embeddings
+      // Fetch only the first demo for testing
       const { data, error } = await supabase
         .from("demos")
         .select("id, name, component_id")
         .order("id")
+        .limit(1)
 
       if (error) throw error
 
@@ -157,90 +170,85 @@ export default function GenerateEmbeddingsPage() {
         return
       }
 
-      addLog(`Найдено ${data.length} демо для обработки`)
+      addLog(`Найдено демо для обработки`)
 
-      let processed = 0
-      setDemosTotal(data.length)
+      setDemosTotal(1)
+      const demo = data[0]
+      
+      try {
+        const demoName = demo.name || "Без имени"
+        const demoId = demo.id
+        const componentId = demo.component_id
 
-      // Process each demo
-      for (const demo of data) {
-        try {
-          const demoName = demo.name || "Без имени"
-          const demoId = demo.id
-          const componentId = demo.component_id
+        addLog(
+          `[Демо] Обработка ${demoName} (ID: ${demoId}, Component ID: ${componentId || "нет"})...`,
+        )
 
+        const { data: response, error: invokeError } =
+          await supabase.functions.invoke("generate-embeddings", {
+            body: { type: "demo_usage", demoId: demoId },
+          })
+
+        if (invokeError) {
           addLog(
-            `[Демо] Обработка ${demoName} (ID: ${demoId}, Component ID: ${componentId || "нет"})...`,
+            `[Демо] Ошибка при генерации для ${demoName}: ${invokeError.message}`,
+          )
+        } else {
+          addLog(
+            `[Демо] Успешно сгенерирован эмбединг для ${demoName} (ID: ${demoId})`,
           )
 
-          const { data: response, error: invokeError } =
-            await supabase.functions.invoke("generate-embeddings", {
-              body: { type: "demo_usage", demoId: demoId },
-            })
+          // Выводим весь объект ответа в консоль для отладки
+          console.log(
+            "Полный ответ от функции generate-embeddings:",
+            response,
+          )
 
-          if (invokeError) {
+          // Добавляем полный ответ в лог
+          addLog(`[ОТЛАДКА] Полный ответ: ${formatObjectForLog(response)}`)
+
+          // Используем response.data вместо response
+          const result = response.data
+
+          if (result && result.description) {
+            // Показываем полное описание, а не превью
             addLog(
-              `[Демо] Ошибка при генерации для ${demoName}: ${invokeError.message}`,
+              `[Демо] Сгенерировано описание (полностью):\n"${result.description}"`,
             )
-          } else {
-            addLog(
-              `[Демо] Успешно сгенерирован эмбединг для ${demoName} (ID: ${demoId})`,
-            )
-
-            // Выводим весь объект ответа в консоль для отладки
-            console.log(
-              "Полный ответ от функции generate-embeddings:",
-              response,
-            )
-
-            // Добавляем полный ответ в лог
-            addLog(`[ОТЛАДКА] Полный ответ: ${formatObjectForLog(response)}`)
-
-            // Используем response.data вместо response
-            const result = response.data
-
-            if (result && result.description) {
-              // Показываем полное описание, а не превью
-              addLog(
-                `[Демо] Сгенерировано описание (полностью):\n"${result.description}"`,
-              )
-            }
-
-            // Показываем полный промпт, а не превью
-            if (result && result.prompt_preview) {
-              addLog(
-                `[Демо] Промпт для AI (полностью):\n"${result.prompt_preview}"`,
-              )
-              // Добавляем оригинальный текст без ... после превью
-              const originalPrompt = result.prompt_preview.replace(
-                /\.\.\.$/,
-                "",
-              )
-              addLog(`[ПРОМПТ] ${originalPrompt}`)
-            }
-
-            // Показываем полный текст для эмбединга, а не превью
-            if (result && result.embedding_text_preview) {
-              addLog(
-                `[Демо] Текст для эмбединга (полностью):\n"${result.embedding_text_preview}"`,
-              )
-              // Добавляем оригинальный текст без ... после превью
-              const originalEmbeddingText =
-                result.embedding_text_preview.replace(/\.\.\.$/, "")
-              addLog(`[ЭМБЕДИНГ] ${originalEmbeddingText}`)
-            }
           }
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : String(err)
-          addLog(`[Демо] Исключение для демо ${demo.id}: ${errorMessage}`)
-        }
 
-        processed++
-        setDemosProgress(Math.floor((processed / data.length) * 100))
+          // Показываем полный промпт, а не превью
+          if (result && result.prompt_preview) {
+            addLog(
+              `[Демо] Промпт для AI (полностью):\n"${result.prompt_preview}"`,
+            )
+            // Добавляем оригинальный текст без ... после превью
+            const originalPrompt = result.prompt_preview.replace(
+              /\.\.\.$/,
+              "",
+            )
+            addLog(`[ПРОМПТ] ${originalPrompt}`)
+          }
+
+          // Показываем полный текст для эмбединга, а не превью
+          if (result && result.embedding_text_preview) {
+            addLog(
+              `[Демо] Текст для эмбединга (полностью):\n"${result.embedding_text_preview}"`,
+            )
+            // Добавляем оригинальный текст без ... после превью
+            const originalEmbeddingText =
+              result.embedding_text_preview.replace(/\.\.\.$/, "")
+            addLog(`[ЭМБЕДИНГ] ${originalEmbeddingText}`)
+          }
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        addLog(`[Демо] Исключение для демо ${demo.id}: ${errorMessage}`)
       }
 
-      addLog(`Завершена генерация эмбедингов для ${processed} демо`)
-      toast.success(`Успешно сгенерированы эмбединги для ${processed} демо`)
+      setDemosProgress(100)
+      addLog(`Завершена генерация эмбедингов для тестового демо`)
+      toast.success(`Успешно сгенерирован эмбединг для тестового демо`)
     } catch (error) {
       console.error("Error generating demo embeddings:", error)
       const errorMessage =

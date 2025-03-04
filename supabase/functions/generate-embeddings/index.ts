@@ -3,6 +3,7 @@ import "https://deno.land/x/xhr@0.3.0/mod.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import OpenAI from "https://esm.sh/openai@4.86.1"
 import { Anthropic } from "https://esm.sh/@anthropic-ai/sdk@0.39.0"
+import { CLAUDE_CONFIG, OPENAI_CONFIG } from "./ai-config.ts"
 
 // Configure CORS headers
 const corsHeaders = {
@@ -13,7 +14,7 @@ const corsHeaders = {
 
 // Initialize OpenAI client for embeddings
 const openai = new OpenAI({
-  apiKey: Deno.env.get("OPENAI_API_KEY"),
+  apiKey: Deno.env.get("OPENAI_API_KEY") || "",
 })
 
 // Initialize Anthropic client for descriptions
@@ -21,17 +22,23 @@ const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY")
 let anthropic: any = null
 
 try {
-  if (anthropicApiKey) {
+  if (!anthropicApiKey) {
+    console.warn(
+      "⚠️ ANTHROPIC_API_KEY not found in environment variables. AI descriptions will fall back to default templates.",
+    )
+  } else if (anthropicApiKey.trim() === "") {
+    console.warn(
+      "⚠️ ANTHROPIC_API_KEY is empty. AI descriptions will fall back to default templates.",
+    )
+  } else {
     // Создаём клиент по современной спецификации API
     anthropic = new Anthropic({
       apiKey: anthropicApiKey,
     })
-    console.log("Anthropic client initialized successfully")
-  } else {
-    console.warn("ANTHROPIC_API_KEY not found in environment variables")
+    console.log("✓ Anthropic client initialized successfully")
   }
 } catch (error) {
-  console.error("Error initializing Anthropic client:", error)
+  console.error("❌ Error initializing Anthropic client:", error)
 }
 
 // Initialize Supabase client
@@ -86,28 +93,39 @@ async function fetchCodeFromUrl(codeOrUrl: string): Promise<string> {
 }
 
 /**
- * Generate embedding using OpenAI's text-embedding-3-large model
+ * Generate embedding using OpenAI
  */
 async function generateEmbedding(text: string): Promise<number[]> {
   try {
+    console.log(
+      `Generating embedding using model: ${OPENAI_CONFIG.EMBEDDING_MODEL}`,
+    )
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-large",
+      model: OPENAI_CONFIG.EMBEDDING_MODEL,
       input: text,
-      dimensions: 1536, // explicit dimensions
     })
+    const embedding = response.data[0].embedding
+    console.log(`Generated embedding with ${embedding.length} dimensions`)
 
-    return response.data[0].embedding
+    // Проверяем соответствие ожидаемой размерности
+    if (embedding.length !== OPENAI_CONFIG.EMBEDDING_DIMENSIONS) {
+      console.error(
+        `⚠️ Warning: Expected ${OPENAI_CONFIG.EMBEDDING_DIMENSIONS} dimensions, but got ${embedding.length}`,
+      )
+    }
+
+    return embedding
   } catch (error) {
-    console.error("Error generating embedding:", error)
+    console.error("❌ Error generating embedding:", error)
     throw error
   }
 }
 
 /**
- * Generate AI-enhanced description using Claude 3.7 Sonnet
+ * Generate AI-enhanced description using Claude
  */
 async function generateDescription(
-  type: "component" | "demo",
+  type: "component" | "demo" | "context",
   data: any,
 ): Promise<string> {
   let prompt = ""
@@ -165,6 +183,33 @@ async function generateDescription(
       DO NOT return the Original Description as your answer.
       Start your response with a full technical description.
     `
+  } else if (type === "context") {
+    // Обрезаем код до безопасного размера
+    const trimmedComponentCode = trimCodeForPrompt(data.componentCode, 4000)
+    const trimmedDemoCode = trimCodeForPrompt(data.demoCode, 4000)
+
+    prompt = `
+      Analyze how this component is being used in this specific demo context and provide a detailed analysis.
+      
+      Component Name: ${data.componentName || ""}
+      Component Description: ${data.componentDescription || ""}
+      Component Code:
+      ${trimmedComponentCode || "No component code available"}
+      
+      Demo Name: ${data.demoName || ""}
+      Demo Code:
+      ${trimmedDemoCode || "No demo code available"}
+      
+      Please provide a detailed technical analysis (at least 200 words) that describes:
+      1. How the component is being implemented in this specific demo
+      2. What customizations or props are being used in this context
+      3. What specific functionality or features of the component are being showcased
+      4. How the demo extends or demonstrates the capabilities of the component
+      5. Any notable implementation patterns or technical details worth highlighting
+      
+      Write in a clear, technical style that would help developers understand how to use this component in similar contexts.
+      Be comprehensive and detailed in your analysis, focusing on the technical implementation details.
+    `
   }
 
   try {
@@ -185,20 +230,17 @@ async function generateDescription(
 
     try {
       // Создаем сообщение используя актуальный API
-      console.log("Using Anthropic API v0.39.0")
-
-      // Отправляем запрос к Claude используя актуальный API
+      console.log("Using standard anthropic.messages.create API")
       const response = await anthropic.messages.create({
-        model: "claude-3-sonnet-20240229", // Обновленное название модели
-        max_tokens: 1000,
+        model: CLAUDE_CONFIG.MODEL,
+        max_tokens: CLAUDE_CONFIG.MAX_TOKENS,
         messages: [
           {
             role: "user",
             content: prompt,
           },
         ],
-        system:
-          "You are a technical writer specializing in explaining React components. Always provide detailed, accurate descriptions. Focus on technical details, implementation patterns, and use cases.",
+        system: CLAUDE_CONFIG.SYSTEM_PROMPT,
       })
 
       console.log(`Received response from Claude for ${type} description`)
@@ -249,16 +291,15 @@ async function generateDescription(
 
         try {
           const retryResponse = await anthropic.messages.create({
-            model: "claude-3-sonnet-20240229", // Обновленное название модели
-            max_tokens: 1000,
+            model: CLAUDE_CONFIG.MODEL,
+            max_tokens: CLAUDE_CONFIG.MAX_TOKENS,
             messages: [
               {
                 role: "user",
                 content: retryPrompt,
               },
             ],
-            system:
-              "You are a technical writer specializing in explaining React components. Always provide detailed, accurate descriptions. Focus on technical details, implementation patterns, and USE CASES.",
+            system: CLAUDE_CONFIG.SYSTEM_PROMPT,
           })
 
           if (!retryResponse.content || retryResponse.content.length === 0) {
@@ -318,12 +359,14 @@ async function generateDescription(
 function getFallbackDescription(
   name: string,
   originalDescription: string,
-  type: "component" | "demo",
+  type: "component" | "demo" | "context",
 ): string {
   if (type === "component") {
     return `${name} is a React component that provides ${originalDescription.toLowerCase()} It is built using React and integrates with common UI patterns. The component is designed to be flexible, customizable, and accessible, following best practices for modern web development. It is part of a component library and can be styled and modified to fit various design systems. The code demonstrates proper handling of props, state management, and event handling typical of React components. It is structured following composition patterns that make it reusable across different projects and contexts.`
-  } else {
+  } else if (type === "demo") {
     return `This demo showcases ${name}, which ${originalDescription.toLowerCase()} It demonstrates how to implement and utilize UI components in a real-world application context. The demo illustrates best practices for component integration, state management, and user interaction patterns. It provides developers with a practical example of how to use the component library effectively in their own projects. The implementation follows modern React patterns and can be adapted to different design requirements and use cases.`
+  } else {
+    return `This context analysis is not provided in the fallback description. Please implement the fallback logic for context analysis.`
   }
 }
 
@@ -525,10 +568,10 @@ export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }`
 async function generateDemoEmbedding(supabase: any, demoId: number) {
   console.log(`Generating embeddings for demo ID: ${demoId}`)
 
-  // Get demo data
+  // Get demo data - remove 'description' since it doesn't exist
   const { data: demo, error: demoError } = await supabase
     .from("demos")
-    .select("name, description, component_id, demo_code")
+    .select("name, component_id, demo_code")
     .eq("id", demoId)
     .single()
 
@@ -562,10 +605,10 @@ async function generateDemoEmbedding(supabase: any, demoId: number) {
     }
   }
 
-  // Prepare text for generating description
+  // Prepare text for generating description - use empty string instead of demo.description
   const descriptionPrompt = {
-    name: demo.name,
-    description: demo.description || "",
+    name: demo.name || "",
+    description: "", // No description column in demos table
     code: demoCode || "No code available",
     componentName,
     componentDescription,
@@ -578,8 +621,8 @@ async function generateDemoEmbedding(supabase: any, demoId: number) {
   const prompt = `
     Analyze this UI demo and provide a comprehensive technical description.
     
-    Demo Name: ${demo.name}
-    Original Description: ${demo.description || "No description provided"}
+    Demo Name: ${demo.name || ""}
+    Original Description: No description provided
     Related Component: ${componentName || "No specific component associated"}
     Component Description: ${componentDescription || ""}
     Demo Code: 
@@ -594,7 +637,7 @@ async function generateDemoEmbedding(supabase: any, demoId: number) {
 
     Write in a clear, technical style that would help developers understand how to use these patterns.
     
-    IMPORTANT: Your response should be at minimum 200 words and contain significantly more detail than the Original Description.
+    IMPORTANT: Your response should be at minimum 200 words and contain significantly more detail than just the demo name.
   `
 
   // Generate enhanced description using AI
@@ -603,10 +646,9 @@ async function generateDemoEmbedding(supabase: any, demoId: number) {
     descriptionPrompt,
   )
 
-  // Prepare text for embeddings
+  // Prepare text for embeddings - remove demo.description
   const embeddingText = `
-    Demo Name: ${demo.name}
-    Demo Description: ${demo.description || ""}
+    Demo Name: ${demo.name || ""}
     Enhanced Description: ${enhancedDescription}
     Component: ${componentName || "No associated component"}
     Component Description: ${componentDescription || ""}
@@ -676,10 +718,10 @@ async function generateContextEmbedding(
     )
   }
 
-  // Get demo data
+  // Get demo data - remove description from select
   const { data: demo, error: demoError } = await supabase
     .from("demos")
-    .select("name, description, demo_code")
+    .select("name, demo_code")
     .eq("id", demoId)
     .single()
 
@@ -689,78 +731,61 @@ async function generateContextEmbedding(
     )
   }
 
-  // Component code is directly available in the 'code' field
+  // Component code handling - convert from URL if needed
   let componentCode = component.code || ""
-  console.log(
-    `Component code (original): ${componentCode.substring(0, 200)}...`,
-  )
-
-  // Если в поле code содержится URL, загружаем код с этого URL
+  console.log(`Original component code: ${componentCode.substring(0, 200)}...`)
   componentCode = await fetchCodeFromUrl(componentCode)
   console.log(`Component code length: ${componentCode.length} characters`)
 
-  // Demo code is directly available in the 'demo_code' field
+  // Demo code handling - convert from URL if needed
   let demoCode = demo.demo_code || ""
-  console.log(`Demo code (original): ${demoCode.substring(0, 200)}...`)
-
-  // Если в поле demo_code содержится URL, загружаем код с этого URL
+  console.log(`Original demo code: ${demoCode.substring(0, 200)}...`)
   demoCode = await fetchCodeFromUrl(demoCode)
   console.log(`Demo code length: ${demoCode.length} characters`)
 
+  // Prepare prompt for context generation
   // Обрезаем код до безопасного размера
-  const trimmedComponentCode = trimCodeForPrompt(componentCode, 5000)
-  const trimmedDemoCode = trimCodeForPrompt(demoCode, 5000)
+  const trimmedComponentCode = trimCodeForPrompt(componentCode, 4000)
+  const trimmedDemoCode = trimCodeForPrompt(demoCode, 4000)
 
-  // Generate a contextual description
-  const contextPrompt = `Analyze how the following component is used in this specific demo context.
-    Focus on the usage pattern, interaction with other elements, and specific implementation details.
-
-    Component Name: ${component.name}
-    Component Description: ${component.description || "No description available"}
-    Component Code: ${trimmedComponentCode || "No code available"}
-
-    Demo Name: ${demo.name}
-    Demo Description: ${demo.description || "No description available"}
-    Demo Code: ${trimmedDemoCode || "No code available"}
-
-    Provide a detailed analysis including:
-    1. The specific role this component plays in this demo
-    2. How it interacts with other elements or components
-    3. Any customization or adaptation made to the component for this use case
-    4. The key functionality or user experience it provides in this context
-
-    IMPORTANT: Your response should be at minimum 200 words and contain significantly more detail than the brief descriptions.
+  const prompt = `
+    Analyze how this component is being used in this specific demo context and provide a detailed analysis.
     
-    Focus your response solely on the technical details and usage patterns.`
+    Component Name: ${component.name || ""}
+    Component Description: ${component.description || ""}
+    Component Code:
+    ${trimmedComponentCode || "No component code available"}
+    
+    Demo Name: ${demo.name || ""}
+    Demo Code:
+    ${trimmedDemoCode || "No demo code available"}
+    
+    Please provide a detailed technical analysis (at least 200 words) that describes:
+    1. How the component is being implemented in this specific demo
+    2. What customizations or props are being used in this context
+    3. What specific functionality or features of the component are being showcased
+    4. How the demo extends or demonstrates the capabilities of the component
+    5. Any notable implementation patterns or technical details worth highlighting
+    
+    Write in a clear, technical style that would help developers understand how to use this component in similar contexts.
+    Be comprehensive and detailed in your analysis, focusing on the technical implementation details.
+  `
 
-  console.log(`Context prompt preview: ${contextPrompt.substring(0, 200)}...`)
-
-  const contextDescription = await anthropic.messages.create({
-    model: "claude-3-7-sonnet-20250219",
-    max_tokens: 1000,
-    temperature: 0.7,
-    messages: [
-      {
-        role: "user",
-        content: contextPrompt,
-      },
-    ],
+  // Generate usage analysis using AI
+  const contextAnalysis = await generateDescription("context", {
+    componentName: component.name,
+    componentDescription: component.description || "",
+    componentCode,
+    demoName: demo.name || "",
+    demoCode,
   })
 
-  const contextualDescription = contextDescription.content[0].text
-  console.log(
-    `Generated context description: ${contextualDescription.substring(0, 200)}...`,
-  )
-
-  // Prepare text for embedding generation
+  // Prepare text for embeddings
   const embeddingText = `
-    Component: ${component.name}
+    Component Name: ${component.name || ""}
     Component Description: ${component.description || ""}
-    Demo: ${demo.name}
-    Demo Description: ${demo.description || ""}
-    Usage Context: ${contextualDescription}
-    Component Code: ${componentCode ? "Available" : "Not available"}
-    Demo Code: ${demoCode ? "Available" : "Not available"}
+    Demo Name: ${demo.name || ""}
+    Context Analysis: ${contextAnalysis}
   `
   console.log(`Embedding text preview: ${embeddingText.substring(0, 200)}...`)
 
@@ -773,15 +798,16 @@ async function generateContextEmbedding(
     .insert({
       component_id: componentId,
       demo_id: demoId,
-      context_description: contextualDescription,
       embedding,
+      context_description: contextAnalysis,
       metadata: {
+        description: contextAnalysis,
         component_name: component.name,
         demo_name: demo.name,
         has_component_code: !!componentCode,
         has_demo_code: !!demoCode,
         // Сохраняем полный текст промпта и эмбединга для будущих запросов
-        full_prompt: contextPrompt,
+        full_prompt: prompt,
         full_embedding_text: embeddingText,
       },
     })
@@ -794,9 +820,9 @@ async function generateContextEmbedding(
 
   return {
     ...data,
-    description: contextualDescription,
+    description: contextAnalysis,
     // Возвращаем полный промпт, а не его превью
-    prompt_preview: contextPrompt,
+    prompt_preview: prompt,
     // Возвращаем полный текст для эмбединга, а не его превью
     embedding_text_preview: embeddingText,
   }
