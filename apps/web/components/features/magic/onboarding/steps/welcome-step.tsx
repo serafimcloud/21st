@@ -83,11 +83,11 @@ export function WelcomeStep({ onComplete }: WelcomeStepProps) {
       <Button 
         onClick={onComplete} 
         ref={buttonRef} 
-        className="mt-8"
+        className="mt-8 pr-1.5"
         disabled={!termsAccepted}
       >
         Continue
-        <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+        <kbd className="pointer-events-none h-5 w-5 justify-center select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
           <Icons.enter className="h-2.5 w-2.5" />
         </kbd>
       </Button>

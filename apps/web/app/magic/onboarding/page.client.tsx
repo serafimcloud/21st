@@ -16,6 +16,7 @@ export type OnboardingStep =
   | "install-ide"
   | "create-component"
   | "upgrade-pro"
+  | "troubleshooting"
 
 // Define the IDE options
 export type IdeOption = "cursor" | "cline" | "windsurf"
@@ -67,6 +68,13 @@ const InstallIdeStep = dynamic(
     import(
       "@/components/features/magic/onboarding/steps/install-ide-step"
     ).then((mod) => mod.InstallIdeStep),
+  { ssr: false },
+)
+const TroubleshootingStep = dynamic(
+  () =>
+    import(
+      "@/components/features/magic/onboarding/steps/troubleshooting-step"
+    ).then((mod) => mod.TroubleshootingStep),
   { ssr: false },
 )
 const CreateComponentStep = dynamic(
@@ -124,6 +132,7 @@ export function OnboardingClient({
     "welcome",
     "select-ide",
     "install-ide",
+    "troubleshooting",
     "create-component",
     "upgrade-pro",
   ] as const
@@ -244,14 +253,63 @@ export function OnboardingClient({
             apiKey={apiKey}
             selectedIde={onboardingState.selectedIde || "cursor"}
             osType={onboardingState.osType}
-            onComplete={() => completeStep("install-ide", "create-component")}
+            onComplete={(action) => {
+              if (action === "troubleshooting") {
+                router.push(
+                  "/magic/onboarding?step=troubleshooting&from=install-ide",
+                  {
+                    scroll: false,
+                  },
+                )
+                setOnboardingState((prev) => ({
+                  ...prev,
+                  currentStep: "troubleshooting",
+                }))
+              } else {
+                completeStep("install-ide", "create-component")
+              }
+            }}
+          />
+        )
+      case "troubleshooting":
+        return (
+          <TroubleshootingStep
+            selectedIde={onboardingState.selectedIde || "cursor"}
+            osType={onboardingState.osType}
+            previousStep={
+              (searchParams.get("from") as OnboardingStep) || "install-ide"
+            }
+            onComplete={(returnToStep) => {
+              router.push(`/magic/onboarding?step=${returnToStep}`, {
+                scroll: false,
+              })
+              setOnboardingState((prev) => ({
+                ...prev,
+                currentStep: returnToStep,
+              }))
+            }}
           />
         )
       case "create-component":
         return (
           <CreateComponentStep
             hasCreatedComponent={!!hasCreatedComponent}
-            onComplete={() => completeStep("create-component", "upgrade-pro")}
+            onComplete={(action) => {
+              if (action === "troubleshooting") {
+                router.push(
+                  "/magic/onboarding?step=troubleshooting&from=create-component",
+                  {
+                    scroll: false,
+                  },
+                )
+                setOnboardingState((prev) => ({
+                  ...prev,
+                  currentStep: "troubleshooting",
+                }))
+              } else {
+                completeStep("create-component", "upgrade-pro")
+              }
+            }}
           />
         )
       case "upgrade-pro":

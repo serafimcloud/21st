@@ -16,7 +16,7 @@ export const magicOnboardingCompletedAtom = atomWithStorage<boolean>(
 
 interface CreateComponentStepProps {
   hasCreatedComponent: boolean
-  onComplete: () => void
+  onComplete: (action?: "next" | "troubleshooting") => void
 }
 
 export function CreateComponentStep({
@@ -35,12 +35,21 @@ export function CreateComponentStep({
     }
   }, [hasCreatedComponent, setMagicOnboardingCompleted])
 
-  // Add keyboard shortcut for Enter key
+  // Add keyboard shortcut for Enter key and Help
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
         e.preventDefault()
-        onComplete()
+        onComplete("next")
+      } else if (
+        e.code === "KeyH" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.shiftKey
+      ) {
+        e.preventDefault()
+        onComplete("troubleshooting")
       }
     }
 
@@ -167,10 +176,20 @@ export function CreateComponentStep({
       </div>
 
       <div className="sticky bottom-5 w-full pt-8 pb-4">
-        <div className="flex justify-center w-full">
-          <Button onClick={onComplete}>
+        <div className="flex justify-center w-full gap-2">
+          <Button
+            variant="outline"
+            className="pr-1.5"
+            onClick={() => onComplete("troubleshooting")}
+          >
+            Need help?
+            <kbd className="pointer-events-none h-5 w-5 justify-center select-none items-center gap-1 rounded border-muted-foreground/40 bg-foreground/10 px-1.5 ml-1.5 font-sans text-[11px] text-foreground leading-none opacity-100 flex">
+              H
+            </kbd>
+          </Button>
+          <Button className="pr-1.5" onClick={() => onComplete("next")}>
             Continue
-            <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+            <kbd className="pointer-events-none h-5 w-5 justify-center select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
               <Icons.enter className="h-2.5 w-2.5" />
             </kbd>
           </Button>
