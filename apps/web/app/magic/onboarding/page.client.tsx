@@ -236,6 +236,7 @@ export function OnboardingClient({
             onComplete={() => {
               completeStep("welcome", "select-ide")
             }}
+            isAuthenticated={!!userId}
           />
         )
       case "select-ide":
@@ -344,7 +345,8 @@ export function OnboardingClient({
   }
 
   return (
-    <div className="min-h-screen w-full bg-background antialiased flex items-center">
+    <div className="min-h-screen w-full bg-background antialiased relative flex items-center">
+      <div className="absolute inset-0 pointer-events-none bg-grid-purple" />
       <div className="absolute top-4 right-4">
         <Button
           variant="ghost"

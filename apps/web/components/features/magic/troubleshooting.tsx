@@ -2,16 +2,23 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Hammer } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface TroubleshootingSectionProps {
   selectedOS?: "windows" | "mac"
+  selectedIde?: "cursor" | "cline" | "windsurf"
 }
 
 export function TroubleshootingSection({
   selectedOS = "mac",
+  selectedIde = "cursor",
 }: TroubleshootingSectionProps) {
   const [os, setOs] = useState<"windows" | "mac">(selectedOS)
+
+  // Log the selectedIde value to debug
+  useEffect(() => {
+    console.log("TroubleshootingSection received selectedIde:", selectedIde)
+  }, [selectedIde])
 
   const commonIssues = [
     {
@@ -105,7 +112,11 @@ export function TroubleshootingSection({
 
   return (
     <div className="space-y-6">
-      <Tabs value={os} onValueChange={(value) => setOs(value as "mac" | "windows")} className="w-full">
+      <Tabs
+        value={os}
+        onValueChange={(value) => setOs(value as "mac" | "windows")}
+        className="w-full"
+      >
         <TabsList className="grid grid-cols-2 mb-4 rounded-md h-7 p-0.5 w-[200px]">
           <TabsTrigger className="text-xs h-6" value="mac">
             Mac OS
@@ -162,7 +173,7 @@ export function TroubleshootingSection({
         <h4 className="text-lg font-medium text-white mb-2">
           IDE-Specific Issues
         </h4>
-        <Tabs defaultValue="cursor" className="w-full">
+        <Tabs defaultValue={selectedIde} className="w-full">
           <TabsList className="grid grid-cols-3 mb-4 rounded-md h-7 p-0.5">
             <TabsTrigger className="text-xs h-6" value="cursor">
               Cursor

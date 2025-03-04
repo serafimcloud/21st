@@ -5,12 +5,18 @@ import { useEffect, useRef, useState } from "react"
 import { Icons } from "@/components/icons"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TermsDialog } from "@/components/features/api/terms-dialog"
+import { SignInButton } from "@clerk/nextjs"
+import { LogIn } from "lucide-react"
 
 interface WelcomeStepProps {
   onComplete: () => void
+  isAuthenticated?: boolean
 }
 
-export function WelcomeStep({ onComplete }: WelcomeStepProps) {
+export function WelcomeStep({
+  onComplete,
+  isAuthenticated = false,
+}: WelcomeStepProps) {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const checkboxRef = useRef<HTMLButtonElement>(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -26,12 +32,18 @@ export function WelcomeStep({ onComplete }: WelcomeStepProps) {
   // Add keyboard shortcut for Enter key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      if (
+        e.key === "Enter" &&
+        !e.shiftKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey
+      ) {
         e.preventDefault()
-        
+
         if (!termsAccepted) {
           setTermsAccepted(true)
-        } else {
+        } else if (isAuthenticated) {
           onComplete()
         }
       }
@@ -39,7 +51,7 @@ export function WelcomeStep({ onComplete }: WelcomeStepProps) {
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [onComplete, termsAccepted])
+  }, [onComplete, termsAccepted, isAuthenticated])
 
   const handleTermsAccept = () => {
     setTermsAccepted(true)
@@ -58,12 +70,13 @@ export function WelcomeStep({ onComplete }: WelcomeStepProps) {
         </p>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="terms"
-          ref={checkboxRef}
-          checked={termsAccepted}
-          onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+      {isAuthenticated && (
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="terms"
+            ref={checkboxRef}
+            checked={termsAccepted}
+            onCheckedChange={(checked) => setTermsAccepted(checked === true)}
         />
         <label
           htmlFor="terms"
@@ -77,20 +90,29 @@ export function WelcomeStep({ onComplete }: WelcomeStepProps) {
           >
             Terms of Use
           </button>
-        </label>
-      </div>
+          </label>
+        </div>
+      )}
 
-      <Button 
-        onClick={onComplete} 
-        ref={buttonRef} 
-        className="mt-8 pr-1.5"
-        disabled={!termsAccepted}
-      >
-        Continue
-        <kbd className="pointer-events-none h-5 w-5 justify-center select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
-          <Icons.enter className="h-2.5 w-2.5" />
-        </kbd>
-      </Button>
+      {isAuthenticated ? (
+        <Button
+          onClick={onComplete}
+          ref={buttonRef}
+          className="mt-8 pr-1.5"
+          disabled={!termsAccepted}
+        >
+          Continue
+          <kbd className="pointer-events-none h-5 w-5 justify-center select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+            <Icons.enter className="h-2.5 w-2.5" />
+          </kbd>
+        </Button>
+      ) : (
+          <SignInButton mode="modal">
+            <Button className="mt-4">
+            Sign In to Continue
+          </Button>
+        </SignInButton>
+      )}
 
       <TermsDialog
         open={termsDialogOpen}
