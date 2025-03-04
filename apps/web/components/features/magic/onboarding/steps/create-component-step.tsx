@@ -50,7 +50,7 @@ export function CreateComponentStep({
         <h1 className="text-3xl font-bold tracking-tight">
           Create Your First Component
         </h1>
-        <p className="text-lg text-muted-foreground">
+        <p className="text-lg  text-muted-foreground">
           Let's create your first UI component with Magic MCP
         </p>
       </div>

@@ -9,6 +9,7 @@ import { Check, LoaderCircle } from "lucide-react"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 import { toast } from "sonner"
 import { UpgradeConfirmationDialog } from "@/components/features/settings/billing/upgrade-confirmation-dialog"
+import { CircleProgress } from "@/components/ui/circle-progress"
 
 interface ConsoleClientProps {
   subscription: PlanInfo | null
@@ -160,31 +161,7 @@ export function ConsoleClient({
                     Monthly limit
                   </div>
                   <div className="flex items-center gap-2">
-                    <svg height="22" width="22">
-                      <circle
-                        className="text-border"
-                        cx="11"
-                        cy="11"
-                        fill="transparent"
-                        r="8"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                      />
-                      <circle
-                        className="text-primary"
-                        cx="11"
-                        cy="11"
-                        fill="transparent"
-                        r="8"
-                        stroke="currentColor"
-                        strokeDasharray={`${2 * Math.PI * 8}`}
-                        strokeLinecap="round"
-                        strokeWidth="3"
-                        strokeDashoffset={`${
-                          2 * Math.PI * 8 * (1 - usageCount / usageLimit)
-                        }`}
-                      />
-                    </svg>
+                    <CircleProgress progress={usageCount / usageLimit} />
                     <div className="text-sm">
                       {usageCount.toLocaleString()} /{" "}
                       {usageLimit.toLocaleString()}

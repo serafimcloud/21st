@@ -6,6 +6,7 @@ import { useClerkSupabaseClient } from "@/lib/clerk"
 import { useQuery } from "@tanstack/react-query"
 import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
 
 // Define the onboarding steps
 export type OnboardingStep =
@@ -211,6 +212,11 @@ export function OnboardingClient({
     }))
   }
 
+  // Handle skipping onboarding
+  const skipOnboarding = () => {
+    router.push("/magic/console")
+  }
+
   // Render the current step
   const renderCurrentStep = () => {
     switch (onboardingState.currentStep) {
@@ -262,8 +268,18 @@ export function OnboardingClient({
   }
 
   return (
-    <div className="min-h-screen w-full bg-background antialiased mt-14">
-      <div className="p-3 sm:p-6">
+    <div className="min-h-screen w-full bg-background antialiased flex items-center">
+      <div className="absolute top-4 right-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground"
+          onClick={skipOnboarding}
+        >
+          Skip onboarding
+        </Button>
+      </div>
+      <div className="p-3 sm:p-6 w-full">
         <div className="w-full max-w-4xl mx-auto">{renderCurrentStep()}</div>
       </div>
     </div>
