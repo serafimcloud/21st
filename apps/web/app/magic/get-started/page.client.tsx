@@ -1,6 +1,6 @@
 "use client"
 
-import { OnboardingServerWrapper } from "@/components/features/magic/onboarding/onboarding-server-wrapper"
+import { OnboardingServerWrapper } from "@/components/features/magic/get-started/onboarding-server-wrapper"
 import { ApiKey } from "@/types/global"
 import { PlanInfo } from "@/app/settings/billing/page"
 import { FAQ } from "@/components/features/magic/faq"
@@ -134,9 +134,7 @@ export function GetStartedClient({
             {/* Troubleshooting */}
             <div className="space-y-2 mt-8">
               <div className="flex items-center justify-between pb-4 border-b mb-4">
-                <h3 className="font-medium">
-                  Troubleshooting Guide
-                </h3>
+                <h3 className="font-medium">Troubleshooting Guide</h3>
                 <Link
                   href="https://discord.gg/Qx4rFunHfm"
                   target="_blank"
