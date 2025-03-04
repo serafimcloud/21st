@@ -4,6 +4,7 @@ import { OnboardingServerWrapper } from "@/components/features/magic/onboarding/
 import { ApiKey } from "@/types/global"
 import { PlanInfo } from "@/app/settings/billing/page"
 import { FAQ } from "@/components/features/magic/faq"
+import { TroubleshootingSection } from "@/components/features/magic/troubleshooting"
 import Link from "next/link"
 
 interface GetStartedClientProps {
@@ -127,6 +128,25 @@ export function GetStartedClient({
               </h3>
               <div className="bg-background">
                 <FAQ simplified={true} />
+              </div>
+            </div>
+
+            {/* Troubleshooting */}
+            <div className="space-y-2 mt-8">
+              <div className="flex items-center justify-between pb-4 border-b mb-4">
+                <h3 className="font-medium">
+                  Troubleshooting Guide
+                </h3>
+                <Link
+                  href="https://discord.gg/Qx4rFunHfm"
+                  target="_blank"
+                  className="text-muted-foreground hover:text-primary text-sm"
+                >
+                  Get help on Discord
+                </Link>
+              </div>
+              <div className="bg-background">
+                <TroubleshootingSection />
               </div>
             </div>
           </div>
