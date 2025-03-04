@@ -339,8 +339,10 @@ const createTempProject = async (options: BundleOptions) => {
       private: true,
       type: "module",
       dependencies: {
-        react: "^18.2.0",
-        "react-dom": "^18.2.0",
+        react: "^19.0.0",
+        "react-dom": "^19.0.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
         ...(options.dependencies || {}),
       },
     }
@@ -419,6 +421,7 @@ const bundleReact = async ({
         ...files,
         "index.js": endent`
           import { createRoot } from "react-dom/client";
+          import { StrictMode } from "react";
           import App from "./App";
           import { ThemeProvider } from "next-themes";
           import "./globals.css";
@@ -427,9 +430,11 @@ const bundleReact = async ({
           const root = createRoot(rootElement);
 
           root.render(
-            <ThemeProvider attribute="class" enableSystem={false}>
-              <App />
-            </ThemeProvider>
+            <StrictMode>
+              <ThemeProvider attribute="class" enableSystem={false}>
+                <App />
+              </ThemeProvider>
+            </StrictMode>
           );
         `,
       },
@@ -443,7 +448,8 @@ const bundleReact = async ({
     const result = await Bun.build({
       entrypoints: [path.join(tempDir, "index.js")],
       target: "browser",
-      minify: true,
+      minify: false,
+      sourcemap: "linked",
       root: tempDir,
       outdir: outDir,
     })
@@ -467,9 +473,9 @@ const bundleReact = async ({
     return { js: bundledJs, css: bundledCss }
   } finally {
     // Clean up temp directory
-    if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true })
-    }
+    // if (tempDir) {
+    //   await fs.rm(tempDir, { recursive: true, force: true })
+    // }
   }
 }
 
