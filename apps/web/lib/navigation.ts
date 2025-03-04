@@ -184,7 +184,7 @@ export const categories: NavigationCategory[] = [
       },
       {
         title: "Onboarding",
-        href: "/magic/get-started",
+        href: "/magic/onboarding",
       },
       {
         title: "Console",

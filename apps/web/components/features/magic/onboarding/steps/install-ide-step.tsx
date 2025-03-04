@@ -12,10 +12,11 @@ import {
   RefreshCw,
   Hammer,
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import { Icons } from "@/components/icons"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { toast } from "sonner"
 
 interface InstallIdeStepProps {
   apiKey: ApiKey | null
@@ -34,6 +35,44 @@ export function InstallIdeStep({
   const [copiedConfig, setCopiedConfig] = useState(false)
   const [copiedApiKey, setCopiedApiKey] = useState(false)
   const [currentSubStep, setCurrentSubStep] = useState<number>(1)
+  const [clineState, setClineState] = useState<"none" | "command" | "api">(
+    "none",
+  )
+  const firstCopyDone = useRef(false)
+
+  // Add useEffect for auto-copy
+  useEffect(() => {
+    if (!apiKey || firstCopyDone.current) return
+
+    const autoCopy = () => {
+      if (selectedIde === "cursor") {
+        handleCopy()
+      } else if (selectedIde === "cline") {
+        if (clineState === "none") {
+          handleCopy()
+          setClineState("command")
+        }
+      } else if (selectedIde === "windsurf") {
+        handleCopyConfig()
+      }
+      firstCopyDone.current = true
+    }
+
+    autoCopy()
+  }, [apiKey, selectedIde])
+
+  // Add useEffect for focus tracking
+  useEffect(() => {
+    const handleFocus = () => {
+      if (selectedIde === "cline" && clineState === "command" && apiKey) {
+        handleCopyApiKey()
+        setClineState("api")
+      }
+    }
+
+    window.addEventListener("focus", handleFocus)
+    return () => window.removeEventListener("focus", handleFocus)
+  }, [selectedIde, clineState, apiKey])
 
   const getCommandForIde = () => {
     if (!apiKey) return ""
@@ -66,29 +105,24 @@ export function InstallIdeStep({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [onComplete])
 
-  const handleCopy = async () => {
+  const handleCopy = () => {
     if (!apiKey) return
     try {
-      await navigator.clipboard.writeText(getCommandForIde())
+      const textArea = document.createElement("textarea")
+      textArea.value = getCommandForIde()
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
       setCopied(true)
+      toast.success("Command copied to clipboard")
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error("Failed to copy:", err)
     }
   }
 
-  const handleCopyApiKey = async () => {
-    if (!apiKey) return
-    try {
-      await navigator.clipboard.writeText(apiKey.key)
-      setCopiedApiKey(true)
-      setTimeout(() => setCopiedApiKey(false), 2000)
-    } catch (err) {
-      console.error("Failed to copy API key:", err)
-    }
-  }
-
-  const handleCopyConfig = async () => {
+  const handleCopyConfig = () => {
     if (!apiKey) return
     try {
       const config = `{
@@ -108,11 +142,34 @@ export function InstallIdeStep({
     }
   }
 }`
-      await navigator.clipboard.writeText(config)
+      const textArea = document.createElement("textarea")
+      textArea.value = config
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
       setCopiedConfig(true)
+      toast.success("MCP Configuration copied to clipboard")
       setTimeout(() => setCopiedConfig(false), 2000)
     } catch (err) {
       console.error("Failed to copy config:", err)
+    }
+  }
+
+  const handleCopyApiKey = () => {
+    if (!apiKey) return
+    try {
+      const textArea = document.createElement("textarea")
+      textArea.value = apiKey.key
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      setCopiedApiKey(true)
+      toast.success("API Key copied to clipboard")
+      setTimeout(() => setCopiedApiKey(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy API key:", err)
     }
   }
 
@@ -593,7 +650,7 @@ export function InstallIdeStep({
               </TabsContent>
             </Tabs>
 
-            <div className="mt-4 rounded-md border border-yellow-500/20 bg-yellow-500/10 p-3 max-w-[600px]">
+            <div className="mt-4 rounded-md border border-yellow-500/20 bg-yellow-500/10 p-3">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
                 <div className="text-sm text-yellow-500">

@@ -223,7 +223,9 @@ export function OnboardingClient({
       case "welcome":
         return (
           <WelcomeStep
-            onComplete={() => completeStep("welcome", "select-ide")}
+            onComplete={() => {
+              completeStep("welcome", "select-ide")
+            }}
           />
         )
       case "select-ide":
@@ -255,7 +257,30 @@ export function OnboardingClient({
         return (
           <UpgradeProStep
             apiKey={apiKey}
-            onComplete={() => completeStep("upgrade-pro", "welcome")} // Cycle back to welcome if needed
+            onComplete={() => {
+              const upgradePro: OnboardingStep = "upgrade-pro"
+              // Save that install is the current step locally
+              setOnboardingState((prev) => ({
+                ...prev,
+                currentStep: "install-ide",
+                completedSteps: [
+                  ...new Set([...prev.completedSteps, upgradePro]),
+                ],
+              }))
+              // Save to localStorage
+              localStorage.setItem(
+                ONBOARDING_STATE_KEY,
+                JSON.stringify({
+                  ...onboardingState,
+                  currentStep: "install-ide",
+                  completedSteps: [
+                    ...new Set([...onboardingState.completedSteps, upgradePro]),
+                  ],
+                }),
+              )
+              // Redirect to console
+              router.push("/magic/console")
+            }}
           />
         )
       default:

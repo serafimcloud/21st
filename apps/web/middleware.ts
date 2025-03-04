@@ -7,6 +7,9 @@ export default clerkMiddleware(async (auth, request) => {
   if (process.env.MAINTENANCE_MODE === "true") {
     return NextResponse.rewrite(new URL("/maintenance", request.url))
   }
+  if (request.nextUrl.pathname.startsWith("/magic/get-started")) {
+    return NextResponse.redirect(new URL("/magic/onboarding", request.url))
+  }
 
   if (request.nextUrl.pathname.startsWith("/api/")) {
     const requestHeaders = new Headers(request.headers)
