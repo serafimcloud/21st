@@ -18,6 +18,7 @@ import { UpgradeConfirmationDialog } from "@/components/features/settings/billin
 import { InvoicesList } from "@/components/features/settings/billing/invoices-list"
 import { useSubscription, PlanInfo } from "@/hooks/use-subscription"
 import { useAuth } from "@clerk/nextjs"
+import { CircleProgress } from "@/components/ui/circle-progress"
 
 interface Invoice {
   id: string
@@ -399,29 +400,7 @@ export function BillingSettingsClient({
           <div className="flex flex-col justify-between items-end">
             <div className="text-xs text-muted-foreground">Monthly limit</div>
             <div className="flex items-center gap-2">
-              <svg height="22" width="22">
-                <circle
-                  className="text-border"
-                  cx="11"
-                  cy="11"
-                  fill="transparent"
-                  r="8"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                />
-                <circle
-                  className="text-primary"
-                  cx="11"
-                  cy="11"
-                  fill="transparent"
-                  r="8"
-                  stroke="currentColor"
-                  strokeDasharray={`${2 * Math.PI * 8}`}
-                  strokeLinecap="round"
-                  strokeWidth="3"
-                  strokeDashoffset={`${2 * Math.PI * 8 * (1 - usageCount / displayLimit)}`}
-                />
-              </svg>
+              <CircleProgress progress={usageCount / displayLimit} />
               <div className="text-sm">
                 {usageCount.toLocaleString()} / {displayLimit.toLocaleString()}
               </div>

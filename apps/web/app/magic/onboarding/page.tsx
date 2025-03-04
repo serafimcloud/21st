@@ -1,9 +1,10 @@
 import { auth } from "@clerk/nextjs/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { GetStartedClient } from "./page.client"
+import { OnboardingClient } from "./page.client"
 import { Header } from "@/components/ui/header.client"
 import { Logo } from "@/components/ui/logo"
 import { Footer } from "@/components/ui/footer"
+import { ApiKey } from "@/types/global"
 
 async function getApiKey(userId: string) {
   const supabase = supabaseWithAdminAccess
@@ -31,22 +32,14 @@ async function getApiKey(userId: string) {
   }
 }
 
-export default async function GetStartedPage() {
+export default async function OnboardingPage() {
   const { userId } = await auth()
-
   const apiKey = userId ? await getApiKey(userId) : null
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Logo />
-      <Header />
-      <div className="flex-1">
-        <GetStartedClient
-          initialApiKey={apiKey}
-          userId={userId}
-        />
-      </div>
-      <Footer />
+        <OnboardingClient initialApiKey={apiKey} userId={userId} />
+ 
     </div>
   )
 }

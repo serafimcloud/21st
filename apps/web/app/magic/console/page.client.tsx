@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PlanInfo } from "@/app/settings/billing/page"
 import { TroubleshootingSection } from "@/components/features/magic/troubleshooting"
 import Link from "next/link"
@@ -9,10 +9,15 @@ import { Check, LoaderCircle } from "lucide-react"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 import { toast } from "sonner"
 import { UpgradeConfirmationDialog } from "@/components/features/settings/billing/upgrade-confirmation-dialog"
+import { CircleProgress } from "@/components/ui/circle-progress"
+import { IdeOption } from "@/app/magic/onboarding/page.client"
 
 interface ConsoleClientProps {
   subscription: PlanInfo | null
 }
+
+// Add the localStorage key constant
+const ONBOARDING_STATE_KEY = "magic_onboarding_state"
 
 export function ConsoleClient({
   subscription: initialSubscription,
@@ -32,6 +37,41 @@ export function ConsoleClient({
     open: false,
     planId: "standard",
   })
+
+  // Add state for the selected IDE
+  const [selectedIde, setSelectedIde] = useState<IdeOption>("cursor")
+
+  // Get the selected IDE from localStorage on mount
+  useEffect(() => {
+    try {
+      console.log("Reading onboarding state from localStorage")
+      const savedState = localStorage.getItem(ONBOARDING_STATE_KEY)
+      console.log("Raw savedState:", savedState)
+
+      if (savedState) {
+        const parsedState = JSON.parse(savedState)
+        console.log("Parsed state:", parsedState)
+
+        if (
+          parsedState &&
+          typeof parsedState === "object" &&
+          parsedState.selectedIde
+        ) {
+          console.log(
+            "Found selectedIde in localStorage:",
+            parsedState.selectedIde,
+          )
+          setSelectedIde(parsedState.selectedIde)
+        } else {
+          console.log("No valid selectedIde found in parsed state")
+        }
+      } else {
+        console.log("No savedState found in localStorage")
+      }
+    } catch (error) {
+      console.error("Error reading onboarding state:", error)
+    }
+  }, [])
 
   // Determine which plan to show as upgrade
   let upgradePlanId: PlanType | null = null
@@ -125,7 +165,7 @@ export function ConsoleClient({
         <div className="space-y-6">
           {/* Current plan block */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between pb-4 border-b mb-4">
+            <div className="flex items-center justify-between pb-3 border-b mb-4">
               <h3 className="font-medium">Current Plan</h3>
               <Link
                 href="/settings/billing"
@@ -160,31 +200,7 @@ export function ConsoleClient({
                     Monthly limit
                   </div>
                   <div className="flex items-center gap-2">
-                    <svg height="22" width="22">
-                      <circle
-                        className="text-border"
-                        cx="11"
-                        cy="11"
-                        fill="transparent"
-                        r="8"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                      />
-                      <circle
-                        className="text-primary"
-                        cx="11"
-                        cy="11"
-                        fill="transparent"
-                        r="8"
-                        stroke="currentColor"
-                        strokeDasharray={`${2 * Math.PI * 8}`}
-                        strokeLinecap="round"
-                        strokeWidth="3"
-                        strokeDashoffset={`${
-                          2 * Math.PI * 8 * (1 - usageCount / usageLimit)
-                        }`}
-                      />
-                    </svg>
+                    <CircleProgress progress={usageCount / usageLimit} />
                     <div className="text-sm">
                       {usageCount.toLocaleString()} /{" "}
                       {usageLimit.toLocaleString()}
@@ -276,7 +292,7 @@ export function ConsoleClient({
 
           {/* Troubleshooting */}
           <div className="space-y-2 mt-8">
-            <div className="flex items-center justify-between pb-4 border-b mb-4">
+            <div className="flex items-center justify-between pb-3 border-b mb-4">
               <h3 className="font-medium">Troubleshooting Guide</h3>
               <Link
                 href="https://discord.gg/Qx4rFunHfm"
@@ -287,7 +303,7 @@ export function ConsoleClient({
               </Link>
             </div>
             <div className="bg-background">
-              <TroubleshootingSection />
+              <TroubleshootingSection selectedIde={selectedIde} />
             </div>
           </div>
         </div>

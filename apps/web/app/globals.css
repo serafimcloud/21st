@@ -325,7 +325,18 @@ iframe {
     background-image: linear-gradient(to right, rgb(29 31 211 / 0.02) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(29 31 211 / 0.02) 1px, transparent 1px);
   }
+
+    .bg-grid-purple {
+      background-size: 30px 30px;
+      background-image: linear-gradient(to right, rgb(29 31 211 / 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgb(29 31 211 / 0.05) 1px, transparent 1px);
+      mask-image: radial-gradient(circle at top, black 30%, transparent 70%);
+      -webkit-mask-image: radial-gradient(circle at top, black 30%, transparent 70%);
+      z-index: 0;
+    }
 }
+
+
 
 [data-vaul-drawer-close-button] {
   display: none;
