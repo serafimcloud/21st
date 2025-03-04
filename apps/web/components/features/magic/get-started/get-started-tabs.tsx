@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { OnboardingServerWrapper } from "@/components/features/magic/onboarding/onboarding-server-wrapper"
+import { OnboardingServerWrapper } from "@/components/features/magic/get-started/onboarding-server-wrapper"
 import { ApiKey } from "@/types/global"
 import { ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"

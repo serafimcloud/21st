@@ -8,10 +8,6 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.rewrite(new URL("/maintenance", request.url))
   }
 
-  if (request.nextUrl.pathname === "/magic/console") {
-    return NextResponse.redirect(new URL("/magic/get-started", request.url))
-  }
-
   if (request.nextUrl.pathname.startsWith("/api/")) {
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set("x-internal-token", process.env.INTERNAL_API_SECRET!)

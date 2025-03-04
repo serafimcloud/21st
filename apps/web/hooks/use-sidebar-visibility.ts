@@ -10,7 +10,8 @@ export function useSidebarVisibility() {
     pathname === "/" ||
     pathname.startsWith("/s/") ||
     pathname.startsWith("/q/") ||
-    pathname.startsWith("/magic/get-started")
+    pathname.startsWith("/magic/get-started") ||
+    pathname.startsWith("/magic/console")
 
   return shouldShowSidebar
 }
