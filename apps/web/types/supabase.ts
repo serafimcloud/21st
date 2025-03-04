@@ -190,6 +190,58 @@ export type Database = {
           },
         ]
       }
+      component_embeddings: {
+        Row: {
+          component_id: number
+          created_at: string | null
+          embedding: string | null
+          embedding_type: string
+          id: string
+          metadata: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          component_id: number
+          created_at?: string | null
+          embedding?: string | null
+          embedding_type: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          component_id?: number
+          created_at?: string | null
+          embedding?: string | null
+          embedding_type?: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_embeddings_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_embeddings_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_embeddings_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       component_likes: {
         Row: {
           component_id: number
@@ -462,6 +514,44 @@ export type Database = {
           },
         ]
       }
+      demo_embeddings: {
+        Row: {
+          created_at: string | null
+          demo_id: number
+          embedding: string | null
+          embedding_type: string
+          id: string
+          metadata: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          demo_id: number
+          embedding?: string | null
+          embedding_type: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          demo_id?: number
+          embedding?: string | null
+          embedding_type?: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_embeddings_demo_id_fkey"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "demos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_tags: {
         Row: {
           created_at: string | null
@@ -501,6 +591,9 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
+          bundle_css_url: string | null
+          bundle_html_url: string | null
+          bundle_js_url: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -511,6 +604,7 @@ export type Database = {
           embedding: string | null
           embedding_oai: string | null
           fts: unknown | null
+          has_bundle: boolean | null
           id: number
           name: string | null
           preview_url: string | null
@@ -521,6 +615,9 @@ export type Database = {
         }
         Insert: {
           bookmarks_count?: number | null
+          bundle_css_url?: string | null
+          bundle_html_url?: string | null
+          bundle_js_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -531,6 +628,7 @@ export type Database = {
           embedding?: string | null
           embedding_oai?: string | null
           fts?: unknown | null
+          has_bundle?: boolean | null
           id?: number
           name?: string | null
           preview_url?: string | null
@@ -541,6 +639,9 @@ export type Database = {
         }
         Update: {
           bookmarks_count?: number | null
+          bundle_css_url?: string | null
+          bundle_html_url?: string | null
+          bundle_js_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -551,6 +652,7 @@ export type Database = {
           embedding?: string | null
           embedding_oai?: string | null
           fts?: unknown | null
+          has_bundle?: boolean | null
           id?: number
           name?: string | null
           preview_url?: string | null
@@ -1031,6 +1133,68 @@ export type Database = {
           },
         ]
       }
+      usage_context_embeddings: {
+        Row: {
+          component_id: number
+          context_description: string | null
+          created_at: string | null
+          demo_id: number
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          component_id: number
+          context_description?: string | null
+          created_at?: string | null
+          demo_id: number
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          component_id?: number
+          context_description?: string | null
+          created_at?: string | null
+          demo_id?: number
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_context_embeddings_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usage_context_embeddings_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usage_context_embeddings_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usage_context_embeddings_demo_id_fkey"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "demos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usages: {
         Row: {
           created_at: string
@@ -1490,6 +1654,7 @@ export type Database = {
           component_user_data: Json
           total_count: number
           view_count: number
+          bookmarks_count: number
         }[]
       }
       get_liked_components: {
@@ -1625,6 +1790,24 @@ export type Database = {
           p_liked: boolean
         }
         Returns: undefined
+      }
+      match_embeddings: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+          embedding_table: string
+          embedding_column?: string
+        }
+        Returns: {
+          id: string
+          component_id: number
+          embedding_type: string
+          metadata: Json
+          demo_id: number
+          context_description: string
+          similarity: number
+        }[]
       }
       record_mcp_component_usage:
         | {
