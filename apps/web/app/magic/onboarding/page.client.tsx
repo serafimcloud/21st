@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query"
 import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence } from "motion/react"
 
 // Define the onboarding steps
 export type OnboardingStep =
@@ -259,24 +260,16 @@ export function OnboardingClient({
             apiKey={apiKey}
             onComplete={() => {
               const upgradePro: OnboardingStep = "upgrade-pro"
-              // Save that install is the current step locally
-              setOnboardingState((prev) => ({
-                ...prev,
-                currentStep: "install-ide",
+              // Save completed state to localStorage with current step unchanged
+              const updatedState = {
+                ...onboardingState,
                 completedSteps: [
-                  ...new Set([...prev.completedSteps, upgradePro]),
+                  ...new Set([...onboardingState.completedSteps, upgradePro]),
                 ],
-              }))
-              // Save to localStorage
+              }
               localStorage.setItem(
                 ONBOARDING_STATE_KEY,
-                JSON.stringify({
-                  ...onboardingState,
-                  currentStep: "install-ide",
-                  completedSteps: [
-                    ...new Set([...onboardingState.completedSteps, upgradePro]),
-                  ],
-                }),
+                JSON.stringify(updatedState),
               )
               // Redirect to console
               router.push("/magic/console")
@@ -305,7 +298,22 @@ export function OnboardingClient({
         </Button>
       </div>
       <div className="p-3 sm:p-6 w-full">
-        <div className="w-full max-w-4xl mx-auto">{renderCurrentStep()}</div>
+        <div className="w-full max-w-4xl mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={onboardingState.currentStep}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{
+                duration: 0.3,
+                ease: "easeInOut",
+              }}
+            >
+              {renderCurrentStep()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   )

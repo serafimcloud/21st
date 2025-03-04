@@ -33,9 +33,9 @@ export function SelectIdeStep({ onSelect }: SelectIdeStepProps) {
 
   const renderHotkeyHint = (hotkey: string) => {
     return (
-      <Button className="mt-2">
+      <Button className="mt-2" variant="outline">
         Press
-        <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex ml-1.5">
+        <kbd className="pointer-events-none h-5 w-5 select-none items-center justify-center gap-1 rounded border-muted-foreground/40 bg-foreground px-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex ml-1.5">
           {hotkey}
         </kbd>
       </Button>

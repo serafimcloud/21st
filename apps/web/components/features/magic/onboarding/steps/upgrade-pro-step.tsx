@@ -7,14 +7,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Icons } from "@/components/icons"
 import { toast } from "sonner"
-
-type PlanType = "free" | "standard" | "pro" | "enterprise"
-
-interface PlanLimits {
-  generationsPerMonth: number | "Unlimited"
-  displayName: string
-  description: string
-}
+import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 
 interface UpgradeProStepProps {
   apiKey: ApiKey | null
@@ -100,73 +93,16 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
     }
   }
 
-  // Define plan limits based on plan type
-  const getPlanLimits = (plan: PlanType): PlanLimits => {
-    switch (plan) {
-      case "free":
-        return {
-          generationsPerMonth: 100,
-          displayName: "Hobby",
-          description: "Perfect for trying out",
-        }
-      case "standard":
-        return {
-          generationsPerMonth: 1000,
-          displayName: "Standard",
-          description: "For professional developers",
-        }
-      case "pro":
-        return {
-          generationsPerMonth: "Unlimited",
-          displayName: "Pro",
-          description: "For power users",
-        }
-      case "enterprise":
-        return {
-          generationsPerMonth: "Unlimited",
-          displayName: "Enterprise",
-          description: "Custom enterprise solution",
-        }
-      default:
-        return {
-          generationsPerMonth: 100,
-          displayName: "Hobby",
-          description: "Perfect for trying out",
-        }
-    }
-  }
-
-  const currentPlanLimits = getPlanLimits(currentPlan)
-  const upgradePlanLimits = upgradePlan ? getPlanLimits(upgradePlan) : null
-
   // Mock usage data - in a real app, this would come from the API
   const usageCount = 30
-  const usageLimit =
-    typeof currentPlanLimits.generationsPerMonth === "number"
-      ? currentPlanLimits.generationsPerMonth
-      : 1000000
+  const usageLimit = PLAN_LIMITS[currentPlan].generationsPerMonth
 
   const calculateProgressOffset = (used: number, limit: number) => {
     return 2 * Math.PI * 8 * (1 - used / limit)
   }
 
-  const getAdditionalGenerations = (
-    current: PlanLimits,
-    upgrade: PlanLimits,
-  ) => {
-    if (typeof upgrade.generationsPerMonth === "string") {
-      return upgrade.generationsPerMonth
-    }
-    if (typeof current.generationsPerMonth === "string") {
-      return upgrade.generationsPerMonth
-    }
-    return (
-      upgrade.generationsPerMonth - current.generationsPerMonth
-    ).toLocaleString()
-  }
-
   return (
-    <div className="flex flex-col space-y-8 px-4">
+    <div className="flex flex-col space-y-8 px-4 max-w-[700px] mx-auto">
       <div className="space-y-4 max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight">Upgrade to Pro</h1>
         <p className="text-lg text-muted-foreground">
@@ -183,14 +119,14 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-medium">
-                      {currentPlanLimits.displayName}
+                      {PLAN_LIMITS[currentPlan].displayName}
                     </h3>
                     <span className="bg-muted/80 text-accent-foreground px-2 py-0.5 rounded-sm text-xs border shadow-inner">
                       Current plan
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {currentPlanLimits.description}
+                    {PLAN_LIMITS[currentPlan].description}
                   </p>
                 </div>
               </div>
@@ -224,9 +160,7 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
                   </svg>
                   <div className="text-sm">
                     {usageCount.toLocaleString()} /{" "}
-                    {typeof usageLimit === "number"
-                      ? usageLimit.toLocaleString()
-                      : usageLimit}
+                    {usageLimit.toLocaleString()}
                   </div>
                 </div>
               </div>
@@ -235,20 +169,20 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
         </div>
 
         {/* Upgrade Plan Block - show only if there's an upgrade option */}
-        {upgradePlan && upgradePlanLimits && (
+        {upgradePlan && (
           <div className="space-y-2">
             <h3 className="text-sm font-medium">
-              Upgrade to {upgradePlanLimits.displayName}
+              Upgrade to {PLAN_LIMITS[upgradePlan].displayName}
             </h3>
 
             <div className="bg-background rounded-lg border border-border overflow-hidden">
               <div className="p-4 grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-sm font-medium">
-                    ${upgradePlan === "standard" ? "10" : "30"} per month
+                    ${PLAN_LIMITS[upgradePlan].monthlyPrice} per month
                   </h4>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {upgradePlanLimits.description}
+                    {PLAN_LIMITS[upgradePlan].description}
                   </p>
                 </div>
 
@@ -257,55 +191,25 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
                     <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
                     <span className="text-xs">
                       <strong>
-                        {upgradePlan === "standard" && upgradePlanLimits
-                          ? getAdditionalGenerations(
-                              currentPlanLimits,
-                              upgradePlanLimits,
-                            )
-                          : upgradePlanLimits?.generationsPerMonth}
+                        {PLAN_LIMITS[upgradePlan].generationsPerMonth -
+                          PLAN_LIMITS[currentPlan].generationsPerMonth}
                       </strong>{" "}
                       additional generations per month
                     </span>
                   </div>
 
-                  {/* Additional features */}
-                  {upgradePlan === "standard" && (
-                    <>
-                      <div className="flex items-center gap-1">
+                  {/* Additional features unique to the upgrade plan */}
+                  {PLAN_LIMITS[upgradePlan].features
+                    .filter(
+                      (feature) =>
+                        !PLAN_LIMITS[currentPlan].features.includes(feature),
+                    )
+                    .map((feature, index) => (
+                      <div key={index} className="flex items-center gap-1">
                         <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        <span className="text-xs">
-                          Premium component library
-                        </span>
+                        <span className="text-xs">{feature}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        <span className="text-xs">Priority support</span>
-                      </div>
-                    </>
-                  )}
-
-                  {upgradePlan === "pro" && (
-                    <>
-                      <div className="flex items-center gap-1">
-                        <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        <span className="text-xs">
-                          Premium component library
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        <span className="text-xs">Priority support</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        <span className="text-xs">Advanced AI features</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        <span className="text-xs">Custom integrations</span>
-                      </div>
-                    </>
-                  )}
+                    ))}
                 </div>
               </div>
 
