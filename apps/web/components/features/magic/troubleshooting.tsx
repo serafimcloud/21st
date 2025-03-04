@@ -128,15 +128,15 @@ export function TroubleshootingSection({
       </Tabs>
 
       <div>
-        <h4 className="text-lg font-medium text-white mb-2">Common Issues</h4>
+        <h4 className="text-lg font-medium mb-2">Common Issues</h4>
         <div className="space-y-4">
           {commonIssues.map((issue, index) => (
             <div
               key={index}
-              className="rounded-md border border-neutral-800 bg-neutral-900/30 p-3"
+              className="rounded-md border bg-card p-3"
             >
-              <p className="font-medium text-white mb-2">{issue.problem}</p>
-              <ul className="list-disc pl-5 text-sm text-neutral-300 space-y-1">
+              <p className="font-medium mb-2">{issue.problem}</p>
+              <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                 {issue.solutions.map((solution, sIndex) => (
                   <li key={sIndex}>{solution}</li>
                 ))}
@@ -147,7 +147,7 @@ export function TroubleshootingSection({
       </div>
 
       <div>
-        <h4 className="text-lg font-medium text-white mb-2">
+        <h4 className="text-lg font-medium mb-2">
           {os === "windows" ? "Windows-Specific Issues" : "Mac-Specific Issues"}
         </h4>
         <div className="space-y-4">
@@ -155,10 +155,10 @@ export function TroubleshootingSection({
             (issue, index) => (
               <div
                 key={index}
-                className="rounded-md border border-neutral-800 bg-neutral-900/30 p-3"
+                className="rounded-md border bg-card p-3"
               >
-                <p className="font-medium text-white mb-2">{issue.problem}</p>
-                <ul className="list-disc pl-5 text-sm text-neutral-300 space-y-1">
+                <p className="font-medium mb-2">{issue.problem}</p>
+                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   {issue.solutions.map((solution, sIndex) => (
                     <li key={sIndex}>{solution}</li>
                   ))}
@@ -170,7 +170,7 @@ export function TroubleshootingSection({
       </div>
 
       <div>
-        <h4 className="text-lg font-medium text-white mb-2">
+        <h4 className="text-lg font-medium mb-2">
           IDE-Specific Issues
         </h4>
         <Tabs defaultValue={selectedIde} className="w-full">
@@ -190,10 +190,10 @@ export function TroubleshootingSection({
               {issues.map((issue, index) => (
                 <div
                   key={index}
-                  className="rounded-md border border-neutral-800 bg-neutral-900/30 p-3"
+                  className="rounded-md border bg-card p-3"
                 >
-                  <p className="font-medium text-white mb-2">{issue.problem}</p>
-                  <ul className="list-disc pl-5 text-sm text-neutral-300 space-y-1">
+                  <p className="font-medium mb-2">{issue.problem}</p>
+                  <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                     {issue.solutions.map((solution, sIndex) => (
                       <li key={sIndex}>{solution}</li>
                     ))}
