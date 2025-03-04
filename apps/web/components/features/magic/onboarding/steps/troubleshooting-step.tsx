@@ -135,7 +135,7 @@ export function TroubleshootingStep({
   const currentIdeIssues = ideIssues[selectedIde]
 
   return (
-    <div className="flex flex-col space-y-8 px-4 max-w-[700px] mx-auto w-full">
+    <div className="flex flex-col space-y-8 px-4 max-w-[700px] mx-auto w-full z-10">
       <div className="space-y-4 max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight">Troubleshooting</h1>
         <p className="text-lg text-muted-foreground">
@@ -152,15 +152,15 @@ export function TroubleshootingStep({
       <div className="space-y-8">
         {/* Common Issues */}
         <div>
-          <h4 className="text-lg font-medium text-white mb-4">Common Issues</h4>
+          <h4 className="text-lg font-medium mb-4">Common Issues</h4>
           <div className="space-y-4">
             {commonIssues.map((issue, index) => (
               <div
                 key={index}
-                className="rounded-md border border-neutral-800 bg-neutral-900/30 p-4"
+                className="rounded-md border bg-card p-4"
               >
-                <p className="font-medium text-white mb-2">{issue.problem}</p>
-                <ul className="list-disc pl-5 text-sm text-neutral-300 space-y-1">
+                <p className="font-medium mb-2">{issue.problem}</p>
+                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   {issue.solutions.map((solution, sIndex) => (
                     <li key={sIndex}>{solution}</li>
                   ))}
@@ -172,17 +172,17 @@ export function TroubleshootingStep({
 
         {/* OS-Specific Issues */}
         <div>
-          <h4 className="text-lg font-medium text-white mb-4">
+          <h4 className="text-lg font-medium mb-4">
             {osType === "windows" ? "Windows" : "Mac"}-Specific Issues
           </h4>
           <div className="space-y-4">
             {currentOsIssues.map((issue, index) => (
               <div
                 key={index}
-                className="rounded-md border border-neutral-800 bg-neutral-900/30 p-4"
+                className="rounded-md border bg-card p-4"
               >
-                <p className="font-medium text-white mb-2">{issue.problem}</p>
-                <ul className="list-disc pl-5 text-sm text-neutral-300 space-y-1">
+                <p className="font-medium mb-2">{issue.problem}</p>
+                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   {issue.solutions.map((solution, sIndex) => (
                     <li key={sIndex}>{solution}</li>
                   ))}
@@ -194,7 +194,7 @@ export function TroubleshootingStep({
 
         {/* IDE-Specific Issues */}
         <div>
-          <h4 className="text-lg font-medium text-white mb-4">
+          <h4 className="text-lg font-medium mb-4">
             {selectedIde === "cursor"
               ? "Cursor"
               : selectedIde === "windsurf"
@@ -206,10 +206,10 @@ export function TroubleshootingStep({
             {currentIdeIssues.map((issue, index) => (
               <div
                 key={index}
-                className="rounded-md border border-neutral-800 bg-neutral-900/30 p-4"
+                className="rounded-md border bg-card p-4"
               >
-                <p className="font-medium text-white mb-2">{issue.problem}</p>
-                <ul className="list-disc pl-5 text-sm text-neutral-300 space-y-1">
+                <p className="font-medium mb-2">{issue.problem}</p>
+                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   {issue.solutions.map((solution, sIndex) => (
                     <li key={sIndex}>{solution}</li>
                   ))}

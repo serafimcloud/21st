@@ -79,7 +79,7 @@ export function CreateComponentStep({
   }
 
   return (
-    <div className="flex flex-col space-y-8 px-4 max-w-[700px] mx-auto w-full">
+    <div className="flex flex-col space-y-8 px-4 max-w-[700px] mx-auto w-full z-10">
       <div className="space-y-4 max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight">
           Create Your First Component

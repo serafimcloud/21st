@@ -114,7 +114,7 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
         {/* Current plan block */}
         <div className="space-y-2">
           <div className="bg-background rounded-lg border border-border overflow-hidden">
-            <div className="p-4 flex justify-between">
+            <div className="p-4 flex justify-between bg-background z-10">
               <div className="flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-2">

@@ -52,11 +52,11 @@ export function SelectIdeStep({ onSelect }: SelectIdeStepProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-3xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-3xl z-10">
         {/* Cursor Option */}
         <Button
           variant="outline"
-          className="h-auto py-6 px-4 flex flex-col items-center gap-4 hover:bg-primary/5 group"
+          className="h-auto py-6 px-4 flex flex-col items-center gap-4 hover:bg-primary/5 group bg-background"
           onClick={() => onSelect("cursor")}
         >
           <div className="bg-black rounded-md flex items-center justify-center p-2">

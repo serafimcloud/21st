@@ -357,7 +357,7 @@ export function OnboardingClient({
           Skip onboarding
         </Button>
       </div>
-      <div className="p-3 sm:p-6 w-full">
+      <div className="p-3 sm:p-6 w-full z-10">
         <div className="w-full max-w-4xl mx-auto">
           <AnimatePresence mode="wait">
             <motion.div
