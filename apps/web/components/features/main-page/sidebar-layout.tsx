@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { categories } from "@/lib/navigation"
+import { categories as defaultCategories } from "@/lib/navigation"
+import { useFilteredNavigation } from "@/lib/navigation-with-magic"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
@@ -25,11 +26,23 @@ import {
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
 
+// Import types from navigation-with-magic.tsx
+import type {
+  NavigationItem,
+  NavigationCategory,
+} from "@/lib/navigation-with-magic"
+
 export function MainSidebar() {
   const { toggleSidebar } = useSidebar()
   const [showTrigger, setShowTrigger] = React.useState(true)
   const [hoveredItem, setHoveredItem] = React.useState<string | null>(null)
   const pathname = usePathname()
+
+  // Use the filtered navigation that checks if Magic onboarding is completed
+  const filteredCategories = useFilteredNavigation()
+
+  // Fall back to default categories if filteredCategories is not available (SSR)
+  const categories = filteredCategories || defaultCategories
 
   return (
     <Sidebar className="hidden md:block">
@@ -65,7 +78,7 @@ export function MainSidebar() {
         </div>
       </div>
       <SidebarContent className="pb-14">
-        {categories.map((category) => (
+        {categories.map((category: NavigationCategory) => (
           <SidebarGroup key={category.title}>
             <SidebarGroupLabel className="text-sm font-semibold text-foreground">
               <div className="flex items-center">
@@ -79,7 +92,7 @@ export function MainSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {category.items.map((item) => {
+                {category.items.map((item: NavigationItem) => {
                   const isActive =
                     pathname === item.href ||
                     (item.href === "/magic/get-started" &&

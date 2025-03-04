@@ -190,10 +190,6 @@ export const categories: NavigationCategory[] = [
         title: "Console",
         href: "/magic/console",
       },
-      {
-        title: "Manage Subscription",
-        href: "/settings/billing",
-      },
     ],
   },
   {
