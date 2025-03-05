@@ -128,6 +128,19 @@ async function generateMissingUsageEmbeddings() {
 
     for (const item of missingEmbeddings) {
       try {
+        // First, delete any existing embeddings
+        const { error: deleteError } = await supabase
+          .from("usage_embeddings")
+          .delete()
+          .eq("item_id", item.id)
+          .eq("item_type", item.type)
+
+        if (deleteError) {
+          logger.warn(
+            `Failed to delete existing embedding for ${item.type} ${item.name || item.id}: ${deleteError.message}`,
+          )
+        }
+
         // Generate embeddings via Edge Function
         const { data: response, error } = await supabase.functions.invoke(
           "generate-embeddings",
@@ -139,13 +152,25 @@ async function generateMissingUsageEmbeddings() {
           },
         )
 
-        if (error || !response?.data?.usage_description) {
-          throw new Error(error?.message || "No usage description generated")
+        if (error) {
+          throw new Error(
+            error.message || "Error calling generate-embeddings function",
+          )
+        }
+
+        // Edge function returns data in response.data.data
+        const edgeFunctionData = response?.data?.data
+
+        if (!edgeFunctionData?.usage_description) {
+          logger.warn(
+            `No usage description in response for ${item.type} ${item.name || item.id}, full response: ${JSON.stringify(response)}`,
+          )
+          continue
         }
 
         // Generate new embedding
         const newEmbedding = await generateEmbedding(
-          response.data.usage_description,
+          edgeFunctionData.usage_description,
         )
 
         // Format embedding for pgvector
@@ -156,8 +181,8 @@ async function generateMissingUsageEmbeddings() {
           p_item_id: item.id,
           p_item_type: item.type,
           p_embedding: vectorEmbedding,
-          p_usage_description: response.data.usage_description,
-          p_metadata: response.data.metadata || {},
+          p_usage_description: edgeFunctionData.usage_description,
+          p_metadata: edgeFunctionData.metadata || {},
         })
 
         if (insertError) throw insertError
@@ -168,8 +193,8 @@ async function generateMissingUsageEmbeddings() {
         )
 
         const preview =
-          response.data.usage_description.substring(0, 200) +
-          (response.data.usage_description.length > 200 ? "..." : "")
+          edgeFunctionData.usage_description.substring(0, 200) +
+          (edgeFunctionData.usage_description.length > 200 ? "..." : "")
         logger.info(`Generated description:\n${preview}`)
       } catch (error: any) {
         logger.error(
