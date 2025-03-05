@@ -8,6 +8,7 @@ import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "motion/react"
+import { toast } from "sonner"
 
 // Define the onboarding steps
 export type OnboardingStep =
@@ -100,9 +101,11 @@ export function OnboardingClient({
   const [onboardingState, setOnboardingState] = useState<OnboardingState>(
     defaultOnboardingState,
   )
+  const [isCreatingApiKey, setIsCreatingApiKey] = useState(false)
   const supabase = useClerkSupabaseClient()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [loading, setLoading] = useState(false)
 
   // Check if user has created components
   const { data: hasCreatedComponent } = useQuery({
@@ -227,13 +230,65 @@ export function OnboardingClient({
     router.push("/magic/console")
   }
 
+  // Create an API key for a user
+  const createApiKeyForUser = async (id: string) => {
+    if (!id || isCreatingApiKey) return null
+
+    setIsCreatingApiKey(true)
+    try {
+      const { data, error } = await supabase.rpc("create_api_key", {
+        user_id: id,
+        plan: "free",
+        requests_limit: 100,
+      })
+
+      if (error) {
+        console.error("Failed to create API key:", error)
+        toast.error(`Failed to create API key: ${error.message}`)
+        return null
+      }
+
+      if (!data || !data.key) {
+        toast.error("No API key data returned")
+        return null
+      }
+
+      const newKey: ApiKey = {
+        id: data.id,
+        key: data.key,
+        user_id: data.user_id,
+        plan: data.plan || "free",
+        requests_limit: data.requests_limit || 100,
+        requests_count: data.requests_count || 0,
+        created_at: data.created_at || new Date().toISOString(),
+        expires_at: data.expires_at,
+        last_used_at: data.last_used_at,
+        is_active: data.is_active ?? true,
+        project_url: "https://21st.dev/magic",
+      }
+
+      setApiKey(newKey)
+      return newKey
+    } catch (err) {
+      console.error("Unexpected error creating API key:", err)
+      toast.error("An unexpected error occurred")
+      return null
+    } finally {
+      setIsCreatingApiKey(false)
+    }
+  }
+
   // Render the current step
   const renderCurrentStep = () => {
     switch (onboardingState.currentStep) {
       case "welcome":
         return (
           <WelcomeStep
-            onComplete={() => {
+            onComplete={async () => {
+              // Generate API key when welcome step is completed (if user is authenticated and doesn't have one)
+              if (userId && !apiKey) {
+                await createApiKeyForUser(userId)
+              }
               completeStep("welcome", "select-ide")
             }}
             isAuthenticated={!!userId}
