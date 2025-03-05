@@ -1,7 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import "https://deno.land/x/xhr@0.3.0/mod.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import OpenAI from "https://esm.sh/openai@4.12.1"
+import OpenAI from "https://esm.sh/openai@4.86.1"
+import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.39.0"
+import {
+  claudeConfig,
+  openaiConfig,
+  HYDE_PROMPT,
+} from "../generate-embeddings/ai-config.ts"
 
 // Configure CORS headers
 const corsHeaders = {
@@ -12,8 +18,23 @@ const corsHeaders = {
 
 // Initialize OpenAI client for embeddings
 const openai = new OpenAI({
-  apiKey: Deno.env.get("OPENAI_API_KEY"),
+  apiKey: openaiConfig.apiKey || Deno.env.get("OPENAI_API_KEY"),
 })
+
+const anthropic = new Anthropic({
+  apiKey: claudeConfig.apiKey || Deno.env.get("ANTHROPIC_API_KEY"),
+})
+
+// Create a Supabase client
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || ""
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Constants
+const DEFAULT_SEARCH_LIMIT = 8
+const MAX_SEARCH_LIMIT = 20
+const MMR_LAMBDA = 0.5 // Balance between relevance and diversity (0.5 = equal weight)
+const SIMILARITY_THRESHOLD = 0.75 // Minimum similarity score to include in results
 
 /**
  * Generate embedding for search query
@@ -21,138 +42,312 @@ const openai = new OpenAI({
 async function generateEmbedding(text: string): Promise<number[]> {
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-large",
+      model: openaiConfig.embeddingModel,
       input: text,
-      dimensions: 1536, // explicit dimensions for consistency
     })
 
     return response.data[0].embedding
   } catch (error) {
-    console.error("Error generating search query embedding:", error)
+    console.error("Error generating embedding:", error)
     throw error
   }
 }
 
 /**
- * Search for items by embedding similarity
+ * Generate a hypothetical document based on the query using HyDE technique
  */
-async function searchByEmbedding(
-  supabase: any,
-  queryEmbedding: number[],
-  table: string,
-  embeddingColumn: string = "embedding", // default column name
-  embeddingType: string | null = null,
-  threshold: number = 0.7,
-  limit: number = 20,
-) {
-  // Prepare query to search by embedding similarity
-  let query = supabase.rpc("match_embeddings", {
-    query_embedding: queryEmbedding,
-    match_threshold: threshold,
-    match_count: limit,
-    embedding_table: table,
-    embedding_column: embeddingColumn,
-  })
+async function generateHypotheticalDocument(
+  query: string,
+): Promise<{ componentCode: string; demoCode: string; fullDocument: string }> {
+  try {
+    console.log("Generating hypothetical document for query:", query)
 
-  // Apply embedding type filter if provided
-  if (
-    embeddingType &&
-    (table === "component_embeddings" || table === "demo_embeddings")
-  ) {
-    query = query.eq("embedding_type", embeddingType)
+    // Prepare prompt with the user's query
+    const hydePrompt = HYDE_PROMPT.replace("{query}", query)
+
+    // Generate hypothetical document using Claude
+    const response = await anthropic.messages.create({
+      model: claudeConfig.model,
+      max_tokens: 1000,
+      temperature: 0.7,
+      messages: [
+        {
+          role: "user",
+          content: hydePrompt,
+        },
+      ],
+    })
+
+    const hydeDocument = response.content[0].text
+    console.log(
+      "Generated hypothetical document:",
+      hydeDocument.substring(0, 100) + "...",
+    )
+
+    // Try to parse the JSON response
+    try {
+      const hydeJson = JSON.parse(hydeDocument)
+
+      // Extract component and demo code
+      const componentCode = hydeJson.componentCode || ""
+      const demoCode = hydeJson.demoCode || ""
+
+      // Create a combined document for general search
+      const fullDocument = `
+        Component: ${hydeJson.componentName || ""}
+        Description: ${hydeJson.componentDescription || ""}
+        Features: ${(hydeJson.keyFeatures || []).join(", ")}
+        Use Cases: ${(hydeJson.useCases || []).join(", ")}
+      `.trim()
+
+      return {
+        componentCode,
+        demoCode,
+        fullDocument,
+      }
+    } catch (parseError) {
+      console.warn(
+        "Failed to parse HyDE JSON response, using as plain text:",
+        parseError,
+      )
+      // Fallback: use the entire document as both component and demo code
+      return {
+        componentCode: hydeDocument,
+        demoCode: hydeDocument,
+        fullDocument: hydeDocument,
+      }
+    }
+  } catch (error) {
+    console.error("Error generating hypothetical document:", error)
+    // Fallback to the original query for all fields
+    return {
+      componentCode: query,
+      demoCode: query,
+      fullDocument: query,
+    }
+  }
+}
+
+/**
+ * Compute similarity score between two embedding vectors
+ */
+function computeSimilarity(embedding1: number[], embedding2: number[]): number {
+  if (embedding1.length !== embedding2.length) {
+    throw new Error(
+      `Embedding dimensions don't match: ${embedding1.length} vs ${embedding2.length}`,
+    )
   }
 
-  const { data, error } = await query
+  // Compute dot product
+  let dotProduct = 0
+  let norm1 = 0
+  let norm2 = 0
+
+  for (let i = 0; i < embedding1.length; i++) {
+    dotProduct += embedding1[i] * embedding2[i]
+    norm1 += embedding1[i] * embedding1[i]
+    norm2 += embedding2[i] * embedding2[i]
+  }
+
+  // Compute cosine similarity
+  return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2))
+}
+
+/**
+ * Maximal Marginal Relevance algorithm for diverse results
+ */
+function maximalMarginalRelevance(
+  queryEmbedding: number[],
+  candidateEmbeddings: { id: number; embedding: number[]; score: number }[],
+  lambda: number = 0.5,
+  k: number = DEFAULT_SEARCH_LIMIT,
+): number[] {
+  if (candidateEmbeddings.length <= k) {
+    return candidateEmbeddings.map((item) => item.id)
+  }
+
+  // Initialize with most relevant item
+  const selectedIds: number[] = [candidateEmbeddings[0].id]
+  const selectedEmbeddings: number[][] = [candidateEmbeddings[0].embedding]
+
+  // Remove the first item from candidates
+  const remainingCandidates = candidateEmbeddings.slice(1)
+
+  // Select k-1 more items
+  while (selectedIds.length < k) {
+    let nextBestId = -1
+    let nextBestScore = -Infinity
+
+    for (let i = 0; i < remainingCandidates.length; i++) {
+      const candidate = remainingCandidates[i]
+
+      // Relevance term (similarity to query)
+      const relevance = candidate.score
+
+      // Diversity term (negative max similarity to any selected item)
+      let maxSimilarity = -Infinity
+      for (const selectedEmbedding of selectedEmbeddings) {
+        const similarity = computeSimilarity(
+          candidate.embedding,
+          selectedEmbedding,
+        )
+        maxSimilarity = Math.max(maxSimilarity, similarity)
+      }
+
+      // MMR score combines relevance and diversity
+      const mmrScore = lambda * relevance - (1 - lambda) * maxSimilarity
+
+      if (mmrScore > nextBestScore) {
+        nextBestScore = mmrScore
+        nextBestId = i
+      }
+    }
+
+    // Add the next best item
+    if (nextBestId !== -1) {
+      selectedIds.push(remainingCandidates[nextBestId].id)
+      selectedEmbeddings.push(remainingCandidates[nextBestId].embedding)
+      remainingCandidates.splice(nextBestId, 1)
+    } else {
+      break // No more suitable candidates
+    }
+  }
+
+  return selectedIds
+}
+
+/**
+ * Perform vector search on the database
+ */
+async function performVectorSearch(
+  embedding: number[],
+  options: {
+    limit?: number
+    itemTypes?: string[]
+    threshold?: number
+    table: "usage_embeddings" | "code_embeddings"
+  },
+): Promise<any[]> {
+  const {
+    limit = DEFAULT_SEARCH_LIMIT,
+    itemTypes = ["component", "demo"],
+    threshold = SIMILARITY_THRESHOLD,
+    table,
+  } = options
+
+  // Construct filter based on item types
+  const typeFilter =
+    itemTypes.length > 0
+      ? `item_type IN (${itemTypes.map((t) => `'${t}'`).join(",")})`
+      : ""
+
+  // Execute vector search query
+  const { data, error } = await supabase.rpc("match_embeddings", {
+    query_embedding: embedding,
+    match_threshold: threshold,
+    match_count: MAX_SEARCH_LIMIT, // Get more results than needed for MMR
+    filter: typeFilter,
+    table_name: table,
+  })
 
   if (error) {
-    console.error(`Error searching ${table}:`, error)
+    console.error(`Error performing vector search on ${table}:`, error)
+    throw error
+  }
+
+  // Handle empty results
+  if (!data || data.length === 0) {
     return []
   }
 
-  return data || []
+  console.log(`Found ${data.length} results from ${table} search`)
+
+  // Prepare data for MMR
+  const candidateEmbeddings = data.map((item) => ({
+    id: item.id,
+    embedding: item.embedding,
+    score: item.similarity,
+  }))
+
+  // Apply Maximal Marginal Relevance for diversity
+  const selectedIds = maximalMarginalRelevance(
+    embedding,
+    candidateEmbeddings,
+    MMR_LAMBDA,
+    limit,
+  )
+
+  // Filter the original results to only include selected items
+  const selectedResults = data.filter((item) => selectedIds.includes(item.id))
+
+  return selectedResults
 }
 
 /**
- * Apply Maximal Marginal Relevance (MMR) to rerank results for diversity
+ * Get item details from the database
  */
-function applyMMR(
-  results: any[],
-  queryEmbedding: number[],
-  lambda: number = 0.7,
-  k: number = 10,
-) {
-  if (results.length <= k) return results
+async function getItemDetails(results: any[]): Promise<any[]> {
+  if (!results || results.length === 0) {
+    return []
+  }
 
-  // Initialize selected and remaining sets
-  let selected: any[] = []
-  let remaining = [...results]
+  // Group results by item type
+  const componentIds: number[] = []
+  const demoIds: number[] = []
 
-  // Select first item (highest similarity)
-  // Выбираем первый самый релевантный результат
-  let bestIdx = 0
-  let bestSimilarity = remaining[0].similarity
+  results.forEach((result) => {
+    if (result.item_type === "component") {
+      componentIds.push(result.item_id)
+    } else if (result.item_type === "demo") {
+      demoIds.push(result.item_id)
+    }
+  })
 
-  for (let i = 1; i < remaining.length; i++) {
-    if (remaining[i].similarity > bestSimilarity) {
-      bestSimilarity = remaining[i].similarity
-      bestIdx = i
+  // Fetch component details
+  let components: any[] = []
+  if (componentIds.length > 0) {
+    const { data, error } = await supabase
+      .from("components")
+      .select("id, name, code")
+      .in("id", componentIds)
+
+    if (error) {
+      console.error("Error fetching component details:", error)
+    } else if (data) {
+      components = data
     }
   }
 
-  selected.push(remaining[bestIdx])
-  remaining.splice(bestIdx, 1)
+  // Fetch demo details
+  let demos: any[] = []
+  if (demoIds.length > 0) {
+    const { data, error } = await supabase
+      .from("demos")
+      .select("id, name, demo_code, component_id")
+      .in("id", demoIds)
 
-  // Iteratively select the rest
-  while (selected.length < k && remaining.length > 0) {
-    let bestScore = -Infinity
-    let bestIdx = -1
+    if (error) {
+      console.error("Error fetching demo details:", error)
+    } else if (data) {
+      demos = data
+    }
+  }
 
-    for (let i = 0; i < remaining.length; i++) {
-      // Relevance to query
-      const queryRelevance = remaining[i].similarity
+  // Map details to results
+  return results.map((result) => {
+    let item = null
 
-      // Find maximum similarity to already selected items
-      let maxSimilarityToSelected = -Infinity
-      for (const sel of selected) {
-        // Here we would ideally compute cosine similarity between embeddings,
-        // but for simplicity we use the difference in similarity scores
-        const sim = Math.abs(remaining[i].similarity - sel.similarity)
-        maxSimilarityToSelected = Math.max(maxSimilarityToSelected, sim)
-      }
-
-      // MMR formula: λ*relevance - (1-λ)*similarity
-      const score =
-        lambda * queryRelevance - (1 - lambda) * maxSimilarityToSelected
-
-      if (score > bestScore) {
-        bestScore = score
-        bestIdx = i
-      }
+    if (result.item_type === "component") {
+      item = components.find((c) => c.id === result.item_id)
+    } else if (result.item_type === "demo") {
+      item = demos.find((d) => d.id === result.item_id)
     }
 
-    selected.push(remaining[bestIdx])
-    remaining.splice(bestIdx, 1)
-  }
-
-  return selected
-}
-
-/**
- * Rank and group search results by type
- */
-function rankAndGroupResults(results: any[]) {
-  // Group results by type
-  const grouped = {
-    fullSolutions: results.filter((r) => r.type === "full_demo"),
-    componentUsages: results.filter((r) => r.type === "component_usage"),
-    versatileComponents: results.filter((r) => r.type === "component"),
-  }
-
-  return {
-    fullSolutions: grouped.fullSolutions.slice(0, 3),
-    contextualComponents: grouped.componentUsages.slice(0, 5),
-    adaptableComponents: grouped.versatileComponents.slice(0, 3),
-  }
+    return {
+      ...result,
+      item_details: item || null,
+    }
+  })
 }
 
 /**
@@ -165,135 +360,115 @@ async function searchComponents(
 ) {
   console.log(`Searching for: ${query}, search type: ${searchType}`)
 
-  // Generate embedding for query
+  // Generate hypothetical document based on query using HyDE
+  const hydeDocuments = await generateHypotheticalDocument(query)
+
+  // Generate embeddings for query and hypothetical documents
   const queryEmbedding = await generateEmbedding(query)
+  const hydeComponentEmbedding = await generateEmbedding(
+    hydeDocuments.componentCode,
+  )
+  const hydeDemoEmbedding = await generateEmbedding(hydeDocuments.demoCode)
+  const hydeFullEmbedding = await generateEmbedding(hydeDocuments.fullDocument)
+
   let results: any[] = []
 
-  // Search different types of embeddings based on search type
-  if (searchType === "combined" || searchType === "demo") {
-    // Search for full demos matching the query
-    const demoResults = await searchByEmbedding(
-      supabase,
-      queryEmbedding,
-      "demo_embeddings",
-      "embedding",
-      "usage",
-      0.7,
-      10,
-    )
-
-    // Get demo details
-    const demoIds = demoResults.map((r: any) => r.demo_id)
-
-    if (demoIds.length > 0) {
-      const { data: demoDetails, error: demoError } = await supabase
-        .from("demos")
-        .select(
-          `
-          id,
-          name,
-          demo_code,
-          demo_slug,
-          components:component_id (
-            id,
-            name
-          )
-        `,
-        )
-        .in("id", demoIds)
-
-      if (!demoError && demoDetails) {
-        // Combine results with details
-        const enhancedDemoResults = demoResults.map((result: any) => {
-          const details = demoDetails.find((d: any) => d.id === result.demo_id)
-          return {
-            ...result,
-            demo_name: details?.name,
-            demo_code: details?.demo_code,
-            component_id: details?.components?.id,
-            component_name: details?.components?.name,
-            type: "full_demo",
-          }
-        })
-
-        results.push(...enhancedDemoResults)
-      }
-    }
-  }
-
-  if (searchType === "combined" || searchType === "context") {
-    // Search for usage contexts
-    const contextResults = await searchByEmbedding(
-      supabase,
-      queryEmbedding,
-      "usage_context_embeddings",
-      "embedding",
-      null,
-      0.7,
-      10,
-    )
-
-    // Enhance context results with names
-    const enhancedContextResults = contextResults.map((result: any) => ({
-      ...result,
-      component_id: result.component_id,
-      demo_id: result.demo_id,
-      component_name: result.metadata?.component_name,
-      demo_name: result.metadata?.demo_name,
-      context_description: result.context_description,
-      type: "component_usage",
-    }))
-
-    results.push(...enhancedContextResults)
-  }
-
+  // Search for components using both direct query and HyDE
   if (searchType === "combined" || searchType === "component") {
-    // Search for components by their capabilities
-    const componentResults = await searchByEmbedding(
-      supabase,
-      queryEmbedding,
-      "component_embeddings",
-      "embedding",
-      "capability",
-      0.7,
-      10,
+    // Use code embeddings to search for components by their code
+    const componentCodeResults = await performVectorSearch(
+      hydeComponentEmbedding,
+      {
+        table: "code_embeddings",
+        itemTypes: ["component"],
+        limit: 10,
+        threshold: 0.65,
+      },
     )
 
-    // Get component details
-    const componentIds = componentResults.map((r: any) => r.component_id)
+    // Use usage embeddings to search for components by their use cases
+    const componentUsageResults = await performVectorSearch(hydeFullEmbedding, {
+      table: "usage_embeddings",
+      itemTypes: ["component"],
+      limit: 10,
+      threshold: 0.65,
+    })
 
-    if (componentIds.length > 0) {
-      const { data: componentDetails, error: componentError } = await supabase
-        .from("components")
-        .select("id, name, description")
-        .in("id", componentIds)
+    // Get details for all component results
+    const allComponentResults = [
+      ...componentCodeResults,
+      ...componentUsageResults,
+    ]
+    const enhancedComponentResults = await getItemDetails(allComponentResults)
 
-      if (!componentError && componentDetails) {
-        // Combine results with details
-        const enhancedComponentResults = componentResults.map((result: any) => {
-          const details = componentDetails.find(
-            (c: any) => c.id === result.component_id,
-          )
-          return {
-            ...result,
-            component_id: result.component_id,
-            component_name: details?.name,
-            component_description: details?.description,
-            enhanced_description: result.metadata?.description,
-            type: "component",
-          }
-        })
+    results.push(
+      ...enhancedComponentResults.map((result) => ({
+        ...result,
+        search_type:
+          result.item_type === "component" &&
+          componentCodeResults.some((r) => r.item_id === result.item_id)
+            ? "code_match"
+            : "usage_match",
+      })),
+    )
+  }
 
-        results.push(...enhancedComponentResults)
-      }
-    }
+  // Search for demos using HyDE
+  if (searchType === "combined" || searchType === "demo") {
+    // Use code embeddings to search for demos by their code
+    const demoCodeResults = await performVectorSearch(hydeDemoEmbedding, {
+      table: "code_embeddings",
+      itemTypes: ["demo"],
+      limit: 10,
+      threshold: 0.65,
+    })
+
+    // Use usage embeddings to search for demos by their use cases
+    const demoUsageResults = await performVectorSearch(hydeFullEmbedding, {
+      table: "usage_embeddings",
+      itemTypes: ["demo"],
+      limit: 10,
+      threshold: 0.65,
+    })
+
+    // Get details for all demo results
+    const allDemoResults = [...demoCodeResults, ...demoUsageResults]
+    const enhancedDemoResults = await getItemDetails(allDemoResults)
+
+    results.push(
+      ...enhancedDemoResults.map((result) => ({
+        ...result,
+        search_type:
+          result.item_type === "demo" &&
+          demoCodeResults.some((r) => r.item_id === result.item_id)
+            ? "code_match"
+            : "usage_match",
+      })),
+    )
   }
 
   // Apply MMR to all results for diversity
-  results = applyMMR(results, queryEmbedding, 0.7, 15)
+  results = await maximalMarginalRelevance(
+    queryEmbedding,
+    results.map((r) => ({
+      id: r.item_id,
+      embedding: r.embedding,
+      score: r.similarity,
+    })),
+    0.7,
+    15,
+  )
+    .map((id) => results.find((r) => r.item_id === id))
+    .filter(Boolean)
 
-  // Group results by type
-  return rankAndGroupResults(results)
+  return {
+    results,
+    query,
+    hyde_documents: {
+      component_code: hydeDocuments.componentCode.substring(0, 500) + "...",
+      demo_code: hydeDocuments.demoCode.substring(0, 500) + "...",
+    },
+  }
 }
 
 // Server handler
