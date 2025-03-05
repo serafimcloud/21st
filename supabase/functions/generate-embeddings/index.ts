@@ -264,8 +264,8 @@ async function generateDemoEmbedding(demoId: number): Promise<any> {
       componentCode,
     )
 
-    // Generate embedding for demo description
-    const demoEmbedding = await generateEmbedding(demoDescription)
+    // Generate embedding for demo description (for usage search)
+    const demoUsageEmbedding = await generateEmbedding(demoDescription)
 
     // Store in usage_embeddings
     const { data: usageData, error: usageError } = await supabase
@@ -273,7 +273,7 @@ async function generateDemoEmbedding(demoId: number): Promise<any> {
       .upsert({
         item_id: demoId,
         item_type: "demo",
-        embedding: demoEmbedding,
+        embedding: demoUsageEmbedding,
         usage_description: demoDescription,
         metadata: {
           name: demo.name,
@@ -286,13 +286,43 @@ async function generateDemoEmbedding(demoId: number): Promise<any> {
       .single()
 
     if (usageError) {
-      throw new Error(`Failed to store demo embedding: ${usageError.message}`)
+      throw new Error(
+        `Failed to store demo usage embedding: ${usageError.message}`,
+      )
+    }
+
+    // Generate embedding for demo code (for code search)
+    const demoCodeEmbedding = await generateEmbedding(demoCode)
+
+    // Store code embedding
+    const { data: codeData, error: codeError } = await supabase
+      .from("code_embeddings")
+      .upsert({
+        item_id: demoId,
+        item_type: "demo",
+        embedding: demoCodeEmbedding,
+        metadata: {
+          name: demo.name,
+          demo_id: demoId,
+          component_id: demo.component_id,
+          component_name: component.name,
+          code_preview: demoCode.substring(0, 200) + "...",
+        },
+      })
+      .select("id")
+      .single()
+
+    if (codeError) {
+      throw new Error(
+        `Failed to store demo code embedding: ${codeError.message}`,
+      )
     }
 
     return {
       success: true,
       demo_id: demoId,
       usage_embedding_id: usageData.id,
+      code_embedding_id: codeData.id,
       usage_description: demoDescription,
     }
   } catch (error) {

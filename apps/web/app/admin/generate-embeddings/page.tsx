@@ -98,6 +98,54 @@ export default function GenerateEmbeddingsPage() {
   const clearComponentUsageLogs = () => setComponentUsageLogs([])
   const clearDemoUsageLogs = () => setDemoUsageLogs([])
 
+  // Check if embeddings exist for a component
+  const checkComponentEmbeddingsExist = async (componentId: number) => {
+    // Check code embeddings
+    const { data: codeEmbedding, error: codeError } = await supabase
+      .from("code_embeddings")
+      .select("id")
+      .eq("item_id", componentId)
+      .eq("item_type", "component")
+      .maybeSingle()
+
+    // Check usage embeddings
+    const { data: usageEmbedding, error: usageError } = await supabase
+      .from("usage_embeddings")
+      .select("id")
+      .eq("item_id", componentId)
+      .eq("item_type", "component")
+      .maybeSingle()
+
+    return {
+      codeExists: !!codeEmbedding,
+      usageExists: !!usageEmbedding,
+    }
+  }
+
+  // Check if embeddings exist for a demo
+  const checkDemoEmbeddingsExist = async (demoId: number) => {
+    // Check code embeddings
+    const { data: codeEmbedding, error: codeError } = await supabase
+      .from("code_embeddings")
+      .select("id")
+      .eq("item_id", demoId)
+      .eq("item_type", "demo")
+      .maybeSingle()
+
+    // Check usage embeddings
+    const { data: usageEmbedding, error: usageError } = await supabase
+      .from("usage_embeddings")
+      .select("id")
+      .eq("item_id", demoId)
+      .eq("item_type", "demo")
+      .maybeSingle()
+
+    return {
+      codeExists: !!codeEmbedding,
+      usageExists: !!usageEmbedding,
+    }
+  }
+
   // Generate code embeddings for components
   const generateComponentCodeEmbeddings = async () => {
     if (isGeneratingComponentCode) return
@@ -125,6 +173,7 @@ export default function GenerateEmbeddingsPage() {
 
       let processed = 0
       let totalSuccesses = 0
+      let skipped = 0
 
       for (const component of components) {
         addComponentCodeLog(
@@ -132,6 +181,23 @@ export default function GenerateEmbeddingsPage() {
         )
 
         try {
+          // Check if embeddings already exist
+          const { codeExists } = await checkComponentEmbeddingsExist(
+            component.id,
+          )
+
+          if (codeExists) {
+            addComponentCodeLog(
+              `[Code] Embeddings already exist for ${component.name}, skipping...`,
+            )
+            skipped++
+            processed++
+            setComponentCodeProgress(
+              Math.floor((processed / components.length) * 100),
+            )
+            continue
+          }
+
           // Generate embeddings using the existing "component" type
           // This will generate both usage and code embeddings
           await sleep(500)
@@ -194,10 +260,10 @@ export default function GenerateEmbeddingsPage() {
       }
 
       addComponentCodeLog(
-        `Completed code embedding generation. Successfully processed ${totalSuccesses} of ${processed} components.`,
+        `Completed code embedding generation. Successfully processed ${totalSuccesses} of ${processed} components. Skipped ${skipped} components with existing embeddings.`,
       )
       toast.success(
-        `Successfully generated code embeddings for ${totalSuccesses} components`,
+        `Successfully generated code embeddings for ${totalSuccesses} components. Skipped ${skipped} components.`,
       )
     } catch (error: any) {
       console.error("Error generating component code embeddings:", error)
@@ -238,6 +304,7 @@ export default function GenerateEmbeddingsPage() {
 
       let processed = 0
       let totalSuccesses = 0
+      let skipped = 0
 
       for (const demo of demos) {
         addDemoCodeLog(
@@ -245,6 +312,21 @@ export default function GenerateEmbeddingsPage() {
         )
 
         try {
+          // Check if embeddings already exist
+          const { codeExists, usageExists } = await checkDemoEmbeddingsExist(
+            demo.id,
+          )
+
+          if (codeExists && usageExists) {
+            addDemoCodeLog(
+              `[Code] Both code and usage embeddings already exist for demo ${demo.id}, skipping...`,
+            )
+            skipped++
+            processed++
+            setDemoCodeProgress(Math.floor((processed / demos.length) * 100))
+            continue
+          }
+
           // Generate embeddings using the existing "demo" type
           // This will generate usage embeddings for the demo
           await sleep(500)
@@ -299,10 +381,10 @@ export default function GenerateEmbeddingsPage() {
       }
 
       addDemoCodeLog(
-        `Completed code embedding generation. Successfully processed ${totalSuccesses} of ${processed} demos.`,
+        `Completed code embedding generation. Successfully processed ${totalSuccesses} of ${processed} demos. Skipped ${skipped} demos with existing embeddings.`,
       )
       toast.success(
-        `Successfully generated code embeddings for ${totalSuccesses} demos`,
+        `Successfully generated code embeddings for ${totalSuccesses} demos. Skipped ${skipped} demos.`,
       )
     } catch (error: any) {
       console.error("Error generating demo code embeddings:", error)
@@ -345,6 +427,7 @@ export default function GenerateEmbeddingsPage() {
 
       let processed = 0
       let totalSuccesses = 0
+      let skipped = 0
 
       for (const component of components) {
         addComponentUsageLog(
@@ -352,6 +435,23 @@ export default function GenerateEmbeddingsPage() {
         )
 
         try {
+          // Check if embeddings already exist
+          const { usageExists } = await checkComponentEmbeddingsExist(
+            component.id,
+          )
+
+          if (usageExists) {
+            addComponentUsageLog(
+              `[Usage] Embeddings already exist for ${component.name}, skipping...`,
+            )
+            skipped++
+            processed++
+            setComponentUsageProgress(
+              Math.floor((processed / components.length) * 100),
+            )
+            continue
+          }
+
           // Generate embeddings using the existing "component" type
           // This will generate both usage and code embeddings
           await sleep(500)
@@ -420,10 +520,10 @@ export default function GenerateEmbeddingsPage() {
       }
 
       addComponentUsageLog(
-        `Completed usage embedding generation. Successfully processed ${totalSuccesses} of ${processed} components.`,
+        `Completed usage embedding generation. Successfully processed ${totalSuccesses} of ${processed} components. Skipped ${skipped} components with existing embeddings.`,
       )
       toast.success(
-        `Successfully generated usage embeddings for ${totalSuccesses} components`,
+        `Successfully generated usage embeddings for ${totalSuccesses} components. Skipped ${skipped} components.`,
       )
     } catch (error: any) {
       console.error("Error generating component usage embeddings:", error)
@@ -464,6 +564,7 @@ export default function GenerateEmbeddingsPage() {
 
       let processed = 0
       let totalSuccesses = 0
+      let skipped = 0
 
       for (const demo of demos) {
         addDemoUsageLog(
@@ -471,6 +572,21 @@ export default function GenerateEmbeddingsPage() {
         )
 
         try {
+          // Check if embeddings already exist
+          const { codeExists, usageExists } = await checkDemoEmbeddingsExist(
+            demo.id,
+          )
+
+          if (codeExists && usageExists) {
+            addDemoUsageLog(
+              `[Usage] Both code and usage embeddings already exist for demo ${demo.id}, skipping...`,
+            )
+            skipped++
+            processed++
+            setDemoUsageProgress(Math.floor((processed / demos.length) * 100))
+            continue
+          }
+
           // Generate embeddings using the existing "demo" type
           // This will generate usage embeddings for the demo
           await sleep(500)
@@ -531,10 +647,10 @@ export default function GenerateEmbeddingsPage() {
       }
 
       addDemoUsageLog(
-        `Completed usage embedding generation. Successfully processed ${totalSuccesses} of ${processed} demos.`,
+        `Completed usage embedding generation. Successfully processed ${totalSuccesses} of ${processed} demos. Skipped ${skipped} demos with existing embeddings.`,
       )
       toast.success(
-        `Successfully generated usage embeddings for ${totalSuccesses} demos`,
+        `Successfully generated usage embeddings for ${totalSuccesses} demos. Skipped ${skipped} demos.`,
       )
     } catch (error: any) {
       console.error("Error generating demo usage embeddings:", error)

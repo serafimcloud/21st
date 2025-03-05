@@ -66,6 +66,33 @@ export type Database = {
           },
         ]
       }
+      code_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string | null
+          id: string
+          item_id: number
+          item_type: string
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          item_id: number
+          item_type: string
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          item_id?: number
+          item_type?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       component_analytics: {
         Row: {
           activity_type: string | null
@@ -184,58 +211,6 @@ export type Database = {
           {
             foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
             columns: ["dependency_component_id"]
-            isOneToOne: false
-            referencedRelation: "components_with_username"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      component_embeddings: {
-        Row: {
-          component_id: number
-          created_at: string | null
-          embedding: string | null
-          embedding_type: string
-          id: string
-          metadata: Json | null
-          updated_at: string | null
-        }
-        Insert: {
-          component_id: number
-          created_at?: string | null
-          embedding?: string | null
-          embedding_type: string
-          id?: string
-          metadata?: Json | null
-          updated_at?: string | null
-        }
-        Update: {
-          component_id?: number
-          created_at?: string | null
-          embedding?: string | null
-          embedding_type?: string
-          id?: string
-          metadata?: Json | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "component_embeddings_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_embeddings_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_embeddings_component_id_fkey"
-            columns: ["component_id"]
             isOneToOne: false
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
@@ -514,44 +489,6 @@ export type Database = {
           },
         ]
       }
-      demo_embeddings: {
-        Row: {
-          created_at: string | null
-          demo_id: number
-          embedding: string | null
-          embedding_type: string
-          id: string
-          metadata: Json | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          demo_id: number
-          embedding?: string | null
-          embedding_type: string
-          id?: string
-          metadata?: Json | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          demo_id?: number
-          embedding?: string | null
-          embedding_type?: string
-          id?: string
-          metadata?: Json | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "demo_embeddings_demo_id_fkey"
-            columns: ["demo_id"]
-            isOneToOne: false
-            referencedRelation: "demos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       demo_tags: {
         Row: {
           created_at: string | null
@@ -698,6 +635,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      embedding_generation_status: {
+        Row: {
+          created_at: string | null
+          error: string | null
+          id: number
+          item_id: number
+          item_type: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error?: string | null
+          id?: number
+          item_id: number
+          item_type: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error?: string | null
+          id?: number
+          item_id?: number
+          item_type?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       mcp_author_payouts: {
         Row: {
@@ -1133,67 +1100,35 @@ export type Database = {
           },
         ]
       }
-      usage_context_embeddings: {
+      usage_embeddings: {
         Row: {
-          component_id: number
-          context_description: string | null
           created_at: string | null
-          demo_id: number
           embedding: string | null
           id: string
+          item_id: number
+          item_type: string
           metadata: Json | null
-          updated_at: string | null
+          usage_description: string | null
         }
         Insert: {
-          component_id: number
-          context_description?: string | null
           created_at?: string | null
-          demo_id: number
           embedding?: string | null
           id?: string
+          item_id: number
+          item_type: string
           metadata?: Json | null
-          updated_at?: string | null
+          usage_description?: string | null
         }
         Update: {
-          component_id?: number
-          context_description?: string | null
           created_at?: string | null
-          demo_id?: number
           embedding?: string | null
           id?: string
+          item_id?: number
+          item_type?: string
           metadata?: Json | null
-          updated_at?: string | null
+          usage_description?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "usage_context_embeddings_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "usage_context_embeddings_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "usage_context_embeddings_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components_with_username"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "usage_context_embeddings_demo_id_fkey"
-            columns: ["demo_id"]
-            isOneToOne: false
-            referencedRelation: "demos"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       usages: {
         Row: {
