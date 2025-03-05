@@ -13,6 +13,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3"
+import { build as esbuild } from "esbuild"
 
 // Initialize R2 client
 const r2Client = new S3Client({
@@ -398,6 +399,56 @@ const createTempProject = async (options: BundleOptions) => {
   }
 }
 
+const bundleWithEsbuild = async (tempDir: string, outDir: string): Promise<boolean> => {
+  try {
+    await esbuild({
+      entryPoints: [path.join(tempDir, "index.js")],
+      bundle: true,
+      outdir: outDir,
+      format: "esm",
+      target: "es2020",
+      sourcemap: true,
+      platform: "browser",
+      loader: {
+        ".js": "jsx",
+        ".ts": "tsx",
+        ".tsx": "tsx",
+      },
+      jsx: "automatic",
+      minify: false,
+      define: {
+        'process.env.NODE_ENV': '"production"'
+      }
+    })
+    return true
+  } catch (error) {
+    console.warn("esbuild bundling error:", error)
+    return false
+  }
+}
+
+const bundleWithBun = async (tempDir: string, outDir: string): Promise<boolean> => {
+  try {
+    const result = await Bun.build({
+      entrypoints: [path.join(tempDir, "index.js")],
+      target: "browser",
+      minify: false,
+      sourcemap: "linked",
+      root: tempDir,
+      outdir: outDir,
+    })
+
+    if (!result.success) {
+      console.warn(result.logs)
+      return false
+    }
+    return true
+  } catch (error) {
+    console.warn("Bun bundling error:", error)
+    return false
+  }
+}
+
 const bundleReact = async ({
   files,
   baseTailwindConfig,
@@ -405,6 +456,7 @@ const bundleReact = async ({
   customTailwindConfig,
   customGlobalCss,
   dependencies,
+  bundler = "bun", // Add bundler parameter with default value
 }: {
   files: Record<string, string>,
   baseTailwindConfig: string,
@@ -412,6 +464,7 @@ const bundleReact = async ({
   customTailwindConfig?: string,
   customGlobalCss?: string,
   dependencies?: Record<string, string>,
+  bundler?: "bun" | "esbuild", // Add bundler type
 }): Promise<{ js: string; css: string }> => {
   let tempDir: string | null = null
 
@@ -444,18 +497,13 @@ const bundleReact = async ({
     })
     const outDir = path.join(tempDir, "dist")
 
-    // Bundle the code
-    const result = await Bun.build({
-      entrypoints: [path.join(tempDir, "index.js")],
-      target: "browser",
-      minify: false,
-      sourcemap: "linked",
-      root: tempDir,
-      outdir: outDir,
-    })
+    // Use the selected bundler
+    const bundleSuccess = bundler === "bun" 
+      ? await bundleWithBun(tempDir, outDir)
+      : await bundleWithEsbuild(tempDir, outDir)
 
-    if (!result.success) {
-      console.warn(result.logs)
+    if (!bundleSuccess) {
+      throw new Error(`Failed to bundle with ${bundler}`)
     }
 
     // Read the bundled files
@@ -473,9 +521,9 @@ const bundleReact = async ({
     return { js: bundledJs, css: bundledCss }
   } finally {
     // Clean up temp directory
-    // if (tempDir) {
-    //   await fs.rm(tempDir, { recursive: true, force: true })
-    // }
+    if (tempDir) {
+      await fs.rm(tempDir, { recursive: true, force: true })
+    }
   }
 }
 
@@ -530,7 +578,7 @@ const editorHTML = endent`
           margin-bottom: 0.5rem;
           font-weight: 500;
         }
-        input[type="text"] {
+        input[type="text"], select {
           width: 100%;
           padding: 0.5rem;
           border: 1px solid #ddd;
@@ -560,14 +608,31 @@ const editorHTML = endent`
           color: #dc2626;
           margin-top: 0.5rem;
         }
+        .controls {
+          display: flex;
+          gap: 1rem;
+          align-items: flex-end;
+        }
+        .controls .form-group {
+          flex: 1;
+        }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="editor-container">
-          <div class="form-group">
-            <label for="id">Page ID:</label>
-            <input type="text" id="id" placeholder="Enter a unique ID (alphanumeric, hyphens, underscores)">
+          <div class="controls">
+            <div class="form-group">
+              <label for="id">Page ID:</label>
+              <input type="text" id="id" placeholder="Enter a unique ID (alphanumeric, hyphens, underscores)">
+            </div>
+            <div class="form-group">
+              <label for="bundler">Bundler:</label>
+              <select id="bundler">
+                <option value="bun">Bun</option>
+                <option value="esbuild">esbuild</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
             <label for="editor">React Component:</label>
@@ -619,6 +684,7 @@ const editorHTML = endent`
         async function handleSubmit() {
           const code = window.editor.getValue();
           const id = document.getElementById('id').value;
+          const bundler = document.getElementById('bundler').value;
           const dependenciesStr = window.dependenciesEditor.getValue();
           const errorDiv = document.getElementById('error');
           const preview = document.getElementById('preview');
@@ -637,7 +703,7 @@ const editorHTML = endent`
             const response = await fetch('/bundle', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code, id, dependencies })
+              body: JSON.stringify({ code, id, dependencies, bundler })
             });
             
             const result = await response.json();
@@ -795,7 +861,7 @@ const server = serve({
 
     if (url.pathname === "/bundle" && req.method === "POST") {
       try {
-        const { files, id, dependencies, baseTailwindConfig, baseGlobalCss, customTailwindConfig, customGlobalCss } =
+        const { files, id, dependencies, baseTailwindConfig, baseGlobalCss, customTailwindConfig, customGlobalCss, bundler } =
           await req.json()
 
         if (!files || !Object.keys(files).length) {
@@ -806,7 +872,7 @@ const server = serve({
           throw new Error("No ID provided")
         }
 
-        // Bundle React code with optional dependencies
+        // Bundle React code with optional dependencies and bundler choice
         const { js, css: bundledCss } = await bundleReact({
           files,
           baseTailwindConfig,
@@ -814,6 +880,7 @@ const server = serve({
           customTailwindConfig,
           customGlobalCss,
           dependencies,
+          bundler: bundler as "bun" | "esbuild" || "esbuild",
         })
 
         // Save the bundled files

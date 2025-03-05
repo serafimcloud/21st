@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "endent": "^2.1.0",
+    "esbuild": "^0.25.0",
     "lodash": "^4.17.21",
     "mini-svg-data-uri": "^1.4.4",
     "postcss": "^8.4.35",
