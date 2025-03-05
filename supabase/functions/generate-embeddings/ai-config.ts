@@ -80,9 +80,7 @@ Generate a JSON object with the following structure:
   "componentName": "A suitable name for this component",
   "componentDescription": "A brief description of what the component does (2-3 sentences)",
   "componentCode": "// A realistic React component code (TypeScript/JSX) that implements what the user is asking for",
-  "demoCode": "// A realistic usage example of this component",
-  "keyFeatures": ["Feature 1", "Feature 2", "Feature 3", "..."],
-  "useCases": ["Use case 1", "Use case 2", "..."]
+  "demoCode": "// A realistic usage example of this component"
 }
 
 Make sure the component code:

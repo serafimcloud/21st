@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "build:css": "tailwindcss -i ./input.css -o ./public/compiled-tailwind.css --minify",
-    "combine-css": "node css/combinedCSS.js"
+    "combine-css": "node css/combinedCSS.js",
+    "generate-embeddings": "ts-node --project scripts/tsconfig.json scripts/generate-embeddings.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.11.10",
@@ -65,7 +66,6 @@
     "clsx": "^2.1.1",
     "cmdk": "1.0.0",
     "date-fns": "^4.1.0",
-    "dotenv": "^16.4.5",
     "endent": "^2.1.0",
     "ffmpeg": "^0.0.4",
     "fs": "0.0.1-security",
@@ -76,6 +76,8 @@
     "motion": "^11.18.0",
     "next": "15.1.7",
     "next-themes": "^0.3.0",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.86.1",
     "postcss": "^8.4.47",
     "qss": "^3.0.0",
     "react": "19.0.0",
@@ -103,6 +105,7 @@
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "dotenv": "^16.4.5",
     "eslint": "^8",
     "eslint-config-next": "15.1.7",
     "supabase": "link:supabase/tap/supabase",

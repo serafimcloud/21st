@@ -66,10 +66,67 @@ export type Database = {
           },
         ]
       }
-      code_embeddings: {
+      backup_code_embeddings: {
         Row: {
           created_at: string | null
           embedding: string | null
+          id: string | null
+          item_id: number | null
+          item_type: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      backup_usage_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string | null
+          id: string | null
+          item_id: number | null
+          item_type: string | null
+          metadata: Json | null
+          usage_description: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Relationships: []
+      }
+      code_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string
           id: string
           item_id: number
           item_type: string
@@ -77,7 +134,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          embedding?: string | null
+          embedding: string
           id?: string
           item_id: number
           item_type: string
@@ -85,7 +142,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          embedding?: string | null
+          embedding?: string
           id?: string
           item_id?: number
           item_type?: string
@@ -1103,7 +1160,7 @@ export type Database = {
       usage_embeddings: {
         Row: {
           created_at: string | null
-          embedding: string | null
+          embedding: string
           id: string
           item_id: number
           item_type: string
@@ -1112,7 +1169,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          embedding?: string | null
+          embedding: string
           id?: string
           item_id: number
           item_type: string
@@ -1121,7 +1178,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          embedding?: string | null
+          embedding?: string
           id?: string
           item_id?: number
           item_type?: string
@@ -1714,6 +1771,28 @@ export type Database = {
         }
         Returns: undefined
       }
+      insert_code_embedding: {
+        Args: {
+          p_id: string
+          p_item_id: number
+          p_item_type: string
+          p_embedding: string
+          p_code: string
+          p_metadata: Json
+        }
+        Returns: undefined
+      }
+      insert_embedding: {
+        Args: {
+          p_id: string
+          p_item_id: number
+          p_item_type: string
+          p_embedding: string
+          p_usage_description: string
+          p_metadata: Json
+        }
+        Returns: undefined
+      }
       is_trigger_operation: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1731,16 +1810,14 @@ export type Database = {
           query_embedding: string
           match_threshold: number
           match_count: number
-          embedding_table: string
-          embedding_column?: string
+          filter?: string
+          table_name?: string
         }
         Returns: {
           id: string
-          component_id: number
-          embedding_type: string
-          metadata: Json
-          demo_id: number
-          context_description: string
+          item_id: number
+          item_type: string
+          embedding: string
           similarity: number
         }[]
       }
@@ -1864,6 +1941,12 @@ export type Database = {
           p_tags: Json
         }
         Returns: undefined
+      }
+      vec_dim: {
+        Args: {
+          v: string
+        }
+        Returns: number
       }
     }
     Enums: {

@@ -7,7 +7,8 @@
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "convert-videos": "node apps/web/video-converter/convertVideos.js",
-    "rename-files": "node apps/web/rename/rename.js"
+    "rename-files": "node apps/web/rename/rename.js",
+    "generate-embeddings": "pnpm --filter web generate-embeddings"
   },
   "devDependencies": {
     "prettier": "^3.2.5",

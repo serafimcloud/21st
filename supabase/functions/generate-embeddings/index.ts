@@ -194,10 +194,13 @@ async function generateComponentEmbeddings(componentId: number): Promise<any> {
 
     return {
       success: true,
-      component_id: componentId,
-      usage_embedding_id: usageData.id,
-      code_embedding_id: codeData.id,
-      usage_description: usageDescription,
+      data: {
+        usage_description: usageDescription,
+        metadata: {
+          name: component.name,
+          component_id: componentId
+        }
+      }
     }
   } catch (error) {
     console.error(
@@ -320,10 +323,15 @@ async function generateDemoEmbedding(demoId: number): Promise<any> {
 
     return {
       success: true,
-      demo_id: demoId,
-      usage_embedding_id: usageData.id,
-      code_embedding_id: codeData.id,
-      usage_description: demoDescription,
+      data: {
+        usage_description: demoDescription,
+        metadata: {
+          name: demo.name,
+          demo_id: demoId,
+          component_id: demo.component_id,
+          component_name: component.name,
+        },
+      },
     }
   } catch (error) {
     console.error(`Error generating embeddings for demo ${demoId}:`, error)

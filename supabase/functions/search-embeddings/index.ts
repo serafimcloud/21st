@@ -42,11 +42,25 @@ const SIMILARITY_THRESHOLD = 0.75 // Minimum similarity score to include in resu
 async function generateEmbedding(text: string): Promise<number[]> {
   try {
     const response = await openai.embeddings.create({
-      model: openaiConfig.embeddingModel,
+      model: "text-embedding-3-small",
       input: text,
+      encoding_format: "float",
     })
 
-    return response.data[0].embedding
+    if (!response.data?.[0]?.embedding) {
+      throw new Error("No embedding returned from OpenAI")
+    }
+
+    const embedding = response.data[0].embedding
+
+    // Validate embedding length
+    if (embedding.length !== 1536) {
+      throw new Error(
+        `Invalid embedding length: ${embedding.length}. Expected 1536.`,
+      )
+    }
+
+    return embedding
   } catch (error) {
     console.error("Error generating embedding:", error)
     throw error
@@ -360,113 +374,130 @@ async function searchComponents(
 ) {
   console.log(`Searching for: ${query}, search type: ${searchType}`)
 
-  // Generate hypothetical document based on query using HyDE
-  const hydeDocuments = await generateHypotheticalDocument(query)
+  // Запускаем оба потока поиска параллельно
+  const [usageResults, hydeResults] = await Promise.all([
+    // 1. Поток поиска по usage embeddings
+    (async () => {
+      const queryEmbedding = await generateEmbedding(query)
+      const results = await performVectorSearch(queryEmbedding, {
+        table: "usage_embeddings",
+        itemTypes:
+          searchType === "component"
+            ? ["component"]
+            : searchType === "demo"
+              ? ["demo"]
+              : ["component", "demo"],
+        limit: 15,
+        threshold: 0.65,
+      })
+      return { results, embedding: queryEmbedding }
+    })(),
 
-  // Generate embeddings for query and hypothetical documents
-  const queryEmbedding = await generateEmbedding(query)
-  const hydeComponentEmbedding = await generateEmbedding(
-    hydeDocuments.componentCode,
-  )
-  const hydeDemoEmbedding = await generateEmbedding(hydeDocuments.demoCode)
-  const hydeFullEmbedding = await generateEmbedding(hydeDocuments.fullDocument)
+    // 2. Поток поиска через HyDE
+    (async () => {
+      // Генерируем HyDE документы и их эмбеддинги
+      const hydeDocuments = await generateHypotheticalDocument(query)
+      const [hydeComponentEmbedding, hydeDemoEmbedding] = await Promise.all([
+        generateEmbedding(hydeDocuments.componentCode),
+        generateEmbedding(hydeDocuments.demoCode),
+      ])
 
+      // Параллельный поиск по code_embeddings для компонентов и демо
+      const [componentResults, demoResults] = await Promise.all([
+        searchType === "demo"
+          ? Promise.resolve([])
+          : performVectorSearch(hydeComponentEmbedding, {
+              table: "code_embeddings",
+              itemTypes: ["component"],
+              limit: 10,
+              threshold: 0.65,
+            }),
+        searchType === "component"
+          ? Promise.resolve([])
+          : performVectorSearch(hydeDemoEmbedding, {
+              table: "code_embeddings",
+              itemTypes: ["demo"],
+              limit: 10,
+              threshold: 0.65,
+            }),
+      ])
+
+      return {
+        componentResults,
+        demoResults,
+        hydeDocuments,
+      }
+    })(),
+  ])
+
+  // Объединяем и обогащаем результаты
   let results: any[] = []
 
-  // Search for components using both direct query and HyDE
   if (searchType === "combined" || searchType === "component") {
-    // Use code embeddings to search for components by their code
-    const componentCodeResults = await performVectorSearch(
-      hydeComponentEmbedding,
-      {
-        table: "code_embeddings",
-        itemTypes: ["component"],
-        limit: 10,
-        threshold: 0.65,
-      },
-    )
-
-    // Use usage embeddings to search for components by their use cases
-    const componentUsageResults = await performVectorSearch(hydeFullEmbedding, {
-      table: "usage_embeddings",
-      itemTypes: ["component"],
-      limit: 10,
-      threshold: 0.65,
-    })
-
-    // Get details for all component results
-    const allComponentResults = [
-      ...componentCodeResults,
-      ...componentUsageResults,
+    const componentResults = [
+      ...hydeResults.componentResults,
+      ...usageResults.results.filter((r) => r.item_type === "component"),
     ]
-    const enhancedComponentResults = await getItemDetails(allComponentResults)
+    const enhancedComponentResults = await getItemDetails(componentResults)
 
     results.push(
       ...enhancedComponentResults.map((result) => ({
         ...result,
-        search_type:
-          result.item_type === "component" &&
-          componentCodeResults.some((r) => r.item_id === result.item_id)
-            ? "code_match"
-            : "usage_match",
+        search_type: hydeResults.componentResults.some(
+          (r) => r.item_id === result.item_id,
+        )
+          ? "code_match"
+          : "usage_match",
       })),
     )
   }
 
-  // Search for demos using HyDE
   if (searchType === "combined" || searchType === "demo") {
-    // Use code embeddings to search for demos by their code
-    const demoCodeResults = await performVectorSearch(hydeDemoEmbedding, {
-      table: "code_embeddings",
-      itemTypes: ["demo"],
-      limit: 10,
-      threshold: 0.65,
-    })
-
-    // Use usage embeddings to search for demos by their use cases
-    const demoUsageResults = await performVectorSearch(hydeFullEmbedding, {
-      table: "usage_embeddings",
-      itemTypes: ["demo"],
-      limit: 10,
-      threshold: 0.65,
-    })
-
-    // Get details for all demo results
-    const allDemoResults = [...demoCodeResults, ...demoUsageResults]
-    const enhancedDemoResults = await getItemDetails(allDemoResults)
+    const demoResults = [
+      ...hydeResults.demoResults,
+      ...usageResults.results.filter((r) => r.item_type === "demo"),
+    ]
+    const enhancedDemoResults = await getItemDetails(demoResults)
 
     results.push(
       ...enhancedDemoResults.map((result) => ({
         ...result,
-        search_type:
-          result.item_type === "demo" &&
-          demoCodeResults.some((r) => r.item_id === result.item_id)
-            ? "code_match"
-            : "usage_match",
+        search_type: hydeResults.demoResults.some(
+          (r) => r.item_id === result.item_id,
+        )
+          ? "code_match"
+          : "usage_match",
       })),
     )
   }
 
-  // Apply MMR to all results for diversity
-  results = await maximalMarginalRelevance(
-    queryEmbedding,
-    results.map((r) => ({
-      id: r.item_id,
-      embedding: r.embedding,
-      score: r.similarity,
-    })),
-    0.7,
-    15,
-  )
-    .map((id) => results.find((r) => r.item_id === id))
-    .filter(Boolean)
+  // Применяем MMR для разнообразия результатов
+  const mmrResults = results.map((r) => ({
+    id: r.item_id,
+    embedding: r.embedding,
+    score: r.similarity,
+  }))
+
+  if (mmrResults.length > 0) {
+    const selectedIds = maximalMarginalRelevance(
+      usageResults.embedding, // Используем эмбеддинг оригинального запроса для MMR
+      mmrResults,
+      0.7,
+      15,
+    )
+
+    results = selectedIds
+      .map((id) => results.find((r) => r.item_id === id))
+      .filter(Boolean)
+  }
 
   return {
     results,
     query,
     hyde_documents: {
-      component_code: hydeDocuments.componentCode.substring(0, 500) + "...",
-      demo_code: hydeDocuments.demoCode.substring(0, 500) + "...",
+      component_code:
+        hydeResults.hydeDocuments.componentCode.substring(0, 500) + "...",
+      demo_code: hydeResults.hydeDocuments.demoCode.substring(0, 500) + "...",
     },
   }
 }
@@ -509,10 +540,12 @@ serve(async (req) => {
     return new Response(JSON.stringify({ success: true, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error in search-embeddings function:", error)
 
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })
