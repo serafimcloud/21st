@@ -21,7 +21,6 @@ import {
   MagicBanner,
   magicBannerVisibleAtom,
 } from "@/components/features/magic/magic-banner"
-import { LogosList } from "@/components/features/logos/logos-list"
 
 const MainContent = React.memo(function MainContent({
   activeTab,
@@ -38,7 +37,6 @@ const MainContent = React.memo(function MainContent({
     | "authors"
     | "pro"
     | "templates"
-    | "logos"
   selectedFilter: string
   setSelectedFilter: (filter: string) => void
   sortBy: SortOption
@@ -50,8 +48,7 @@ const MainContent = React.memo(function MainContent({
       | "components"
       | "authors"
       | "pro"
-      | "templates"
-      | "logos",
+      | "templates",
   ) => void
 }) {
   const renderContent = () => {
@@ -128,20 +125,6 @@ const MainContent = React.memo(function MainContent({
             <TemplatesContainer tagSlug={selectedFilter} />
           </>
         )
-      case "logos":
-        return (
-          <>
-            <FilterChips
-              activeTab={activeTab}
-              selectedFilter={selectedFilter}
-              onFilterChange={setSelectedFilter}
-            />
-            <LogosList
-              category={selectedFilter === "all" ? undefined : selectedFilter}
-              onCategoryChange={setSelectedFilter}
-            />
-          </>
-        )
       default:
         return null
     }
@@ -165,15 +148,14 @@ export function HomePageClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<
-    "categories" | "components" | "authors" | "pro" | "templates" | "logos"
+    "categories" | "components" | "authors" | "pro" | "templates"
   >(
     (searchParams.get("tab") as
       | "categories"
       | "components"
       | "authors"
       | "pro"
-      | "templates"
-      | "logos") || "components",
+      | "templates") || "components",
   )
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
@@ -220,8 +202,7 @@ export function HomePageClient() {
       | "components"
       | "authors"
       | "pro"
-      | "templates"
-      | "logos",
+      | "templates",
   ) => {
     setActiveTab(newTab)
     setSelectedFilter("all")

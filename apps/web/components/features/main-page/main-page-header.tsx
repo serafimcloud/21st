@@ -1,11 +1,10 @@
 import { atom, useAtom } from "jotai"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import { ArrowUpDown, CircleX } from "lucide-react"
+import { ArrowUpDown } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
-import { Input } from "@/components/ui/input"
 
 import {
   Select,
@@ -20,7 +19,6 @@ import { SORT_OPTIONS } from "@/types/global"
 import { setCookie } from "@/lib/cookies"
 
 export const sortByAtom = atom<SortOption>("recommended")
-export const logosSearchAtom = atom("")
 
 const tabLabels = {
   components: "Components",
@@ -28,7 +26,6 @@ const tabLabels = {
   categories: "Categories",
   authors: "Design Engineers",
   pro: "Pro",
-  logos: "Logos",
 } as const
 
 interface ComponentsHeaderProps {
@@ -38,15 +35,13 @@ interface ComponentsHeaderProps {
     | "authors"
     | "pro"
     | "templates"
-    | "logos"
   onTabChange: (
     tab:
       | "categories"
       | "components"
       | "authors"
       | "pro"
-      | "templates"
-      | "logos",
+      | "templates",
   ) => void
 }
 
@@ -55,7 +50,6 @@ export function ComponentsHeader({
   onTabChange,
 }: ComponentsHeaderProps) {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
-  const [searchQuery, setSearchQuery] = useAtom(logosSearchAtom)
   const [sidebarOpen] = useAtom(sidebarOpenAtom)
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const router = useRouter()
@@ -66,12 +60,6 @@ export function ComponentsHeader({
   useEffect(() => {
     setIsClient(true)
   }, [])
-
-  useEffect(() => {
-    return () => {
-      setSearchQuery("")
-    }
-  }, [setSearchQuery])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -106,7 +94,6 @@ export function ComponentsHeader({
         | "authors"
         | "pro"
         | "templates"
-        | "logos",
     )
   }
 
@@ -147,12 +134,6 @@ export function ComponentsHeader({
                 >
                   Pro
                 </TabsTrigger>
-                {/* <TabsTrigger
-                  value="logos"
-                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
-                >
-                  Logos
-                </TabsTrigger> */}
               </TabsList>
             </Tabs>
           </div>
@@ -166,7 +147,6 @@ export function ComponentsHeader({
       className={`flex flex-col gap-4 ${
         (activeTab !== "categories" &&
           activeTab !== "components" &&
-          activeTab !== "logos" &&
           activeTab !== "templates") ||
         (activeTab === "components" && sidebarOpen)
           ? "mb-5"
@@ -208,12 +188,6 @@ export function ComponentsHeader({
                 >
                   Pro
                 </TabsTrigger>
-                {/* <TabsTrigger
-                  value="logos"
-                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
-                >
-                  Logos <span className="text-xs text-muted-foreground ml-1">by svgl</span>
-                </TabsTrigger> */}
               </TabsList>
             </Tabs>
           ) : (
@@ -233,37 +207,6 @@ export function ComponentsHeader({
         </div>
 
         <div className="flex items-center gap-2 md:w-auto min-w-0">
-          {activeTab === "logos" && (
-            <div className="relative flex-1 min-w-0 lg:min-w-[250px] md:min-w-[100px]">
-              <Input
-                ref={inputRef}
-                type="text"
-                placeholder="Search logos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-8 min-w-[100px] [&::placeholder]:pe-8 lg:[&::placeholder]:pe-16"
-              />
-              {searchQuery ? (
-                <button
-                  className="absolute inset-y-0 end-0 flex h-full w-8 md:w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 outline-offset-2 transition-colors hover:text-foreground focus:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70"
-                  onClick={() => {
-                    setSearchQuery("")
-                    inputRef.current?.focus()
-                  }}
-                  aria-label="Clear search"
-                >
-                  <CircleX size={16} strokeWidth={2} aria-hidden="true" />
-                </button>
-              ) : (
-                <div className="pointer-events-none absolute inset-y-0 end-0 flex items-center justify-center pe-2 text-muted-foreground">
-                  <kbd className="hidden lg:inline-flex size-5 items-center justify-center rounded border bg-muted px-1 font-[inherit] text-[0.625rem] font-medium text-muted-foreground/70">
-                    <span className="text-[11px] font-sans">/</span>
-                  </kbd>
-                </div>
-              )}
-            </div>
-          )}
-
           {activeTab === "components" && (
             <Select
               value={sortBy}
