@@ -585,6 +585,9 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
+          bundle_css_url: string | null
+          bundle_html_url: string | null
+          bundle_js_url: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -595,6 +598,7 @@ export type Database = {
           embedding: string | null
           embedding_oai: string | null
           fts: unknown | null
+          has_bundle: boolean | null
           id: number
           name: string | null
           preview_url: string | null
@@ -605,6 +609,9 @@ export type Database = {
         }
         Insert: {
           bookmarks_count?: number | null
+          bundle_css_url?: string | null
+          bundle_html_url?: string | null
+          bundle_js_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -615,6 +622,7 @@ export type Database = {
           embedding?: string | null
           embedding_oai?: string | null
           fts?: unknown | null
+          has_bundle?: boolean | null
           id?: number
           name?: string | null
           preview_url?: string | null
@@ -625,6 +633,9 @@ export type Database = {
         }
         Update: {
           bookmarks_count?: number | null
+          bundle_css_url?: string | null
+          bundle_html_url?: string | null
+          bundle_js_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -635,6 +646,7 @@ export type Database = {
           embedding?: string | null
           embedding_oai?: string | null
           fts?: unknown | null
+          has_bundle?: boolean | null
           id?: number
           name?: string | null
           preview_url?: string | null
@@ -710,6 +722,51 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      feedback: {
+        Row: {
+          content: string
+          created_at: string
+          id: number
+          response: string | null
+          status: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: number
+          response?: string | null
+          status?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: number
+          response?: string | null
+          status?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mcp_author_payouts: {
         Row: {
@@ -1232,6 +1289,7 @@ export type Database = {
           pro_banner_url: string | null
           pro_referral_url: string | null
           ref: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
           twitter_url: string | null
           updated_at: string | null
           username: string | null
@@ -1254,6 +1312,7 @@ export type Database = {
           pro_banner_url?: string | null
           pro_referral_url?: string | null
           ref?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           twitter_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -1276,6 +1335,7 @@ export type Database = {
           pro_banner_url?: string | null
           pro_referral_url?: string | null
           ref?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           twitter_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -1970,6 +2030,12 @@ export type Database = {
       api_plan: "free" | "pro" | "enterprise"
       payment_status: "pending" | "paid" | "rejected"
       submission_status: "on_review" | "featured" | "posted"
+      user_role:
+        | "designer"
+        | "frontend_developer"
+        | "backend_developer"
+        | "product_manager"
+        | "entrepreneur"
     }
     CompositeTypes: {
       component_with_user: {

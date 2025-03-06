@@ -9,9 +9,8 @@ import {
   Check,
   LoaderCircle,
   Copy,
-  ArrowRight,
   AlertTriangle,
-  RefreshCw,
+  MessageSquare,
 } from "lucide-react"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 import { toast } from "sonner"
@@ -19,10 +18,23 @@ import { UpgradeConfirmationDialog } from "@/components/features/settings/billin
 import { CircleProgress } from "@/components/ui/circle-progress"
 import { IdeOption, OsType } from "@/app/magic/onboarding/page.client"
 import { Code } from "@/components/ui/code"
-import { useRouter } from "next/navigation"
 import { ApiKey } from "@/types/global"
 import { useUser } from "@clerk/nextjs"
 import { useClerkSupabaseClient } from "@/lib/clerk"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Database } from "@/types/supabase"
+import { cn } from "@/lib/utils"
+import React from "react"
+import { FeedbackDialog } from "@/components/features/magic/feedback-dialog"
 
 interface ConsoleClientProps {
   subscription: PlanInfo | null
@@ -31,6 +43,69 @@ interface ConsoleClientProps {
 
 // Add the localStorage key constant
 const ONBOARDING_STATE_KEY = "magic_onboarding_state"
+
+type FeedbackType = "feedback" | "feature_request"
+
+interface CheckboxCardProps extends React.HTMLAttributes<HTMLDivElement> {
+  checked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+  label?: string
+  description?: string
+  icon?: React.ReactNode
+}
+
+const CheckboxCard = React.forwardRef<HTMLDivElement, CheckboxCardProps>(
+  (
+    {
+      className,
+      checked = false,
+      onCheckedChange,
+      label,
+      description,
+      icon,
+      ...props
+    },
+    ref,
+  ) => {
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "relative flex cursor-pointer items-start gap-4 rounded-md border border-border p-4 transition-all duration-200",
+          "hover:border-primary/50 hover:bg-muted/50",
+          checked && "border-primary bg-primary/5",
+          className,
+        )}
+        onClick={() => onCheckedChange?.(!checked)}
+        {...props}
+      >
+        <div className="flex-shrink-0 pt-0.5">
+          <div
+            className={cn(
+              "flex h-5 w-5 items-center justify-center rounded-md border border-border bg-background transition-all duration-200",
+              checked && "border-primary bg-primary text-primary-foreground",
+              !checked && "group-hover:border-primary/50",
+            )}
+          >
+            {checked && <Check className="h-3.5 w-3.5" />}
+          </div>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            {icon}
+            <div className="text-sm font-medium text-foreground">{label}</div>
+          </div>
+          {description && (
+            <div className="mt-1 text-xs text-muted-foreground">
+              {description}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  },
+)
+CheckboxCard.displayName = "CheckboxCard"
 
 export function ConsoleClient({
   subscription: initialSubscription,
@@ -328,7 +403,7 @@ export function ConsoleClient({
         "run",
         "@21st-dev/magic-mcp",
         "--config",
-        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey.key}\\\\"}\\"" 
+        "\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey.key}\\\\\\\"}\\\""
       ]
     }
   }
@@ -348,10 +423,49 @@ export function ConsoleClient({
     }
   }
 
+  // Add state for feedback dialog
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>("feedback")
+
   return (
     <div className="min-h-screen w-full bg-background antialiased mt-14">
       <div className="p-3 sm:p-6">
         <div className="space-y-6">
+          {/* Feedback section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between pb-3 border-b mb-4">
+              <h3 className="font-medium">Help Us Improve</h3>
+            </div>
+            <div className="bg-background rounded-lg border border-border overflow-hidden">
+              <div className="p-4">
+                <p className="text-sm text-muted-foreground">
+                  We're constantly working to improve Magic MCP. Share your
+                  thoughts or request new features to help us make it even
+                  better.
+                </p>
+              </div>
+              <div className="bg-muted p-3 rounded-b-lg flex justify-end gap-3 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFeedbackType("feedback")
+                    setFeedbackDialogOpen(true)
+                  }}
+                >
+                  Share Feedback
+                </Button>
+                <Button
+                  onClick={() => {
+                    setFeedbackType("feature_request")
+                    setFeedbackDialogOpen(true)
+                  }}
+                >
+                  Request Feature
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* Current plan block */}
           <div className="space-y-2">
             <div className="flex items-center justify-between pb-3 border-b mb-4">
@@ -749,6 +863,13 @@ export function ConsoleClient({
           </div>
         </div>
       </div>
+
+      {/* Feedback Dialog */}
+      <FeedbackDialog
+        open={feedbackDialogOpen}
+        onOpenChange={setFeedbackDialogOpen}
+        initialType={feedbackType}
+      />
 
       {/* Upgrade confirmation dialog */}
       <UpgradeConfirmationDialog
