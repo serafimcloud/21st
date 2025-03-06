@@ -1,43 +1,19 @@
 import { auth } from "@clerk/nextjs/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { GetStartedClient } from "./page.client"
-import { Header } from "@/components/ui/header.client"
-import { Logo } from "@/components/ui/logo"
-import { Footer } from "@/components/ui/footer"
+import { ConsoleClient } from "./page.client"
 import { PlanInfo } from "@/app/settings/billing/page"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
-
-async function getApiKey(userId: string) {
-  const supabase = supabaseWithAdminAccess
-  const { data: rawApiKey } = await supabase
-    .from("api_keys")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("is_active", true)
-    .single()
-
-  if (!rawApiKey) return null
-
-  return {
-    id: rawApiKey.id,
-    key: rawApiKey.key,
-    user_id: rawApiKey.user_id,
-    plan: rawApiKey.plan || "free",
-    requests_limit: rawApiKey.requests_limit || 100,
-    requests_count: rawApiKey.requests_count || 0,
-    created_at: rawApiKey.created_at || new Date().toISOString(),
-    expires_at: rawApiKey.expires_at,
-    last_used_at: rawApiKey.last_used_at,
-    is_active: rawApiKey.is_active ?? true,
-    project_url: rawApiKey.project_url || "https://21st.dev/magic",
-  }
-}
+import { Logo } from "@/components/ui/logo"
+import { Footer } from "@/components/ui/footer"
+import { Header } from "@/components/ui/header.client"
+import { ApiKey } from "@/types/global"
+import { redirect } from "next/navigation"
 
 /**
- * Получает текущую информацию о плане и лимитах пользователя
+ * Gets current plan information for the user
  */
 async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
-  // Данные плана по умолчанию
+  // Default plan data
   const defaultPlanInfo: PlanInfo = {
     name: PLAN_LIMITS.free.displayName,
     type: "free",
@@ -53,7 +29,7 @@ async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
   }
 
   try {
-    // 1. Получаем активную подписку пользователя
+    // 1. Get active user subscription
     const { data: userPlan, error: planError } = await supabaseWithAdminAccess
       .from("users_to_plans")
       .select(
@@ -78,46 +54,46 @@ async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
       .eq("status", "active")
       .maybeSingle()
 
-    // 2. Получаем информацию об использовании
+    // 2. Get usage information
     const { data: usageData, error: usageError } = await supabaseWithAdminAccess
       .from("usages")
       .select("*")
       .eq("user_id", userId)
       .maybeSingle()
 
-    // Если произошла ошибка при запросе плана, возвращаем план по умолчанию
+    // If there was an error fetching plan, return default plan
     if (planError) {
       console.error("Error fetching plan:", planError)
       return defaultPlanInfo
     }
 
-    // Если нет активного плана, возвращаем бесплатный план
+    // If no active plan, return free plan
     if (!userPlan) {
       return {
         ...defaultPlanInfo,
-        // Если есть данные об использовании, используем их
+        // If usage data exists, use it
         usage: usageData?.usage || 0,
         limit: usageData?.limit || PLAN_LIMITS.free.generationsPerMonth,
       }
     }
 
-    // Получаем информацию о плане
+    // Get plan information
     const plansData = userPlan.plans as any
     const planType = (plansData?.type || "free") as PlanType
 
-    // Данные из meta
+    // Data from meta
     const meta = (userPlan.meta as Record<string, any>) || {}
 
-    // Определяем лимит использования
-    // 1. Сначала проверяем, есть ли специфичный лимит в таблице usages
-    // 2. Если нет, используем лимит из плана + add_usage
-    // 3. Если ничего не определено, используем дефолтный лимит для типа плана
+    // Determine usage limit
+    // 1. First check if there's a specific limit in usages table
+    // 2. If not, use plan limit + add_usage
+    // 3. If nothing defined, use default limit for plan type
     const planLimit =
       usageData?.limit ||
       PLAN_LIMITS[planType].generationsPerMonth + (plansData?.add_usage || 0) ||
       PLAN_LIMITS[planType].generationsPerMonth
 
-    // Подготавливаем информацию о плане
+    // Prepare plan information
     const planInfo: PlanInfo = {
       id: userPlan.id.toString(),
       name:
@@ -153,34 +129,64 @@ async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
   }
 }
 
+/**
+ * Gets the API key for the user
+ */
+async function getApiKey(userId: string | null): Promise<ApiKey | null> {
+  if (!userId) return null
+
+  try {
+    const { data: rawApiKey } = await supabaseWithAdminAccess
+      .from("api_keys")
+      .select("*")
+      .eq("user_id", userId)
+      .single()
+
+    if (!rawApiKey) return null
+
+    return {
+      id: rawApiKey.id,
+      key: rawApiKey.key,
+      user_id: rawApiKey.user_id,
+      plan: rawApiKey.plan || "free",
+      requests_limit: rawApiKey.requests_limit || 100,
+      requests_count: rawApiKey.requests_count || 0,
+      created_at: rawApiKey.created_at || new Date().toISOString(),
+      expires_at: rawApiKey.expires_at,
+      last_used_at: rawApiKey.last_used_at,
+      is_active: rawApiKey.is_active || true,
+      project_url: rawApiKey.project_url || "",
+    }
+  } catch (error) {
+    console.error("Error fetching API key:", error)
+    return null
+  }
+}
+
 // Always fetch fresh data on page load
 export const dynamic = "force-dynamic"
 
-export default async function GetStartedPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    [key: string]: string | string[] | undefined
-  }>
-}) {
-  const resolvedSearchParams = await searchParams
+export default async function ConsolePage() {
   const { userId } = await auth()
 
-  const apiKey = userId ? await getApiKey(userId) : null
+  // Redirect unauthorized users to onboarding
+  if (!userId) {
+    redirect("/magic/onboarding")
+  }
+
   const subscription = await getCurrentPlan(userId)
+  const apiKey = await getApiKey(userId)
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Logo />
-      <Header />
-      <div className="flex-1">
-        <GetStartedClient
-          initialApiKey={apiKey}
-          userId={userId}
-          subscription={subscription}
-        />
+    <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col">
+        <Logo />
+        <Header />
+        <div className="flex-1 mt-[11vh] max-w-[640px] mx-auto w-full px-4">
+          <ConsoleClient subscription={subscription} apiKey={apiKey} />
+        </div>
+        <Footer />
       </div>
-      <Footer />
     </div>
   )
 }

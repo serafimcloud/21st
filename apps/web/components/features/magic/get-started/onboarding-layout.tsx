@@ -16,6 +16,7 @@ interface OnboardingProps {
   userId: string | null
   showWelcome?: boolean
   onWelcomeComplete?: () => void
+  allStepsCompleted?: boolean
 }
 
 export function Onboarding({
@@ -24,6 +25,7 @@ export function Onboarding({
   userId,
   showWelcome = true,
   onWelcomeComplete,
+  allStepsCompleted = false,
 }: OnboardingProps) {
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(showWelcome)
   const [selectedOS, setSelectedOS] = useState<"windows" | "mac">("mac")
@@ -48,7 +50,7 @@ export function Onboarding({
       id: "api-key",
       title: "Add an API Key",
       description: "Use the following generated key to authenticate requests",
-      isCompleted: !!apiKey,
+      isCompleted: !!apiKey || allStepsCompleted,
       content: (
         <ApiKeySection apiKey={apiKey} setApiKey={setApiKey} userId={userId} />
       ),
@@ -59,13 +61,18 @@ export function Onboarding({
         <div className="flex items-center gap-4">
           <span>Setup your IDE</span>
           <div className="flex items-center gap-2 text-sm">
-            <Tabs defaultValue="mac" onValueChange={(value) => setSelectedOS(value as "mac" | "windows")}>
+            <Tabs
+              defaultValue="mac"
+              onValueChange={(value) =>
+                setSelectedOS(value as "mac" | "windows")
+              }
+            >
               <TabsList className="rounded-md h-7 p-0.5">
                 <TabsTrigger value="mac" className="text-xs h-6">
                   macOS
                 </TabsTrigger>
                 <TabsTrigger value="windows" className="text-xs h-6">
-                  Windows  
+                  Windows
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -73,14 +80,14 @@ export function Onboarding({
         </div>
       ),
       description: "Install Magic in your preferred IDE",
-      isCompleted: false,
+      isCompleted: allStepsCompleted,
       content: <IdeInstructions apiKey={apiKey} selectedOS={selectedOS} />,
     },
     {
       id: "first-component",
       title: "Create your first component",
       description: "Try creating your first UI component with Magic",
-      isCompleted: false,
+      isCompleted: allStepsCompleted,
       content: (
         <div className="space-y-6 max-w-[650px]">
           {/* Step 1 */}
@@ -139,9 +146,7 @@ export function Onboarding({
     <div className="relative">
       <div className="mx-auto max-w-[1200px] px-2 sm:px-4">
         <div className="border-b pb-4 mb-4">
-          <h1 className="font-semibold tracking-tight">
-            Get Started
-          </h1>
+          <h1 className="font-semibold tracking-tight">Get Started</h1>
           {showWelcomeDialog && (
             <WelcomeOnboarding
               onComplete={handleWelcomeComplete}

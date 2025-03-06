@@ -178,17 +178,17 @@ export const categories: NavigationCategory[] = [
     isNew: true,
     items: [
       {
-        title: "Introduction",
+        title: "About",
         href: "/magic",
         externalLink: true,
       },
       {
-        title: "Get Started",
-        href: "/magic/get-started",
+        title: "Onboarding",
+        href: "/magic/onboarding",
       },
       {
-        title: "Manage Subscription",
-        href: "/settings/billing",
+        title: "Console",
+        href: "/magic/console",
       },
     ],
   },
