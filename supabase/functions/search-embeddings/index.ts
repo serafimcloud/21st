@@ -53,13 +53,8 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
     const embedding = response.data[0].embedding
 
-    // Validate embedding length
-    if (embedding.length !== 1536) {
-      throw new Error(
-        `Invalid embedding length: ${embedding.length}. Expected 1536.`,
-      )
-    }
-
+    // Remove the strict validation since we need to handle different dimensions
+    // We'll validate dimension matching when comparing embeddings instead
     return embedding
   } catch (error) {
     console.error("Error generating embedding:", error)
@@ -68,18 +63,20 @@ async function generateEmbedding(text: string): Promise<number[]> {
 }
 
 /**
- * Generate a hypothetical document based on the query using HyDE technique
+ * Generate a hypothetical document based on the query and user message using HyDE technique
  */
 async function generateHypotheticalDocument(
   query: string,
-): Promise<{ componentCode: string; demoCode: string; fullDocument: string }> {
+  userMessage: string,
+): Promise<{ searchQueries: string; fullDocument: string }> {
   try {
-    console.log("Generating hypothetical document for query:", query)
+    console.log("Generating hypothetical search queries for:", query)
+    console.log("User message:", userMessage)
 
-    // Prepare prompt with the user's query
-    const hydePrompt = HYDE_PROMPT.replace("{query}", query)
+    // Combine query and user message for better context
+    const combinedInput = `Search Query: ${query}\nUser Request: ${userMessage}`
 
-    // Generate hypothetical document using Claude
+    // Generate search queries using Claude
     const response = await anthropic.messages.create({
       model: claudeConfig.model,
       max_tokens: 1000,
@@ -87,57 +84,34 @@ async function generateHypotheticalDocument(
       messages: [
         {
           role: "user",
-          content: hydePrompt,
+          content: HYDE_PROMPT.replace("{query}", combinedInput),
         },
       ],
     })
 
     const hydeDocument = response.content[0].text
     console.log(
-      "Generated hypothetical document:",
+      "Generated search queries:",
       hydeDocument.substring(0, 100) + "...",
     )
 
-    // Try to parse the JSON response
-    try {
-      const hydeJson = JSON.parse(hydeDocument)
+    // Clean up the generated queries
+    const searchQueries = hydeDocument
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("-"))
+      .join("\n")
 
-      // Extract component and demo code
-      const componentCode = hydeJson.componentCode || ""
-      const demoCode = hydeJson.demoCode || ""
-
-      // Create a combined document for general search
-      const fullDocument = `
-        Component: ${hydeJson.componentName || ""}
-        Description: ${hydeJson.componentDescription || ""}
-        Features: ${(hydeJson.keyFeatures || []).join(", ")}
-        Use Cases: ${(hydeJson.useCases || []).join(", ")}
-      `.trim()
-
-      return {
-        componentCode,
-        demoCode,
-        fullDocument,
-      }
-    } catch (parseError) {
-      console.warn(
-        "Failed to parse HyDE JSON response, using as plain text:",
-        parseError,
-      )
-      // Fallback: use the entire document as both component and demo code
-      return {
-        componentCode: hydeDocument,
-        demoCode: hydeDocument,
-        fullDocument: hydeDocument,
-      }
+    return {
+      searchQueries,
+      fullDocument: `${query}\n${userMessage}\n${searchQueries}`,
     }
   } catch (error) {
-    console.error("Error generating hypothetical document:", error)
-    // Fallback to the original query for all fields
+    console.error("Error generating search queries:", error)
+    // Fallback to the original inputs
     return {
-      componentCode: query,
-      demoCode: query,
-      fullDocument: query,
+      searchQueries: `- ${query}\n- ${userMessage}`,
+      fullDocument: `${query}\n${userMessage}`,
     }
   }
 }
@@ -147,9 +121,11 @@ async function generateHypotheticalDocument(
  */
 function computeSimilarity(embedding1: number[], embedding2: number[]): number {
   if (embedding1.length !== embedding2.length) {
-    throw new Error(
-      `Embedding dimensions don't match: ${embedding1.length} vs ${embedding2.length}`,
+    console.error(
+      `Warning: Embedding dimensions don't match: ${embedding1.length} vs ${embedding2.length}`,
     )
+    // Return a very low similarity score to effectively exclude this result
+    return -1
   }
 
   // Compute dot product
@@ -370,135 +346,40 @@ async function getItemDetails(results: any[]): Promise<any[]> {
 async function searchComponents(
   supabase: any,
   query: string,
+  userMessage: string = "",
   searchType: string = "combined",
 ) {
-  console.log(`Searching for: ${query}, search type: ${searchType}`)
+  console.log(
+    `Searching for: ${query}, user message: ${userMessage}, search type: ${searchType}`,
+  )
 
-  // Запускаем оба потока поиска параллельно
-  const [usageResults, hydeResults] = await Promise.all([
-    // 1. Поток поиска по usage embeddings
-    (async () => {
-      const queryEmbedding = await generateEmbedding(query)
-      const results = await performVectorSearch(queryEmbedding, {
-        table: "usage_embeddings",
-        itemTypes:
-          searchType === "component"
-            ? ["component"]
-            : searchType === "demo"
-              ? ["demo"]
-              : ["component", "demo"],
-        limit: 15,
-        threshold: 0.65,
-      })
-      return { results, embedding: queryEmbedding }
-    })(),
+  // Генерируем поисковые запросы через HyDE
+  const hydeDocuments = await generateHypotheticalDocument(query, userMessage)
 
-    // 2. Поток поиска через HyDE
-    (async () => {
-      // Генерируем HyDE документы и их эмбеддинги
-      const hydeDocuments = await generateHypotheticalDocument(query)
-      const [hydeComponentEmbedding, hydeDemoEmbedding] = await Promise.all([
-        generateEmbedding(hydeDocuments.componentCode),
-        generateEmbedding(hydeDocuments.demoCode),
-      ])
+  // Получаем эмбеддинг для сгенерированных запросов
+  const hydeEmbedding = await generateEmbedding(hydeDocuments.searchQueries)
 
-      // Параллельный поиск по code_embeddings для компонентов и демо
-      const [componentResults, demoResults] = await Promise.all([
-        searchType === "demo"
-          ? Promise.resolve([])
-          : performVectorSearch(hydeComponentEmbedding, {
-              table: "code_embeddings",
-              itemTypes: ["component"],
-              limit: 10,
-              threshold: 0.65,
-            }),
-        searchType === "component"
-          ? Promise.resolve([])
-          : performVectorSearch(hydeDemoEmbedding, {
-              table: "code_embeddings",
-              itemTypes: ["demo"],
-              limit: 10,
-              threshold: 0.65,
-            }),
-      ])
+  // Поиск по usage_embeddings используя сгенерированные запросы
+  const results = await performVectorSearch(hydeEmbedding, {
+    table: "usage_embeddings",
+    itemTypes:
+      searchType === "component"
+        ? ["component"]
+        : searchType === "demo"
+          ? ["demo"]
+          : ["component", "demo"],
+    limit: 15,
+    threshold: 0.7,
+  })
 
-      return {
-        componentResults,
-        demoResults,
-        hydeDocuments,
-      }
-    })(),
-  ])
-
-  // Объединяем и обогащаем результаты
-  let results: any[] = []
-
-  if (searchType === "combined" || searchType === "component") {
-    const componentResults = [
-      ...hydeResults.componentResults,
-      ...usageResults.results.filter((r) => r.item_type === "component"),
-    ]
-    const enhancedComponentResults = await getItemDetails(componentResults)
-
-    results.push(
-      ...enhancedComponentResults.map((result) => ({
-        ...result,
-        search_type: hydeResults.componentResults.some(
-          (r) => r.item_id === result.item_id,
-        )
-          ? "code_match"
-          : "usage_match",
-      })),
-    )
-  }
-
-  if (searchType === "combined" || searchType === "demo") {
-    const demoResults = [
-      ...hydeResults.demoResults,
-      ...usageResults.results.filter((r) => r.item_type === "demo"),
-    ]
-    const enhancedDemoResults = await getItemDetails(demoResults)
-
-    results.push(
-      ...enhancedDemoResults.map((result) => ({
-        ...result,
-        search_type: hydeResults.demoResults.some(
-          (r) => r.item_id === result.item_id,
-        )
-          ? "code_match"
-          : "usage_match",
-      })),
-    )
-  }
-
-  // Применяем MMR для разнообразия результатов
-  const mmrResults = results.map((r) => ({
-    id: r.item_id,
-    embedding: r.embedding,
-    score: r.similarity,
-  }))
-
-  if (mmrResults.length > 0) {
-    const selectedIds = maximalMarginalRelevance(
-      usageResults.embedding, // Используем эмбеддинг оригинального запроса для MMR
-      mmrResults,
-      0.7,
-      15,
-    )
-
-    results = selectedIds
-      .map((id) => results.find((r) => r.item_id === id))
-      .filter(Boolean)
-  }
+  // Получаем детали для результатов
+  const enhancedResults = await getItemDetails(results)
 
   return {
-    results,
+    results: enhancedResults,
     query,
-    hyde_documents: {
-      component_code:
-        hydeResults.hydeDocuments.componentCode.substring(0, 500) + "...",
-      demo_code: hydeResults.hydeDocuments.demoCode.substring(0, 500) + "...",
-    },
+    user_message: userMessage,
+    hyde_queries: hydeDocuments.searchQueries,
   }
 }
 
@@ -511,7 +392,11 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { query, searchType = "combined" } = await req.json()
+    const {
+      query,
+      userMessage = "",
+      searchType = "combined",
+    } = await req.json()
 
     if (!query) {
       return new Response(
@@ -533,8 +418,13 @@ serve(async (req) => {
       },
     })
 
-    // Search components
-    const results = await searchComponents(supabase, query, searchType)
+    // Search components with both query and user message
+    const results = await searchComponents(
+      supabase,
+      query,
+      userMessage,
+      searchType,
+    )
 
     // Return search results
     return new Response(JSON.stringify({ success: true, results }), {

@@ -71,28 +71,43 @@ DO NOT use general component descriptions that don't reflect the uniqueness of t
 DO NOT add any comments or additional information - only the list of queries.`
 
 // Hypothetical Document Embeddings (HyDE) prompt
-export const HYDE_PROMPT = `You are an expert React developer. Based on the search query provided, generate a hypothetical code example that would be exactly what the user is looking for.
+export const HYDE_PROMPT = `You are a UI component expert. Based on the search query and user's request provided, generate a list of search queries that a developer might use to find a component that solves this specific need.
 
-The user search query: "{query}"
+Input:
+{query}
 
-Generate a JSON object with the following structure:
-{
-  "componentName": "A suitable name for this component",
-  "componentDescription": "A brief description of what the component does (2-3 sentences)",
-  "componentCode": "// A realistic React component code (TypeScript/JSX) that implements what the user is asking for",
-  "demoCode": "// A realistic usage example of this component"
-}
+Generate a diverse list of 15-20 search queries that would match components solving this need. Think about:
+- Different ways to describe the main functionality
+- Various use cases and scenarios
+- Common variations and alternatives
+- Technical and user-focused descriptions
+- Specific features and requirements
 
-Make sure the component code:
-1. Uses modern React patterns (functional components, hooks)
-2. Has proper TypeScript typing
-3. Is properly structured with clear props interface
-4. Has helpful comments explaining key parts
-5. Transitions: Uses Tailwind utility classes for smooth visual effects
-6. Shadows: Incorporates subtle shadow classes for appropriate depth
-7. Spacing: Enforces consistent sizing and spacing for balanced layout
+FORMAT REQUIREMENTS:
+- Start each line with a dash (-)
+- One query per line
+- Keep queries concise (3-7 words)
+- Use natural language as if typing a search
+- Include some common variations/synonyms
+- DO NOT use the word "React" - it's redundant
+- Include both technical and task-based queries
+- Mix of specific and general queries
+- Include some common typos or alternative spellings
 
-The demo code should show practical usage of the component in a realistic scenario.
-Both code snippets should be valid, executable code that would actually work if implemented.
+EXAMPLE OUTPUT FORMAT:
+- dropdown with multi select search
+- searchable select with checkboxes
+- filterable multi choice dropdown
+- select component with search filter
+- multi select with checkbox list
+- searchable dropdown with selections
+...
 
-ONLY respond with the JSON object. No introduction or explanation text.`
+IMPORTANT: 
+- Queries should be highly relevant to the user's specific need
+- Focus on real, practical search terms
+- Maintain consistent formatting
+- No explanations or additional text
+- Just the list of queries
+
+ONLY respond with the search queries list. No introduction or explanation text.`
