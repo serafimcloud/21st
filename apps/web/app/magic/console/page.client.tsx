@@ -34,6 +34,7 @@ import {
 import { Database } from "@/types/supabase"
 import { cn } from "@/lib/utils"
 import React from "react"
+import { FeedbackDialog } from "@/components/features/magic/feedback-dialog"
 
 interface ConsoleClientProps {
   subscription: PlanInfo | null
@@ -43,17 +44,6 @@ interface ConsoleClientProps {
 // Add the localStorage key constant
 const ONBOARDING_STATE_KEY = "magic_onboarding_state"
 
-interface FeedbackDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
-type UserRole =
-  | "designer"
-  | "frontend_developer"
-  | "backend_developer"
-  | "product_manager"
-  | "entrepreneur"
 type FeedbackType = "feedback" | "feature_request"
 
 interface CheckboxCardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -116,165 +106,6 @@ const CheckboxCard = React.forwardRef<HTMLDivElement, CheckboxCardProps>(
   },
 )
 CheckboxCard.displayName = "CheckboxCard"
-
-function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
-  const { user } = useUser()
-  const supabase = useClerkSupabaseClient()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [type, setType] = useState<FeedbackType>("feedback")
-  const [content, setContent] = useState("")
-  const [role, setRole] = useState<UserRole | "">("")
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user?.id || !content || !role) {
-      toast.error("Please fill in all required fields")
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      // First, get the user's UUID from Supabase
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("id", user.id)
-        .single()
-
-      if (userError || !userData) {
-        console.error("Error getting user:", userError)
-        throw new Error("Failed to get user information")
-      }
-
-      // Update user's role
-      const { error: updateError } = await supabase
-        .from("users")
-        .update({
-          role: role as Database["public"]["Enums"]["user_role"],
-        } as Database["public"]["Tables"]["users"]["Update"])
-        .eq("id", user.id)
-
-      if (updateError) {
-        console.error("Error updating user role:", updateError)
-        throw new Error(`Failed to update user role: ${updateError.message}`)
-      }
-
-      // Submit the feedback with the user's UUID
-      const { error: feedbackError } = await supabase.from("feedback").insert({
-        user_id: user.id,
-        type,
-        content,
-        status: "pending",
-      })
-
-      if (feedbackError) {
-        console.error("Error submitting feedback:", feedbackError)
-        throw new Error(`Failed to submit feedback: ${feedbackError.message}`)
-      }
-
-      toast.success("Thank you for your feedback!")
-      onOpenChange(false)
-      setContent("")
-      setType("feedback")
-      setRole("")
-    } catch (error) {
-      console.error("Error in feedback submission:", error)
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to submit feedback. Please try again.",
-      )
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Send Feedback</DialogTitle>
-          <DialogDescription>
-            Help us improve Magic MCP by sharing your thoughts or requesting new
-            features.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <Label>What would you like to share?</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <CheckboxCard
-                  checked={type === "feedback"}
-                  onCheckedChange={() => setType("feedback")}
-                  label="Feedback"
-                  className="py-2.5"
-                />
-                <CheckboxCard
-                  checked={type === "feature_request"}
-                  onCheckedChange={() => setType("feature_request")}
-                  label="Feature Request"
-                  className="py-2.5"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Label>Your Role</Label>
-              <div className="grid gap-2">
-                {[
-                  { value: "designer", label: "Designer" },
-                  { value: "frontend_developer", label: "Frontend Developer" },
-                  { value: "backend_developer", label: "Backend Developer" },
-                  { value: "product_manager", label: "Product Manager" },
-                  { value: "entrepreneur", label: "Entrepreneur" },
-                ].map(({ value, label }) => (
-                  <CheckboxCard
-                    key={value}
-                    checked={role === value}
-                    onCheckedChange={() => setRole(value as UserRole)}
-                    label={label}
-                    className="py-2.5"
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="content">
-                {type === "feedback" ? "Your Feedback" : "Feature Request"}
-              </Label>
-              <Textarea
-                id="content"
-                placeholder={
-                  type === "feedback"
-                    ? "Tell us what you think about Magic MCP..."
-                    : "Describe the feature you'd like to see..."
-                }
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting || !content || !role}>
-              {isSubmitting ? (
-                <>
-                  <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
-                  Submitting
-                </>
-              ) : (
-                "Submit"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 export function ConsoleClient({
   subscription: initialSubscription,
@@ -594,11 +425,47 @@ export function ConsoleClient({
 
   // Add state for feedback dialog
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false)
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>("feedback")
 
   return (
     <div className="min-h-screen w-full bg-background antialiased mt-14">
       <div className="p-3 sm:p-6">
         <div className="space-y-6">
+          {/* Feedback section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between pb-3 border-b mb-4">
+              <h3 className="font-medium">Help Us Improve</h3>
+            </div>
+            <div className="bg-background rounded-lg border border-border overflow-hidden">
+              <div className="p-4">
+                <p className="text-sm text-muted-foreground">
+                  We're constantly working to improve Magic MCP. Share your
+                  thoughts or request new features to help us make it even
+                  better.
+                </p>
+              </div>
+              <div className="bg-muted p-3 rounded-b-lg flex justify-end gap-3 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFeedbackType("feedback")
+                    setFeedbackDialogOpen(true)
+                  }}
+                >
+                  Share Feedback
+                </Button>
+                <Button
+                  onClick={() => {
+                    setFeedbackType("feature_request")
+                    setFeedbackDialogOpen(true)
+                  }}
+                >
+                  Request Feature
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* Current plan block */}
           <div className="space-y-2">
             <div className="flex items-center justify-between pb-3 border-b mb-4">
@@ -978,35 +845,6 @@ export function ConsoleClient({
             </div>
           </div>
 
-          {/* Feedback section */}
-          <div className="space-y-2 mt-8">
-            <div className="flex items-center justify-between pb-3 border-b mb-4">
-              <h3 className="font-medium">Help Us Improve</h3>
-              <Button
-                variant="ghost"
-                className="text-muted-foreground hover:text-primary text-sm"
-                onClick={() => setFeedbackDialogOpen(true)}
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Send Feedback
-              </Button>
-            </div>
-            <div className="bg-background rounded-lg border border-border p-4">
-              <p className="text-sm text-muted-foreground">
-                We're constantly working to improve Magic MCP. Share your
-                thoughts or request new features to help us make it even better.
-              </p>
-              <Button
-                className="mt-4"
-                variant="outline"
-                onClick={() => setFeedbackDialogOpen(true)}
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Share Your Feedback
-              </Button>
-            </div>
-          </div>
-
           {/* Troubleshooting */}
           <div className="space-y-2 mt-8">
             <div className="flex items-center justify-between pb-3 border-b mb-4">
@@ -1030,6 +868,7 @@ export function ConsoleClient({
       <FeedbackDialog
         open={feedbackDialogOpen}
         onOpenChange={setFeedbackDialogOpen}
+        initialType={feedbackType}
       />
 
       {/* Upgrade confirmation dialog */}
