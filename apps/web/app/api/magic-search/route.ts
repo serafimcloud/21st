@@ -4,6 +4,13 @@ import { SearchResponseMCP } from "@/types/global"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import fetchFileTextContent from "@/lib/utils/fetchFileTextContent"
 
+interface SearchResult {
+  id: number
+  usage_data?: {
+    total_usages: number
+  }
+}
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -37,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { search, match_threshold = 0.33, limit = 5 } = body
+    const { search, match_threshold = 0.33, limit = 5, userMessage = "" } = body
 
     if (!search) {
       return NextResponse.json(
@@ -47,12 +54,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: searchResults, error } = await supabase.functions.invoke(
-      "ai-search-oai",
+      "search-embeddings",
       {
         body: {
-          search: search,
-          match_threshold: match_threshold,
-          limit: limit,
+          search,
+          match_threshold,
+          userMessage,
         },
       },
     )
@@ -65,7 +72,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const searchResultsTruncated = searchResults.slice(0, limit)
+    const searchResultsTruncated = searchResults.slice(
+      0,
+      limit,
+    ) as SearchResult[]
 
     const { data: demos, error: demosError } = await supabase
       .from("demos")
@@ -118,16 +128,29 @@ export async function POST(request: NextRequest) {
           withDemoDependencies: false,
         })
 
+      // Find original search result to get similarity
+      const searchResult = searchResultsTruncated.find(
+        (r: SearchResult) => r.id === d.id,
+      )
+
       return {
         demoName: d.name,
         demoCode: demoCode ?? "",
         componentName: d.component!.name,
         componentCode: componentCode ?? "",
         registryDependencies: registryDependencies || undefined,
+        similarity: searchResult?.usage_data?.total_usages
+          ? searchResult.usage_data.total_usages / 1000
+          : undefined, // Normalize usage as similarity
       }
     })
 
     const demosWithCodeAndRegistryDependencies = await Promise.all(promises)
+    const sortedResults = demosWithCodeAndRegistryDependencies.sort((a, b) => {
+      const similarityA = a.similarity || 0
+      const similarityB = b.similarity || 0
+      return similarityB - similarityA
+    })
 
     const { data: userData, error: userError } = await supabase
       .from("api_keys")
@@ -136,7 +159,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     const response = {
-      results: demosWithCodeAndRegistryDependencies,
+      results: sortedResults,
     }
 
     const responseObj = NextResponse.json<SearchResponseMCP>(response)
