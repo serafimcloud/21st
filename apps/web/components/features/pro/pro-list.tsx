@@ -27,6 +27,7 @@ export function ProList({ className }: ProListProps) {
         ...publisher,
         image: publisher.pro_banner_url,
         paypal_email: null,
+        role: null,
       }))
 
       return publishersWithImages
