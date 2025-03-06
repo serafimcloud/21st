@@ -1782,17 +1782,28 @@ export type Database = {
         }
         Returns: undefined
       }
-      insert_embedding: {
-        Args: {
-          p_id: string
-          p_item_id: number
-          p_item_type: string
-          p_embedding: string
-          p_usage_description: string
-          p_metadata: Json
-        }
-        Returns: undefined
-      }
+      insert_embedding:
+        | {
+            Args: {
+              p_id: string
+              p_item_id: number
+              p_item_type: string
+              p_embedding: string
+              p_usage_description: string
+              p_metadata: Json
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_item_id: number
+              p_item_type: string
+              p_embedding: string
+              p_usage_description: string
+              p_metadata: Json
+            }
+            Returns: undefined
+          }
       is_trigger_operation: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1819,6 +1830,24 @@ export type Database = {
           item_type: string
           embedding: string
           similarity: number
+        }[]
+      }
+      match_embeddings_with_details: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          demo_slug: string
+          user_id: string
+          component_data: Json
+          user_data: Json
+          usage_data: Json
         }[]
       }
       record_mcp_component_usage:

@@ -25,11 +25,6 @@ const anthropic = new Anthropic({
   apiKey: claudeConfig.apiKey || Deno.env.get("ANTHROPIC_API_KEY"),
 })
 
-// Create a Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || ""
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
-const supabase = createClient(supabaseUrl, supabaseKey)
-
 // Constants
 const DEFAULT_SEARCH_LIMIT = 8
 const MAX_SEARCH_LIMIT = 20
@@ -220,7 +215,7 @@ async function performVectorSearch(
 ): Promise<any[]> {
   const {
     limit = DEFAULT_SEARCH_LIMIT,
-    itemTypes = ["component", "demo"],
+    itemTypes = ["demo"],
     threshold = SIMILARITY_THRESHOLD,
     table,
   } = options
@@ -345,62 +340,55 @@ async function getItemDetails(results: any[]): Promise<any[]> {
  */
 async function searchComponents(
   supabase: any,
-  query: string,
+  search: string,
+  match_threshold: number = 0.33,
   userMessage: string = "",
-  searchType: string = "combined",
 ) {
   console.log(
-    `Searching for: ${query}, user message: ${userMessage}, search type: ${searchType}`,
+    `Searching for: ${search}, threshold: ${match_threshold}, user message: ${userMessage}`,
   )
 
-  // Генерируем поисковые запросы через HyDE
-  const hydeDocuments = await generateHypotheticalDocument(query, userMessage)
+  // Generate hypothetical document for better search context
+  const hydeDocuments = await generateHypotheticalDocument(search, userMessage)
 
-  // Получаем эмбеддинг для сгенерированных запросов
+  // Get embedding for generated queries
   const hydeEmbedding = await generateEmbedding(hydeDocuments.searchQueries)
 
-  // Поиск по usage_embeddings используя сгенерированные запросы
-  const results = await performVectorSearch(hydeEmbedding, {
-    table: "usage_embeddings",
-    itemTypes:
-      searchType === "component"
-        ? ["component"]
-        : searchType === "demo"
-          ? ["demo"]
-          : ["component", "demo"],
-    limit: 15,
-    threshold: 0.7,
+  // Search with embeddings using the new RPC function
+  const { data: results, error } = await supabase.rpc("match_embeddings_with_details", {
+    query_embedding: hydeEmbedding,
+    match_threshold: match_threshold,
+    match_count: 15
   })
 
-  // Получаем детали для результатов
-  const enhancedResults = await getItemDetails(results)
-
-  return {
-    results: enhancedResults,
-    query,
-    user_message: userMessage,
-    hyde_queries: hydeDocuments.searchQueries,
+  if (error) {
+    throw error
   }
+
+  return results
 }
 
 // Server handler
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Initialize Supabase client with request authorization
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || ""
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || ""
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: { Authorization: req.headers.get("Authorization")! },
+    },
+  })
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
   }
 
   try {
-    // Parse request body
-    const {
-      query,
-      userMessage = "",
-      searchType = "combined",
-    } = await req.json()
+    const { search, match_threshold = 0.33, userMessage = "" } = await req.json()
 
-    if (!query) {
+    if (!search) {
       return new Response(
-        JSON.stringify({ error: "Missing required field: query" }),
+        JSON.stringify({ error: "Missing required field: search" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -408,26 +396,25 @@ serve(async (req) => {
       )
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || ""
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || ""
+    if (match_threshold && (match_threshold < 0.1 || match_threshold > 0.99)) {
+      return new Response(
+        JSON.stringify({ error: "match_threshold must be between 0.1 and 0.99" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      )
+    }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: req.headers.get("Authorization")! },
-      },
-    })
-
-    // Search components with both query and user message
     const results = await searchComponents(
       supabase,
-      query,
+      search,
+      match_threshold,
       userMessage,
-      searchType,
     )
 
-    // Return search results
-    return new Response(JSON.stringify({ success: true, results }), {
+    // Return results directly like in ai-search-oai
+    return new Response(JSON.stringify(results), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })
   } catch (error: unknown) {
