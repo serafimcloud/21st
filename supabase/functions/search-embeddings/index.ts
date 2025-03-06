@@ -21,10 +21,6 @@ const openai = new OpenAI({
   apiKey: openaiConfig.apiKey || Deno.env.get("OPENAI_API_KEY"),
 })
 
-const anthropic = new Anthropic({
-  apiKey: claudeConfig.apiKey || Deno.env.get("ANTHROPIC_API_KEY"),
-})
-
 // Constants
 const DEFAULT_SEARCH_LIMIT = 8
 const MAX_SEARCH_LIMIT = 20
@@ -71,20 +67,24 @@ async function generateHypotheticalDocument(
     // Combine query and user message for better context
     const combinedInput = `Search Query: ${query}\nUser Request: ${userMessage}`
 
-    // Generate search queries using Claude
-    const response = await anthropic.messages.create({
-      model: claudeConfig.model,
-      max_tokens: 1000,
-      temperature: 0.7,
+    // Generate search queries using GPT-4
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
       messages: [
         {
+          role: "system",
+          content: HYDE_PROMPT,
+        },
+        {
           role: "user",
-          content: HYDE_PROMPT.replace("{query}", combinedInput),
+          content: combinedInput,
         },
       ],
+      temperature: 0.7,
+      max_tokens: 1000,
     })
 
-    const hydeDocument = response.content[0].text
+    const hydeDocument = response.choices[0]?.message?.content || ""
     console.log(
       "Generated search queries:",
       hydeDocument.substring(0, 100) + "...",

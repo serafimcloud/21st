@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { search, match_threshold = 0.33, limit = 5, userMessage = "" } = body
+    const { search, match_threshold = 0.33, limit = 3, userMessage = "" } = body
 
     if (!search) {
       return NextResponse.json(
