@@ -23,6 +23,7 @@ interface InstallIdeStepProps {
   selectedIde: IdeOption
   osType: OsType
   onComplete: (action: "next" | "troubleshooting") => void
+  onGenerateApiKey?: () => Promise<void>
 }
 
 export function InstallIdeStep({
@@ -30,6 +31,7 @@ export function InstallIdeStep({
   selectedIde,
   osType,
   onComplete,
+  onGenerateApiKey,
 }: InstallIdeStepProps) {
   const [copied, setCopied] = useState(false)
   const [copiedConfig, setCopiedConfig] = useState(false)
@@ -675,6 +677,41 @@ export function InstallIdeStep({
     }
   }
 
+  // Early in the component, we'll add a fallback UI for when API key is missing
+  if (!apiKey) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 px-4">
+        <div className="space-y-4 max-w-2xl">
+          <h1 className="text-2xl font-bold tracking-tight">API Key Missing</h1>
+          <p className="text-lg text-muted-foreground">
+            We couldn't find your API key, which is required to use Magic MCP.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
+          {onGenerateApiKey && (
+            <Button
+              onClick={onGenerateApiKey}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Generate API Key
+            </Button>
+          )}
+
+          <Button
+            variant="outline"
+            onClick={() => onComplete("troubleshooting")}
+            className="flex items-center gap-2"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Go to Troubleshooting
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col space-y-8 px-4 max-w-[700px] mx-auto w-full">
       <div className="space-y-4 max-w-2xl">
@@ -699,7 +736,7 @@ export function InstallIdeStep({
             className="pr-1.5"
           >
             Need help?
-            <kbd className="pointer-events-none h-5 w-5 justify-center select-none items-center gap-1 rounded border-muted-foreground/40 bg-foreground/10 px-1.5 ml-1.5 font-sans text-[11px] text-foreground leading-none opacity-100 flex"> 
+            <kbd className="pointer-events-none h-5 w-5 justify-center select-none items-center gap-1 rounded border-muted-foreground/40 bg-foreground/10 px-1.5 ml-1.5 font-sans text-[11px] text-foreground leading-none opacity-100 flex">
               H
             </kbd>
           </Button>

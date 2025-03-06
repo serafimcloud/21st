@@ -6,6 +6,8 @@ import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 import { Logo } from "@/components/ui/logo"
 import { Footer } from "@/components/ui/footer"
 import { Header } from "@/components/ui/header.client"
+import { ApiKey } from "@/types/global"
+import { redirect } from "next/navigation"
 
 /**
  * Gets current plan information for the user
@@ -127,20 +129,61 @@ async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
   }
 }
 
+/**
+ * Gets the API key for the user
+ */
+async function getApiKey(userId: string | null): Promise<ApiKey | null> {
+  if (!userId) return null
+
+  try {
+    const { data: rawApiKey } = await supabaseWithAdminAccess
+      .from("api_keys")
+      .select("*")
+      .eq("user_id", userId)
+      .single()
+
+    if (!rawApiKey) return null
+
+    return {
+      id: rawApiKey.id,
+      key: rawApiKey.key,
+      user_id: rawApiKey.user_id,
+      plan: rawApiKey.plan || "free",
+      requests_limit: rawApiKey.requests_limit || 100,
+      requests_count: rawApiKey.requests_count || 0,
+      created_at: rawApiKey.created_at || new Date().toISOString(),
+      expires_at: rawApiKey.expires_at,
+      last_used_at: rawApiKey.last_used_at,
+      is_active: rawApiKey.is_active || true,
+      project_url: rawApiKey.project_url || "",
+    }
+  } catch (error) {
+    console.error("Error fetching API key:", error)
+    return null
+  }
+}
+
 // Always fetch fresh data on page load
 export const dynamic = "force-dynamic"
 
 export default async function ConsolePage() {
   const { userId } = await auth()
+
+  // Redirect unauthorized users to onboarding
+  if (!userId) {
+    redirect("/magic/onboarding")
+  }
+
   const subscription = await getCurrentPlan(userId)
+  const apiKey = await getApiKey(userId)
 
   return (
     <div className="min-h-screen">
-       <div className="min-h-screen flex flex-col">
-      <Logo />
+      <div className="min-h-screen flex flex-col">
+        <Logo />
         <Header />
         <div className="flex-1 mt-[11vh] max-w-[640px] mx-auto w-full px-4">
-          <ConsoleClient subscription={subscription} />
+          <ConsoleClient subscription={subscription} apiKey={apiKey} />
         </div>
         <Footer />
       </div>

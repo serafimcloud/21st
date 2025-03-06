@@ -5,15 +5,28 @@ import { PlanInfo } from "@/app/settings/billing/page"
 import { TroubleshootingSection } from "@/components/features/magic/troubleshooting"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Check, LoaderCircle } from "lucide-react"
+import {
+  Check,
+  LoaderCircle,
+  Copy,
+  ArrowRight,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 import { toast } from "sonner"
 import { UpgradeConfirmationDialog } from "@/components/features/settings/billing/upgrade-confirmation-dialog"
 import { CircleProgress } from "@/components/ui/circle-progress"
-import { IdeOption } from "@/app/magic/onboarding/page.client"
+import { IdeOption, OsType } from "@/app/magic/onboarding/page.client"
+import { Code } from "@/components/ui/code"
+import { useRouter } from "next/navigation"
+import { ApiKey } from "@/types/global"
+import { useUser } from "@clerk/nextjs"
+import { useClerkSupabaseClient } from "@/lib/clerk"
 
 interface ConsoleClientProps {
   subscription: PlanInfo | null
+  apiKey: ApiKey | null
 }
 
 // Add the localStorage key constant
@@ -21,10 +34,14 @@ const ONBOARDING_STATE_KEY = "magic_onboarding_state"
 
 export function ConsoleClient({
   subscription: initialSubscription,
+  apiKey: initialApiKey,
 }: ConsoleClientProps) {
+  const { user } = useUser()
+  const supabase = useClerkSupabaseClient()
   const [subscription, setSubscription] = useState<PlanInfo | null>(
     initialSubscription,
   )
+  const [apiKey, setApiKey] = useState<ApiKey | null>(initialApiKey)
   const usageCount = subscription?.usage || 0
   const usageLimit = subscription?.limit || 5
   const currentPlanId = subscription?.type || "free"
@@ -41,9 +58,24 @@ export function ConsoleClient({
   // Add state for the selected IDE
   const [selectedIde, setSelectedIde] = useState<IdeOption>("cursor")
 
-  // Get the selected IDE from localStorage on mount
+  // Get OS type
+  const [osType, setOsType] = useState<OsType>("mac")
+
+  // Get the selected IDE and OS from localStorage on mount
   useEffect(() => {
     try {
+      // Detect OS
+      const userAgent = window.navigator.userAgent.toLowerCase()
+      let detectedOs: OsType = "mac"
+
+      if (userAgent.includes("windows")) {
+        detectedOs = "windows"
+      } else if (userAgent.includes("linux")) {
+        detectedOs = "linux"
+      }
+
+      setOsType(detectedOs)
+
       console.log("Reading onboarding state from localStorage")
       const savedState = localStorage.getItem(ONBOARDING_STATE_KEY)
       console.log("Raw savedState:", savedState)
@@ -157,6 +189,163 @@ export function ConsoleClient({
       open: true,
       planId,
     })
+  }
+
+  // Function to get the IDE installation command
+  const getCommandForIde = () => {
+    if (!apiKey) return ""
+
+    const windowsPrefix =
+      osType === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""
+
+    switch (selectedIde) {
+      case "cursor":
+        return `${windowsPrefix}npx -y @smithery/cli@latest run @21st-dev/magic-mcp --config "{\\\"TWENTY_FIRST_API_KEY\\\":\\\"${apiKey.key}\\\"}"`
+      case "windsurf":
+        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf`
+      case "cline":
+        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline`
+      default:
+        return ""
+    }
+  }
+
+  // Function to mask API key with dots
+  const getMaskedApiKey = (key: string) => {
+    return key
+      .split("")
+      .map(() => "•")
+      .join("")
+  }
+
+  // Function to create API key
+  const [isCreatingApiKey, setIsCreatingApiKey] = useState(false)
+  const createApiKey = async () => {
+    if (!user?.id) {
+      toast.error("You must be signed in to generate an API key")
+      return
+    }
+
+    setIsCreatingApiKey(true)
+    try {
+      const { data, error } = await supabase.rpc("create_api_key", {
+        user_id: user.id,
+        plan: "free",
+        requests_limit: 100,
+      })
+
+      if (error) {
+        console.error("Failed to create API key:", error)
+        toast.error(`Failed to create API key: ${error.message}`)
+        return
+      }
+
+      if (!data || !data.key) {
+        toast.error("No API key data returned")
+        return
+      }
+
+      const newKey: ApiKey = {
+        id: data.id,
+        key: data.key,
+        user_id: data.user_id,
+        plan: data.plan || "free",
+        requests_limit: data.requests_limit || 100,
+        requests_count: data.requests_count || 0,
+        created_at: data.created_at || new Date().toISOString(),
+        expires_at: data.expires_at,
+        last_used_at: data.last_used_at,
+        is_active: data.is_active ?? true,
+        project_url: "https://21st.dev/magic",
+      }
+
+      setApiKey(newKey)
+      toast.success("API key created successfully")
+    } catch (error) {
+      console.error("Error creating API key:", error)
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create API key",
+      )
+    } finally {
+      setIsCreatingApiKey(false)
+    }
+  }
+
+  // State for copy confirmations
+  const [copiedCommand, setCopiedCommand] = useState(false)
+  const [copiedApiKey, setCopiedApiKey] = useState(false)
+  const [copiedConfig, setCopiedConfig] = useState(false)
+
+  // Update function to handle copy with confirmations
+  const handleCopy = () => {
+    if (!apiKey) return
+    try {
+      const textArea = document.createElement("textarea")
+      textArea.value = getCommandForIde()
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      setCopiedCommand(true)
+      toast.success("Command copied to clipboard")
+      setTimeout(() => setCopiedCommand(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy:", err)
+      toast.error("Failed to copy command")
+    }
+  }
+
+  // Function to copy API key
+  const handleCopyApiKey = () => {
+    if (!apiKey) return
+    try {
+      const textArea = document.createElement("textarea")
+      textArea.value = apiKey.key
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      setCopiedApiKey(true)
+      toast.success("API key copied to clipboard")
+      setTimeout(() => setCopiedApiKey(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy API key:", err)
+      toast.error("Failed to copy API key")
+    }
+  }
+
+  // Function to copy config
+  const handleCopyConfig = () => {
+    if (!apiKey) return
+    try {
+      const config = `{
+  "mcpServers": {
+    "@21st-dev-magic-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@21st-dev/magic-mcp",
+        "--config",
+        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey.key}\\\\"}\\"" 
+      ]
+    }
+  }
+}`
+      const textArea = document.createElement("textarea")
+      textArea.value = config
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      setCopiedConfig(true)
+      toast.success("Configuration copied to clipboard")
+      setTimeout(() => setCopiedConfig(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy config:", err)
+      toast.error("Failed to copy configuration")
+    }
   }
 
   return (
@@ -289,6 +478,260 @@ export function ConsoleClient({
               </div>
             </div>
           )}
+
+          {/* Update Install Command Section */}
+          <div className="space-y-2 mt-8">
+            <div className="flex items-center justify-between pb-3 border-b mb-4">
+              <h3 className="font-medium">Install Command</h3>
+              <Link
+                href="/magic/onboarding?step=select-ide"
+                className="text-muted-foreground hover:text-primary text-sm"
+              >
+                Open onboarding
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {apiKey ? (
+                <>
+                  {selectedIde === "cursor" ? (
+                    <div className="bg-background rounded-md border p-4 space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">For Cursor</h4>
+                        <div className="text-sm text-muted-foreground">
+                          <p className="mb-2">
+                            Add Magic MCP to Cursor settings:
+                          </p>
+                          <ol className="space-y-2 list-decimal list-inside">
+                            <li>
+                              Open settings with{" "}
+                              <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 inline-flex text-[11px] leading-none font-sans">
+                                {osType === "windows" ? "Ctrl" : "⌘"}
+                              </kbd>{" "}
+                              +{" "}
+                              <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 inline-flex text-[13px] leading-none font-sans">
+                                ,
+                              </kbd>
+                            </li>
+                            <li>
+                              Go to{" "}
+                              <span className="text-primary">
+                                Cursor → Full Settings → Features → MCP Servers
+                              </span>
+                            </li>
+                            <li>
+                              Click "+ Add New MCP Server" and set Name:{" "}
+                              <span className="text-primary bg-muted px-2 py-0.5 rounded text-xs">
+                                Magic
+                              </span>
+                              , Type:{" "}
+                              <span className="text-primary bg-muted px-2 py-0.5 rounded text-xs">
+                                command
+                              </span>
+                            </li>
+                          </ol>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Paste into Command field:
+                        </p>
+                        <div className="bg-muted rounded-md flex items-center w-full group relative">
+                          <input
+                            type="text"
+                            readOnly
+                            value={getCommandForIde()}
+                            className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={handleCopy}
+                          >
+                            {copiedCommand ? (
+                              <Check className="h-3.5 w-3.5 text-green-500" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : selectedIde === "windsurf" ? (
+                    <div className="bg-background rounded-md border p-4 space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">For Windsurf</h4>
+                        <div className="text-sm text-muted-foreground">
+                          <div className="rounded-md border border-yellow-500/20 bg-yellow-500/10 p-3 mb-3">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                              <div className="text-sm text-yellow-500 flex-1">
+                                Note: MCP is only available in Windsurf Next
+                                (Beta)
+                              </div>
+                              <a
+                                href="https://codeium.com/windsurf/download-next"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-yellow-500 underline hover:text-yellow-400"
+                              >
+                                Download Windsurf Next
+                              </a>
+                            </div>
+                          </div>
+                          <p className="mb-2">
+                            Configure Magic MCP in Windsurf:
+                          </p>
+                          <ol className="space-y-2 list-decimal list-inside">
+                            <li>
+                              Click the hammer icon in the Cascade toolbar
+                            </li>
+                            <li>
+                              Click "Configure" button to open{" "}
+                              <span className="text-primary bg-muted px-2 py-0.5 rounded text-xs break-all">
+                                ~/.codeium/windsurf-next/mcp_config.json
+                              </span>
+                            </li>
+                          </ol>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Add this configuration:
+                        </p>
+                        <div className="relative">
+                          <Code
+                            code={`{
+  "mcpServers": {
+    "@21st-dev-magic-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@21st-dev/magic-mcp",
+        "--config",
+        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey.key}\\\\"}\\"" 
+      ]
+    }
+  }
+}`}
+                            language="json"
+                            className="overflow-x-auto bg-muted"
+                            display="block"
+                            fontSize="sm"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-2 right-2 h-8 px-2"
+                            onClick={handleCopyConfig}
+                          >
+                            {copiedConfig ? (
+                              <Check className="h-3.5 w-3.5 text-green-500" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-background rounded-md border p-4 space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">
+                          For VSCode + Cline
+                        </h4>
+                        <div className="text-sm text-muted-foreground">
+                          <p className="mb-2">
+                            Run this command in your terminal:
+                          </p>
+                          <div className="bg-muted rounded-md flex items-center w-full group relative">
+                            <input
+                              type="text"
+                              readOnly
+                              value={getCommandForIde()}
+                              className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2"
+                              onClick={handleCopy}
+                            >
+                              {copiedCommand ? (
+                                <Check className="h-3.5 w-3.5 text-green-500" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                          </div>
+                          <p className="mt-2">
+                            When prompted, paste your API key:
+                          </p>
+                          <div className="bg-muted rounded-md flex items-center w-full group relative mt-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={getMaskedApiKey(apiKey.key)}
+                              className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2"
+                              onClick={handleCopyApiKey}
+                            >
+                              {copiedApiKey ? (
+                                <Check className="h-3.5 w-3.5 text-green-500" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="text-sm text-muted-foreground">
+                    <p>
+                      Need more detailed instructions?{" "}
+                      <Link
+                        href="/magic/onboarding?step=select-ide"
+                        className="text-primary hover:underline"
+                      >
+                        View full setup guide
+                      </Link>
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-background rounded-lg border border-border overflow-hidden">
+                  <div className="p-4">
+                    <h4 className="text-sm font-medium">Generate API Key</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      You need an API key to use Magic MCP. Generate one to get started.
+                    </p>
+                  </div>
+                  <div className="bg-muted p-3 rounded-b-lg flex justify-end border-t">
+                    <Button
+                      disabled={isCreatingApiKey}
+                      onClick={createApiKey}
+                    >
+                      {isCreatingApiKey ? (
+                        <>
+                          <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
+                          Processing
+                        </>
+                      ) : (
+                        "Create key"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Troubleshooting */}
           <div className="space-y-2 mt-8">

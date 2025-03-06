@@ -105,7 +105,6 @@ export function OnboardingClient({
   const supabase = useClerkSupabaseClient()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [loading, setLoading] = useState(false)
 
   // Check if user has created components
   const { data: hasCreatedComponent } = useQuery({
@@ -287,7 +286,13 @@ export function OnboardingClient({
             onComplete={async () => {
               // Generate API key when welcome step is completed (if user is authenticated and doesn't have one)
               if (userId && !apiKey) {
-                await createApiKeyForUser(userId)
+                const createdKey = await createApiKeyForUser(userId)
+                if (!createdKey) {
+                  // If the API key creation fails, show an error but allow to continue
+                  toast.error(
+                    "API key generation failed. You can try again in the next step.",
+                  )
+                }
               }
               completeStep("welcome", "select-ide")
             }}
@@ -309,6 +314,16 @@ export function OnboardingClient({
             apiKey={apiKey}
             selectedIde={onboardingState.selectedIde || "cursor"}
             osType={onboardingState.osType}
+            onGenerateApiKey={async () => {
+              if (userId) {
+                const createdKey = await createApiKeyForUser(userId)
+                if (createdKey) {
+                  toast.success("API key generated successfully!")
+                }
+              } else {
+                toast.error("You must be signed in to generate an API key")
+              }
+            }}
             onComplete={(action) => {
               if (action === "troubleshooting") {
                 router.push(

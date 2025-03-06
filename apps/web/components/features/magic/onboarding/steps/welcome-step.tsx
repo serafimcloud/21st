@@ -19,15 +19,18 @@ export function WelcomeStep({
 }: WelcomeStepProps) {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const checkboxRef = useRef<HTMLButtonElement>(null)
+  const signInButtonRef = useRef<HTMLButtonElement>(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [termsDialogOpen, setTermsDialogOpen] = useState(false)
 
-  // Focus checkbox on mount
+  // Focus checkbox on mount if authenticated, otherwise focus sign in button
   useEffect(() => {
-    if (checkboxRef.current) {
+    if (isAuthenticated && checkboxRef.current) {
       checkboxRef.current.focus()
+    } else if (!isAuthenticated && signInButtonRef.current) {
+      signInButtonRef.current.focus()
     }
-  }, [])
+  }, [isAuthenticated])
 
   // Add keyboard shortcut for Enter key
   useEffect(() => {
@@ -41,10 +44,14 @@ export function WelcomeStep({
       ) {
         e.preventDefault()
 
-        if (!termsAccepted) {
-          setTermsAccepted(true)
-        } else if (isAuthenticated) {
-          onComplete()
+        if (isAuthenticated) {
+          if (!termsAccepted) {
+            setTermsAccepted(true)
+          } else {
+            onComplete()
+          }
+        } else if (signInButtonRef.current) {
+          signInButtonRef.current.click()
         }
       }
     }
@@ -108,9 +115,12 @@ export function WelcomeStep({
         </Button>
       ) : (
           <SignInButton mode="modal">
-            <Button className="mt-4">
-            Sign In to Continue
-          </Button>
+            <Button className="mt-4 pr-1.5" ref={signInButtonRef}>
+              Sign In to Continue
+              <kbd className="pointer-events-none h-5 w-5 justify-center select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                <Icons.enter className="h-2.5 w-2.5" />
+              </kbd>
+            </Button>
         </SignInButton>
       )}
 
