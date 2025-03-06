@@ -39,12 +39,21 @@ export const FREE_USAGE_LIMIT = 5
 // Core features configuration that will be used in pricing table
 export const PLAN_FEATURES: PlanFeature[] = [
   {
-    name: "Monthly generations",
+    name: "Component generation",
     included: "free",
     valueByPlan: {
-      free: FREE_USAGE_LIMIT.toString(),
-      standard: "50",
-      pro: "200",
+      free: "5/m",
+      standard: "50/m",
+      pro: "200/m",
+    },
+  },
+  {
+    name: "Component inspiration",
+    included: "free",
+    valueByPlan: {
+      free: "Unlimited",
+      standard: "Unlimited",
+      pro: "Unlimited",
     },
   },
   {
@@ -71,7 +80,7 @@ export const PLAN_FEATURES: PlanFeature[] = [
     valueByPlan: {
       free: "✓",
       standard: "✓",
-      pro: "-",
+      pro: "✓",
     },
   },
   {
@@ -111,7 +120,8 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     name: "Hobby",
     description: "Perfect for trying out",
     features: [
-      "5 generations per month",
+      "5 component generations per month",
+      "Unlimited component inspiration",
       "Access to basic components",
       "Access to SVGL logo library",
       "Community support",
@@ -123,7 +133,8 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     name: "Standard",
     description: "For professional developers",
     features: [
-      "50 generations per month",
+      "50 component generations per month",
+      "Unlimited component inspiration",
       "Access to all components",
       "Access to SVGL logo library",
       "50% of revenue goes to component authors",
@@ -137,7 +148,8 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     name: "Pro",
     description: "For power users",
     features: [
-      "200 generations per month",
+      "200 component generations per month",
+      "Unlimited component inspiration",
       "Access to all components",
       "Access to SVGL logo library",
       "Priority support",

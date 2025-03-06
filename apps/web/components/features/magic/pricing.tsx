@@ -14,8 +14,9 @@ const TIERS = [
     description: "Perfect for trying out",
     features: [
       "5 generations per month",
+      "Unlimited UI Inspirations",
+      "Unlimited SVG Logo Searches",
       "Access to basic components",
-      "Access to SVGL logo library",
       "Community support",
     ],
     cta: "Get Started",
@@ -30,8 +31,9 @@ const TIERS = [
     description: "For professional developers",
     features: [
       "50 generations per month",
+      "Unlimited UI Inspirations",
+      "Unlimited SVG Logo Searches",
       "Access to all components",
-      "Access to SVGL logo library",
       "Priority support",
       "50% of revenue goes to component authors",
     ],
@@ -48,8 +50,9 @@ const TIERS = [
     description: "For power users",
     features: [
       "200 generations per month",
+      "Unlimited UI Inspirations",
+      "Unlimited SVG Logo Searches",
       "Access to all components",
-      "Access to SVGL logo library",
       "Priority support",
       "50% of revenue goes to component authors",
     ],

@@ -21,17 +21,6 @@ import { Code } from "@/components/ui/code"
 import { ApiKey } from "@/types/global"
 import { useUser } from "@clerk/nextjs"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Database } from "@/types/supabase"
 import { cn } from "@/lib/utils"
 import React from "react"
 import { FeedbackDialog } from "@/components/features/magic/feedback-dialog"
@@ -478,7 +467,7 @@ export function ConsoleClient({
               </Link>
             </div>
             <div className="bg-background rounded-lg border border-border overflow-hidden">
-              <div className="p-4 flex justify-between">
+              <div className="p-4 flex flex-col md:flex-row md:justify-between gap-4 md:gap-0">
                 <div className="flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2">
@@ -498,16 +487,50 @@ export function ConsoleClient({
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col justify-between items-end">
-                  <div className="text-xs text-muted-foreground">
-                    Monthly limit
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CircleProgress progress={usageCount / usageLimit} />
-                    <div className="text-sm">
+                <div className="flex flex-col justify-between items-end space-y-3">
+                  <div className="flex items-center justify-between w-full gap-3">
+                    <div className="flex items-center">
+                      <div className="w-5 mr-2">
+                        <CircleProgress progress={usageCount / usageLimit} />
+                      </div>
+                      <div className="text-sm text-foreground">
+                        New UI Generations
+                      </div>
+                    </div>
+                    <div className="text-sm tabular-nums">
                       {usageCount.toLocaleString()} /{" "}
                       {usageLimit.toLocaleString()}
                     </div>
+                  </div>
+                  <div className="flex items-center justify-between w-full gap-3">
+                    <div className="flex items-center">
+                      <div className="w-5 mr-2 flex justify-center items-center">
+                        <div className="flex items-center justify-center h-6 w-6 p-1 pb-2">
+                          <span className="text-[22px] leading-none">∞</span>
+                        </div>
+                      </div>
+                      <div className="text-sm text-foreground">
+                        UI Inspirations
+                      </div>
+                    </div>
+                    <span className="bg-muted/80 text-accent-foreground px-2 py-0.5 rounded-sm text-xs border shadow-inner">
+                      unlimited
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between w-full gap-3">
+                    <div className="flex items-center">
+                      <div className="w-5 mr-2 flex justify-center items-center">
+                        <div className="flex items-center justify-center h-6 w-6 p-1 pb-2">
+                          <span className="text-[22px] leading-none">∞</span>
+                        </div>
+                      </div>
+                      <div className="text-sm text-foreground">
+                        SVG Logo Searches
+                      </div>
+                    </div>
+                    <span className="bg-muted/80 text-accent-foreground px-2 py-0.5 rounded-sm text-xs border shadow-inner">
+                      unlimited
+                    </span>
                   </div>
                 </div>
               </div>

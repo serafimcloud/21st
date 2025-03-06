@@ -319,6 +319,17 @@ function getFeatureValue(
     if (value === "✓") {
       return <Check className="h-4 w-4 text-blue-500" />
     }
+    if (value === "-") {
+      return <span className="text-zinc-300 dark:text-zinc-700">-</span>
+    }
+    // Handle special values like "5/m", "50/m", etc.
+    if (value?.endsWith("/m")) {
+      return <span className="  ">{value}</span>
+    }
+    // Handle "Unlimited" value
+    if (value === "Unlimited") {
+      return <span className="font-medium">{value}</span>
+    }
     return value
   }
 
