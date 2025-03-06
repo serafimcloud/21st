@@ -421,7 +421,7 @@ export function OnboardingClient({
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground"
+          className="text-muted-foreground z-20"
           onClick={skipOnboarding}
         >
           Skip onboarding

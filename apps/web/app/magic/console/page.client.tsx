@@ -611,7 +611,7 @@ export function ConsoleClient({
         "run",
         "@21st-dev/magic-mcp",
         "--config",
-        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey.key}\\\\"}\\"" 
+        "\\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey.key}\\\\\\\"}\\\""
       ]
     }
   }
@@ -710,14 +710,12 @@ export function ConsoleClient({
                   <div className="p-4">
                     <h4 className="text-sm font-medium">Generate API Key</h4>
                     <p className="text-xs text-muted-foreground mt-1">
-                      You need an API key to use Magic MCP. Generate one to get started.
+                      You need an API key to use Magic MCP. Generate one to get
+                      started.
                     </p>
                   </div>
                   <div className="bg-muted p-3 rounded-b-lg flex justify-end border-t">
-                    <Button
-                      disabled={isCreatingApiKey}
-                      onClick={createApiKey}
-                    >
+                    <Button disabled={isCreatingApiKey} onClick={createApiKey}>
                       {isCreatingApiKey ? (
                         <>
                           <LoaderCircle className="mr-2 h-3 w-3 animate-spin" />
