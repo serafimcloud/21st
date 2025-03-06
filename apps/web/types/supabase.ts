@@ -66,6 +66,90 @@ export type Database = {
           },
         ]
       }
+      backup_code_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string | null
+          id: string | null
+          item_id: number | null
+          item_type: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      backup_usage_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string | null
+          id: string | null
+          item_id: number | null
+          item_type: string | null
+          metadata: Json | null
+          usage_description: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Relationships: []
+      }
+      code_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string
+          id: string
+          item_id: number
+          item_type: string
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding: string
+          id?: string
+          item_id: number
+          item_type: string
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string
+          id?: string
+          item_id?: number
+          item_type?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       component_analytics: {
         Row: {
           activity_type: string | null
@@ -501,6 +585,9 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
+          bundle_css_url: string | null
+          bundle_html_url: string | null
+          bundle_js_url: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -511,6 +598,7 @@ export type Database = {
           embedding: string | null
           embedding_oai: string | null
           fts: unknown | null
+          has_bundle: boolean | null
           id: number
           name: string | null
           preview_url: string | null
@@ -521,6 +609,9 @@ export type Database = {
         }
         Insert: {
           bookmarks_count?: number | null
+          bundle_css_url?: string | null
+          bundle_html_url?: string | null
+          bundle_js_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -531,6 +622,7 @@ export type Database = {
           embedding?: string | null
           embedding_oai?: string | null
           fts?: unknown | null
+          has_bundle?: boolean | null
           id?: number
           name?: string | null
           preview_url?: string | null
@@ -541,6 +633,9 @@ export type Database = {
         }
         Update: {
           bookmarks_count?: number | null
+          bundle_css_url?: string | null
+          bundle_html_url?: string | null
+          bundle_js_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -551,6 +646,7 @@ export type Database = {
           embedding?: string | null
           embedding_oai?: string | null
           fts?: unknown | null
+          has_bundle?: boolean | null
           id?: number
           name?: string | null
           preview_url?: string | null
@@ -596,6 +692,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      embedding_generation_status: {
+        Row: {
+          created_at: string | null
+          error: string | null
+          id: number
+          item_id: number
+          item_type: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error?: string | null
+          id?: number
+          item_id: number
+          item_type: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error?: string | null
+          id?: number
+          item_id?: number
+          item_type?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       mcp_author_payouts: {
         Row: {
@@ -1030,6 +1156,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      usage_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string
+          id: string
+          item_id: number
+          item_type: string
+          metadata: Json | null
+          usage_description: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding: string
+          id?: string
+          item_id: number
+          item_type: string
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string
+          id?: string
+          item_id?: number
+          item_type?: string
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Relationships: []
       }
       usages: {
         Row: {
@@ -1490,6 +1646,7 @@ export type Database = {
           component_user_data: Json
           total_count: number
           view_count: number
+          bookmarks_count: number
         }[]
       }
       get_liked_components: {
@@ -1614,6 +1771,39 @@ export type Database = {
         }
         Returns: undefined
       }
+      insert_code_embedding: {
+        Args: {
+          p_id: string
+          p_item_id: number
+          p_item_type: string
+          p_embedding: string
+          p_code: string
+          p_metadata: Json
+        }
+        Returns: undefined
+      }
+      insert_embedding:
+        | {
+            Args: {
+              p_id: string
+              p_item_id: number
+              p_item_type: string
+              p_embedding: string
+              p_usage_description: string
+              p_metadata: Json
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_item_id: number
+              p_item_type: string
+              p_embedding: string
+              p_usage_description: string
+              p_metadata: Json
+            }
+            Returns: undefined
+          }
       is_trigger_operation: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1625,6 +1815,40 @@ export type Database = {
           p_liked: boolean
         }
         Returns: undefined
+      }
+      match_embeddings: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+          filter?: string
+          table_name?: string
+        }
+        Returns: {
+          id: string
+          item_id: number
+          item_type: string
+          embedding: string
+          similarity: number
+        }[]
+      }
+      match_embeddings_with_details: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          demo_slug: string
+          user_id: string
+          component_data: Json
+          user_data: Json
+          usage_data: Json
+        }[]
       }
       record_mcp_component_usage:
         | {
@@ -1746,6 +1970,12 @@ export type Database = {
           p_tags: Json
         }
         Returns: undefined
+      }
+      vec_dim: {
+        Args: {
+          v: string
+        }
+        Returns: number
       }
     }
     Enums: {
