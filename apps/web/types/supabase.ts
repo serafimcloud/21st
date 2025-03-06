@@ -585,9 +585,6 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
-          bundle_css_url: string | null
-          bundle_html_url: string | null
-          bundle_js_url: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -598,7 +595,6 @@ export type Database = {
           embedding: string | null
           embedding_oai: string | null
           fts: unknown | null
-          has_bundle: boolean | null
           id: number
           name: string | null
           preview_url: string | null
@@ -609,9 +605,6 @@ export type Database = {
         }
         Insert: {
           bookmarks_count?: number | null
-          bundle_css_url?: string | null
-          bundle_html_url?: string | null
-          bundle_js_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -622,7 +615,6 @@ export type Database = {
           embedding?: string | null
           embedding_oai?: string | null
           fts?: unknown | null
-          has_bundle?: boolean | null
           id?: number
           name?: string | null
           preview_url?: string | null
@@ -633,9 +625,6 @@ export type Database = {
         }
         Update: {
           bookmarks_count?: number | null
-          bundle_css_url?: string | null
-          bundle_html_url?: string | null
-          bundle_js_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -646,7 +635,6 @@ export type Database = {
           embedding?: string | null
           embedding_oai?: string | null
           fts?: unknown | null
-          has_bundle?: boolean | null
           id?: number
           name?: string | null
           preview_url?: string | null
