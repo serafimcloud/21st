@@ -9,20 +9,19 @@ import { PromptRuleForm } from "@/components/features/prompt-rules/prompt-rule-f
 import { getPromptRule } from "@/lib/queries"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
+interface PageProps {
+  params: Promise<{
+    id: string
+  }>
+}
+
 export const metadata: Metadata = {
   title: "Edit Rules",
   description: "Edit an existing rule",
 }
 
-interface EditPromptRulePageProps {
-  params: {
-    id: string
-  }
-}
-
-export default async function EditPromptRulePage({
-  params,
-}: EditPromptRulePageProps) {
+export default async function EditPromptRulePage(props: PageProps) {
+  const params = await props.params
   const { userId } = await auth()
 
   if (!userId) {

@@ -312,7 +312,7 @@ export function CommandMenu() {
       )
 
       const prompt = getComponentInstallPrompt({
-        promptType: PROMPT_TYPES.BASIC,
+        promptType: PROMPT_TYPES.EXTENDED,
         codeFileName: selectedComponent.component.code.split("/").slice(-1)[0]!,
         demoCodeFileName: selectedComponent.demo_code.split("/").slice(-1)[0]!,
         code: codeResult.data as string,
@@ -333,7 +333,7 @@ export function CommandMenu() {
       trackEvent(AMPLITUDE_EVENTS.COPY_AI_PROMPT, {
         componentId: selectedComponent.id,
         componentName: selectedComponent.name,
-        promptType: PROMPT_TYPES.BASIC,
+        promptType: PROMPT_TYPES.EXTENDED,
       })
     } catch (err) {
       console.error("Failed to copy AI prompt:", err)

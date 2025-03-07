@@ -1,23 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import React from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { PromptRule } from "@/types/prompt-rules"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { usePromptRules } from "@/hooks/use-prompt-rules"
 
 interface PromptRuleSelectorProps {
@@ -29,54 +21,37 @@ export function PromptRuleSelector({
   value,
   onChange,
 }: PromptRuleSelectorProps) {
-  const [open, setOpen] = useState(false)
   const { data: promptRules, isLoading } = usePromptRules()
 
   const selectedRule = promptRules?.find((rule) => rule.id === value)
 
+  if (isLoading) {
+    return (
+      <SelectTrigger className="w-full" disabled>
+        <SelectValue placeholder="Loading..." />
+      </SelectTrigger>
+    )
+  }
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-        >
-          {value && selectedRule
-            ? selectedRule.name
-            : "Select prompt rule..."}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0">
-        <Command>
-          <CommandInput placeholder="Search rules..." />
-          <CommandEmpty>
-            {isLoading ? "Loading..." : "No rules found."}
-          </CommandEmpty>
-          <CommandGroup>
-            {promptRules?.map((rule) => (
-              <CommandItem
-                key={rule.id}
-                value={rule.name}
-                onSelect={() => {
-                  onChange(rule.id === value ? undefined : rule.id)
-                  setOpen(false)
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === rule.id ? "opacity-100" : "opacity-0",
-                  )}
-                />
-                {rule.name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <Select
+      value={value?.toString()}
+      onValueChange={(value) => onChange(value ? parseInt(value) : undefined)}
+    >
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Select prompt rule...">
+          {selectedRule?.name}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {promptRules?.map((rule) => (
+          <SelectItem key={rule.id} value={rule.id.toString()}>
+            <div className="flex items-center gap-2">
+              <span>{rule.name}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }

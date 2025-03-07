@@ -25,25 +25,12 @@ type PromptOption = PromptOptionBase | PromptSeparator
 export const promptOptions: PromptOption[] = [
   {
     type: "option",
-    id: PROMPT_TYPES.BASIC,
-    label: "Basic",
-    description: "Standard prompt for AI code editors",
+    id: PROMPT_TYPES.EXTENDED,
+    label: "For most AI code editors",
+    description: "Optimized for most AI code editors",
     action: "copy",
     icon: (
       <Sparkles
-        size={16}
-        className="min-h-[16px] min-w-[16px] max-h-[16px] max-w-[16px]"
-      />
-    ),
-  },
-  {
-    type: "option",
-    id: PROMPT_TYPES.EXTENDED,
-    label: "Extended",
-    description: "Extended prompt for complex components",
-    action: "copy",
-    icon: (
-      <Brain
         size={16}
         className="min-h-[16px] min-w-[16px] max-h-[16px] max-w-[16px]"
       />
@@ -143,6 +130,7 @@ export const getComponentInstallPrompt = ({
   tailwindConfig,
   globalCss,
   promptRule,
+  userAdditionalContext,
 }: {
   promptType: PromptType
   codeFileName: string
@@ -155,6 +143,7 @@ export const getComponentInstallPrompt = ({
   tailwindConfig?: string
   globalCss?: string
   promptRule?: PromptRule
+  userAdditionalContext?: string
 }) => {
   const componentFileName = codeFileName.split("/").slice(-1)[0]
   const componentDemoFileName = demoCodeFileName.split("/").slice(-1)[0]
@@ -315,6 +304,52 @@ export const getComponentInstallPrompt = ({
         REMEMBER TO KEEP THE DESIGN AND FUNCTIONALITY OF THE COMPONENT AS IS AND IN FULL 
       ` +
       "\n"
+
+    // Add prompt rule and additional context for SITEBREW
+    if (promptRule) {
+      if (promptRule.tech_stack?.length) {
+        const techStack = promptRule.tech_stack
+          .map(
+            (tech) => `${tech.name}${tech.version ? ` ${tech.version}` : ""}`,
+          )
+          .join(", ")
+        prompt +=
+          "\n\nPlease use the following technologies in your implementation: " +
+          techStack
+      }
+
+      if (promptRule.theme) {
+        if (promptRule.theme.tailwindConfig) {
+          prompt +=
+            "\n\nFor context, here is the current Tailwind configuration being used: " +
+            promptRule.theme.tailwindConfig
+        }
+        if (promptRule.theme.globalCss) {
+          prompt +=
+            "\n\nFor context, here are the global CSS styles being used: " +
+            promptRule.theme.globalCss
+        }
+        if (promptRule.theme.colors) {
+          const colors = Object.entries(promptRule.theme.colors)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")
+          prompt += "\n\nPlease use these custom color values: \n" + colors
+        }
+        if (promptRule.theme.spacing) {
+          const spacing = Object.entries(promptRule.theme.spacing)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")
+          prompt += "\n\nPlease use these custom spacing values: \n" + spacing
+        }
+      }
+
+      if (promptRule.additional_context) {
+        prompt +=
+          "\n\nAdditional important context to consider: " +
+          promptRule.additional_context
+      }
+    }
+
     return prompt
   }
 
@@ -443,20 +478,68 @@ export const getComponentInstallPrompt = ({
       "\n"
   }
 
-  if (promptType === PROMPT_TYPES.REPLIT) {
-    prompt +=
-      "\n" +
-      endent`
+  // Add prompt rule and additional context for all other prompt types
+  if (promptRule) {
+    if (promptRule.tech_stack?.length) {
+      const techStack = promptRule.tech_stack
+        .map((tech) => `${tech.name}${tech.version ? ` ${tech.version}` : ""}`)
+        .join(", ")
+      prompt +=
+        "\n\nPlease use the following technologies in your implementation: " +
+        techStack
+    }
+
+    if (promptRule.theme) {
+      if (promptRule.theme.tailwindConfig) {
+        prompt +=
+          "\n\nFor context, here is the current Tailwind configuration being used: " +
+          promptRule.theme.tailwindConfig
+      }
+      if (promptRule.theme.globalCss) {
+        prompt +=
+          "\n\nFor context, here are the global CSS styles being used: " +
+          promptRule.theme.globalCss
+      }
+      if (promptRule.theme.colors) {
+        const colors = Object.entries(promptRule.theme.colors)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("\n")
+        prompt += "\n\nPlease use these custom color values: \n" + colors
+      }
+      if (promptRule.theme.spacing) {
+        const spacing = Object.entries(promptRule.theme.spacing)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("\n")
+        prompt += "\n\nPlease use these custom spacing values: \n" + spacing
+      }
+    }
+
+    if (promptRule.additional_context) {
+      prompt +=
+        "\n\nAdditional important context to consider: " +
+        promptRule.additional_context
+    }
+
+    // Add user's additional context if provided
+    if (userAdditionalContext) {
+      prompt += "\n\nUser Additional Context:\n" + userAdditionalContext
+    }
+
+    if (promptType === PROMPT_TYPES.REPLIT) {
+      prompt +=
+        "\n" +
+        endent`
         Remember: For the code above, not change the component's code unless it's required to integrate or the user asks you to.
         IMPORTANT: The code above contains the initial prototype desired by the user. Create all mentioned files in full, without abbreviations. Do not use placeholders like "insert the rest of the code here" – output every line of code exactly as it is, so it can be copied and pasted directly into the project.
       `
-  } else {
-    prompt +=
-      "\n" +
-      endent`
+    } else {
+      prompt +=
+        "\n" +
+        endent`
         Remember: Do not change the component's code unless it's required to integrate or the user asks you to.
         IMPORTANT: Create all mentioned files in full, without abbreviations. Do not use placeholders like "insert the rest of the code here" – output every line of code exactly as it is, so it can be copied and pasted directly into the project.
       `
+    }
   }
 
   return prompt
@@ -466,6 +549,7 @@ export const formatV0Prompt = (
   componentName: string,
   code: string,
   promptRule?: PromptRule,
+  userAdditionalContext?: string,
 ) => {
   let prompt = `Create a React component called ${componentName} based on the following code:\n\n${code}`
 
@@ -510,9 +594,11 @@ export const formatV0Prompt = (
     }
 
     // Add additional context from prompt rule
-    if (promptRule.additional_context) {
-      prompt += `\n\nAdditional Context: ${promptRule.additional_context}`
-    }
+  }
+
+  // Add user's additional context if provided
+  if (userAdditionalContext) {
+    prompt += "\n\nUser Additional Context:\n" + userAdditionalContext
   }
 
   return prompt

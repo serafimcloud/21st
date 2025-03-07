@@ -1802,6 +1802,14 @@ export type Database = {
           ref: string
         }[]
       }
+      get_prompt: {
+        Args: {
+          p_prompt_type: string
+          p_rule_id?: number
+          p_additional_context?: string
+        }
+        Returns: string
+      }
       get_section_previews: {
         Args: {
           p_demo_ids: number[]

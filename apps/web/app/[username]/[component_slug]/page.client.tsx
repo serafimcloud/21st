@@ -61,6 +61,7 @@ import { EditComponentDialog } from "../../../components/ui/edit-component-dialo
 import { usePublishAs } from "../../../components/features/publish/hooks/use-publish-as"
 import { Icons } from "@/components/icons"
 import Image from "next/image"
+import { CopyPromptDialog } from "@/components/ui/copy-prompt-dialog"
 
 import {
   CodeXml,
@@ -94,7 +95,7 @@ import { isEditingCodeAtom } from "@/components/ui/edit-component-dialog"
 export const isShowCodeAtom = atom(true)
 const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
   "selectedPromptType",
-  PROMPT_TYPES.BASIC,
+  PROMPT_TYPES.EXTENDED,
 )
 export const isFullScreenAtom = atom(false)
 const addNoCacheParam = (url: string | null | undefined) => {
@@ -397,6 +398,8 @@ export default function ComponentPage({
 
   const { mutate: updateComponent } = useUpdateComponentWithTags(supabase)
 
+  const [isCopyPromptDialogOpen, setIsCopyPromptDialogOpen] = useState(false)
+
   const handleUpdate = async (
     updatedData: Partial<Component>,
     demoUpdates: Partial<Demo> & { demo_tags?: Tag[] },
@@ -561,11 +564,7 @@ export default function ComponentPage({
   }
 
   const handlePromptAction = async () => {
-    const selectedOption = promptOptions.find(
-      (opt) => opt.id === selectedPromptType || opt.id === "v0-open",
-    )
-
-    if (selectedOption?.id === "v0-open") {
+    if (selectedPromptType === "v0-open") {
       const formattedPrompt = formatV0Prompt(component.name, code)
       const encodedPrompt = encodeURIComponent(formattedPrompt)
       window.open(`https://v0.dev/?q=${encodedPrompt}`, "_blank")
@@ -573,7 +572,7 @@ export default function ComponentPage({
       trackEvent(AMPLITUDE_EVENTS.COPY_AI_PROMPT, {
         componentId: component.id,
         componentName: component.name,
-        promptType: selectedOption.id,
+        promptType: selectedPromptType,
         action: "open",
         destination: "v0.dev",
       })
@@ -585,22 +584,53 @@ export default function ComponentPage({
       return
     }
 
+    // Open dialog for non-v0 prompt types
+    setIsCopyPromptDialogOpen(true)
+  }
+
+  const handleCopyPrompt = async (ruleId?: number, context?: string) => {
     try {
-      const prompt = getComponentInstallPrompt({
-        promptType: selectedPromptType as PromptType,
-        codeFileName: component.code.split("/").slice(-1)[0]!,
-        demoCodeFileName: demo.demo_code.split("/").slice(-1)[0]!,
-        code,
-        demoCode,
-        registryDependencies,
-        npmDependencies: dependencies,
-        npmDependenciesOfRegistryDependencies,
-        tailwindConfig,
-        globalCss,
+      // Get the selected rule from the dialog
+      const response = await fetch("/api/prompts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt_type: selectedPromptType,
+          demo_id: demo.id,
+          rule_id: ruleId,
+          additional_context: context,
+        }),
       })
 
-      await copyToClipboard(prompt)
-      toast.success("AI prompt copied to clipboard")
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error("Error response:", errorData)
+        throw new Error(errorData.error || "Failed to generate prompt")
+      }
+
+      const data = await response.json()
+      console.log("Response data:", data)
+
+      if (!data.prompt) {
+        throw new Error("No prompt received in response")
+      }
+
+      await navigator.clipboard.writeText(data.prompt)
+
+      if (data.debug) {
+        const debugMessage = []
+        if (data.debug.ruleApplied) debugMessage.push("rule applied")
+        if (data.debug.contextApplied) debugMessage.push("context added")
+
+        toast.success(
+          `Prompt copied to clipboard`,
+        )
+      } else {
+        toast.success("AI prompt copied to clipboard")
+      }
+
       capture(
         component.id,
         AnalyticsActivityType.COMPONENT_PROMPT_COPY,
@@ -613,17 +643,19 @@ export default function ComponentPage({
         promptType: selectedPromptType as PromptType,
         action: "copy",
         destination:
-          selectedOption?.id === PROMPT_TYPES.V0
+          selectedPromptType === PROMPT_TYPES.V0
             ? "v0"
-            : selectedOption?.id === PROMPT_TYPES.LOVABLE
+            : selectedPromptType === PROMPT_TYPES.LOVABLE
               ? "lovable"
-              : selectedOption?.id === PROMPT_TYPES.BOLT
+              : selectedPromptType === PROMPT_TYPES.BOLT
                 ? "bolt"
                 : "other",
       })
-    } catch (err) {
-      console.error("Failed to copy AI prompt:", err)
-      toast.error("Failed to generate AI prompt")
+    } catch (error) {
+      console.error("Error in handleCopy:", error)
+      toast.error(
+        error instanceof Error ? error.message : "Error generating prompt",
+      )
     }
   }
 
@@ -1078,43 +1110,53 @@ export default function ComponentPage({
                     }
                     key={selectedPromptType}
                   >
-                    <DropdownMenuLabel>Copy prompt</DropdownMenuLabel>
-                    {promptOptions.map((option) => {
-                      if (option.type === "separator") {
-                        return (
-                          <>
-                            <DropdownMenuSeparator key={option.id} />
-                            <DropdownMenuLabel>
-                              {option.id === "separator1"
-                                ? "Copy optimized prompt"
-                                : "Open in AI editor"}
-                            </DropdownMenuLabel>
-                          </>
-                        )
-                      }
+                    {(() => {
+                      const options = []
 
-                      return (
-                        <DropdownMenuRadioItem
-                          key={option.id}
-                          value={option.id}
-                          className="items-start [&>span]:pt-1"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex items-center justify-center w-[22px] h-[22px]">
-                              {option.icon}
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-sm font-medium">
-                                {option.label}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {option.description}
-                              </span>
-                            </div>
-                          </div>
-                        </DropdownMenuRadioItem>
+                      // Add Copy prompt option
+                      const copyOption = promptOptions.find(
+                        (opt) =>
+                          opt.type === "option" &&
+                          opt.id === PROMPT_TYPES.EXTENDED,
                       )
-                    })}
+                      if (copyOption) options.push(copyOption)
+
+                      // Always add v0-open option
+                      const v0Option = promptOptions.find(
+                        (opt) => opt.id === "v0-open",
+                      )
+                      if (v0Option) options.push(v0Option)
+
+                      return options.map((option) => {
+                        if (option.type === "separator") return null
+                        return (
+                          <DropdownMenuRadioItem
+                            key={option.id}
+                            value={option.id}
+                            className="items-start [&>span]:pt-1"
+                            onSelect={() => {
+                              if (option.id === PROMPT_TYPES.EXTENDED) {
+                                setIsCopyPromptDialogOpen(true)
+                              }
+                            }}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="flex items-center justify-center w-[22px] h-[22px]">
+                                {option.icon}
+                              </div>
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-sm font-medium">
+                                  Copy prompt
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Optimized for most AI code editors
+                                </span>
+                              </div>
+                            </div>
+                          </DropdownMenuRadioItem>
+                        )
+                      })
+                    })()}
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1149,6 +1191,14 @@ export default function ComponentPage({
         isOpen={isEditDialogOpen}
         setIsOpen={setIsEditDialogOpen}
         onUpdate={handleUpdate}
+      />
+      <CopyPromptDialog
+        isOpen={isCopyPromptDialogOpen}
+        onClose={() => setIsCopyPromptDialogOpen(false)}
+        selectedPromptType={selectedPromptType}
+        onPromptTypeChange={setSelectedPromptType}
+        onCopyPrompt={handleCopyPrompt}
+        demoId={demo.id.toString()}
       />
     </div>
   )
