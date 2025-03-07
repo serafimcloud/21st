@@ -1119,7 +1119,10 @@ export default function ComponentPage({
                           opt.type === "option" &&
                           opt.id === PROMPT_TYPES.EXTENDED,
                       )
-                      if (copyOption) options.push(copyOption)
+                      if (copyOption) options.push({
+                        ...copyOption,
+                        label: "Copy prompt" // Override label for EXTENDED type
+                      })
 
                       // Always add v0-open option
                       const v0Option = promptOptions.find(
@@ -1146,10 +1149,10 @@ export default function ComponentPage({
                               </div>
                               <div className="flex flex-col gap-0.5">
                                 <span className="text-sm font-medium">
-                                  Copy prompt
+                                  {option.label}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  Optimized for most AI code editors
+                                  {option.description}
                                 </span>
                               </div>
                             </div>
