@@ -27,6 +27,7 @@ import React from "react"
 import { FeedbackDialog } from "@/components/features/magic/feedback-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import Image from "next/image"
+import { PromptRuleDisplay } from "@/components/features/prompt-rules/prompt-rule-display"
 
 interface ConsoleClientProps {
   subscription: PlanInfo | null
@@ -458,6 +459,28 @@ export function ConsoleClient({
             </div>
           </div>
 
+          {/* AI Rules section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between pb-3 border-b mb-4">
+              <h3 className="font-medium">AI Rules</h3>
+              <Link
+                href="/settings/rules"
+                className="text-muted-foreground hover:text-primary text-sm"
+              >
+                Manage rules
+              </Link>
+            </div>
+            <div className="bg-background rounded-lg border border-border overflow-hidden">
+              <div className="p-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Select a context rule to enhance AI code generation with your
+                  project's tech stack, theme, and additional context.
+                </p>
+                <PromptRuleDisplay />
+              </div>
+            </div>
+          </div>
+
           {/* Current plan block */}
           <div className="space-y-2">
             <div className="flex items-center justify-between pb-3 border-b mb-4">
@@ -767,15 +790,22 @@ export function ConsoleClient({
                                 </div>
                               )}
                               <div className="space-y-3 mt-4">
-                                <h4 className="text-sm font-medium">Next steps:</h4>
+                                <h4 className="text-sm font-medium">
+                                  Next steps:
+                                </h4>
                                 <div className="flex items-start gap-2.5 text-sm">
                                   <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                                  <span>Save the configuration file to your project root</span>
+                                  <span>
+                                    Save the configuration file to your project
+                                    root
+                                  </span>
                                 </div>
                                 <div className="flex items-start gap-2.5 text-sm">
                                   <RefreshCw className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                                   <span>
-                                    Cursor will automatically detect the configuration file and initialize the MCP server
+                                    Cursor will automatically detect the
+                                    configuration file and initialize the MCP
+                                    server
                                   </span>
                                 </div>
                                 <div className="flex items-start gap-2.5 text-sm">
@@ -790,10 +820,16 @@ export function ConsoleClient({
                                       <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 inline-flex text-[13px] leading-none font-sans">
                                         ,
                                       </kbd>
-                                      <span className="text-muted-foreground">→</span>
+                                      <span className="text-muted-foreground">
+                                        →
+                                      </span>
                                       <span className="font-medium">MCP</span>
-                                      <span className="text-muted-foreground">→</span>
-                                      <span className="text-green-500 font-medium">Enable</span>
+                                      <span className="text-muted-foreground">
+                                        →
+                                      </span>
+                                      <span className="text-green-500 font-medium">
+                                        Enable
+                                      </span>
                                     </div>
                                   </div>
                                 </div>

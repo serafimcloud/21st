@@ -46,7 +46,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { prompt_type, demo_id } = body
+    const { prompt_type, demo_id, rule_id, additional_context } = body
+
+    console.log("Received request:", {
+      prompt_type,
+      demo_id,
+      rule_id,
+      additional_context,
+    })
 
     if (!prompt_type || !demo_id) {
       return NextResponse.json(
@@ -108,10 +115,28 @@ export async function POST(request: NextRequest) {
       fetchCode(demo.demo_code),
     ])
 
-    console.log("Generating prompt for type:", prompt_type)
+    // If rule_id is provided, fetch the rule template
+    let ruleData = null
+    if (rule_id) {
+      console.log("Fetching rule template for rule_id:", rule_id)
+      const { data: rule, error: ruleError } = await supabase
+        .from("prompt_rules")
+        .select("tech_stack, theme, additional_context")
+        .eq("id", rule_id)
+        .single()
 
-    // Generate prompt using the existing function
-    const prompt = getComponentInstallPrompt({
+      if (ruleError) {
+        console.error("Error fetching rule:", ruleError)
+      }
+
+      if (rule) {
+        console.log("Found rule data:", JSON.stringify(rule, null, 2))
+        ruleData = rule
+      }
+    }
+
+    // Generate base prompt
+    const promptParams = {
       promptType: prompt_type as PromptType,
       codeFileName: demo.component.file_name || "component.tsx",
       demoCodeFileName: demo.file_name || "demo.tsx",
@@ -123,9 +148,63 @@ export async function POST(request: NextRequest) {
         demo.component.npm_dependencies_of_registry_dependencies || {},
       tailwindConfig: demo.component.tailwind_config,
       globalCss: demo.component.global_css,
+      userAdditionalContext: additional_context,
+      ...(ruleData && {
+        promptRule: {
+          id: rule_id,
+          user_id: "",
+          name: "",
+          tech_stack: ruleData.tech_stack,
+          theme: ruleData.theme,
+          additional_context: ruleData.additional_context,
+          created_at: "",
+          updated_at: "",
+        },
+      }),
+    }
+
+    console.log(
+      "Rule data being passed to promptRule:",
+      ruleData
+        ? JSON.stringify(
+            {
+              tech_stack: ruleData.tech_stack,
+              theme: ruleData.theme,
+              additional_context: ruleData.additional_context,
+            },
+            null,
+            2,
+          )
+        : "No rule data",
+    )
+
+    console.log(
+      "Generating prompt with params:",
+      JSON.stringify(promptParams, null, 2),
+    )
+    let prompt = getComponentInstallPrompt(promptParams)
+    console.log("Generated prompt content:", prompt.substring(0, 500) + "...")
+
+    console.log("Base prompt generated")
+
+    console.log(
+      "Additional Context:",
+      additional_context || "No additional context provided",
+    )
+
+    console.log("Final prompt structure:", {
+      hasBasePrompt: !!prompt,
+      hasRuleData: !!ruleData,
+      hasAdditionalContext: !!additional_context,
     })
 
-    return NextResponse.json({ prompt })
+    return NextResponse.json({
+      prompt,
+      debug: {
+        ruleApplied: !!ruleData,
+        contextApplied: !!(additional_context || ruleData?.additional_context),
+      },
+    })
   } catch (error) {
     console.error("Full error details:", error)
     return NextResponse.json(

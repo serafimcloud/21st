@@ -6,10 +6,19 @@ import {
   useQuery,
 } from "@tanstack/react-query"
 import { makeSlugFromName } from "@/components/features/publish/hooks/use-is-check-slug-available"
-import { SupabaseClient } from "@supabase/supabase-js"
-import { useClerkSupabaseClient } from "./clerk"
+import { SupabaseClient, createClient } from "@supabase/supabase-js"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { useUser } from "@clerk/nextjs"
 import { Database } from "@/types/supabase"
 import { transformDemoResult } from "@/lib/utils/transformData"
+import {
+  PromptRule,
+  CreatePromptRuleInput,
+  UpdatePromptRuleInput,
+  TechStack,
+  Theme,
+} from "@/types/prompt-rules"
+import { Json } from "@/types/supabase"
 
 export const componentReadableDbFields = `
   *,
@@ -76,7 +85,6 @@ export async function getUserData(
     return { data: null, error }
   }
 }
-
 
 export async function addTagsToDemo(
   supabase: SupabaseClient<Database>,
@@ -636,5 +644,168 @@ export function useHasUserBookmarkedDemo(
       return !!data
     },
     enabled: !!demoId && !!userId,
+  })
+}
+
+// Prompt Rules functions
+export async function getPromptRules(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+): Promise<PromptRule[]> {
+  const { data, error } = await supabase
+    .from("prompt_rules")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching prompt rules:", error)
+    throw new Error(`Failed to fetch prompt rules: ${error.message}`)
+  }
+
+  // Transform the data to match the PromptRule type
+  return data.map((item) => ({
+    ...item,
+    tech_stack: (item.tech_stack as unknown as TechStack[]) || [],
+    theme: (item.theme as unknown as Theme) || {},
+    created_at: item.created_at || new Date().toISOString(), // Ensure created_at is never null
+    updated_at: item.updated_at || item.created_at || new Date().toISOString(), // Ensure updated_at is never null
+  }))
+}
+
+export async function getPromptRule(
+  supabase: SupabaseClient<Database>,
+  id: number,
+): Promise<PromptRule | null> {
+  const { data, error } = await supabase
+    .from("prompt_rules")
+    .select("*")
+    .eq("id", id)
+    .single()
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null
+    }
+    console.error("Error fetching prompt rule:", error)
+    throw new Error(`Failed to fetch prompt rule: ${error.message}`)
+  }
+
+  // Transform the data to match the PromptRule type
+  return {
+    ...data,
+    tech_stack: (data.tech_stack as unknown as TechStack[]) || [],
+    theme: (data.theme as unknown as Theme) || {},
+    created_at: data.created_at || new Date().toISOString(),
+    updated_at: data.updated_at || data.created_at || new Date().toISOString(),
+  }
+}
+
+export async function createPromptRule(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  input: CreatePromptRuleInput,
+): Promise<PromptRule> {
+  const now = new Date().toISOString()
+  const { data, error } = await supabase
+    .from("prompt_rules")
+    .insert({
+      user_id: userId,
+      name: input.name,
+      tech_stack: input.tech_stack as unknown as Json,
+      theme: input.theme as unknown as Json,
+      additional_context: input.additional_context || null,
+      created_at: now,
+      updated_at: now,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error creating prompt rule:", error)
+    throw new Error(`Failed to create prompt rule: ${error.message}`)
+  }
+
+  // Transform the data to match the PromptRule type
+  return {
+    ...data,
+    tech_stack: (data.tech_stack as unknown as TechStack[]) || [],
+    theme: (data.theme as unknown as Theme) || {},
+    created_at: data.created_at || now,
+    updated_at: data.updated_at || now,
+  }
+}
+
+export async function updatePromptRule(
+  supabase: SupabaseClient<Database>,
+  id: number,
+  input: UpdatePromptRuleInput,
+): Promise<PromptRule> {
+  const now = new Date().toISOString()
+  const { data, error } = await supabase
+    .from("prompt_rules")
+    .update({
+      name: input.name,
+      tech_stack: input.tech_stack as unknown as Json,
+      theme: input.theme as unknown as Json,
+      additional_context: input.additional_context,
+      updated_at: now,
+    })
+    .eq("id", id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error updating prompt rule:", error)
+    throw new Error(`Failed to update prompt rule: ${error.message}`)
+  }
+
+  // Transform the data to match the PromptRule type
+  return {
+    ...data,
+    tech_stack: (data.tech_stack as unknown as TechStack[]) || [],
+    theme: (data.theme as unknown as Theme) || {},
+    created_at: data.created_at || now,
+    updated_at: data.updated_at || now,
+  }
+}
+
+export async function deletePromptRule(
+  supabase: SupabaseClient<Database>,
+  id: number,
+): Promise<void> {
+  const { error } = await supabase.from("prompt_rules").delete().eq("id", id)
+
+  if (error) {
+    console.error("Error deleting prompt rule:", error)
+    throw new Error(`Failed to delete prompt rule: ${error.message}`)
+  }
+}
+
+// Hook for prompt rules
+export function usePromptRules() {
+  const supabase = useClerkSupabaseClient()
+  const { user } = useUser()
+
+  return useQuery<PromptRule[]>({
+    queryKey: ["prompt-rules"],
+    queryFn: async () => {
+      if (!user?.id) return []
+      return getPromptRules(supabase, user.id)
+    },
+    enabled: !!user?.id,
+  })
+}
+
+export function usePromptRule(id: number | undefined) {
+  const supabase = useClerkSupabaseClient()
+
+  return useQuery<PromptRule | null>({
+    queryKey: ["prompt-rule", id],
+    queryFn: async () => {
+      if (!id) return null
+      return getPromptRule(supabase, id)
+    },
+    enabled: !!id,
   })
 }
