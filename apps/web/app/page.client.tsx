@@ -210,8 +210,8 @@ export function HomePageClient() {
 
   return (
     <>
-      <AnimatePresence mode="popLayout">
-        <AnimatePresence>
+      <AnimatePresence mode="popLayout" key="main-content">
+        <AnimatePresence key="magic-banner">
           {shouldShowBanner && (
             <motion.div
               initial={{ opacity: 0, height: 0, marginBottom: 0 }}
