@@ -967,6 +967,39 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_rules: {
+        Row: {
+          additional_context: string | null
+          created_at: string | null
+          id: number
+          name: string
+          tech_stack: Json | null
+          theme: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          additional_context?: string | null
+          created_at?: string | null
+          id?: number
+          name: string
+          tech_stack?: Json | null
+          theme?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          additional_context?: string | null
+          created_at?: string | null
+          id?: number
+          name?: string
+          tech_stack?: Json | null
+          theme?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       referral_payments: {
         Row: {
           amount: number
@@ -1585,6 +1618,38 @@ export type Database = {
       }
     }
     Functions: {
+      analyze_author_payouts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          author_id: string
+          username: string
+          display_name: string
+          published_components: number
+          total_usage: number
+          free_plan_usage: number
+          paid_plan_usage: number
+          potential_amount: number
+          actual_amount: number
+          has_payouts: boolean
+          last_payout_date: string
+          last_payout_status: string
+        }[]
+      }
+      analyze_component_usage: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          author_id: string
+          username: string
+          display_name: string
+          component_id: number
+          component_name: string
+          total_usage: number
+          free_plan_usage: number
+          paid_plan_usage: number
+          total_amount: number
+          has_payouts: boolean
+        }[]
+      }
       check_api_key: {
         Args: {
           api_key: string
@@ -1655,6 +1720,28 @@ export type Database = {
           top_components: Json
           total_count: number
         }[]
+      }
+      get_all_author_payouts: {
+        Args: {
+          p_period?: string
+          p_min_amount?: number
+          p_max_amount?: number
+          p_status?: string
+          p_sort_by?: string
+          p_sort_order?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: Json[]
+      }
+      get_all_author_payouts_count: {
+        Args: {
+          p_period?: string
+          p_min_amount?: number
+          p_max_amount?: number
+          p_status?: string
+        }
+        Returns: number
       }
       get_author_payout_stats: {
         Args: {

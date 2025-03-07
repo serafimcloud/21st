@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@radix-ui/react-radio-group": "^1.2.3",
+    "emblor": "^1.4.7",
     "jotai": "2.8.0",
     "next": "^15.2.1"
   },
