@@ -417,11 +417,11 @@ export function OnboardingClient({
   return (
     <div className="min-h-screen w-full bg-background antialiased relative flex items-center">
       <div className="absolute inset-0 pointer-events-none bg-grid-purple" />
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 z-20">
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground z-20"
+          className="text-muted-foreground"
           onClick={skipOnboarding}
         >
           Skip onboarding
