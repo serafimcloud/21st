@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       })
     }
 
-    // Call the external bundle service
+    // Call backend bundle serverless function
     const bundleResponse = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/bundle`,
       {

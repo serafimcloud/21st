@@ -38,10 +38,6 @@ import {
   SandpackFileExplorer,
   SandpackProviderProps,
 } from "@codesandbox/sandpack-react"
-import {
-  SandpackProvider as SandpackProviderUnstyled,
-  SandpackPreview,
-} from "@codesandbox/sandpack-react/unstyled"
 
 import { useDebugMode } from "@/hooks/use-debug-mode"
 import { useCompileCss } from "@/hooks/use-compile-css"
