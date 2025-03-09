@@ -290,6 +290,7 @@ interface BundleOptions {
   dependencies?: Record<string, string> // package name -> version
   tailwindConfig?: string
   globalCss?: string
+  bundledCss?: string
 }
 
 const createTempProject = async (options: BundleOptions) => {
@@ -460,11 +461,13 @@ const createTempProject = async (options: BundleOptions) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>React App</title>
+    ${options.bundledCss ? `<style>${options.bundledCss}</style>` : ""}
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
+  
 </html>`
 
     await fs.writeFile(path.join(tempDir, "index.html"), indexHtml)
@@ -521,14 +524,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        plugins: [],
-        babelrc: false,
-        configFile: false,
-      },
-      include: [/\\.jsx$/, /\\.tsx$/],
-    }),
+    react(),
     viteSingleFile()
   ],
   resolve: {
@@ -541,17 +537,8 @@ export default defineConfig({
   build: {
     outDir: '${path.relative(tempDir, outDir)}',
     sourcemap: false,
-    minify: false,
-    cssCodeSplit: false,
-    rollupOptions: {
-      output: {
-        inlineDynamicImports: true
-      }
-    }
+    minify: true,
   },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'next']
-  }
 });
       `,
     )
@@ -601,6 +588,14 @@ const bundleReact = async ({
     console.log("Files to bundle:", Object.keys(files))
     console.log("\nDependencies:", dependencies)
 
+    const bundledCss = await compileCSS({
+      jsx: files["main.tsx"],
+      baseTailwindConfig,
+      baseGlobalCss,
+      customTailwindConfig,
+      customGlobalCss,
+    })
+
     tempDir = await createTempProject({
       files: {
         ...files,
@@ -608,7 +603,7 @@ const bundleReact = async ({
           import { createRoot } from "react-dom/client";
           import { StrictMode } from "react";
           import App from "./App";
-          import { ThemeProvider } from "next-themes";
+          import { ThemeProvider } from "./next-themes";
           import "./globals.css";
 
           const rootElement = document.getElementById("root");
@@ -626,10 +621,12 @@ const bundleReact = async ({
       dependencies,
       tailwindConfig: baseTailwindConfig,
       globalCss: baseGlobalCss,
+      bundledCss,
     })
     const outDir = path.join(tempDir, "dist")
 
     console.log("\nBundling with Vite...")
+
     const bundleSuccess = await bundleWithVite(tempDir, outDir)
 
     if (!bundleSuccess) {
