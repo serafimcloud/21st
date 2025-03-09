@@ -13,7 +13,6 @@ import {
   PutObjectCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3"
-import { build as esbuild } from "esbuild"
 
 // Initialize R2 client
 const r2Client = new S3Client({
@@ -33,17 +32,11 @@ const isValidId = (id: string) => {
 const saveBundledFilesToR2 = async (
   id: string,
   {
-    js,
-    css,
     html,
-    bundler,
   }: {
-    js: string
-    css: string
-    html?: string
-    bundler: "bun" | "esbuild" | "vite"
+    html: string
   },
-): Promise<{ htmlUrl: string; jsUrl?: string; cssUrl?: string }> => {
+): Promise<{ htmlUrl: string }> => {
   if (!isValidId(id)) {
     throw new Error(
       "Invalid ID format. Only alphanumeric characters, hyphens, and underscores are allowed.",
@@ -53,59 +46,18 @@ const saveBundledFilesToR2 = async (
   const bucketName = "components-code"
   const baseKey = `bundled/${id}`
 
-  if (bundler === "vite" && html) {
-    // For Vite, store only the complete HTML
-    await r2Client.send(
-      new PutObjectCommand({
-        Bucket: bucketName,
-        Key: `${baseKey}.html`,
-        Body: Buffer.from(html),
-        ContentType: "text/html",
-      }),
-    )
+  // Store the complete HTML
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: `${baseKey}.html`,
+      Body: Buffer.from(html),
+      ContentType: "text/html",
+    }),
+  )
 
-    return {
-      htmlUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.html`,
-    }
-  } else {
-    // For other bundlers, generate HTML and store separate files
-    const generatedHtml = generateHTML({ id })
-
-    await Promise.all([
-      // Save HTML
-      r2Client.send(
-        new PutObjectCommand({
-          Bucket: bucketName,
-          Key: `${baseKey}.html`,
-          Body: Buffer.from(generatedHtml),
-          ContentType: "text/html",
-        }),
-      ),
-      // Save JS
-      r2Client.send(
-        new PutObjectCommand({
-          Bucket: bucketName,
-          Key: `${baseKey}.js`,
-          Body: Buffer.from(js),
-          ContentType: "application/javascript",
-        }),
-      ),
-      // Save CSS
-      r2Client.send(
-        new PutObjectCommand({
-          Bucket: bucketName,
-          Key: `${baseKey}.css`,
-          Body: Buffer.from(css),
-          ContentType: "text/css",
-        }),
-      ),
-    ])
-
-    return {
-      htmlUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.html`,
-      jsUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.js`,
-      cssUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.css`,
-    }
+  return {
+    htmlUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.html`,
   }
 }
 
@@ -136,22 +88,6 @@ const getBundledPageFromR2 = async (id: string): Promise<string | null> => {
     return null
   }
 }
-
-const generateHTML = ({ id }: { id: string }) => endent`
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>React + Tailwind App</title>
-      <link rel="stylesheet" href="${process.env.NEXT_PUBLIC_CDN_URL}/bundled/${id}.css">
-    </head>
-    <body>
-      <div id="root"></div>
-      <script type="text/javascript" src="${process.env.NEXT_PUBLIC_CDN_URL}/bundled/${id}.js"></script>
-    </body>
-  </html>
-`
 
 export const compileCSS = async ({
   jsx,
@@ -567,217 +503,6 @@ const createTempProject = async (options: BundleOptions) => {
   }
 }
 
-/**
- * ESBuild plugin that resolves duplicate exports in modules
- * Can be used directly with esbuild's plugin system
- */
-const createExportDeduplicationPlugin = () => ({
-  name: "export-deduplication",
-  setup(build) {
-    build.onLoad({ filter: /\.(js|jsx|ts|tsx)$/ }, async (args) => {
-      try {
-        const fs = await import("fs/promises")
-        const content = await fs.readFile(args.path, "utf8")
-
-        // Process exports using the same logic as resolveExportDuplicates
-        // Track exported identifiers and their export style
-        const exportMap = new Map<
-          string,
-          { named: boolean; objectExport: boolean; location: number[] }
-        >()
-
-        // Find named exports (functions, classes, consts, etc.)
-        const namedExportRegexes = [
-          /export\s+function\s+(\w+)/g,
-          /export\s+class\s+(\w+)/g,
-          /export\s+const\s+(\w+)\s*=/g,
-          /export\s+let\s+(\w+)\s*=/g,
-          /export\s+var\s+(\w+)\s*=/g,
-          /export\s+enum\s+(\w+)/g,
-          /export\s+interface\s+(\w+)/g,
-          /export\s+type\s+(\w+)/g,
-        ]
-
-        // Find all named exports and track their positions
-        for (const regex of namedExportRegexes) {
-          const matches = Array.from(content.matchAll(regex))
-          for (const match of matches) {
-            const name = match[1]
-            const start = match.index || 0
-
-            exportMap.set(name, {
-              named: true,
-              objectExport: false,
-              location: [start, start + match[0].length],
-            })
-          }
-        }
-
-        // Find object export statements and their positions
-        const objectExportRegex = /export\s+\{([^}]+)\}/g
-        const objectExports = Array.from(content.matchAll(objectExportRegex))
-
-        // Detect if processing is needed
-        let needsProcessing = false
-        for (const match of objectExports) {
-          const exportList = match[1]
-          const exportItems = exportList.split(",").map((item) =>
-            item
-              .trim()
-              .split(/\s+as\s+/)[0]
-              .trim(),
-          )
-
-          for (const name of exportItems) {
-            if (exportMap.get(name)?.named) {
-              needsProcessing = true
-              break
-            }
-          }
-
-          if (needsProcessing) break
-        }
-
-        // Skip processing if no duplicates found
-        if (!needsProcessing) {
-          return null // Null means use default loader
-        }
-
-        // Track duplicates and modify object exports
-        let processedContent = content
-        let offset = 0 // Track string length changes during replacements
-
-        for (const match of objectExports) {
-          const exportList = match[1]
-          const start = match.index || 0
-          const end = start + match[0].length
-
-          // Parse export names, handling aliasing (e.g., "Component as RenamedComponent")
-          const exportItems = exportList.split(",").map((item) => {
-            const parts = item.trim().split(/\s+as\s+/)
-            return {
-              name: parts[0].trim(),
-              alias: parts[1]?.trim(),
-              full: item.trim(),
-            }
-          })
-
-          // Check for duplicates with named exports
-          const duplicateItems = exportItems.filter(
-            (item) => exportMap.get(item.name)?.named,
-          )
-
-          // If there are duplicates, modify the export statement
-          if (duplicateItems.length > 0) {
-            const uniqueItems = exportItems.filter(
-              (item) => !duplicateItems.some((d) => d.name === item.name),
-            )
-
-            // Build new export statement
-            let newExport = ""
-            if (uniqueItems.length > 0) {
-              newExport = `export { ${uniqueItems.map((i) => i.full).join(", ")} }`
-            }
-
-            // Apply the change with offset adjustment
-            const startWithOffset = start + offset
-            const endWithOffset = end + offset
-
-            processedContent =
-              processedContent.substring(0, startWithOffset) +
-              newExport +
-              processedContent.substring(endWithOffset)
-
-            // Update offset for future replacements
-            offset += newExport.length - (endWithOffset - startWithOffset)
-
-            console.log(
-              `ESBuild plugin: Fixed duplicate exports in ${args.path}`,
-            )
-          }
-        }
-
-        return {
-          contents: processedContent,
-          loader: args.path.endsWith("x") ? "jsx" : "js",
-        }
-      } catch (error) {
-        console.error(`Error in export-deduplication plugin: ${error}`)
-        return null // On error, fallback to default loader
-      }
-    })
-  },
-})
-
-const bundleWithEsbuild = async (
-  tempDir: string,
-  outDir: string,
-): Promise<boolean> => {
-  try {
-    console.log("esbuild: Starting bundling process...")
-
-    // List files in tempDir
-    try {
-      const files = await fs.readdir(tempDir)
-      console.log("esbuild: Files to bundle:", files)
-    } catch (err) {
-      console.log("esbuild: Error listing directory:", err)
-    }
-
-    await esbuild({
-      entryPoints: [path.join(tempDir, "index.js")],
-      bundle: true,
-      outdir: outDir,
-      format: "esm",
-      target: "es2020",
-      sourcemap: true,
-      platform: "browser",
-      loader: {
-        ".js": "jsx",
-        ".ts": "tsx",
-        ".tsx": "tsx",
-      },
-      jsx: "automatic",
-      minify: false,
-      define: {
-        "process.env.NODE_ENV": '"production"',
-      },
-      logLevel: "info", // Increase log level for more details
-      plugins: [createExportDeduplicationPlugin()],
-    })
-    console.log("esbuild: Bundle completed successfully")
-    return true
-  } catch (error) {
-    console.warn("esbuild: Detailed bundling error:", error)
-    return false
-  }
-}
-
-const bundleWithBun = async (
-  tempDir: string,
-  outDir: string,
-): Promise<boolean> => {
-  try {
-    const result = await Bun.build({
-      entrypoints: [path.join(tempDir, "index.js")],
-      target: "browser",
-      minify: false,
-      sourcemap: "linked",
-      root: tempDir,
-      outdir: outDir,
-    })
-
-    if (!result.success) {
-      console.warn(result.logs)
-      return false
-    }
-    return true
-  } catch (error) {
-    console.warn("Bun bundling error:", error)
-    return false
-  }
-}
-
 const bundleWithVite = async (
   tempDir: string,
   outDir: string,
@@ -856,7 +581,6 @@ const bundleReact = async ({
   customTailwindConfig,
   customGlobalCss,
   dependencies,
-  bundler = "bun",
 }: {
   files: Record<string, string>
   baseTailwindConfig: string
@@ -864,24 +588,18 @@ const bundleReact = async ({
   customTailwindConfig?: string
   customGlobalCss?: string
   dependencies?: Record<string, string>
-  bundler?: "bun" | "esbuild" | "vite"
 }): Promise<{
   js: string
   css: string
   html?: string
-  bundler: "bun" | "esbuild" | "vite"
+  bundler: "vite"
 }> => {
   let tempDir: string | null = null
 
   try {
-    // Log the incoming files for debugging
     console.log("=== BUNDLING REQUEST ===")
     console.log("Files to bundle:", Object.keys(files))
-
-    // Preprocess files to fix duplicate exports
-
     console.log("\nDependencies:", dependencies)
-    console.log("Bundler:", bundler)
 
     tempDir = await createTempProject({
       files: {
@@ -911,26 +629,15 @@ const bundleReact = async ({
     })
     const outDir = path.join(tempDir, "dist")
 
-    // Use the selected bundler
-    console.log(`\nAttempting to bundle with ${bundler}...`)
-    let bundleSuccess = false
-
-    if (bundler === "bun") {
-      bundleSuccess = await bundleWithBun(tempDir, outDir)
-    } else if (bundler === "vite") {
-      bundleSuccess = await bundleWithVite(tempDir, outDir)
-    } else {
-      bundleSuccess = await bundleWithEsbuild(tempDir, outDir)
-    }
+    console.log("\nBundling with Vite...")
+    const bundleSuccess = await bundleWithVite(tempDir, outDir)
 
     if (!bundleSuccess) {
       console.log("Bundle failed!")
-      // List files in temp directory for debugging
       try {
         const files = await fs.readdir(tempDir)
         console.log("Files in temp directory:", files)
 
-        // If demo.tsx exists, log its content
         if (files.includes("demo.tsx")) {
           const demoContent = await fs.readFile(
             path.join(tempDir, "demo.tsx"),
@@ -943,42 +650,24 @@ const bundleReact = async ({
         console.log("Error listing temp directory:", err)
       }
 
-      throw new Error(`Failed to bundle with ${bundler}`)
+      throw new Error("Failed to bundle with Vite")
     }
 
     console.log("Bundle succeeded!")
 
-    // Read the bundled files
-    if (bundler === "vite") {
-      // For Vite with singlefile plugin, read the index.html which contains everything
-      const bundledHtml = await fs.readFile(
-        path.join(outDir, "index.html"),
-        "utf-8",
-      )
+    // Read the bundled HTML file
+    const bundledHtml = await fs.readFile(
+      path.join(outDir, "index.html"),
+      "utf-8",
+    )
 
-      return {
-        js: "",
-        css: "",
-        html: bundledHtml,
-        bundler: "vite",
-      }
-    } else {
-      // For other bundlers, read separate files as before
-      const [bundledJs, bundledCss] = await Promise.all([
-        fs.readFile(path.join(outDir, "index.js"), "utf-8"),
-        compileCSS({
-          jsx: Object.values(files).join("\n"),
-          baseTailwindConfig: baseTailwindConfig,
-          customTailwindConfig: customTailwindConfig,
-          baseGlobalCss: baseGlobalCss,
-          customGlobalCss: customGlobalCss,
-        }),
-      ])
-
-      return { js: bundledJs, css: bundledCss, bundler }
+    return {
+      js: "",
+      css: "",
+      html: bundledHtml,
+      bundler: "vite",
     }
   } finally {
-    // Clean up temp directory
     if (tempDir) {
       await fs.rm(tempDir, { recursive: true, force: true })
     }
@@ -1085,12 +774,7 @@ const editorHTML = endent`
               <input type="text" id="id" placeholder="Enter a unique ID (alphanumeric, hyphens, underscores)">
             </div>
             <div class="form-group">
-              <label for="bundler">Bundler:</label>
-              <select id="bundler">
-                <option value="bun">Bun</option>
-                <option value="esbuild">esbuild</option>
-                <option value="vite">Vite</option>
-              </select>
+              <input type="hidden" id="bundler" value="vite">
             </div>
           </div>
           <div class="form-group">
@@ -1328,7 +1012,6 @@ const server = serve({
           baseGlobalCss,
           customTailwindConfig,
           customGlobalCss,
-          bundler,
         } = await req.json()
 
         if (!files || !Object.keys(files).length) {
@@ -1339,33 +1022,22 @@ const server = serve({
           throw new Error("No ID provided")
         }
 
-        // Bundle React code with optional dependencies and bundler choice
-        const {
-          js,
-          css,
-          html,
-          bundler: bundlerType,
-        } = await bundleReact({
+        // Bundle React code with optional dependencies
+        const { html } = await bundleReact({
           files,
           baseTailwindConfig,
           baseGlobalCss,
           customTailwindConfig,
           customGlobalCss,
           dependencies,
-          bundler: "vite", // bundler as "bun" | "esbuild" | "vite",
         })
 
         // Save the bundled files
-        const { htmlUrl, jsUrl, cssUrl } = await saveBundledFilesToR2(id, {
-          js,
-          css,
-          html,
-          bundler: bundlerType,
+        const { htmlUrl } = await saveBundledFilesToR2(id, {
+          html: html ?? "",
         })
 
         const response: any = { success: true, id, html: htmlUrl }
-        if (jsUrl) response.js = jsUrl
-        if (cssUrl) response.css = cssUrl
 
         return Response.json(response, { headers })
       } catch (error) {

@@ -20,7 +20,6 @@ export const useBundleDemo = (
   tailwindConfig?: string,
   globalCss?: string,
   existingBundleUrls?: BundleUrls | null,
-  bundler?: "bun" | "esbuild" | "vite",
 ) => {
   const client = useClerkSupabaseClient()
   const [bundleUrls, setBundleUrls] = useState<BundleUrls | null>(
@@ -41,7 +40,6 @@ export const useBundleDemo = (
         baseGlobalCss: defaultGlobalCss,
         customTailwindConfig: tailwindConfig,
         customGlobalCss: globalCss,
-        bundler: bundler || "esbuild",
       }),
     })
       .then((res) => res.json())
@@ -96,7 +94,6 @@ export const useBundleDemo = (
     component,
     shellCode,
     demoId,
-    bundler,
   ])
 
   return bundleUrls
