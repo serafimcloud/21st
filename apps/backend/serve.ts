@@ -32,8 +32,18 @@ const isValidId = (id: string) => {
 
 const saveBundledFilesToR2 = async (
   id: string,
-  { js, css }: { js: string; css: string },
-): Promise<{ htmlUrl: string; jsUrl: string; cssUrl: string }> => {
+  {
+    js,
+    css,
+    html,
+    bundler,
+  }: {
+    js: string
+    css: string
+    html?: string
+    bundler: "bun" | "esbuild" | "vite"
+  },
+): Promise<{ htmlUrl: string; jsUrl?: string; cssUrl?: string }> => {
   if (!isValidId(id)) {
     throw new Error(
       "Invalid ID format. Only alphanumeric characters, hyphens, and underscores are allowed.",
@@ -43,42 +53,59 @@ const saveBundledFilesToR2 = async (
   const bucketName = "components-code"
   const baseKey = `bundled/${id}`
 
-  const html = generateHTML({ id })
-
-  await Promise.all([
-    // Save HTML
-    r2Client.send(
+  if (bundler === "vite" && html) {
+    // For Vite, store only the complete HTML
+    await r2Client.send(
       new PutObjectCommand({
         Bucket: bucketName,
         Key: `${baseKey}.html`,
         Body: Buffer.from(html),
         ContentType: "text/html",
       }),
-    ),
-    // Save JS
-    r2Client.send(
-      new PutObjectCommand({
-        Bucket: bucketName,
-        Key: `${baseKey}.js`,
-        Body: Buffer.from(js),
-        ContentType: "application/javascript",
-      }),
-    ),
-    // Save CSS
-    r2Client.send(
-      new PutObjectCommand({
-        Bucket: bucketName,
-        Key: `${baseKey}.css`,
-        Body: Buffer.from(css),
-        ContentType: "text/css",
-      }),
-    ),
-  ])
+    )
 
-  return {
-    htmlUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.html`,
-    jsUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.js`,
-    cssUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.css`,
+    return {
+      htmlUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.html`,
+    }
+  } else {
+    // For other bundlers, generate HTML and store separate files
+    const generatedHtml = generateHTML({ id })
+
+    await Promise.all([
+      // Save HTML
+      r2Client.send(
+        new PutObjectCommand({
+          Bucket: bucketName,
+          Key: `${baseKey}.html`,
+          Body: Buffer.from(generatedHtml),
+          ContentType: "text/html",
+        }),
+      ),
+      // Save JS
+      r2Client.send(
+        new PutObjectCommand({
+          Bucket: bucketName,
+          Key: `${baseKey}.js`,
+          Body: Buffer.from(js),
+          ContentType: "application/javascript",
+        }),
+      ),
+      // Save CSS
+      r2Client.send(
+        new PutObjectCommand({
+          Bucket: bucketName,
+          Key: `${baseKey}.css`,
+          Body: Buffer.from(css),
+          ContentType: "text/css",
+        }),
+      ),
+    ])
+
+    return {
+      htmlUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.html`,
+      jsUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.js`,
+      cssUrl: `${process.env.NEXT_PUBLIC_CDN_URL}/${baseKey}.css`,
+    }
   }
 }
 
@@ -342,6 +369,7 @@ const createTempProject = async (options: BundleOptions) => {
       dependencies: {
         react: "^19.0.0",
         "react-dom": "^19.0.0",
+        "next-themes": "^0.4.4",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
         ...(options.dependencies || {}),
@@ -354,16 +382,156 @@ const createTempProject = async (options: BundleOptions) => {
       JSON.stringify(packageJson, null, 2),
     )
 
+    // Create next.js mock modules
+    const nextModules = {
+      "index.js": `
+        export { default as Image } from './image.jsx';
+        export { default as Link } from './link.jsx';
+        export { useRouter, RouterProvider, usePathname } from './router.jsx';
+        export { default as Head } from './head.jsx';
+        export { default as Script } from './script.jsx';
+        export { default as dynamic } from './dynamic.jsx';
+        export { Roboto } from './font.js';
+        export { default as Document } from './document.jsx';
+      `,
+      "image.jsx": `
+        import * as React from 'react';
+        const Image = ({ src, alt, width, height, ...props }) => (
+          <img src={src} alt={alt} width={width} height={height} {...props} />
+        );
+        export default Image;
+      `,
+      "link.jsx": `
+        import * as React from 'react';
+        const Link = ({ href, children, ...props }) => (
+          <a href={href} {...props}>{children}</a>
+        );
+        export default Link;
+      `,
+      "head.jsx": `
+        import * as React from 'react';
+        const Head = ({ children }) => {
+          return <div>{children}</div>;
+        };
+        export default Head;
+      `,
+      "script.jsx": `
+        import * as React from 'react';
+        const Script = ({ src, strategy, children, ...props }) => {
+          return <script src={src} {...props}>{children}</script>;
+        };
+        export default Script;
+      `,
+      "router.jsx": `
+        import * as React from 'react';
+        const RouterContext = React.createContext({
+          pathname: '/',
+          push: (url) => {},
+          replace: (url) => {},
+        });
+        export const useRouter = () => React.useContext(RouterContext);
+        export const usePathname = () => {
+          const router = useRouter();
+          return router.pathname;
+        };
+        export const RouterProvider = ({ children }) => {
+          const router = {
+            pathname: '/',
+            push: (url) => {
+              console.log(\`Navigating to \${url}\`);
+            },
+            replace: (url) => {
+              console.log(\`Replacing with \${url}\`);
+            },
+          };
+          return React.createElement(RouterContext.Provider, { value: router }, children);
+        };
+      `,
+      "dynamic.jsx": `
+        import * as React from 'react';
+        const dynamic = (importFunc, options = {}) => {
+          const { ssr = true, loading: LoadingComponent = () => React.createElement('div', null, 'Loading...') } = options;
+          const LazyComponent = React.lazy(importFunc);
+          return (props) => React.createElement(
+            React.Suspense,
+            { fallback: React.createElement(LoadingComponent) },
+            React.createElement(LazyComponent, props)
+          );
+        };
+        export default dynamic;
+      `,
+      "font.js": `
+        export const Roboto = {
+          className: 'font-roboto',
+        };
+      `,
+      "document.jsx": `
+        import * as React from 'react';
+        const Html = ({ children, ...props }) => React.createElement('html', props, children);
+        const Head = ({ children }) => React.createElement('head', null, children);
+        const Main = () => React.createElement('div', { id: '__next' });
+        const NextScript = () => React.createElement('script');
+        
+        export default function Document() {
+          return React.createElement(
+            Html,
+            null,
+            React.createElement(Head),
+            React.createElement(
+              'body',
+              null,
+              React.createElement(Main),
+              React.createElement(NextScript)
+            )
+          );
+        }
+      `,
+      "navigation.js": `
+        export { usePathname } from './router.jsx';
+      `,
+      "package.json": `{
+        "name": "next",
+        "version": "latest",
+        "type": "module",
+        "main": "index.js"
+      }`,
+    }
+
+    // Write Next.js mock modules
+    const nextModulesDir = path.join(tempDir, "node_modules", "next")
+    await fs.mkdir(nextModulesDir, { recursive: true })
+    await Promise.all(
+      Object.entries(nextModules).map(([filename, content]) =>
+        fs.writeFile(path.join(nextModulesDir, filename), content),
+      ),
+    )
+
     // Write all source files
     await Promise.all(
       Object.entries(options.files).map(([filePath, content]) => {
-        const fullPath = path.join(tempDir, filePath)
+        const fullPath = path.join(tempDir + "/src", filePath)
         const dirPath = path.dirname(fullPath)
         return fs
           .mkdir(dirPath, { recursive: true })
           .then(() => fs.writeFile(fullPath, content))
       }),
     )
+
+    // Create index.html for Vite
+    const indexHtml = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>`
+
+    await fs.writeFile(path.join(tempDir, "index.html"), indexHtml)
 
     // Write Tailwind config if provided
     if (options.tailwindConfig) {
@@ -406,10 +574,8 @@ const createTempProject = async (options: BundleOptions) => {
 const createExportDeduplicationPlugin = () => ({
   name: "export-deduplication",
   setup(build) {
-    // Process all JS/TS/JSX/TSX files
     build.onLoad({ filter: /\.(js|jsx|ts|tsx)$/ }, async (args) => {
       try {
-        // Read the file content
         const fs = await import("fs/promises")
         const content = await fs.readFile(args.path, "utf8")
 
@@ -612,6 +778,77 @@ const bundleWithBun = async (
   }
 }
 
+const bundleWithVite = async (
+  tempDir: string,
+  outDir: string,
+): Promise<boolean> => {
+  try {
+    console.log("vite: Starting bundling process...")
+
+    // Create vite.config.js in temp directory
+    await fs.writeFile(
+      path.join(tempDir, "vite.config.js"),
+      `
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import { viteSingleFile } from 'vite-plugin-singlefile';
+
+export default defineConfig({
+  plugins: [
+    react({
+      babel: {
+        plugins: [],
+        babelrc: false,
+        configFile: false,
+      },
+      include: [/\\.jsx$/, /\\.tsx$/],
+    }),
+    viteSingleFile()
+  ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      'next': path.resolve(__dirname, 'node_modules/next'),
+    },
+    extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json']
+  },
+  build: {
+    outDir: '${path.relative(tempDir, outDir)}',
+    sourcemap: false,
+    minify: false,
+    cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        inlineDynamicImports: true
+      }
+    }
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'next']
+  }
+});
+      `,
+    )
+
+    // Import Vite build API
+    const { build } = await import("vite")
+
+    // Build with Vite
+    await build({
+      root: tempDir,
+      configFile: path.join(tempDir, "vite.config.js"),
+      logLevel: "info",
+    })
+
+    console.log("vite: Bundle completed successfully")
+    return true
+  } catch (error) {
+    console.warn("vite: Bundling error:", error)
+    return false
+  }
+}
+
 const bundleReact = async ({
   files,
   baseTailwindConfig,
@@ -627,8 +864,13 @@ const bundleReact = async ({
   customTailwindConfig?: string
   customGlobalCss?: string
   dependencies?: Record<string, string>
-  bundler?: "bun" | "esbuild"
-}): Promise<{ js: string; css: string }> => {
+  bundler?: "bun" | "esbuild" | "vite"
+}): Promise<{
+  js: string
+  css: string
+  html?: string
+  bundler: "bun" | "esbuild" | "vite"
+}> => {
   let tempDir: string | null = null
 
   try {
@@ -644,7 +886,7 @@ const bundleReact = async ({
     tempDir = await createTempProject({
       files: {
         ...files,
-        "index.js": endent`
+        "main.tsx": endent`
           import { createRoot } from "react-dom/client";
           import { StrictMode } from "react";
           import App from "./App";
@@ -671,10 +913,15 @@ const bundleReact = async ({
 
     // Use the selected bundler
     console.log(`\nAttempting to bundle with ${bundler}...`)
-    const bundleSuccess =
-      bundler === "bun"
-        ? await bundleWithBun(tempDir, outDir)
-        : await bundleWithEsbuild(tempDir, outDir)
+    let bundleSuccess = false
+
+    if (bundler === "bun") {
+      bundleSuccess = await bundleWithBun(tempDir, outDir)
+    } else if (bundler === "vite") {
+      bundleSuccess = await bundleWithVite(tempDir, outDir)
+    } else {
+      bundleSuccess = await bundleWithEsbuild(tempDir, outDir)
+    }
 
     if (!bundleSuccess) {
       console.log("Bundle failed!")
@@ -702,18 +949,34 @@ const bundleReact = async ({
     console.log("Bundle succeeded!")
 
     // Read the bundled files
-    const [bundledJs, bundledCss] = await Promise.all([
-      fs.readFile(path.join(outDir, "index.js"), "utf-8"),
-      compileCSS({
-        jsx: Object.values(files).join("\n"),
-        baseTailwindConfig: baseTailwindConfig,
-        customTailwindConfig: customTailwindConfig,
-        baseGlobalCss: baseGlobalCss,
-        customGlobalCss: customGlobalCss,
-      }),
-    ])
+    if (bundler === "vite") {
+      // For Vite with singlefile plugin, read the index.html which contains everything
+      const bundledHtml = await fs.readFile(
+        path.join(outDir, "index.html"),
+        "utf-8",
+      )
 
-    return { js: bundledJs, css: bundledCss }
+      return {
+        js: "",
+        css: "",
+        html: bundledHtml,
+        bundler: "vite",
+      }
+    } else {
+      // For other bundlers, read separate files as before
+      const [bundledJs, bundledCss] = await Promise.all([
+        fs.readFile(path.join(outDir, "index.js"), "utf-8"),
+        compileCSS({
+          jsx: Object.values(files).join("\n"),
+          baseTailwindConfig: baseTailwindConfig,
+          customTailwindConfig: customTailwindConfig,
+          baseGlobalCss: baseGlobalCss,
+          customGlobalCss: customGlobalCss,
+        }),
+      ])
+
+      return { js: bundledJs, css: bundledCss, bundler }
+    }
   } finally {
     // Clean up temp directory
     if (tempDir) {
@@ -826,6 +1089,7 @@ const editorHTML = endent`
               <select id="bundler">
                 <option value="bun">Bun</option>
                 <option value="esbuild">esbuild</option>
+                <option value="vite">Vite</option>
               </select>
             </div>
           </div>
@@ -1076,25 +1340,34 @@ const server = serve({
         }
 
         // Bundle React code with optional dependencies and bundler choice
-        const { js, css: bundledCss } = await bundleReact({
+        const {
+          js,
+          css,
+          html,
+          bundler: bundlerType,
+        } = await bundleReact({
           files,
           baseTailwindConfig,
           baseGlobalCss,
           customTailwindConfig,
           customGlobalCss,
           dependencies,
-          bundler: (bundler as "bun" | "esbuild") || "esbuild",
+          bundler: "vite", // bundler as "bun" | "esbuild" | "vite",
         })
 
         // Save the bundled files
         const { htmlUrl, jsUrl, cssUrl } = await saveBundledFilesToR2(id, {
           js,
-          css: bundledCss,
+          css,
+          html,
+          bundler: bundlerType,
         })
-        return Response.json(
-          { success: true, id, html: htmlUrl, js: jsUrl, css: cssUrl },
-          { headers },
-        )
+
+        const response: any = { success: true, id, html: htmlUrl }
+        if (jsUrl) response.js = jsUrl
+        if (cssUrl) response.css = cssUrl
+
+        return Response.json(response, { headers })
       } catch (error) {
         console.error("Bundling error:", error)
         return Response.json(

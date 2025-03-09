@@ -4,11 +4,10 @@ import { Component, Tag, User } from "@/types/global"
 import { defaultTailwindConfig } from "@/lib/sandpack"
 import { defaultGlobalCss } from "@/lib/sandpack"
 
-
 interface BundleUrls {
   html: string
-  js: string
-  css: string
+  js?: string
+  css?: string
 }
 
 export const useBundleDemo = (
@@ -21,6 +20,7 @@ export const useBundleDemo = (
   tailwindConfig?: string,
   globalCss?: string,
   existingBundleUrls?: BundleUrls | null,
+  bundler?: "bun" | "esbuild" | "vite",
 ) => {
   const client = useClerkSupabaseClient()
   const [bundleUrls, setBundleUrls] = useState<BundleUrls | null>(
@@ -41,6 +41,7 @@ export const useBundleDemo = (
         baseGlobalCss: defaultGlobalCss,
         customTailwindConfig: tailwindConfig,
         customGlobalCss: globalCss,
+        bundler: bundler || "esbuild",
       }),
     })
       .then((res) => res.json())
@@ -63,13 +64,16 @@ export const useBundleDemo = (
             return
           }
 
+          const updateData: any = {
+            bundle_html_url: bundle.html,
+          }
+
+          if (bundle.js) updateData.bundle_js_url = bundle.js
+          if (bundle.css) updateData.bundle_css_url = bundle.css
+
           const { error: updateError } = await client
             .from("demos")
-            .update({
-              bundle_html_url: bundle.html,
-              bundle_js_url: bundle.js,
-              bundle_css_url: bundle.css,
-            })
+            .update(updateData)
             .eq("id", demoId)
             .eq("component_id", component.id)
 
@@ -92,6 +96,7 @@ export const useBundleDemo = (
     component,
     shellCode,
     demoId,
+    bundler,
   ])
 
   return bundleUrls
