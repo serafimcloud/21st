@@ -1010,7 +1010,6 @@ export function generateBundleFiles({
   relativeImportPath,
   code,
   demoCode,
-  theme,
   css,
   customTailwindConfig,
   customGlobalCss,
@@ -1020,7 +1019,6 @@ export function generateBundleFiles({
   relativeImportPath: string
   code: string
   demoCode: string
-  theme: "light" | "dark"
   css: string
   customTailwindConfig?: string
   customGlobalCss?: string
