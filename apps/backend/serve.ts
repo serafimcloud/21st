@@ -399,8 +399,165 @@ const createTempProject = async (options: BundleOptions) => {
   }
 }
 
-const bundleWithEsbuild = async (tempDir: string, outDir: string): Promise<boolean> => {
+/**
+ * ESBuild plugin that resolves duplicate exports in modules
+ * Can be used directly with esbuild's plugin system
+ */
+const createExportDeduplicationPlugin = () => ({
+  name: "export-deduplication",
+  setup(build) {
+    // Process all JS/TS/JSX/TSX files
+    build.onLoad({ filter: /\.(js|jsx|ts|tsx)$/ }, async (args) => {
+      try {
+        // Read the file content
+        const fs = await import("fs/promises")
+        const content = await fs.readFile(args.path, "utf8")
+
+        // Process exports using the same logic as resolveExportDuplicates
+        // Track exported identifiers and their export style
+        const exportMap = new Map<
+          string,
+          { named: boolean; objectExport: boolean; location: number[] }
+        >()
+
+        // Find named exports (functions, classes, consts, etc.)
+        const namedExportRegexes = [
+          /export\s+function\s+(\w+)/g,
+          /export\s+class\s+(\w+)/g,
+          /export\s+const\s+(\w+)\s*=/g,
+          /export\s+let\s+(\w+)\s*=/g,
+          /export\s+var\s+(\w+)\s*=/g,
+          /export\s+enum\s+(\w+)/g,
+          /export\s+interface\s+(\w+)/g,
+          /export\s+type\s+(\w+)/g,
+        ]
+
+        // Find all named exports and track their positions
+        for (const regex of namedExportRegexes) {
+          const matches = Array.from(content.matchAll(regex))
+          for (const match of matches) {
+            const name = match[1]
+            const start = match.index || 0
+
+            exportMap.set(name, {
+              named: true,
+              objectExport: false,
+              location: [start, start + match[0].length],
+            })
+          }
+        }
+
+        // Find object export statements and their positions
+        const objectExportRegex = /export\s+\{([^}]+)\}/g
+        const objectExports = Array.from(content.matchAll(objectExportRegex))
+
+        // Detect if processing is needed
+        let needsProcessing = false
+        for (const match of objectExports) {
+          const exportList = match[1]
+          const exportItems = exportList.split(",").map((item) =>
+            item
+              .trim()
+              .split(/\s+as\s+/)[0]
+              .trim(),
+          )
+
+          for (const name of exportItems) {
+            if (exportMap.get(name)?.named) {
+              needsProcessing = true
+              break
+            }
+          }
+
+          if (needsProcessing) break
+        }
+
+        // Skip processing if no duplicates found
+        if (!needsProcessing) {
+          return null // Null means use default loader
+        }
+
+        // Track duplicates and modify object exports
+        let processedContent = content
+        let offset = 0 // Track string length changes during replacements
+
+        for (const match of objectExports) {
+          const exportList = match[1]
+          const start = match.index || 0
+          const end = start + match[0].length
+
+          // Parse export names, handling aliasing (e.g., "Component as RenamedComponent")
+          const exportItems = exportList.split(",").map((item) => {
+            const parts = item.trim().split(/\s+as\s+/)
+            return {
+              name: parts[0].trim(),
+              alias: parts[1]?.trim(),
+              full: item.trim(),
+            }
+          })
+
+          // Check for duplicates with named exports
+          const duplicateItems = exportItems.filter(
+            (item) => exportMap.get(item.name)?.named,
+          )
+
+          // If there are duplicates, modify the export statement
+          if (duplicateItems.length > 0) {
+            const uniqueItems = exportItems.filter(
+              (item) => !duplicateItems.some((d) => d.name === item.name),
+            )
+
+            // Build new export statement
+            let newExport = ""
+            if (uniqueItems.length > 0) {
+              newExport = `export { ${uniqueItems.map((i) => i.full).join(", ")} }`
+            }
+
+            // Apply the change with offset adjustment
+            const startWithOffset = start + offset
+            const endWithOffset = end + offset
+
+            processedContent =
+              processedContent.substring(0, startWithOffset) +
+              newExport +
+              processedContent.substring(endWithOffset)
+
+            // Update offset for future replacements
+            offset += newExport.length - (endWithOffset - startWithOffset)
+
+            console.log(
+              `ESBuild plugin: Fixed duplicate exports in ${args.path}`,
+            )
+          }
+        }
+
+        return {
+          contents: processedContent,
+          loader: args.path.endsWith("x") ? "jsx" : "js",
+        }
+      } catch (error) {
+        console.error(`Error in export-deduplication plugin: ${error}`)
+        return null // On error, fallback to default loader
+      }
+    })
+  },
+})
+
+const bundleWithEsbuild = async (
+  tempDir: string,
+  outDir: string,
+): Promise<boolean> => {
   try {
+    console.log("esbuild: Starting bundling process...")
+
+    // List files in tempDir
+    try {
+      const files = await fs.readdir(tempDir)
+      console.log("esbuild: Files to bundle:", files)
+    } catch (err) {
+      console.log("esbuild: Error listing directory:", err)
+    }
+
     await esbuild({
       entryPoints: [path.join(tempDir, "index.js")],
       bundle: true,
@@ -417,17 +574,23 @@ const bundleWithEsbuild = async (tempDir: string, outDir: string): Promise<boole
       jsx: "automatic",
       minify: false,
       define: {
-        'process.env.NODE_ENV': '"production"'
-      }
+        "process.env.NODE_ENV": '"production"',
+      },
+      logLevel: "info", // Increase log level for more details
+      plugins: [createExportDeduplicationPlugin()],
     })
+    console.log("esbuild: Bundle completed successfully")
     return true
   } catch (error) {
-    console.warn("esbuild bundling error:", error)
+    console.warn("esbuild: Detailed bundling error:", error)
     return false
   }
 }
 
-const bundleWithBun = async (tempDir: string, outDir: string): Promise<boolean> => {
+const bundleWithBun = async (
+  tempDir: string,
+  outDir: string,
+): Promise<boolean> => {
   try {
     const result = await Bun.build({
       entrypoints: [path.join(tempDir, "index.js")],
@@ -456,19 +619,28 @@ const bundleReact = async ({
   customTailwindConfig,
   customGlobalCss,
   dependencies,
-  bundler = "bun", // Add bundler parameter with default value
+  bundler = "bun",
 }: {
-  files: Record<string, string>,
-  baseTailwindConfig: string,
-  baseGlobalCss: string,
-  customTailwindConfig?: string,
-  customGlobalCss?: string,
-  dependencies?: Record<string, string>,
-  bundler?: "bun" | "esbuild", // Add bundler type
+  files: Record<string, string>
+  baseTailwindConfig: string
+  baseGlobalCss: string
+  customTailwindConfig?: string
+  customGlobalCss?: string
+  dependencies?: Record<string, string>
+  bundler?: "bun" | "esbuild"
 }): Promise<{ js: string; css: string }> => {
   let tempDir: string | null = null
 
   try {
+    // Log the incoming files for debugging
+    console.log("=== BUNDLING REQUEST ===")
+    console.log("Files to bundle:", Object.keys(files))
+
+    // Preprocess files to fix duplicate exports
+
+    console.log("\nDependencies:", dependencies)
+    console.log("Bundler:", bundler)
+
     tempDir = await createTempProject({
       files: {
         ...files,
@@ -498,13 +670,36 @@ const bundleReact = async ({
     const outDir = path.join(tempDir, "dist")
 
     // Use the selected bundler
-    const bundleSuccess = bundler === "bun" 
-      ? await bundleWithBun(tempDir, outDir)
-      : await bundleWithEsbuild(tempDir, outDir)
+    console.log(`\nAttempting to bundle with ${bundler}...`)
+    const bundleSuccess =
+      bundler === "bun"
+        ? await bundleWithBun(tempDir, outDir)
+        : await bundleWithEsbuild(tempDir, outDir)
 
     if (!bundleSuccess) {
+      console.log("Bundle failed!")
+      // List files in temp directory for debugging
+      try {
+        const files = await fs.readdir(tempDir)
+        console.log("Files in temp directory:", files)
+
+        // If demo.tsx exists, log its content
+        if (files.includes("demo.tsx")) {
+          const demoContent = await fs.readFile(
+            path.join(tempDir, "demo.tsx"),
+            "utf-8",
+          )
+          console.log("\n--- Content of demo.tsx ---")
+          console.log(demoContent)
+        }
+      } catch (err) {
+        console.log("Error listing temp directory:", err)
+      }
+
       throw new Error(`Failed to bundle with ${bundler}`)
     }
+
+    console.log("Bundle succeeded!")
 
     // Read the bundled files
     const [bundledJs, bundledCss] = await Promise.all([
@@ -861,8 +1056,16 @@ const server = serve({
 
     if (url.pathname === "/bundle" && req.method === "POST") {
       try {
-        const { files, id, dependencies, baseTailwindConfig, baseGlobalCss, customTailwindConfig, customGlobalCss, bundler } =
-          await req.json()
+        const {
+          files,
+          id,
+          dependencies,
+          baseTailwindConfig,
+          baseGlobalCss,
+          customTailwindConfig,
+          customGlobalCss,
+          bundler,
+        } = await req.json()
 
         if (!files || !Object.keys(files).length) {
           throw new Error("No files provided")
@@ -880,7 +1083,7 @@ const server = serve({
           customTailwindConfig,
           customGlobalCss,
           dependencies,
-          bundler: bundler as "bun" | "esbuild" || "esbuild",
+          bundler: (bundler as "bun" | "esbuild") || "esbuild",
         })
 
         // Save the bundled files
