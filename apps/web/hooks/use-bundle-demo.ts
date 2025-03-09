@@ -79,8 +79,13 @@ export const useBundleDemo = (
     }
 
     console.log("Fetching bundle - changes detected or first run")
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/bundle`, {
+
+    // Use the new API endpoint
+    fetch(`/api/bundle`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         files,
         id: demoId,
@@ -101,46 +106,8 @@ export const useBundleDemo = (
           return data
         }
       })
-      .then(async (bundle: BundleUrls) => {
-        if (component.id && demoId) {
-          const { data: existingDemo, error: checkError } = await client
-            .from("demos")
-            .select("id, component_id")
-            .eq("id", demoId)
-
-          if (checkError || !existingDemo || existingDemo.length === 0) {
-            console.log("Demo not found, skipping update")
-            return
-          }
-
-          const updateData: any = {
-            bundle_html_url: bundle.html,
-          }
-
-          if (bundle.js) updateData.bundle_js_url = bundle.js
-          if (bundle.css) updateData.bundle_css_url = bundle.css
-
-          console.log(
-            "Updating demo with bundle URLs:",
-            Object.keys(updateData),
-          )
-
-          const { error: updateError } = await client
-            .from("demos")
-            .update(updateData)
-            .eq("id", demoId)
-            .eq("component_id", component.id)
-
-          if (updateError) {
-            console.error(
-              "Failed to update demo with bundle URLs:",
-              updateError,
-            )
-          }
-        }
-      })
       .catch((error) => {
-        console.error("Error in bundle generation or upload:", error)
+        console.error("Error in bundle generation:", error)
       })
   }, [
     files,

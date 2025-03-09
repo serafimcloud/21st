@@ -504,6 +504,7 @@ export type Database = {
           bundle_css_url: string | null
           bundle_html_url: string | null
           bundle_js_url: string | null
+          bundle_hash: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -528,6 +529,7 @@ export type Database = {
           bundle_css_url?: string | null
           bundle_html_url?: string | null
           bundle_js_url?: string | null
+          bundle_hash?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -552,6 +554,7 @@ export type Database = {
           bundle_css_url?: string | null
           bundle_html_url?: string | null
           bundle_js_url?: string | null
+          bundle_hash?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
