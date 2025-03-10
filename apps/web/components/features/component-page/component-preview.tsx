@@ -92,7 +92,6 @@ export function ComponentPagePreview({
   const [isShowCode, setIsShowCode] = useAtom(isShowCodeAtom)
   const isDebug = useDebugMode()
   const [isFullScreen] = useAtom(isFullScreenAtom)
-
   const dumySandpackFiles = generateSandpackFiles({
     demoComponentNames,
     componentSlug: component.component_slug,
@@ -184,8 +183,8 @@ export function ComponentPagePreview({
     }),
     [dependencies, demoDependencies, npmDependenciesOfRegistryDependencies],
   )
-
-  const bundle = useBundleDemo(
+  const [previewError, setPreviewError] = useState(false)
+  const { bundle, error } = useBundleDemo(
     bundleFiles,
     allDependencies,
     component,
@@ -194,6 +193,12 @@ export function ComponentPagePreview({
     tailwindConfig,
     globalCss,
   )
+
+  useEffect(() => {
+    if (error) {
+      setPreviewError(true)
+    }
+  }, [error])
 
   const mainComponentFile = Object.keys(files).find((file) =>
     file.endsWith(`${component.component_slug}.tsx`),
@@ -207,7 +212,6 @@ export function ComponentPagePreview({
     demoComponentFile ?? mainComponentFile ?? "",
   )
 
-  const [previewError, setPreviewError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [loadingText, setLoadingText] = useState("Starting preview...")
 
@@ -304,8 +308,7 @@ export function ComponentPagePreview({
             </p>
             <button
               onClick={() => {
-                setPreviewError(false)
-                setIsLoading(true)
+                window.location.reload()
               }}
               className="text-sm underline text-muted-foreground hover:text-foreground"
             >
