@@ -30,6 +30,7 @@ import { useAnimation } from "motion/react"
 import { useAtom } from "jotai"
 import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 import { useTheme } from "next-themes"
+import { useSubscription } from "@/hooks/use-subscription"
 
 export const searchQueryAtom = atom("")
 
@@ -51,6 +52,16 @@ export function Header({
   const router = useRouter()
   const [open, setSidebarOpen] = useAtom(sidebarOpenAtom)
   const { theme, setTheme } = useTheme()
+  const { fetchSubscription } = useSubscription()
+  const [hasPro, setHasPro] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      const subscription = await fetchSubscription()
+      setHasPro(!!subscription)
+    }
+    checkSubscription()
+  }, [fetchSubscription])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -146,7 +157,7 @@ export function Header({
                 >
                   <Bookmark size={18} />
                 </Button>
-                {!open && (
+                {!open && hasPro === false && (
                   <Button
                     variant="ghost"
                     size="sm"
