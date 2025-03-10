@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Check } from "lucide-react"
@@ -10,6 +10,7 @@ import NumberFlow, { NumberFlowGroup } from "@number-flow/react"
 import type { PlanType } from "@/lib/config/subscription-plans"
 import { useAtom } from "jotai"
 import { pricingFrequencyAtom } from "./pricing-tab"
+import React from "react"
 
 interface PricingProps {
   frequencies: readonly [string, ...string[]]
@@ -27,14 +28,53 @@ interface PricingProps {
     highlighted?: boolean
   }>
   currentPlan?: PlanType
+  currentFrequency?: "monthly" | "yearly"
+  onUpgrade: (planId: PlanType, period?: "monthly" | "yearly") => void
+  onDowngrade: () => void
 }
+
+const planOrder = { free: 1, pro: 2, pro_plus: 3 }
 
 export function PricingSection({
   frequencies,
   tiers,
   currentPlan,
+  currentFrequency,
+  onUpgrade,
+  onDowngrade,
 }: PricingProps) {
   const [frequency] = useAtom(pricingFrequencyAtom)
+
+  const handleClick = (tierType: PlanType) => {
+    const isDowngrade = planOrder[tierType] < planOrder[currentPlan || "free"]
+
+    console.log("🔥 CURRENT SUBSCRIPTION:", {
+      "Current Plan": currentPlan,
+      "Current Billing": currentFrequency,
+      "Selected Billing": frequency,
+    })
+
+    if (tierType === currentPlan && currentFrequency !== frequency) {
+      onUpgrade(tierType, frequency)
+    } else if (isDowngrade) {
+      onDowngrade()
+    } else {
+      onUpgrade(tierType, frequency)
+    }
+  }
+
+  const getButtonText = (tierType: PlanType) => {
+    const isDowngrade = planOrder[tierType] < planOrder[currentPlan || "free"]
+    const isCurrentPlan = tierType === currentPlan
+
+    if (isCurrentPlan && currentFrequency !== frequency) {
+      return frequency === "yearly"
+        ? "Switch to yearly billing"
+        : "Switch to monthly billing"
+    }
+    if (isCurrentPlan) return "Current Plan"
+    return isDowngrade ? "Downgrade" : "Upgrade"
+  }
 
   return (
     <div className="py-24">
@@ -108,18 +148,35 @@ export function PricingSection({
                       </span>
                     </div>
 
-                    <Link href={tier.href} className="block mt-6">
+                    <Link
+                      href={
+                        currentPlan === tier.type &&
+                        currentFrequency === frequency
+                          ? "#"
+                          : tier.href
+                      }
+                      className="block mt-6"
+                      onClick={(e) => {
+                        if (
+                          currentPlan === tier.type &&
+                          currentFrequency === frequency
+                        ) {
+                          e.preventDefault()
+                        }
+                      }}
+                    >
                       <Button
                         variant={
                           currentPlan === tier.type ? "outline" : "default"
                         }
-                        className={cn(
-                          "w-full",
-                          currentPlan === tier.type && "cursor-not-allowed",
-                        )}
-                        disabled={currentPlan === tier.type}
+                        className={cn("w-full")}
+                        disabled={
+                          currentPlan === tier.type &&
+                          currentFrequency === frequency
+                        }
+                        onClick={() => handleClick(tier.type)}
                       >
-                        {currentPlan === tier.type ? "Current Plan" : tier.cta}
+                        {getButtonText(tier.type)}
                       </Button>
                     </Link>
                   </div>

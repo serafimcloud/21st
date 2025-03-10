@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { toast } from "sonner"
 import { PlanComparisonTable } from "@/components/features/pricing/plan-comparison-table"
 import { PricingSection } from "./pricing-section"
 import { FAQ } from "./faq"
@@ -17,27 +18,27 @@ const PAYMENT_FREQUENCIES = ["yearly", "monthly"] as const
 // Using consolidated configuration from PLAN_LIMITS
 const TIERS = [
   {
-    name: PLAN_LIMITS.standard.displayName,
-    type: "standard" as PlanType,
+    name: PLAN_LIMITS.pro.displayName,
+    type: "pro" as PlanType,
     price: {
-      monthly: PLAN_LIMITS.standard.monthlyPrice || 10,
-      yearly: PLAN_LIMITS.standard.yearlyPrice || 96,
+      monthly: PLAN_LIMITS.pro.monthlyPrice || 10,
+      yearly: PLAN_LIMITS.pro.yearlyPrice || 96,
     },
-    description: PLAN_LIMITS.standard.description,
-    features: PLAN_LIMITS.standard.features,
+    description: PLAN_LIMITS.pro.description,
+    features: PLAN_LIMITS.pro.features,
     cta: "Upgrade",
     href: "/signup",
     popular: true,
   },
   {
-    name: PLAN_LIMITS.pro.displayName,
-    type: "pro" as PlanType,
+    name: PLAN_LIMITS.pro_plus.displayName,
+    type: "pro_plus" as PlanType,
     price: {
-      monthly: PLAN_LIMITS.pro.monthlyPrice || 30,
-      yearly: PLAN_LIMITS.pro.yearlyPrice || 288,
+      monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 30,
+      yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 288,
     },
-    description: PLAN_LIMITS.pro.description,
-    features: PLAN_LIMITS.pro.features,
+    description: PLAN_LIMITS.pro_plus.description,
+    features: PLAN_LIMITS.pro_plus.features,
     cta: "Upgrade Plus",
     href: "/signup",
     highlighted: true,
@@ -67,6 +68,48 @@ const PRICING_FAQS = [
   },
 ]
 
+const handleUpgradePlan = async (
+  planId: string,
+  period: "monthly" | "yearly" = "monthly",
+) => {
+  try {
+    const response = await fetch("/api/stripe/create-checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        planId: planId as PlanType,
+        period,
+        successUrl: `${window.location.origin}?success=true`,
+        cancelUrl: `${window.location.origin}/pricing?canceled=true`,
+      }),
+    })
+
+    if (!response.ok) throw new Error("Failed to create checkout session")
+
+    const data = await response.json()
+    window.location.href = data.url
+  } catch (error) {
+    toast.error("Failed to initiate upgrade. Please try again later.")
+  }
+}
+
+const handleDowngradePlan = async () => {
+  try {
+    const response = await fetch("/api/stripe/cancel-subscription", {
+      method: "POST",
+    })
+
+    if (!response.ok) throw new Error("Failed to downgrade subscription")
+
+    toast.success("Plan successfully downgraded", {
+      description:
+        "Your subscription will downgrade at the end of the billing period",
+    })
+  } catch (error) {
+    toast.error("Failed to downgrade subscription. Please try again later.")
+  }
+}
+
 export function Pricing() {
   const [subscription, setSubscription] = useState<PlanInfo | null>(null)
   const { isLoading, fetchSubscription } = useSubscription()
@@ -82,9 +125,9 @@ export function Pricing() {
 
   const currentPlan = (subscription?.type || "free") as PlanType
 
-  const handlePlanSelect = (plan: string, isYearly: boolean) => {
-    console.log(`Selected plan: ${plan}, yearly: ${isYearly}`)
-    // window.location.href = `/checkout?plan=${plan}&yearly=${isYearly}`
+  const handlePlanSelect = (event: React.MouseEvent<HTMLDivElement>) => {
+    console.log("Plan selected:", event)
+    // Add your plan selection logic here
   }
 
   return (
@@ -97,6 +140,11 @@ export function Pricing() {
           frequencies={PAYMENT_FREQUENCIES}
           tiers={TIERS}
           currentPlan={currentPlan}
+          currentFrequency={
+            (subscription?.period as "monthly" | "yearly") || "monthly"
+          }
+          onUpgrade={handleUpgradePlan}
+          onDowngrade={handleDowngradePlan}
         />
       </div>
 
@@ -106,7 +154,9 @@ export function Pricing() {
           features={COMPARISON_FEATURES}
           plans={COMPARISON_PLANS}
           currentPlan={currentPlan}
-          onPlanSelect={handlePlanSelect}
+          onSelect={handlePlanSelect}
+          onUpgrade={handleUpgradePlan}
+          onDowngrade={handleDowngradePlan}
         />
       </div>
 

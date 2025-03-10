@@ -6,8 +6,7 @@ import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAtom } from "jotai"
 import { pricingFrequencyAtom } from "./pricing-tab"
-
-export type PlanType = "free" | "pro" | "team" | string
+import { PlanType } from "@/lib/config/subscription-plans"
 
 export interface ComparisonFeature {
   name: string
@@ -35,7 +34,54 @@ export interface PlanComparisonTableProps
   plans: Plan[]
   className?: string
   currentPlan?: PlanType
-  onPlanSelect?: (plan: PlanType, isYearly: boolean) => void
+  currentFrequency?: "monthly" | "yearly"
+  onUpgrade: (planId: PlanType, period?: "monthly" | "yearly") => void
+  onDowngrade: () => void
+}
+
+const planOrder: Record<PlanType, number> = {
+  free: 1,
+  pro: 2,
+  pro_plus: 3,
+}
+
+const getButtonText = (
+  tierType: PlanType,
+  currentPlan: PlanType,
+  currentFrequency: "monthly" | "yearly",
+  frequency: "monthly" | "yearly",
+) => {
+  const isDowngrade =
+    (planOrder[tierType] ?? 0) < (planOrder[currentPlan || "free"] ?? 0)
+  const isCurrentPlan = tierType === currentPlan
+
+  if (isCurrentPlan && currentFrequency !== frequency) {
+    return frequency === "yearly"
+      ? "Switch to yearly billing"
+      : "Switch to monthly billing"
+  }
+  if (isCurrentPlan) return "Current Plan"
+  return isDowngrade ? "Downgrade" : "Upgrade"
+}
+
+const handlePlanSelect = (
+  planType: PlanType,
+  currentPlan: PlanType,
+  currentFrequency: "monthly" | "yearly",
+  frequency: "monthly" | "yearly",
+  onUpgrade: (planId: PlanType, period?: "monthly" | "yearly") => void,
+  onDowngrade: () => void,
+) => {
+  const isDowngrade =
+    (planOrder[planType] ?? 0) < (planOrder[currentPlan || "free"] ?? 0)
+
+  if (planType === currentPlan && currentFrequency !== frequency) {
+    onUpgrade(planType, frequency)
+  } else if (isDowngrade) {
+    onDowngrade()
+  } else {
+    onUpgrade(planType, frequency)
+  }
 }
 
 export function PlanComparisonTable({
@@ -43,7 +89,9 @@ export function PlanComparisonTable({
   plans,
   className,
   currentPlan = "free",
-  onPlanSelect,
+  currentFrequency = "monthly",
+  onUpgrade,
+  onDowngrade,
   ...props
 }: PlanComparisonTableProps) {
   const [frequency] = useAtom(pricingFrequencyAtom)
@@ -94,9 +142,7 @@ export function PlanComparisonTable({
                 primary: "per month",
                 secondary: "billed yearly",
               }
-            : plan.type === "team"
-              ? "per member/mo"
-              : "per mo"
+            : "per mo"
           const isCurrentPlan = currentPlan === plan.type
           const planIndex = plans.findIndex((p) => p.type === plan.type)
           const currentPlanIndex = plans.findIndex(
@@ -134,22 +180,33 @@ export function PlanComparisonTable({
               </div>
 
               <Button
-                variant={plan.type === "pro" ? "default" : "outline"}
+                variant={plan.type === "pro_plus" ? "default" : "outline"}
                 className={cn(
                   "justify-center",
-                  plan.type === "pro" &&
+                  plan.type === "pro_plus" &&
                     "bg-black text-white hover:bg-black/90",
-                  isCurrentPlan &&
-                    "border-primary text-primary hover:bg-primary/5",
                 )}
-                onClick={() => onPlanSelect?.(plan.type, isYearly)}
-                disabled={isCurrentPlan || plan.disabled}
+                onClick={() =>
+                  handlePlanSelect(
+                    plan.type,
+                    currentPlan,
+                    currentFrequency,
+                    frequency,
+                    onUpgrade,
+                    onDowngrade,
+                  )
+                }
+                disabled={
+                  plan.disabled ||
+                  (plan.type === currentPlan && currentFrequency === frequency)
+                }
               >
-                {isCurrentPlan
-                  ? `On ${plan.name} plan`
-                  : isDowngrade
-                    ? "Downgrade"
-                    : plan.buttonText}
+                {getButtonText(
+                  plan.type,
+                  currentPlan,
+                  currentFrequency,
+                  frequency,
+                )}
               </Button>
             </div>
           )

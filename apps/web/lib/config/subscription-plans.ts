@@ -46,24 +46,24 @@ export const COMPARISON_PLANS: Plan[] = [
   },
   {
     name: "Pro",
-    type: "standard",
+    type: "pro",
     price: {
       monthly: 10,
       yearly: 96,
     },
     popular: true,
-    buttonText: "Upgrade to Pro",
+    buttonText: "Upgrade to pro_plus",
     buttonHref: "/upgrade",
   },
   {
     name: "Pro Plus",
-    type: "pro",
+    type: "pro_plus",
     price: {
       monthly: 30,
       yearly: 288,
     },
-    buttonText: "Upgrade to Pro Plus",
-    buttonHref: "/pro/create",
+    buttonText: "Upgrade to pro_plus Plus",
+    buttonHref: "/pro_plus/create",
   },
 ]
 
@@ -74,8 +74,8 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
     section: "Usage",
     values: {
       free: "5 tokens",
-      standard: "50 tokens",
-      pro: "200 tokens",
+      pro: "50 tokens",
+      pro_plus: "200 tokens",
     },
   },
   {
@@ -83,8 +83,8 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
     section: "21st.dev",
     values: {
       free: "-",
-      standard: "5 tokens each",
       pro: "5 tokens each",
+      pro_plus: "5 tokens each",
     },
   },
   {
@@ -92,8 +92,8 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
     section: "Magic MCP",
     values: {
       free: "1 token per generation",
-      standard: "1 token per generation",
       pro: "1 token per generation",
+      pro_plus: "1 token per generation",
     },
   },
   {
@@ -101,8 +101,8 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
     section: "Magic MCP",
     values: {
       free: "Unlimited",
-      standard: "Unlimited",
       pro: "Unlimited",
+      pro_plus: "Unlimited",
     },
   },
   {
@@ -110,8 +110,8 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
     section: "Magic MCP",
     values: {
       free: "Unlimited",
-      standard: "Unlimited",
       pro: "Unlimited",
+      pro_plus: "Unlimited",
     },
   },
   {
@@ -119,8 +119,8 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
     section: "Support",
     values: {
       free: "Community",
-      standard: "Priority",
-      pro: "Priority + Discord",
+      pro: "Priority",
+      pro_plus: "Priority + Discord",
     },
   },
 ]
@@ -134,8 +134,8 @@ export const PLAN_FEATURES: PlanFeature[] = [
     category: "Resources",
     valueByPlan: {
       free: "5 tokens",
-      standard: "50 tokens",
-      pro: "200 tokens",
+      pro: "50 tokens",
+      pro_plus: "200 tokens",
     },
   },
 
@@ -146,18 +146,18 @@ export const PLAN_FEATURES: PlanFeature[] = [
     category: "Resources",
     valueByPlan: {
       free: "1 token per generation",
-      standard: "1 token per generation",
       pro: "1 token per generation",
+      pro_plus: "1 token per generation",
     },
   },
   {
     name: "Premium Component",
-    included: "standard",
+    included: "pro",
     category: "Resources",
     valueByPlan: {
       free: "Not available",
-      standard: "5 tokens each",
       pro: "5 tokens each",
+      pro_plus: "5 tokens each",
     },
   },
 
@@ -168,8 +168,8 @@ export const PLAN_FEATURES: PlanFeature[] = [
     category: "Unlimited Features",
     valueByPlan: {
       free: "Unlimited",
-      standard: "Unlimited",
       pro: "Unlimited",
+      pro_plus: "Unlimited",
     },
   },
   {
@@ -178,8 +178,8 @@ export const PLAN_FEATURES: PlanFeature[] = [
     category: "Unlimited Features",
     valueByPlan: {
       free: "Unlimited",
-      standard: "Unlimited",
       pro: "Unlimited",
+      pro_plus: "Unlimited",
     },
   },
 
@@ -190,8 +190,8 @@ export const PLAN_FEATURES: PlanFeature[] = [
     category: "Support",
     valueByPlan: {
       free: "Community",
-      standard: "Priority",
-      pro: "Priority + Discord",
+      pro: "Priority",
+      pro_plus: "Priority + Discord",
     },
   },
 ]
@@ -211,7 +211,7 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
       "Community support",
     ],
   },
-  standard: {
+  pro: {
     generationsPerMonth: 50,
     displayName: "Pro",
     name: "Pro",
@@ -227,7 +227,7 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     monthlyPrice: 10,
     yearlyPrice: 96,
   },
-  pro: {
+  pro_plus: {
     generationsPerMonth: 200,
     displayName: "Pro Plus",
     name: "Pro Plus",
@@ -253,20 +253,20 @@ export const PRICING_PLANS: PricingPlan[] = [
     price: { monthly: 0, yearly: 0 },
   },
   {
-    name: PLAN_LIMITS.standard.displayName,
-    level: "standard",
+    name: PLAN_LIMITS.pro.displayName,
+    level: "pro",
     price: {
-      monthly: PLAN_LIMITS.standard.monthlyPrice || 10,
-      yearly: PLAN_LIMITS.standard.yearlyPrice || 96,
+      monthly: PLAN_LIMITS.pro.monthlyPrice || 10,
+      yearly: PLAN_LIMITS.pro.yearlyPrice || 96,
     },
     popular: true,
   },
   {
-    name: PLAN_LIMITS.pro.displayName,
-    level: "pro",
+    name: PLAN_LIMITS.pro_plus.displayName,
+    level: "pro_plus",
     price: {
-      monthly: PLAN_LIMITS.pro.monthlyPrice || 30,
-      yearly: PLAN_LIMITS.pro.yearlyPrice || 288,
+      monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 30,
+      yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 288,
     },
   },
 ]
@@ -319,33 +319,33 @@ export function getPricingCardPlans(options?: {
 
   return [
     {
-      name: PLAN_LIMITS.standard.displayName,
-      type: "standard",
-      description: PLAN_LIMITS.standard.description,
-      monthlyPrice: PLAN_LIMITS.standard.monthlyPrice,
-      yearlyPrice: PLAN_LIMITS.standard.yearlyPrice,
-      features: PLAN_LIMITS.standard.features,
-      buttonText: standardButtonText,
-      href: standardCheckoutLink || href,
-      price: {
-        monthly: PLAN_LIMITS.standard.monthlyPrice || 0,
-        yearly: PLAN_LIMITS.standard.yearlyPrice || 0,
-      },
-      cta: standardButtonText,
-    },
-    {
       name: PLAN_LIMITS.pro.displayName,
       type: "pro",
       description: PLAN_LIMITS.pro.description,
       monthlyPrice: PLAN_LIMITS.pro.monthlyPrice,
       yearlyPrice: PLAN_LIMITS.pro.yearlyPrice,
       features: PLAN_LIMITS.pro.features,
+      buttonText: standardButtonText,
+      href: standardCheckoutLink || href,
+      price: {
+        monthly: PLAN_LIMITS.pro.monthlyPrice || 0,
+        yearly: PLAN_LIMITS.pro.yearlyPrice || 0,
+      },
+      cta: standardButtonText,
+    },
+    {
+      name: PLAN_LIMITS.pro_plus.displayName,
+      type: "pro_plus",
+      description: PLAN_LIMITS.pro_plus.description,
+      monthlyPrice: PLAN_LIMITS.pro_plus.monthlyPrice,
+      yearlyPrice: PLAN_LIMITS.pro_plus.yearlyPrice,
+      features: PLAN_LIMITS.pro_plus.features,
       buttonText: proButtonText,
       href: proCheckoutLink || href,
       isFeatured: true,
       price: {
-        monthly: PLAN_LIMITS.pro.monthlyPrice || 0,
-        yearly: PLAN_LIMITS.pro.yearlyPrice || 0,
+        monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 0,
+        yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 0,
       },
       cta: proButtonText,
       popular: true,
