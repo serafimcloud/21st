@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { PlanComparisonTable } from "@/components/features/pricing/plan-comparison-table"
 import { PricingSection } from "../../components/features/pricing/pricing-section"
@@ -12,7 +12,7 @@ import {
   PlanType,
 } from "@/lib/config/subscription-plans"
 import { useSubscription, PlanInfo } from "@/hooks/use-subscription"
-import { SignInButton, SignedIn, SignedOut, useAuth } from "@clerk/nextjs"
+import { useAuth } from "@clerk/nextjs"
 
 const PAYMENT_FREQUENCIES = ["yearly", "monthly"] as const
 
@@ -117,21 +117,40 @@ const handleDowngradePlan = async () => {
   }
 }
 
+type SubscriptionPeriod = "monthly" | "yearly"
+
 export function Pricing() {
   const [subscription, setSubscription] = useState<PlanInfo | null>(null)
-  const { isLoading, fetchSubscription } = useSubscription()
+  const [isLoading, setIsLoading] = useState(true)
+  const { fetchSubscription } = useSubscription()
   const { isSignedIn } = useAuth()
 
   useEffect(() => {
+    if (!isSignedIn) {
+      setSubscription(null)
+      setIsLoading(false)
+      return
+    }
+
     const getSubscription = async () => {
-      const result = await fetchSubscription()
-      setSubscription(result)
+      setIsLoading(true)
+      try {
+        const result = await fetchSubscription()
+        setSubscription(result)
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     getSubscription()
-  }, [fetchSubscription])
+  }, [fetchSubscription, isSignedIn])
 
-  const currentPlan = (subscription?.type || "free") as PlanType
+  
+
+  const currentPlan = isSignedIn ? subscription?.type || "free" : "free"
+  const currentFrequency = subscription?.period as
+    | SubscriptionPeriod
+    | undefined
 
   const handlePlanSelect = (event: React.MouseEvent<HTMLDivElement>) => {
     console.log("Plan selected:", event)
@@ -148,9 +167,7 @@ export function Pricing() {
           frequencies={PAYMENT_FREQUENCIES}
           tiers={TIERS}
           currentPlan={currentPlan}
-          currentFrequency={
-            (subscription?.period as "monthly" | "yearly") || "monthly"
-          }
+          currentFrequency={currentFrequency}
           onUpgrade={(planId, period) =>
             handleUpgradePlan(planId, period, isSignedIn)
           }
@@ -165,6 +182,7 @@ export function Pricing() {
           features={COMPARISON_FEATURES}
           plans={COMPARISON_PLANS}
           currentPlan={currentPlan}
+          currentFrequency={currentFrequency}
           onSelect={handlePlanSelect}
           onUpgrade={(planId, period) =>
             handleUpgradePlan(planId, period, isSignedIn)

@@ -1,10 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Check } from "lucide-react"
-import Link from "next/link"
 import { PricingTabs } from "./pricing-tab"
 import NumberFlow, { NumberFlowGroup } from "@number-flow/react"
 import type { PlanType } from "@/lib/config/subscription-plans"
@@ -51,12 +49,6 @@ export function PricingSection({
   const handleClick = (tierType: PlanType) => {
     const isDowngrade = planOrder[tierType] < planOrder[currentPlan || "free"]
 
-    console.log("🔥 CURRENT SUBSCRIPTION:", {
-      "Current Plan": currentPlan,
-      "Current Billing": currentFrequency,
-      "Selected Billing": frequency,
-    })
-
     if (tierType === currentPlan && currentFrequency !== frequency) {
       onUpgrade(tierType, frequency)
     } else if (isDowngrade) {
@@ -70,17 +62,19 @@ export function PricingSection({
     const isDowngrade = planOrder[tierType] < planOrder[currentPlan || "free"]
     const isCurrentPlan = tierType === currentPlan
 
-    // Always show "Current Plan" for free plan regardless of frequency
     if (tierType === "free" && currentPlan === "free") {
       return "Current Plan"
     }
 
-    if (isCurrentPlan && currentFrequency !== frequency) {
-      return frequency === "yearly"
-        ? "Switch to yearly billing"
-        : "Switch to monthly billing"
+    if (isCurrentPlan && tierType !== "free") {
+      if (currentFrequency !== frequency) {
+        return frequency === "yearly"
+          ? "Switch to yearly billing"
+          : "Switch to monthly billing"
+      }
+      return "Current Plan"
     }
-    if (isCurrentPlan) return "Current Plan"
+
     return isDowngrade ? "Downgrade" : "Upgrade"
   }
 
@@ -89,7 +83,10 @@ export function PricingSection({
       <Button
         variant={currentPlan === tier.type ? "outline" : "default"}
         className={cn("w-full")}
-        disabled={currentPlan === tier.type && currentFrequency === frequency}
+        disabled={
+          (currentPlan === tier.type && currentFrequency === frequency) ||
+          (tier.type === "free" && currentPlan === "free")
+        }
         onClick={() => handleClick(tier.type)}
       >
         {getButtonText(tier.type)}

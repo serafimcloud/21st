@@ -53,9 +53,11 @@ const getButtonText = (
   currentFrequency: "monthly" | "yearly",
   frequency: "monthly" | "yearly",
 ) => {
+
   const isDowngrade =
     (planOrder[tierType] ?? 0) < (planOrder[currentPlan || "free"] ?? 0)
   const isCurrentPlan = tierType === currentPlan
+
 
   // Always show "Current Plan" for free plan regardless of frequency
   if (tierType === "free" && currentPlan === "free") {
@@ -136,20 +138,6 @@ export function PlanComparisonTable({
       frequency,
     )
 
-    console.log("Button Debug:", {
-      planType: plan.type,
-      currentPlan,
-      currentFrequency,
-      selectedFrequency: frequency,
-      buttonText,
-      isDisabled:
-        plan.disabled ||
-        (plan.type === currentPlan && currentFrequency === frequency),
-      planOrder: planOrder[plan.type],
-      currentPlanOrder: planOrder[currentPlan],
-      isDowngrade: planOrder[plan.type] < planOrder[currentPlan],
-    })
-
     const buttonContent = (
       <Button
         variant={plan.type === "pro_plus" ? "default" : "outline"}
@@ -203,12 +191,7 @@ export function PlanComparisonTable({
                 secondary: "billed yearly",
               }
             : "per mo"
-          const isCurrentPlan = currentPlan === plan.type
-          const planIndex = plans.findIndex((p) => p.type === plan.type)
-          const currentPlanIndex = plans.findIndex(
-            (p) => p.type === currentPlan,
-          )
-          const isDowngrade = planIndex < currentPlanIndex
+
 
           return (
             <div key={plan.type} className="col-span-1 flex flex-col">
