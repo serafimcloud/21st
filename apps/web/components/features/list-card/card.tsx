@@ -200,12 +200,19 @@ export function ComponentCard({
                 )}
               </div>
             </div>
-            {videoUrl && (
-              <div
-                className="absolute top-2 left-2 z-20 bg-background/90 backdrop-blur rounded-sm px-2 py-1 pointer-events-none"
-                data-video-icon={`${demo.id}`}
-              >
-                <Video size={16} className="text-foreground" />
+            <div className="absolute top-2 left-2 z-20 flex gap-2">
+              {videoUrl && (
+                <div
+                  className="bg-background/90 backdrop-blur rounded-sm px-2 py-1 pointer-events-none"
+                  data-video-icon={`${demo.id}`}
+                >
+                  <Video size={16} className="text-foreground" />
+                </div>
+              )}
+            </div>
+            {isDemo && demo.component?.is_paid && (
+              <div className="absolute top-2 right-2 z-20">
+                <span className="inline-block text-xs font-medium bg-blue-100 text-blue-600 px-2 py-1 rounded-md">PRO</span>
               </div>
             )}
           </div>

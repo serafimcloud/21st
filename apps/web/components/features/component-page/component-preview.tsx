@@ -339,38 +339,38 @@ export function ComponentPagePreview({
       </motion.div>
 
       <AnimatePresence mode="popLayout">
-        {!isFullScreen &&
-          (hasComponentAccess ? (
-            <motion.div
-              layout="position"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{
-                duration: 0.3,
-                opacity: { duration: 0.2 },
-                x: {
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                },
-              }}
-              className="h-full w-full md:max-w-[30%] mi overflow-hidden rounded-lg border border-border min-w-[350px] dark:bg-[#151515]"
-            >
-              <SandpackProvider {...providerProps}>
-                <div ref={sandpackRef} className="h-full w-full flex relative">
-                  <SandpackLayout className="flex w-full flex-row gap-4">
-                    <div
-                      className={`flex flex-col w-full ${styles.customScroller}`}
-                    >
-                      <MobileControls
-                        isShowCode={isShowCode}
-                        setIsShowCode={setIsShowCode}
-                        canEdit={canEdit}
-                        setIsEditDialogOpen={setIsEditDialogOpen}
-                      />
-                      <div className="flex w-full h-full flex-col">
-                        {isShowCode ? (
+        {!isFullScreen && (
+          <motion.div
+            layout="position"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{
+              duration: 0.3,
+              opacity: { duration: 0.2 },
+              x: {
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+              },
+            }}
+            className="h-full w-full md:max-w-[30%] mi overflow-hidden rounded-lg border border-border min-w-[350px] dark:bg-[#151515]"
+          >
+            <SandpackProvider {...providerProps}>
+              <div ref={sandpackRef} className="h-full w-full flex relative">
+                <SandpackLayout className="flex w-full flex-row gap-4">
+                  <div
+                    className={`flex flex-col w-full ${styles.customScroller}`}
+                  >
+                    <MobileControls
+                      isShowCode={isShowCode}
+                      setIsShowCode={setIsShowCode}
+                      canEdit={canEdit}
+                      setIsEditDialogOpen={setIsEditDialogOpen}
+                    />
+                    <div className="flex w-full h-full flex-col">
+                      {isShowCode ? (
+                        hasComponentAccess ? (
                           <>
                             <CopyCommandSection component={component} />
                             {isDebug && <SandpackFileExplorer />}
@@ -406,17 +406,18 @@ export function ComponentPagePreview({
                             </div>
                           </>
                         ) : (
-                          <ComponentPageInfo component={component} />
-                        )}
-                      </div>
+                          <PayWall />
+                        )
+                      ) : (
+                        <ComponentPageInfo component={component} />
+                      )}
                     </div>
-                  </SandpackLayout>
-                </div>
-              </SandpackProvider>
-            </motion.div>
-          ) : (
-            <PayWall />
-          ))}
+                  </div>
+                </SandpackLayout>
+              </div>
+            </SandpackProvider>
+          </motion.div>
+        )}
       </AnimatePresence>
       {isDebug && (
         <div className="absolute top-0 left-0 bg-background text-foreground p-2 z-50">
