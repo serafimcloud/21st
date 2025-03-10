@@ -136,6 +136,20 @@ export function PlanComparisonTable({
       frequency,
     )
 
+    console.log("Button Debug:", {
+      planType: plan.type,
+      currentPlan,
+      currentFrequency,
+      selectedFrequency: frequency,
+      buttonText,
+      isDisabled:
+        plan.disabled ||
+        (plan.type === currentPlan && currentFrequency === frequency),
+      planOrder: planOrder[plan.type],
+      currentPlanOrder: planOrder[currentPlan],
+      isDowngrade: planOrder[plan.type] < planOrder[currentPlan],
+    })
+
     const buttonContent = (
       <Button
         variant={plan.type === "pro_plus" ? "default" : "outline"}
@@ -153,11 +167,7 @@ export function PlanComparisonTable({
             onDowngrade,
           )
         }
-        disabled={
-          plan.disabled ||
-          (plan.type === "free" && !currentPlan) ||
-          (plan.type === currentPlan && currentFrequency === frequency)
-        }
+        disabled={buttonText === "Current Plan"}
       >
         {buttonText}
       </Button>
