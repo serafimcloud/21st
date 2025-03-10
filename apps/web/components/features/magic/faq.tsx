@@ -10,7 +10,17 @@ import Link from "next/link"
 import { PLAN_LIMITS } from "@/lib/config/subscription-plans"
 import { cn } from "@/lib/utils"
 
-const faqs = [
+export interface FAQ {
+  question: string
+  answer: React.ReactNode
+}
+
+interface FAQProps {
+  simplified?: boolean
+  faqs?: FAQ[]
+}
+
+const DEFAULT_FAQS = [
   {
     question: "How does Magic AI Agent work?",
     answer:
@@ -69,11 +79,7 @@ const faqs = [
   },
 ]
 
-interface FAQProps {
-  simplified?: boolean
-}
-
-export function FAQ({ simplified = false }: FAQProps) {
+export function FAQ({ simplified = false, faqs = DEFAULT_FAQS }: FAQProps) {
   // Выбираем наиболее важные вопросы для simplified режима
   const displayFaqs = simplified
     ? faqs.slice(0, 5) // Показываем только первые 5 вопросов в simplified режиме

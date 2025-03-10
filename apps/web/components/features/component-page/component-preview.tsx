@@ -53,6 +53,7 @@ import { useUser } from "@clerk/nextjs"
 import styles from "./component-preview.module.css"
 import { FullScreenButton } from "../../ui/full-screen-button"
 import { useBundleDemo } from "@/hooks/use-bundle-demo"
+import { PayWall } from "./pay-wall"
 
 export function ComponentPagePreview({
   component,
@@ -280,6 +281,9 @@ export function ComponentPagePreview({
     ...({ fileLabels: customFileLabels } as any),
   }
 
+  // Mock check for component purchase - replace with actual check later
+  const hasComponentAccess = !component.is_paid
+
   return (
     <motion.div
       layout
@@ -290,7 +294,7 @@ export function ComponentPagePreview({
       transition={{
         layout: {
           duration: 0.4,
-          ease: [0.4, 0, 0.2, 1], // ease-out-cubic
+          ease: [0.4, 0, 0.2, 1],
         },
       }}
     >
@@ -335,81 +339,84 @@ export function ComponentPagePreview({
       </motion.div>
 
       <AnimatePresence mode="popLayout">
-        {!isFullScreen && (
-          <motion.div
-            layout="position"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{
-              duration: 0.3,
-              opacity: { duration: 0.2 },
-              x: {
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-              },
-            }}
-            className="h-full w-full md:max-w-[30%] mi overflow-hidden rounded-lg border border-border min-w-[350px] dark:bg-[#151515]"
-          >
-            <SandpackProvider {...providerProps}>
-              <div ref={sandpackRef} className="h-full w-full flex relative">
-                <SandpackLayout className="flex w-full flex-row gap-4">
-                  <div
-                    className={`flex flex-col w-full ${styles.customScroller}`}
-                  >
-                    <MobileControls
-                      isShowCode={isShowCode}
-                      setIsShowCode={setIsShowCode}
-                      canEdit={canEdit}
-                      setIsEditDialogOpen={setIsEditDialogOpen}
-                    />
-                    <div className="flex w-full h-full flex-col">
-                      {isShowCode ? (
-                        <>
-                          <CopyCommandSection component={component} />
-                          {isDebug && <SandpackFileExplorer />}
-                          <div
-                            className={`overflow-auto ${styles.codeViewerWrapper} relative`}
-                          >
-                            <CopyCodeButton
-                              component_id={component.id}
-                              user_id={user?.id}
-                            />
-                            <Tabs
-                              value={activeFile}
-                              onValueChange={setActiveFile}
+        {!isFullScreen &&
+          (hasComponentAccess ? (
+            <motion.div
+              layout="position"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{
+                duration: 0.3,
+                opacity: { duration: 0.2 },
+                x: {
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                },
+              }}
+              className="h-full w-full md:max-w-[30%] mi overflow-hidden rounded-lg border border-border min-w-[350px] dark:bg-[#151515]"
+            >
+              <SandpackProvider {...providerProps}>
+                <div ref={sandpackRef} className="h-full w-full flex relative">
+                  <SandpackLayout className="flex w-full flex-row gap-4">
+                    <div
+                      className={`flex flex-col w-full ${styles.customScroller}`}
+                    >
+                      <MobileControls
+                        isShowCode={isShowCode}
+                        setIsShowCode={setIsShowCode}
+                        canEdit={canEdit}
+                        setIsEditDialogOpen={setIsEditDialogOpen}
+                      />
+                      <div className="flex w-full h-full flex-col">
+                        {isShowCode ? (
+                          <>
+                            <CopyCommandSection component={component} />
+                            {isDebug && <SandpackFileExplorer />}
+                            <div
+                              className={`overflow-auto ${styles.codeViewerWrapper} relative`}
                             >
-                              <TabsList className="h-9 relative bg-muted dark:bg-background justify-start w-full gap-0.5 pb-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-border px-4 overflow-x-auto flex-nowrap hide-scrollbar">
-                                {visibleFiles.map((file) => (
-                                  <TabsTrigger
-                                    key={file}
-                                    value={file}
-                                    className="overflow-hidden data-[state=active]:rounded-b-none data-[state=active]:bg-white dark:data-[state=active]:bg-[#151515] data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
-                                  >
-                                    {file.split("/").pop()}
-                                  </TabsTrigger>
-                                ))}
-                              </TabsList>
-                              <div className="">
-                                <SandpackCodeViewer
-                                  wrapContent={true}
-                                  showTabs={false}
-                                />
-                              </div>
-                            </Tabs>
-                          </div>
-                        </>
-                      ) : (
-                        <ComponentPageInfo component={component} />
-                      )}
+                              <CopyCodeButton
+                                component_id={component.id}
+                                user_id={user?.id}
+                              />
+                              <Tabs
+                                value={activeFile}
+                                onValueChange={setActiveFile}
+                              >
+                                <TabsList className="h-9 relative bg-muted dark:bg-background justify-start w-full gap-0.5 pb-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-border px-4 overflow-x-auto flex-nowrap hide-scrollbar">
+                                  {visibleFiles.map((file) => (
+                                    <TabsTrigger
+                                      key={file}
+                                      value={file}
+                                      className="overflow-hidden data-[state=active]:rounded-b-none data-[state=active]:bg-white dark:data-[state=active]:bg-[#151515] data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
+                                    >
+                                      {file.split("/").pop()}
+                                    </TabsTrigger>
+                                  ))}
+                                </TabsList>
+                                <div className="">
+                                  <SandpackCodeViewer
+                                    wrapContent={true}
+                                    showTabs={false}
+                                  />
+                                </div>
+                              </Tabs>
+                            </div>
+                          </>
+                        ) : (
+                          <ComponentPageInfo component={component} />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </SandpackLayout>
-              </div>
-            </SandpackProvider>
-          </motion.div>
-        )}
+                  </SandpackLayout>
+                </div>
+              </SandpackProvider>
+            </motion.div>
+          ) : (
+            <PayWall />
+          ))}
       </AnimatePresence>
       {isDebug && (
         <div className="absolute top-0 left-0 bg-background text-foreground p-2 z-50">

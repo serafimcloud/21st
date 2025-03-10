@@ -173,6 +173,37 @@ export type ThemeOptions = {
   light: string
 }
 
+export type PlanType = "free" | "standard" | "pro"
+
+export interface PlanPrice {
+  monthly: number
+  yearly: number
+}
+
+export interface PlanFeature {
+  name: string
+  included: PlanType
+  category?: string
+  valueByPlan: Record<PlanType, string>
+}
+
+export interface PricingPlan {
+  name: string
+  level: PlanType
+  price: PlanPrice
+  popular?: boolean
+}
+
+export interface PlanLimits {
+  generationsPerMonth: number
+  displayName: string
+  name: string
+  description: string
+  features: string[]
+  monthlyPrice?: number
+  yearlyPrice?: number
+}
+
 export interface SVGLogo {
   id?: number
   title: string

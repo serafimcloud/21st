@@ -146,7 +146,7 @@ export function PricingTable({
           </div>
         )}
 
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 min-h-8">
           <div className="inline-flex items-center gap-2 text-xs sm:text-sm">
             <button
               type="button"
@@ -229,7 +229,7 @@ export function PricingTable({
                   {plans.map((plan) => (
                     <div
                       key={plan.level}
-                      className="w-[100px] text-center font-medium"
+                      className="w-[100px] text-left font-medium"
                     >
                       {plan.name}
                     </div>
@@ -241,11 +241,9 @@ export function PricingTable({
                   key={feature.name}
                   className={cn(
                     "flex flex-col sm:flex-row sm:items-center p-4 transition-colors",
-                    feature.included === selectedPlan &&
-                      "bg-blue-50/50 dark:bg-blue-900/20",
                   )}
                 >
-                  <div className="flex-1 min-w-[150px] text-sm font-medium sm:font-normal mb-2 sm:mb-0">
+                  <div className="flex-1 min-w-[150px] text-sm font-medium mb-2 sm:mb-0">
                     {feature.name}
                   </div>
                   <div className="flex items-center gap-4 text-sm shrink-0">
@@ -253,8 +251,8 @@ export function PricingTable({
                       <div
                         key={plan.level}
                         className={cn(
-                          "w-[100px] flex items-center gap-2 sm:justify-center",
-                          plan.level === selectedPlan && "font-medium",
+                          "w-[100px] flex items-center gap-2 justify-start",
+                          plan.level === selectedPlan ? "font-medium" : "font-light",
                         )}
                       >
                         <span className="sm:hidden text-xs text-zinc-500">
