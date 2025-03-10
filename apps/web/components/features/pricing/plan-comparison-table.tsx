@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useAtom } from "jotai"
 import { pricingFrequencyAtom } from "./pricing-tab"
 import { PlanType } from "@/lib/config/subscription-plans"
+import { SignInButton } from "@clerk/nextjs"
 
 export interface ComparisonFeature {
   name: string
@@ -37,6 +38,7 @@ export interface PlanComparisonTableProps
   currentFrequency?: "monthly" | "yearly"
   onUpgrade: (planId: PlanType, period?: "monthly" | "yearly") => void
   onDowngrade: () => void
+  isAuthenticated?: boolean
 }
 
 const planOrder: Record<PlanType, number> = {
@@ -54,6 +56,11 @@ const getButtonText = (
   const isDowngrade =
     (planOrder[tierType] ?? 0) < (planOrder[currentPlan || "free"] ?? 0)
   const isCurrentPlan = tierType === currentPlan
+
+  // Always show "Current Plan" for free plan regardless of frequency
+  if (tierType === "free" && currentPlan === "free") {
+    return "Current Plan"
+  }
 
   if (isCurrentPlan && currentFrequency !== frequency) {
     return frequency === "yearly"
@@ -92,6 +99,7 @@ export function PlanComparisonTable({
   currentFrequency = "monthly",
   onUpgrade,
   onDowngrade,
+  isAuthenticated = false,
   ...props
 }: PlanComparisonTableProps) {
   const [frequency] = useAtom(pricingFrequencyAtom)
@@ -118,6 +126,48 @@ export function PlanComparisonTable({
       return <CheckValue />
     }
     return value
+  }
+
+  const renderUpgradeButton = (plan: Plan) => {
+    const buttonText = getButtonText(
+      plan.type,
+      currentPlan,
+      currentFrequency,
+      frequency,
+    )
+
+    const buttonContent = (
+      <Button
+        variant={plan.type === "pro_plus" ? "default" : "outline"}
+        className={cn(
+          "justify-center",
+          plan.type === "pro_plus" && "bg-black text-white hover:bg-black/90",
+        )}
+        onClick={() =>
+          handlePlanSelect(
+            plan.type,
+            currentPlan,
+            currentFrequency,
+            frequency,
+            onUpgrade,
+            onDowngrade,
+          )
+        }
+        disabled={
+          plan.disabled ||
+          (plan.type === "free" && !currentPlan) ||
+          (plan.type === currentPlan && currentFrequency === frequency)
+        }
+      >
+        {buttonText}
+      </Button>
+    )
+
+    if (!isAuthenticated && plan.type !== "free") {
+      return <SignInButton mode="modal">{buttonContent}</SignInButton>
+    }
+
+    return buttonContent
   }
 
   return (
@@ -179,35 +229,7 @@ export function PlanComparisonTable({
                 </div>
               </div>
 
-              <Button
-                variant={plan.type === "pro_plus" ? "default" : "outline"}
-                className={cn(
-                  "justify-center",
-                  plan.type === "pro_plus" &&
-                    "bg-black text-white hover:bg-black/90",
-                )}
-                onClick={() =>
-                  handlePlanSelect(
-                    plan.type,
-                    currentPlan,
-                    currentFrequency,
-                    frequency,
-                    onUpgrade,
-                    onDowngrade,
-                  )
-                }
-                disabled={
-                  plan.disabled ||
-                  (plan.type === currentPlan && currentFrequency === frequency)
-                }
-              >
-                {getButtonText(
-                  plan.type,
-                  currentPlan,
-                  currentFrequency,
-                  frequency,
-                )}
-              </Button>
+              {renderUpgradeButton(plan)}
             </div>
           )
         })}

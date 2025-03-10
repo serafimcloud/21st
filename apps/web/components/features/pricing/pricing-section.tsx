@@ -11,6 +11,7 @@ import type { PlanType } from "@/lib/config/subscription-plans"
 import { useAtom } from "jotai"
 import { pricingFrequencyAtom } from "./pricing-tab"
 import React from "react"
+import { SignInButton } from "@clerk/nextjs"
 
 interface PricingProps {
   frequencies: readonly [string, ...string[]]
@@ -31,6 +32,7 @@ interface PricingProps {
   currentFrequency?: "monthly" | "yearly"
   onUpgrade: (planId: PlanType, period?: "monthly" | "yearly") => void
   onDowngrade: () => void
+  isAuthenticated?: boolean
 }
 
 const planOrder = { free: 1, pro: 2, pro_plus: 3 }
@@ -42,6 +44,7 @@ export function PricingSection({
   currentFrequency,
   onUpgrade,
   onDowngrade,
+  isAuthenticated = false,
 }: PricingProps) {
   const [frequency] = useAtom(pricingFrequencyAtom)
 
@@ -67,6 +70,11 @@ export function PricingSection({
     const isDowngrade = planOrder[tierType] < planOrder[currentPlan || "free"]
     const isCurrentPlan = tierType === currentPlan
 
+    // Always show "Current Plan" for free plan regardless of frequency
+    if (tierType === "free" && currentPlan === "free") {
+      return "Current Plan"
+    }
+
     if (isCurrentPlan && currentFrequency !== frequency) {
       return frequency === "yearly"
         ? "Switch to yearly billing"
@@ -74,6 +82,25 @@ export function PricingSection({
     }
     if (isCurrentPlan) return "Current Plan"
     return isDowngrade ? "Downgrade" : "Upgrade"
+  }
+
+  const renderUpgradeButton = (tier: PricingProps["tiers"][0]) => {
+    const buttonContent = (
+      <Button
+        variant={currentPlan === tier.type ? "outline" : "default"}
+        className={cn("w-full")}
+        disabled={currentPlan === tier.type && currentFrequency === frequency}
+        onClick={() => handleClick(tier.type)}
+      >
+        {getButtonText(tier.type)}
+      </Button>
+    )
+
+    if (!isAuthenticated && tier.type !== "free") {
+      return <SignInButton mode="modal">{buttonContent}</SignInButton>
+    }
+
+    return buttonContent
   }
 
   return (
@@ -148,37 +175,9 @@ export function PricingSection({
                       </span>
                     </div>
 
-                    <Link
-                      href={
-                        currentPlan === tier.type &&
-                        currentFrequency === frequency
-                          ? "#"
-                          : tier.href
-                      }
-                      className="block mt-6"
-                      onClick={(e) => {
-                        if (
-                          currentPlan === tier.type &&
-                          currentFrequency === frequency
-                        ) {
-                          e.preventDefault()
-                        }
-                      }}
-                    >
-                      <Button
-                        variant={
-                          currentPlan === tier.type ? "outline" : "default"
-                        }
-                        className={cn("w-full")}
-                        disabled={
-                          currentPlan === tier.type &&
-                          currentFrequency === frequency
-                        }
-                        onClick={() => handleClick(tier.type)}
-                      >
-                        {getButtonText(tier.type)}
-                      </Button>
-                    </Link>
+                    <div className="block mt-6">
+                      {renderUpgradeButton(tier)}
+                    </div>
                   </div>
 
                   <div className="px-8 pb-8">

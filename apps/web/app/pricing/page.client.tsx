@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { PlanComparisonTable } from "@/components/features/pricing/plan-comparison-table"
-import { PricingSection } from "./pricing-section"
-import { FAQ } from "./faq"
+import { PricingSection } from "../../components/features/pricing/pricing-section"
+import { FAQ } from "../../components/features/pricing/faq"
 import {
   COMPARISON_PLANS,
   COMPARISON_FEATURES,
@@ -12,6 +12,7 @@ import {
   PlanType,
 } from "@/lib/config/subscription-plans"
 import { useSubscription, PlanInfo } from "@/hooks/use-subscription"
+import { SignInButton, SignedIn, SignedOut, useAuth } from "@clerk/nextjs"
 
 const PAYMENT_FREQUENCIES = ["yearly", "monthly"] as const
 
@@ -71,7 +72,13 @@ const PRICING_FAQS = [
 const handleUpgradePlan = async (
   planId: string,
   period: "monthly" | "yearly" = "monthly",
+  isAuthenticated: boolean = false,
 ) => {
+  if (!isAuthenticated) {
+    // Return early - the SignInButton will handle the click
+    return
+  }
+
   try {
     const response = await fetch("/api/stripe/create-checkout", {
       method: "POST",
@@ -113,6 +120,7 @@ const handleDowngradePlan = async () => {
 export function Pricing() {
   const [subscription, setSubscription] = useState<PlanInfo | null>(null)
   const { isLoading, fetchSubscription } = useSubscription()
+  const { isSignedIn } = useAuth()
 
   useEffect(() => {
     const getSubscription = async () => {
@@ -143,8 +151,11 @@ export function Pricing() {
           currentFrequency={
             (subscription?.period as "monthly" | "yearly") || "monthly"
           }
-          onUpgrade={handleUpgradePlan}
+          onUpgrade={(planId, period) =>
+            handleUpgradePlan(planId, period, isSignedIn)
+          }
           onDowngrade={handleDowngradePlan}
+          isAuthenticated={isSignedIn}
         />
       </div>
 
@@ -155,8 +166,11 @@ export function Pricing() {
           plans={COMPARISON_PLANS}
           currentPlan={currentPlan}
           onSelect={handlePlanSelect}
-          onUpgrade={handleUpgradePlan}
+          onUpgrade={(planId, period) =>
+            handleUpgradePlan(planId, period, isSignedIn)
+          }
           onDowngrade={handleDowngradePlan}
+          isAuthenticated={isSignedIn}
         />
       </div>
 

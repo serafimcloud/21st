@@ -1,10 +1,6 @@
 import { auth } from "@clerk/nextjs/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { OnboardingClient } from "./page.client"
-import { Header } from "@/components/ui/header.client"
-import { Logo } from "@/components/ui/logo"
-import { Footer } from "@/components/ui/footer"
-import { ApiKey } from "@/types/global"
 
 async function getApiKey(userId: string) {
   const supabase = supabaseWithAdminAccess

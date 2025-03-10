@@ -6,7 +6,6 @@ import { Icons } from "@/components/icons"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TermsDialog } from "@/components/features/api/terms-dialog"
 import { SignInButton } from "@clerk/nextjs"
-import { LogIn } from "lucide-react"
 
 interface WelcomeStepProps {
   onComplete: () => void

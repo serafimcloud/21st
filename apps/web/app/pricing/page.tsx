@@ -1,4 +1,4 @@
-import { Pricing } from "@/components/features/pricing/pricing"
+import { Pricing } from "@/app/pricing/page.client"
 import { Header } from "@/components/ui/header.client"
 import { Footer } from "@/components/ui/footer"
 
