@@ -50,9 +50,10 @@ export const compileCSS = async ({
         )
 
         if (!matches) {
-          throw new Error(
-            "Invalid Tailwind config format: Could not parse configuration object",
+          console.warn(
+            "Invalid Tailwind config format: Could not parse configuration object. Falling back to base config.",
           )
+          return await processCSS(jsx, baseConfigObj, globalCss)
         }
 
         const [_, beforeConfig, __, configObject, afterConfig] = matches
@@ -90,19 +91,22 @@ export const compileCSS = async ({
 
             return await processCSS(jsx, evaluatedFinalConfig, globalCss)
           } catch (evalError) {
-            throw new Error(
-              `Error evaluating final Tailwind config: ${evalError instanceof Error ? evalError.message : String(evalError)}`,
+            console.warn(
+              `Error evaluating final Tailwind config: ${evalError instanceof Error ? evalError.message : String(evalError)}. Falling back to base config.`,
             )
+            return await processCSS(jsx, baseConfigObj, globalCss)
           }
         } catch (functionError) {
-          throw new Error(
-            `Error processing custom Tailwind config: ${functionError instanceof Error ? functionError.message : String(functionError)}`,
+          console.warn(
+            `Error processing custom Tailwind config: ${functionError instanceof Error ? functionError.message : String(functionError)}. Falling back to base config.`,
           )
+          return await processCSS(jsx, baseConfigObj, globalCss)
         }
       } catch (transpileError) {
-        throw new Error(
-          `Error transpiling custom Tailwind config: ${transpileError instanceof Error ? transpileError.message : String(transpileError)}`,
+        console.warn(
+          `Error transpiling custom Tailwind config: ${transpileError instanceof Error ? transpileError.message : String(transpileError)}. Falling back to base config.`,
         )
+        return await processCSS(jsx, baseConfigObj, globalCss)
       }
     }
 

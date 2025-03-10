@@ -50,8 +50,6 @@ export const bundleReact = async ({
       `,
     }
 
-    console.log("CUSTOM TAILWIND CONFIG", customTailwindConfig)
-
     const bundledCss = await compileCSS({
       jsx: allFiles["main.tsx"],
       baseTailwindConfig,
