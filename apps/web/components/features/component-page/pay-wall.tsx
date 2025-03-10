@@ -237,6 +237,7 @@ function UnlockPaywall({
   const purchaseMutation = usePurchaseComponent()
   const [showUnlockDialog, setShowUnlockDialog] = useState(false)
   const [, setComponentAccess] = useAtom(componentAccessAtom)
+  const [userState, setUserState] = useAtom(userStateAtom)
 
   const handleUnlockComponent = async () => {
     try {
@@ -250,6 +251,16 @@ function UnlockPaywall({
           componentId: component.id,
           accessState: "UNLOCKED",
         })
+
+        // Update user balance
+        if (userState.balance !== null) {
+          setUserState((prev) => ({
+            ...prev,
+            balance:
+              prev.balance !== null ? prev.balance - component.price : null,
+          }))
+        }
+
         toast.success("Component unlocked successfully!")
         setShowUnlockDialog(false)
       } else {
