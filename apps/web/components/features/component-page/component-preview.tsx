@@ -13,6 +13,11 @@ import {
   ChevronDown,
 } from "lucide-react"
 
+import {
+  SandpackProvider as SandpackProviderUnstyled,
+  SandpackPreview,
+} from "@codesandbox/sandpack-react/unstyled"
+
 import { ComponentPageInfo } from "./info-section"
 import { Icons } from "@/components/icons"
 import { LoadingSpinner } from "../../ui/loading-spinner"
@@ -302,19 +307,18 @@ export function ComponentPagePreview({
         <FullScreenButton />
 
         {previewError && (
-          <div className="flex flex-col items-center justify-center h-full gap-3">
-            <p className="text-muted-foreground text-sm">
-              Failed to load preview
-            </p>
-            <button
-              onClick={() => {
-                window.location.reload()
+          <SandpackProviderUnstyled {...providerProps}>
+            <SandpackPreview
+              showSandpackErrorOverlay={false}
+              showOpenInCodeSandbox={process.env.NODE_ENV === "development"}
+              showRefreshButton={false}
+              onLoad={() => setIsLoading(false)}
+              onError={() => {
+                setPreviewError(true)
+                setIsLoading(false)
               }}
-              className="text-sm underline text-muted-foreground hover:text-foreground"
-            >
-              Try again
-            </button>
-          </div>
+            />
+          </SandpackProviderUnstyled>
         )}
 
         {isLoading && (
