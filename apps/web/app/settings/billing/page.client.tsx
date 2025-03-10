@@ -373,8 +373,6 @@ export function BillingSettingsClient({
   }
 
   const displayLimit = usageLimit
-  console.log("Displaying limit:", displayLimit)
-  console.log("Usage count:", usageCount)
 
   return (
     <div className="space-y-6">

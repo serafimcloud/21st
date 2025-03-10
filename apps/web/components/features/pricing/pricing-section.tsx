@@ -37,7 +37,7 @@ export function PricingSection({
   const [frequency] = useAtom(pricingFrequencyAtom)
 
   return (
-    <div className="py-24 sm:py-32">
+    <div className="py-24">
       <div className="mx-auto max-w-5xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center mb-8">
           <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl mb-3">

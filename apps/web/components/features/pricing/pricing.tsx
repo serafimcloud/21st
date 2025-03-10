@@ -101,7 +101,7 @@ export function Pricing() {
       </div>
 
       {/* Compare Plans Section */}
-      <div>
+      <div className="hidden md:block">
         <PlanComparisonTable
           features={COMPARISON_FEATURES}
           plans={COMPARISON_PLANS}
