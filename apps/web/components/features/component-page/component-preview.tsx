@@ -54,7 +54,6 @@ import styles from "./component-preview.module.css"
 import { FullScreenButton } from "../../ui/full-screen-button"
 import { useBundleDemo } from "@/hooks/use-bundle-demo"
 import { PayWall } from "./pay-wall"
-import { debugAccessStateAtom } from "./pay-wall"
 import { ComponentAccessState } from "@/hooks/use-component-access"
 
 export function ComponentPagePreview({
@@ -98,9 +97,8 @@ export function ComponentPagePreview({
   const [isShowCode, setIsShowCode] = useAtom(isShowCodeAtom)
   const isDebug = useDebugMode()
   const [isFullScreen] = useAtom(isFullScreenAtom)
-  const [debugState] = useAtom(debugAccessStateAtom)
 
-  const effectiveAccessState = debugState || accessState
+  const effectiveAccessState = accessState
 
   const dumySandpackFiles = generateSandpackFiles({
     demoComponentNames,

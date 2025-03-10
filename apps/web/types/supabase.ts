@@ -520,6 +520,66 @@ export type Database = {
           },
         ]
       }
+      components_purchases: {
+        Row: {
+          component_id: number
+          created_at: string | null
+          id: string
+          price_paid: number
+          user_id: string
+        }
+        Insert: {
+          component_id: number
+          created_at?: string | null
+          id?: string
+          price_paid: number
+          user_id: string
+        }
+        Update: {
+          component_id?: number
+          created_at?: string | null
+          id?: string
+          price_paid?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "components_purchases_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_purchases_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_purchases_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "components_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_bookmarks: {
         Row: {
           bookmarked_at: string | null
@@ -1962,6 +2022,13 @@ export type Database = {
           user_data: Json
           usage_data: Json
         }[]
+      }
+      purchase_component: {
+        Args: {
+          p_user_id: string
+          p_component_id: number
+        }
+        Returns: Json
       }
       record_mcp_component_usage:
         | {

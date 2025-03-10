@@ -1,14 +1,11 @@
 import { Button } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
-import { useRouter } from "next/navigation"
 import { useHotkeys } from "react-hotkeys-hook"
-import { Check, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Component } from "@/types/global"
 import { ComponentAccessState } from "@/hooks/use-component-access"
-import { atomWithStorage } from "jotai/utils"
 import { useAtom } from "jotai"
-import { userStateAtom } from "@/lib/store/user-store"
-import type { PrimitiveAtom } from "jotai/vanilla"
+import { userStateAtom, componentAccessAtom } from "@/lib/store/user-store"
 import { toast } from "sonner"
 import { useState } from "react"
 import {
@@ -21,13 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { FeatureCards } from "@/components/features/component-page/feature-cards"
 import { cn } from "@/lib/utils"
-
-export const debugAccessStateAtom: PrimitiveAtom<ComponentAccessState | null> =
-  atomWithStorage<ComponentAccessState | null>("debug_access_state", null)
-
-export const debugBalanceAtom: PrimitiveAtom<number | null> = atomWithStorage<
-  number | null
->("debug_balance", null)
+import { usePurchaseComponent } from "@/lib/queries"
 
 interface PayWallProps {
   accessState: ComponentAccessState
@@ -35,13 +26,9 @@ interface PayWallProps {
 }
 
 export function PayWall({ accessState, component }: PayWallProps) {
-  const router = useRouter()
-  const [, setDebugState] = useAtom(debugAccessStateAtom)
   const [userState] = useAtom(userStateAtom)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showUnlockDialog, setShowUnlockDialog] = useState(false)
-
-  const showDebugPanel = process.env.NODE_ENV === "development"
 
   const handleUpgradePlan = async (
     planId: string,
@@ -131,23 +118,6 @@ export function PayWall({ accessState, component }: PayWallProps) {
   return (
     <div className="relative h-full w-full">
       <div className="absolute inset-0 pointer-events-none bg-grid-purple" />
-
-      {showDebugPanel && (
-        <div className="absolute top-2 right-2 z-50 bg-background/80 backdrop-blur-sm p-2 rounded-lg border">
-          <select
-            value={accessState}
-            onChange={(e) =>
-              setDebugState(e.target.value as ComponentAccessState)
-            }
-            className="text-sm p-1 rounded border bg-background"
-          >
-            <option value="ACCESSIBLE">Accessible</option>
-            <option value="REQUIRES_SUBSCRIPTION">Needs Subscription</option>
-            <option value="REQUIRES_TOKENS">Needs Tokens</option>
-            <option value="REQUIRES_UNLOCK">Ready to Unlock</option>
-          </select>
-        </div>
-      )}
 
       <div className="relative z-10 h-full w-full overflow-hidden rounded-sm flex flex-col items-center justify-between p-4 text-center">
         {accessState === "REQUIRES_SUBSCRIPTION" && (
@@ -256,14 +226,80 @@ export function PayWall({ accessState, component }: PayWallProps) {
 }
 
 function UnlockPaywall({
-  isProcessing,
-  onUnlock,
+  component,
+  balance,
 }: {
   component: Component
   balance: number
   isProcessing: boolean
   onUnlock: () => void
 }) {
+  const purchaseMutation = usePurchaseComponent()
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false)
+  const [, setComponentAccess] = useAtom(componentAccessAtom)
+
+  const handleUnlockComponent = async () => {
+    try {
+      const result = await purchaseMutation.mutateAsync({
+        componentId: component.id,
+      })
+
+      if (result.success) {
+        // Update component access state
+        setComponentAccess({
+          componentId: component.id,
+          accessState: "UNLOCKED",
+        })
+        toast.success("Component unlocked successfully!")
+        setShowUnlockDialog(false)
+      } else {
+        switch (result.error.type) {
+          case "INSUFFICIENT_TOKENS":
+            toast.error("Not enough tokens available")
+            break
+          case "ALREADY_PURCHASED":
+            toast.error("You have already purchased this component")
+            break
+          case "UNAUTHORIZED":
+            toast.error("Please log in to unlock components")
+            break
+          default:
+            toast.error(result.error.message)
+        }
+      }
+    } catch (error) {
+      toast.error("Failed to unlock component. Please try again.")
+    }
+  }
+
+  useHotkeys(
+    ["enter"],
+    () => {
+      // Only trigger if we're not in any dialog
+      const isInAnyDialog = document.querySelector('[role="dialog"]') !== null
+      if (!isInAnyDialog) {
+        setShowUnlockDialog(true)
+      }
+    },
+    { preventDefault: true },
+  )
+
+  useHotkeys(
+    ["meta+enter", "ctrl+enter"],
+    () => {
+      // Check if we're in the unlock dialog
+      const isInUnlockDialog =
+        document.querySelector('[data-dialog-type="unlock-component"]') !== null
+
+      if (isInUnlockDialog) {
+        handleUnlockComponent()
+      } else if (!showUnlockDialog) {
+        setShowUnlockDialog(true)
+      }
+    },
+    { preventDefault: true },
+  )
+
   const features = [
     {
       title: "Full Source Code",
@@ -290,14 +326,14 @@ function UnlockPaywall({
         </div>
 
         <Button
-          onClick={onUnlock}
-          disabled={isProcessing}
+          onClick={() => setShowUnlockDialog(true)}
+          disabled={purchaseMutation.isPending}
           className={cn(
             "flex items-center justify-center gap-1.5",
-            isProcessing ? "" : "pr-1.5",
+            purchaseMutation.isPending ? "" : "pr-1.5",
           )}
         >
-          {isProcessing ? (
+          {purchaseMutation.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing...
@@ -312,6 +348,83 @@ function UnlockPaywall({
           )}
         </Button>
       </div>
+
+      <Dialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
+        <DialogContent className="p-4" data-dialog-type="unlock-component">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold tracking-tight">
+              Unlock Component
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              You're about to unlock this component using your tokens.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Current Balance
+              </span>
+              <span className="text-sm font-medium">{balance} tokens</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Component Price
+              </span>
+              <span className="text-sm font-medium text-destructive">
+                -{component.price} tokens
+              </span>
+            </div>
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-foreground">
+                  Remaining Balance
+                </span>
+                <span className="text-sm font-medium text-foreground">
+                  {balance - component.price} tokens
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowUnlockDialog(false)}
+              className="text-sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUnlockComponent}
+              disabled={purchaseMutation.isPending}
+              className={cn(
+                "text-sm gap-1.5",
+                purchaseMutation.isPending ? "" : "pr-1.5",
+              )}
+            >
+              {purchaseMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Unlock
+                  <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                    <span className="text-[10px]">
+                      {navigator?.platform?.toLowerCase()?.includes("mac")
+                        ? "⌘"
+                        : "Ctrl"}
+                    </span>
+                    <Icons.enter className="h-2.5 w-2.5" />
+                  </kbd>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <FeatureCards title="What's included" features={features} />
     </div>

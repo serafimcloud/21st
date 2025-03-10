@@ -179,7 +179,10 @@ const useKeyboardShortcuts = ({
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
       // Check if we're not in an input/editing mode
-      if (isEditingCode || e.target instanceof Element && e.target.matches("input, textarea")) {
+      if (
+        isEditingCode ||
+        (e.target instanceof Element && e.target.matches("input, textarea"))
+      ) {
         return
       }
 
@@ -345,6 +348,7 @@ type ComponentPageProps = {
   globalCss?: string
   compiledCss?: string
   submission?: Submission
+  hasPurchased?: boolean
 }
 
 export default function ComponentPage({
@@ -362,6 +366,7 @@ export default function ComponentPage({
   compiledCss,
   componentDemos,
   submission,
+  hasPurchased = false,
 }: ComponentPageProps) {
   const [component, setComponent] = useState(initialComponent)
   const demo = initialDemo
@@ -374,8 +379,15 @@ export default function ComponentPage({
   const canEdit = user?.id === component.user_id || isAdmin
   const router = useRouter()
 
-  const accessState = useComponentAccess(component)
+  const accessState = useComponentAccess(component, hasPurchased)
   const showPaywall = accessState !== "UNLOCKED"
+
+  console.log({
+    hasPurchased,
+    accessState,
+    showPaywall,
+    componentId: component.id,
+  })
 
   const { data: bookmarked } = useHasUserBookmarkedDemo(
     supabase,
@@ -1031,12 +1043,12 @@ export default function ComponentPage({
             </div>
             <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm">
               <Button
-                onClick={showPaywall ? handlePromptAction : undefined}
+                onClick={!showPaywall ? handlePromptAction : undefined}
                 className="rounded-none shadow-none first:rounded-s-lg focus-visible:z-10"
-                disabled={!showPaywall}
-                variant={!showPaywall ? "secondary" : "default"}
+                disabled={showPaywall}
+                variant={showPaywall ? "secondary" : "default"}
               >
-                {!showPaywall ? (
+                {showPaywall ? (
                   "Unlock to copy prompt"
                 ) : selectedPromptType === "v0-open" ? (
                   <>
@@ -1065,8 +1077,8 @@ export default function ComponentPage({
                   <Button
                     className="rounded-none shadow-none last:rounded-e-lg focus-visible:z-10"
                     size="icon"
-                    disabled={!showPaywall}
-                    variant={!showPaywall ? "secondary" : "default"}
+                    disabled={showPaywall}
+                    variant={showPaywall ? "secondary" : "default"}
                   >
                     <ChevronDown size={16} strokeWidth={2} />
                   </Button>
