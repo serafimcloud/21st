@@ -47,7 +47,7 @@ const customShikiStyles = `
 `
 
 const codeVariants = cva(
-  "font-mono rounded-md cursor-pointer overflow-auto transition-all duration-200 relative",
+  "font-mono rounded-md cursor-pointer overflow-auto transition-all duration-200 relative shadow-inner",
   {
     variants: {
       display: {

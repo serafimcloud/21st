@@ -1,21 +1,23 @@
 "use client"
 
 import * as React from "react"
-import { categories } from "@/lib/navigation"
+import { categories as defaultCategories } from "@/lib/navigation"
+import { useFilteredNavigation } from "@/lib/navigation-with-magic"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
 import { Icons } from "@/components/icons"
+import { usePathname } from "next/navigation"
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip"
+import { ArrowUpRight } from "lucide-react"
 
 import {
   Sidebar,
   SidebarContent,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -24,9 +26,23 @@ import {
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
 
+// Import types from navigation-with-magic.tsx
+import type {
+  NavigationItem,
+  NavigationCategory,
+} from "@/lib/navigation-with-magic"
+
 export function MainSidebar() {
   const { toggleSidebar } = useSidebar()
   const [showTrigger, setShowTrigger] = React.useState(true)
+  const [hoveredItem, setHoveredItem] = React.useState<string | null>(null)
+  const pathname = usePathname()
+
+  // Use the filtered navigation that checks if Magic onboarding is completed
+  const filteredCategories = useFilteredNavigation()
+
+  // Fall back to default categories if filteredCategories is not available (SSR)
+  const categories = filteredCategories || defaultCategories
 
   return (
     <Sidebar className="hidden md:block">
@@ -62,35 +78,64 @@ export function MainSidebar() {
         </div>
       </div>
       <SidebarContent className="pb-14">
-        {categories.map((category) => (
+        {categories.map((category: NavigationCategory) => (
           <SidebarGroup key={category.title}>
             <SidebarGroupLabel className="text-sm font-semibold text-foreground">
-              {category.title}
+              <div className="flex items-center">
+                {category.title}
+                {category.isNew && (
+                  <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
+                    New
+                  </span>
+                )}
+              </div>
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {category.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link
-                        href={item.href}
-                        className="w-full flex items-center justify-between"
-                      >
-                        <span className="flex items-center">
-                          {item.title}
-                          {item.isNew && (
-                            <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
-                              New
-                            </span>
+                {category.items.map((item: NavigationItem) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href === "/magic/get-started" &&
+                      pathname.startsWith("/magic/get-started"))
+
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            "w-full flex items-center justify-between group",
+                            isActive && "bg-accent font-medium",
                           )}
-                        </span>
-                        <span className="text-muted-foreground text-sm">
-                          {item.demosCount}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                          target={item.externalLink ? "_blank" : undefined}
+                          rel={
+                            item.externalLink
+                              ? "noopener noreferrer"
+                              : undefined
+                          }
+                          onMouseEnter={() => setHoveredItem(item.title)}
+                          onMouseLeave={() => setHoveredItem(null)}
+                        >
+                          <span className="flex items-center">
+                            {item.title}
+                            {item.isNew && (
+                              <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
+                                New
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-muted-foreground text-sm flex items-center">
+                            {item.externalLink &&
+                              hoveredItem === item.title && (
+                                <ArrowUpRight className="ml-1 h-3.5 w-3.5 transition-opacity" />
+                              )}
+                            {item.demosCount}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

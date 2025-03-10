@@ -2,17 +2,13 @@
 
 import { useState } from "react"
 import { motion } from "motion/react"
-import { toast } from "sonner"
 import NumberFlow from "@number-flow/react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { cn } from "@/lib/utils"
 import { Mockup, MockupFrame } from "@/components/ui/mockup"
 import Image from "next/image"
 import Link from "next/link"
-import { addToMagicWaitlist } from "@/lib/resend"
 
 type SpotlightProps = {
   gradientFirst?: string
@@ -142,61 +138,11 @@ const Spotlight = ({
 }
 
 export function Hero() {
-  const [email, setEmail] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [count, setCount] = useState(3046)
   const [ref, isIntersecting] = useIntersectionObserver({
     threshold: 0,
     rootMargin: "-80px",
   })
-  const [count, setCount] = useState(2165)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    const time = new Date()
-    const timestamp = time.valueOf()
-    const previousTimestamp = localStorage.getItem("loops-form-timestamp")
-
-    if (previousTimestamp && Number(previousTimestamp) + 60000 > timestamp) {
-      toast.error("Too many signups, please try again in a little while")
-      setIsLoading(false)
-      return
-    }
-
-    localStorage.setItem("loops-form-timestamp", timestamp.toString())
-
-    try {
-      const { success, error } = await addToMagicWaitlist(email)
-
-      if (success) {
-        toast.success(
-          "Thanks for joining the waitlist! We'll be in touch soon!",
-        )
-        setEmail("")
-        setCount(prev => prev + 1)
-      } else {
-        throw error
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === "Failed to fetch") {
-        toast.error("Too many signups, please try again in a little while")
-        return
-      }
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to join waitlist. Please try again.",
-      )
-      localStorage.setItem("loops-form-timestamp", "")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  }
 
   return (
     <div className="relative min-h-screen bg-black/[0.96] antialiased bg-grid-purple/[0.02] overflow-hidden">
@@ -250,56 +196,39 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-10 w-full max-w-md"
           >
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="min-h-[48px] sm:!h-12 flex-1 bg-white/5 text-neutral-200 border-white/10"
-                  required
-                />
-                <Button
-                  type="submit"
-                  disabled={!isValidEmail(email) || isLoading}
-                  className={cn(
-                    "min-h-[48px] sm:h-12 whitespace-nowrap bg-white/10 px-6 text-neutral-200 hover:bg-white/20 backdrop-blur-sm border-none",
-                    isLoading && "opacity-50",
-                  )}
-                >
-                  {isLoading ? "Joining..." : "Join Waitlist"}
-                </Button>
-              </div>
+            <div className="flex justify-center">
+              <Button
+                asChild
+                className="min-h-[48px] sm:h-12 whitespace-nowrap bg-white/10 px-8 text-neutral-200 hover:bg-white/20 backdrop-blur-sm border-none"
+              >
+                <Link href="/magic/get-started">Get Started</Link>
+              </Button>
+            </div>
 
-              <div className="flex items-center justify-between px-2">
-                <div className="flex items-center gap-4">
-                  <div className="flex -space-x-3">
-                    <Avatar className="h-8 w-8 border border-black">
-                      <AvatarFallback className="bg-slate-900 text-sm font-medium text-neutral-200">
-                        JD
-                      </AvatarFallback>
-                    </Avatar>
-                    <Avatar className="h-8 w-8 border border-black">
-                      <AvatarFallback className="bg-gray-900 text-sm font-medium text-neutral-200">
-                        AS
-                      </AvatarFallback>
-                    </Avatar>
-                    <Avatar className="h-8 w-8 border border-black">
-                      <AvatarFallback className="bg-zinc-900 text-sm font-medium text-neutral-200">
-                        MK
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                  <span className="text-sm text-neutral-300">
-                    <NumberFlow value={count} />+ people joined
-                  </span>
+            <div className="flex items-center justify-center mt-4 px-2">
+              <div className="flex items-center gap-4">
+                <div className="flex -space-x-3">
+                  <Avatar className="h-8 w-8 border border-black">
+                    <AvatarFallback className="bg-slate-900 text-sm font-medium text-neutral-200">
+                      JD
+                    </AvatarFallback>
+                  </Avatar>
+                  <Avatar className="h-8 w-8 border border-black">
+                    <AvatarFallback className="bg-gray-900 text-sm font-medium text-neutral-200">
+                      AS
+                    </AvatarFallback>
+                  </Avatar>
+                  <Avatar className="h-8 w-8 border border-black">
+                    <AvatarFallback className="bg-zinc-900 text-sm font-medium text-neutral-200">
+                      MK
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
                 <span className="text-sm text-neutral-300">
-                  Queue: 1-2 days
+                  <NumberFlow value={count} />+ people using Magic
                 </span>
               </div>
-            </form>
+            </div>
           </motion.div>
 
           {/* Mockup Section */}

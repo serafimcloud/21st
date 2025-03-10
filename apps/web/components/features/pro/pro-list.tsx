@@ -26,6 +26,8 @@ export function ProList({ className }: ProListProps) {
       const publishersWithImages = data.map((publisher) => ({
         ...publisher,
         image: publisher.pro_banner_url,
+        paypal_email: null,
+        role: null,
       }))
 
       return publishersWithImages

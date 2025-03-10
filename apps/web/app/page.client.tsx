@@ -21,7 +21,6 @@ import {
   MagicBanner,
   magicBannerVisibleAtom,
 } from "@/components/features/magic/magic-banner"
-import { LogosList } from "@/components/features/logos/logos-list"
 
 const MainContent = React.memo(function MainContent({
   activeTab,
@@ -38,7 +37,6 @@ const MainContent = React.memo(function MainContent({
     | "authors"
     | "pro"
     | "templates"
-    | "logos"
   selectedFilter: string
   setSelectedFilter: (filter: string) => void
   sortBy: SortOption
@@ -50,8 +48,7 @@ const MainContent = React.memo(function MainContent({
       | "components"
       | "authors"
       | "pro"
-      | "templates"
-      | "logos",
+      | "templates",
   ) => void
 }) {
   const renderContent = () => {
@@ -128,20 +125,6 @@ const MainContent = React.memo(function MainContent({
             <TemplatesContainer tagSlug={selectedFilter} />
           </>
         )
-      case "logos":
-        return (
-          <>
-            <FilterChips
-              activeTab={activeTab}
-              selectedFilter={selectedFilter}
-              onFilterChange={setSelectedFilter}
-            />
-            <LogosList
-              category={selectedFilter === "all" ? undefined : selectedFilter}
-              onCategoryChange={setSelectedFilter}
-            />
-          </>
-        )
       default:
         return null
     }
@@ -165,15 +148,14 @@ export function HomePageClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<
-    "categories" | "components" | "authors" | "pro" | "templates" | "logos"
+    "categories" | "components" | "authors" | "pro" | "templates"
   >(
     (searchParams.get("tab") as
       | "categories"
       | "components"
       | "authors"
       | "pro"
-      | "templates"
-      | "logos") || "components",
+      | "templates") || "components",
   )
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
@@ -220,8 +202,7 @@ export function HomePageClient() {
       | "components"
       | "authors"
       | "pro"
-      | "templates"
-      | "logos",
+      | "templates",
   ) => {
     setActiveTab(newTab)
     setSelectedFilter("all")
@@ -229,8 +210,8 @@ export function HomePageClient() {
 
   return (
     <>
-      <AnimatePresence mode="popLayout">
-        <AnimatePresence>
+      <AnimatePresence mode="popLayout" key="main-content">
+        <AnimatePresence key="magic-banner">
           {shouldShowBanner && (
             <motion.div
               initial={{ opacity: 0, height: 0, marginBottom: 0 }}
@@ -242,6 +223,12 @@ export function HomePageClient() {
                   duration: 0.2,
                 },
               }}
+              className="hidden md:block"
+              style={
+                {
+                  "--sidebar-width": sidebarOpen ? "280px" : "0px",
+                } as React.CSSProperties
+              }
             >
               <MagicBanner />
             </motion.div>
@@ -250,7 +237,8 @@ export function HomePageClient() {
         <div
           className={cn(
             "container mx-auto px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px] transition-[margin] duration-200 ease-in-out",
-            shouldShowBanner && isBannerVisible ? "mt-[144px]" : "mt-20",
+            "mt-20",
+            shouldShowBanner && isBannerVisible ? "md:mt-[144px]" : "",
           )}
         >
           <MainContent

@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { motion } from "motion/react"
+
 export function BaseComponent() {
   return (
     <div className="w-full h-full p-4 bg-white rounded-lg shadow-md flex flex-col items-center justify-center">
@@ -21,7 +22,6 @@ export function AnimatedOverlay({ hovered }: AnimatedOverlayProps) {
       animate={{ filter: hovered ? "blur(5px)" : "blur(0px)" }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      {/* Можно задать дополнительный фон или контент */}
       <div className="w-full h-full bg-black bg-opacity-20 flex items-center justify-center rounded-lg">
         <h2 className="text-xl font-bold text-white">Overlay Content</h2>
       </div>

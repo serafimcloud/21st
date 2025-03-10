@@ -4,6 +4,7 @@ import { PromptType } from "@/types/global"
 import { uniq } from "lodash"
 import { Brain, Sparkles, Terminal } from "lucide-react"
 import { Icons } from "@/components/icons"
+import { PromptRule } from "@/types/prompt-rules"
 
 interface PromptOptionBase {
   type: "option"
@@ -24,25 +25,12 @@ type PromptOption = PromptOptionBase | PromptSeparator
 export const promptOptions: PromptOption[] = [
   {
     type: "option",
-    id: PROMPT_TYPES.BASIC,
-    label: "Basic",
-    description: "Standard prompt for AI code editors",
+    id: PROMPT_TYPES.EXTENDED,
+    label: "For most AI code editors",
+    description: "Optimized for most AI code editors",
     action: "copy",
     icon: (
       <Sparkles
-        size={16}
-        className="min-h-[16px] min-w-[16px] max-h-[16px] max-w-[16px]"
-      />
-    ),
-  },
-  {
-    type: "option",
-    id: PROMPT_TYPES.EXTENDED,
-    label: "Extended",
-    description: "Extended prompt for complex components",
-    action: "copy",
-    icon: (
-      <Brain
         size={16}
         className="min-h-[16px] min-w-[16px] max-h-[16px] max-w-[16px]"
       />
@@ -141,6 +129,8 @@ export const getComponentInstallPrompt = ({
   npmDependenciesOfRegistryDependencies,
   tailwindConfig,
   globalCss,
+  promptRule,
+  userAdditionalContext,
 }: {
   promptType: PromptType
   codeFileName: string
@@ -152,6 +142,8 @@ export const getComponentInstallPrompt = ({
   npmDependenciesOfRegistryDependencies: Record<string, string>
   tailwindConfig?: string
   globalCss?: string
+  promptRule?: PromptRule
+  userAdditionalContext?: string
 }) => {
   const componentFileName = codeFileName.split("/").slice(-1)[0]
   const componentDemoFileName = demoCodeFileName.split("/").slice(-1)[0]
@@ -224,6 +216,54 @@ export const getComponentInstallPrompt = ({
           - You MUST create all mentioned files in full, without abbreviations. Do not use placeholders like "insert the rest of the code here"
       `
 
+    // Apply prompt rule if provided
+    if (promptRule) {
+      // Add tech stack from prompt rule
+      if (promptRule.tech_stack && promptRule.tech_stack.length > 0) {
+        const techStackString = promptRule.tech_stack
+          .map(
+            (tech) => `${tech.name}${tech.version ? ` ${tech.version}` : ""}`,
+          )
+          .join(", ")
+
+        prompt += `\n\nProject Tech Stack: ${techStackString}`
+      }
+
+      // Add theme configuration from prompt rule
+      if (promptRule.theme) {
+        // Override tailwind config if provided in the prompt rule
+        if (promptRule.theme.tailwindConfig) {
+          tailwindConfig = promptRule.theme.tailwindConfig
+        }
+
+        // Override global CSS if provided in the prompt rule
+        if (promptRule.theme.globalCss) {
+          globalCss = promptRule.theme.globalCss
+        }
+
+        // Add custom colors if provided
+        if (
+          promptRule.theme.colors &&
+          Object.keys(promptRule.theme.colors).length > 0
+        ) {
+          prompt += `\n\nCustom Colors: ${JSON.stringify(promptRule.theme.colors, null, 2)}`
+        }
+
+        // Add custom spacing if provided
+        if (
+          promptRule.theme.spacing &&
+          Object.keys(promptRule.theme.spacing).length > 0
+        ) {
+          prompt += `\n\nCustom Spacing: ${JSON.stringify(promptRule.theme.spacing, null, 2)}`
+        }
+      }
+
+      // Add additional context from prompt rule
+      if (promptRule.additional_context) {
+        prompt += `\n\nAdditional Context: ${promptRule.additional_context}`
+      }
+    }
+
     return prompt
   }
 
@@ -264,6 +304,52 @@ export const getComponentInstallPrompt = ({
         REMEMBER TO KEEP THE DESIGN AND FUNCTIONALITY OF THE COMPONENT AS IS AND IN FULL 
       ` +
       "\n"
+
+    // Add prompt rule and additional context for SITEBREW
+    if (promptRule) {
+      if (promptRule.tech_stack?.length) {
+        const techStack = promptRule.tech_stack
+          .map(
+            (tech) => `${tech.name}${tech.version ? ` ${tech.version}` : ""}`,
+          )
+          .join(", ")
+        prompt +=
+          "\n\nPlease use the following technologies in your implementation: " +
+          techStack
+      }
+
+      if (promptRule.theme) {
+        if (promptRule.theme.tailwindConfig) {
+          prompt +=
+            "\n\nFor context, here is the current Tailwind configuration being used: " +
+            promptRule.theme.tailwindConfig
+        }
+        if (promptRule.theme.globalCss) {
+          prompt +=
+            "\n\nFor context, here are the global CSS styles being used: " +
+            promptRule.theme.globalCss
+        }
+        if (promptRule.theme.colors) {
+          const colors = Object.entries(promptRule.theme.colors)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")
+          prompt += "\n\nPlease use these custom color values: \n" + colors
+        }
+        if (promptRule.theme.spacing) {
+          const spacing = Object.entries(promptRule.theme.spacing)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")
+          prompt += "\n\nPlease use these custom spacing values: \n" + spacing
+        }
+      }
+
+      if (promptRule.additional_context) {
+        prompt +=
+          "\n\nAdditional important context to consider: " +
+          promptRule.additional_context
+      }
+    }
+
     return prompt
   }
 
@@ -392,34 +478,128 @@ export const getComponentInstallPrompt = ({
       "\n"
   }
 
-  if (promptType === PROMPT_TYPES.REPLIT) {
-    prompt +=
-      "\n" +
-      endent`
+  // Add prompt rule and additional context for all other prompt types
+  if (promptRule) {
+    if (promptRule.tech_stack?.length) {
+      const techStack = promptRule.tech_stack
+        .map((tech) => `${tech.name}${tech.version ? ` ${tech.version}` : ""}`)
+        .join(", ")
+      prompt +=
+        "\n\nPlease use the following technologies in your implementation: " +
+        techStack
+    }
+
+    if (promptRule.theme) {
+      if (promptRule.theme.tailwindConfig) {
+        prompt +=
+          "\n\nFor context, here is the current Tailwind configuration being used: " +
+          promptRule.theme.tailwindConfig
+      }
+      if (promptRule.theme.globalCss) {
+        prompt +=
+          "\n\nFor context, here are the global CSS styles being used: " +
+          promptRule.theme.globalCss
+      }
+      if (promptRule.theme.colors) {
+        const colors = Object.entries(promptRule.theme.colors)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("\n")
+        prompt += "\n\nPlease use these custom color values: \n" + colors
+      }
+      if (promptRule.theme.spacing) {
+        const spacing = Object.entries(promptRule.theme.spacing)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("\n")
+        prompt += "\n\nPlease use these custom spacing values: \n" + spacing
+      }
+    }
+
+    if (promptRule.additional_context) {
+      prompt +=
+        "\n\nAdditional important context to consider: " +
+        promptRule.additional_context
+    }
+
+    // Add user's additional context if provided
+    if (userAdditionalContext) {
+      prompt += "\n\nUser Additional Context:\n" + userAdditionalContext
+    }
+
+    if (promptType === PROMPT_TYPES.REPLIT) {
+      prompt +=
+        "\n" +
+        endent`
         Remember: For the code above, not change the component's code unless it's required to integrate or the user asks you to.
         IMPORTANT: The code above contains the initial prototype desired by the user. Create all mentioned files in full, without abbreviations. Do not use placeholders like "insert the rest of the code here" – output every line of code exactly as it is, so it can be copied and pasted directly into the project.
       `
-  } else {
-    prompt +=
-      "\n" +
-      endent`
+    } else {
+      prompt +=
+        "\n" +
+        endent`
         Remember: Do not change the component's code unless it's required to integrate or the user asks you to.
         IMPORTANT: Create all mentioned files in full, without abbreviations. Do not use placeholders like "insert the rest of the code here" – output every line of code exactly as it is, so it can be copied and pasted directly into the project.
       `
+    }
   }
 
   return prompt
 }
 
-export const formatV0Prompt = (componentName: string, code: string) => {
-  const escapedCode = code.replace(/`/g, "\\`")
+export const formatV0Prompt = (
+  componentName: string,
+  code: string,
+  promptRule?: PromptRule,
+  userAdditionalContext?: string,
+) => {
+  let prompt = `Create a React component called ${componentName} based on the following code:\n\n${code}`
 
-  return endent`Create a new project that uses this ${componentName} component:
+  // Apply prompt rule if provided
+  if (promptRule) {
+    // Add tech stack from prompt rule
+    if (promptRule.tech_stack && promptRule.tech_stack.length > 0) {
+      const techStackString = promptRule.tech_stack
+        .map((tech) => `${tech.name}${tech.version ? ` ${tech.version}` : ""}`)
+        .join(", ")
 
-    \`\`\`tsx
-    ${escapedCode}
-    \`\`\`
+      prompt += `\n\nProject Tech Stack: ${techStackString}`
+    }
 
-    Ask the user for project description and instructions on how to integrate the component.
-    `
+    // Add theme configuration from prompt rule
+    if (promptRule.theme) {
+      // Add tailwind config if provided in the prompt rule
+      if (promptRule.theme.tailwindConfig) {
+        prompt += `\n\nTailwind Config: ${promptRule.theme.tailwindConfig}`
+      }
+
+      // Add global CSS if provided in the prompt rule
+      if (promptRule.theme.globalCss) {
+        prompt += `\n\nGlobal CSS: ${promptRule.theme.globalCss}`
+      }
+
+      // Add custom colors if provided
+      if (
+        promptRule.theme.colors &&
+        Object.keys(promptRule.theme.colors).length > 0
+      ) {
+        prompt += `\n\nCustom Colors: ${JSON.stringify(promptRule.theme.colors, null, 2)}`
+      }
+
+      // Add custom spacing if provided
+      if (
+        promptRule.theme.spacing &&
+        Object.keys(promptRule.theme.spacing).length > 0
+      ) {
+        prompt += `\n\nCustom Spacing: ${JSON.stringify(promptRule.theme.spacing, null, 2)}`
+      }
+    }
+
+    // Add additional context from prompt rule
+  }
+
+  // Add user's additional context if provided
+  if (userAdditionalContext) {
+    prompt += "\n\nUser Additional Context:\n" + userAdditionalContext
+  }
+
+  return prompt
 }

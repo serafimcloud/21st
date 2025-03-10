@@ -31,25 +31,16 @@ export function ApiKeySection({
   const supabase = useClerkSupabaseClient()
 
   const createApiKey = async () => {
-    console.log("Starting API key creation process...")
     toast.info("Creating API key...")
 
     if (!userId) {
-      console.log("No user ID found")
       toast.error("You must be logged in to create an API key")
       return
     }
 
     setLoading(true)
-    console.log("Making RPC call to create_api_key...")
     try {
       toast.loading("Creating your API key...")
-
-      console.log("RPC params:", {
-        user_id: userId,
-        plan: "free",
-        requests_limit: 100,
-      })
 
       const { data, error } = await supabase.rpc("create_api_key", {
         user_id: userId,
@@ -57,21 +48,16 @@ export function ApiKeySection({
         requests_limit: 100,
       })
 
-      console.log("RPC response:", { data, error })
-
       if (error) {
-        console.error("RPC error:", error)
         toast.error(`Failed to create API key: ${error.message}`)
         throw error
       }
 
       if (!data || !data.key) {
-        console.error("No data returned from RPC")
         toast.error("Server returned invalid response")
         throw new Error("No API key returned from server")
       }
 
-      console.log("Creating API key object...")
       const newKey: ApiKey = {
         id: data.id,
         key: data.key,
@@ -86,16 +72,11 @@ export function ApiKeySection({
         project_url: "https://21st.dev/magic",
       }
 
-      console.log("Setting API key in state...")
       setApiKey(newKey)
-
-      console.log("Copying API key to clipboard...")
       await navigator.clipboard.writeText(newKey.key)
 
       toast.success("API key created and copied to clipboard")
-      console.log("API key creation process completed successfully")
     } catch (error) {
-      console.error("Error in API key creation:", error)
       if (error instanceof Error) {
         toast.error(`Failed to create API key: ${error.message}`)
       } else {
@@ -110,18 +91,14 @@ export function ApiKeySection({
 
   const copyToClipboard = async () => {
     if (!apiKey) {
-      console.log("No API key to copy")
       return
     }
     try {
-      console.log("Copying API key to clipboard...")
       await navigator.clipboard.writeText(apiKey.key)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
       toast.success("API key copied to clipboard")
-      console.log("API key copied successfully")
     } catch (error) {
-      console.error("Failed to copy API key:", error)
       toast.error("Failed to copy API key")
     }
   }
@@ -161,7 +138,6 @@ export function ApiKeySection({
         <TermsDialog
           open={showTerms}
           onAccept={() => {
-            console.log("Terms accepted, creating API key...")
             createApiKey()
           }}
           onClose={() => setShowTerms(false)}

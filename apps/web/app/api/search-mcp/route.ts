@@ -1,8 +1,9 @@
 import { createClient } from "@supabase/supabase-js"
 import { NextRequest, NextResponse } from "next/server"
-import { SearchResponse, SearchResponseMCP } from "@/types/global"
+import { SearchResponseMCP } from "@/types/global"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import fetchFileTextContent from "@/lib/utils/fetchFileTextContent"
+import { PromptRule } from "@/types/prompt-rules"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +18,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Check API key
     const { data: keyCheck, error: keyError } = await supabase.rpc(
       "check_api_key",
       { api_key: apiKey },
@@ -37,9 +37,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get search query and pagination params
     const body = await request.json()
-    const { search, match_threshold = 0.33, limit = 5 } = body
+    const { search, match_threshold = 0.33, limit = 5, promptRuleId } = body
 
     if (!search) {
       return NextResponse.json(
@@ -48,13 +47,49 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get user ID from API key
+    const { data: userData, error: userError } = await supabase
+      .from("api_keys")
+      .select("user_id")
+      .eq("key", apiKey)
+      .single()
+
+    if (userError || !userData) {
+      console.error("User ID fetch error:", userError)
+      return NextResponse.json(
+        { error: "Error fetching user data" },
+        { status: 500 },
+      )
+    }
+
+    const userId = userData.user_id
+
+    // Get prompt rule if provided
+    let promptRule: PromptRule | null = null
+    if (promptRuleId) {
+      const { data: promptRuleData, error: promptRuleError } = await supabase
+        .from("prompt_rules")
+        .select("*")
+        .eq("id", promptRuleId)
+        .eq("user_id", userId)
+        .single()
+
+      if (promptRuleError) {
+        if (promptRuleError.code !== "PGRST116") {
+          console.error("Prompt rule fetch error:", promptRuleError)
+        }
+      } else {
+        promptRule = promptRuleData as PromptRule
+      }
+    }
+
     const { data: searchResults, error } = await supabase.functions.invoke(
       "ai-search-oai",
       {
         body: {
           search: search,
           match_threshold: match_threshold,
-          limit: limit, // limit doesnt work within the function
+          limit: limit,
         },
       },
     )
@@ -73,11 +108,14 @@ export async function POST(request: NextRequest) {
       .from("demos")
       .select(
         `
+        id,
         name,
         demo_code,
+        component_id,
         component:components!component_id (
             name,
             code,
+            user_id,
             direct_registry_dependencies,
             demo_direct_registry_dependencies
         )
@@ -97,7 +135,6 @@ export async function POST(request: NextRequest) {
     }
 
     const promises = demos?.map(async (demoRaw) => {
-      // TS thinks that component could be an array, but it's not
       const component = Array.isArray(demoRaw.component)
         ? demoRaw.component[0]
         : demoRaw.component
@@ -129,9 +166,61 @@ export async function POST(request: NextRequest) {
 
     const demosWithCodeAndRegistryDependencies = await Promise.all(promises)
 
-    return NextResponse.json<SearchResponseMCP>({
+    const response = {
       results: demosWithCodeAndRegistryDependencies,
-    })
+      promptRule: promptRule,
+    }
+
+    const responseObj = NextResponse.json<SearchResponseMCP>(response)
+
+    const componentIds =
+      demos
+        ?.map((demoRaw) => {
+          return demoRaw.component_id
+        })
+        .filter(Boolean) || []
+
+    const authorIds =
+      demos
+        ?.map((demoRaw) => {
+          const component = Array.isArray(demoRaw.component)
+            ? demoRaw.component[0]
+            : demoRaw.component
+          return component?.user_id
+        })
+        .filter(Boolean) || []
+
+    if (componentIds.length > 0) {
+      supabase
+        .rpc("record_mcp_component_usage", {
+          p_user_id: userId,
+          p_api_key: apiKey,
+          p_search_query: search,
+          p_component_ids: componentIds,
+          p_author_ids: authorIds,
+        })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Error recording component usage:", error)
+          } else {
+            console.log("Component usage recorded successfully:", data)
+            if (data && typeof data === "object") {
+              console.log("Generation cost details:", {
+                subscription_plan: data.subscription_plan,
+                generation_cost: data.generation_cost,
+                ai_cost_share: data.ai_cost_share,
+                platform_share: data.platform_share,
+                total_author_share: data.total_author_share,
+              })
+            }
+          }
+        })
+        .then(undefined, (err: Error) => {
+          console.error("Exception recording component usage:", err)
+        })
+    }
+
+    return responseObj
   } catch (error) {
     console.error("Search error:", error)
     return NextResponse.json(

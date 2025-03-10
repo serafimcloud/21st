@@ -22,6 +22,7 @@ export type DemoWithComponent = Demo & {
   fts: unknown | null
   pro_preview_image_url: string | null
   view_count: number | null
+  bookmarks_count: number | null
 }
 
 export type DemoWithTags = Demo & {
@@ -38,7 +39,12 @@ export type DemoTag = Database["public"]["Tables"]["demo_tags"]["Row"]
 
 export type ComponentTag = Database["public"]["Tables"]["component_tags"]["Row"]
 
-export type SortOption = "downloads" | "likes" | "date" | "recommended"
+export type SortOption =
+  | "downloads"
+  | "likes"
+  | "date"
+  | "recommended"
+  | "bookmarks"
 
 export type QuickFilterOption = "all" | "last_released" | "most_downloaded"
 
@@ -51,12 +57,11 @@ export const QUICK_FILTER_OPTIONS = {
 export const SORT_OPTIONS = {
   recommended: "Recommended",
   downloads: "Most downloaded",
-  likes: "Most liked",
+  bookmarks: "Most bookmarked",
   date: "Newest",
 } as const
 
 export const PROMPT_TYPES = {
-  BASIC: "basic",
   SITEBREW: "sitebrew",
   V0: "v0",
   LOVABLE: "lovable",

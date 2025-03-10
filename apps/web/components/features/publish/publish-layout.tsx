@@ -540,6 +540,7 @@ export default function PublishComponentForm({
             user_id: user?.id || "",
             fts: null,
             demo_slug: demo.demo_slug,
+            bookmarks_count: null,
           }
 
           const [demoCodeUrl, previewImageR2Url, videoR2Url] =
@@ -727,6 +728,7 @@ export default function PublishComponentForm({
             user_id: publishAsUser.id,
             fts: null,
             demo_slug: demoSlug,
+            bookmarks_count: null,
           }
 
           const { data: insertedDemo, error: demoError } = await client

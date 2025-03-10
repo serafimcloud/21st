@@ -1,11 +1,14 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
-const isProtectedRoute = createRouteMatcher(["/publish(.*)"])
+const isProtectedRoute = createRouteMatcher(["/publish(.*)", "/settings(.*)"])
 
 export default clerkMiddleware(async (auth, request) => {
   if (process.env.MAINTENANCE_MODE === "true") {
     return NextResponse.rewrite(new URL("/maintenance", request.url))
+  }
+  if (request.nextUrl.pathname.startsWith("/magic/get-started")) {
+    return NextResponse.redirect(new URL("/magic/onboarding", request.url))
   }
 
   if (request.nextUrl.pathname.startsWith("/api/")) {
@@ -23,7 +26,7 @@ export default clerkMiddleware(async (auth, request) => {
     const { userId } = await auth()
     if (!userId) {
       return NextResponse.redirect(
-        new URL("https://accounts.21st.dev/sign-in", request.url),
+        new URL(process.env.AUTH_URL_SIGN_IN!, request.url),
       )
     }
   }

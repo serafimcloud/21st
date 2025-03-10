@@ -240,6 +240,7 @@ function useSearchDemos(
               user_id: userData.id,
               video_url: result.video_url,
               view_count: result.view_count || 0,
+              bookmarks_count: result.bookmarks_count || 0,
               component: componentWithUser,
               tags: [],
               embedding: null,

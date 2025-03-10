@@ -7,10 +7,12 @@
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "convert-videos": "node apps/web/video-converter/convertVideos.js",
-    "rename-files": "node apps/web/rename/rename.js"
+    "rename-files": "node apps/web/rename/rename.js",
+    "generate-embeddings": "pnpm --filter web generate-embeddings"
   },
   "devDependencies": {
     "prettier": "^3.2.5",
+    "stripe-cli": "^0.1.0",
     "turbo": "^2.0.7",
     "typescript": "^5.4.5"
   },
@@ -19,8 +21,10 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@radix-ui/react-radio-group": "^1.2.3",
+    "emblor": "^1.4.7",
     "jotai": "2.8.0",
-    "next": "^14.2.6"
+    "next": "^15.2.1"
   },
   "resolutions": {
     "jotai": "2.8.0"

@@ -66,6 +66,90 @@ export type Database = {
           },
         ]
       }
+      backup_code_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string | null
+          id: string | null
+          item_id: number | null
+          item_type: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      backup_usage_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string | null
+          id: string | null
+          item_id: number | null
+          item_type: string | null
+          metadata: Json | null
+          usage_description: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string | null
+          id?: string | null
+          item_id?: number | null
+          item_type?: string | null
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Relationships: []
+      }
+      code_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string
+          id: string
+          item_id: number
+          item_type: string
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding: string
+          id?: string
+          item_id: number
+          item_type: string
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string
+          id?: string
+          item_id?: number
+          item_type?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       component_analytics: {
         Row: {
           activity_type: string | null
@@ -612,6 +696,81 @@ export type Database = {
           },
         ]
       }
+      embedding_generation_status: {
+        Row: {
+          created_at: string | null
+          error: string | null
+          id: number
+          item_id: number
+          item_type: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error?: string | null
+          id?: number
+          item_id: number
+          item_type: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error?: string | null
+          id?: number
+          item_id?: number
+          item_type?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      feedback: {
+        Row: {
+          content: string
+          created_at: string
+          id: number
+          response: string | null
+          status: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: number
+          response?: string | null
+          status?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: number
+          response?: string | null
+          status?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mcp_author_payouts: {
         Row: {
           author_id: string
@@ -820,6 +979,39 @@ export type Database = {
           price?: number | null
           stripe_plan_id?: string | null
           type?: string | null
+        }
+        Relationships: []
+      }
+      prompt_rules: {
+        Row: {
+          additional_context: string | null
+          created_at: string | null
+          id: number
+          name: string
+          tech_stack: Json | null
+          theme: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          additional_context?: string | null
+          created_at?: string | null
+          id?: number
+          name: string
+          tech_stack?: Json | null
+          theme?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          additional_context?: string | null
+          created_at?: string | null
+          id?: number
+          name?: string
+          tech_stack?: Json | null
+          theme?: Json | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1046,6 +1238,36 @@ export type Database = {
           },
         ]
       }
+      usage_embeddings: {
+        Row: {
+          created_at: string | null
+          embedding: string
+          id: string
+          item_id: number
+          item_type: string
+          metadata: Json | null
+          usage_description: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          embedding: string
+          id?: string
+          item_id: number
+          item_type: string
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          embedding?: string
+          id?: string
+          item_id?: number
+          item_type?: string
+          metadata?: Json | null
+          usage_description?: string | null
+        }
+        Relationships: []
+      }
       usages: {
         Row: {
           created_at: string
@@ -1103,6 +1325,7 @@ export type Database = {
           pro_banner_url: string | null
           pro_referral_url: string | null
           ref: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
           twitter_url: string | null
           updated_at: string | null
           username: string | null
@@ -1125,6 +1348,7 @@ export type Database = {
           pro_banner_url?: string | null
           pro_referral_url?: string | null
           ref?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           twitter_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -1147,6 +1371,7 @@ export type Database = {
           pro_banner_url?: string | null
           pro_referral_url?: string | null
           ref?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           twitter_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -1408,6 +1633,38 @@ export type Database = {
       }
     }
     Functions: {
+      analyze_author_payouts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          author_id: string
+          username: string
+          display_name: string
+          published_components: number
+          total_usage: number
+          free_plan_usage: number
+          paid_plan_usage: number
+          potential_amount: number
+          actual_amount: number
+          has_payouts: boolean
+          last_payout_date: string
+          last_payout_status: string
+        }[]
+      }
+      analyze_component_usage: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          author_id: string
+          username: string
+          display_name: string
+          component_id: number
+          component_name: string
+          total_usage: number
+          free_plan_usage: number
+          paid_plan_usage: number
+          total_amount: number
+          has_payouts: boolean
+        }[]
+      }
       check_api_key: {
         Args: {
           api_key: string
@@ -1479,6 +1736,28 @@ export type Database = {
           total_count: number
         }[]
       }
+      get_all_author_payouts: {
+        Args: {
+          p_period?: string
+          p_min_amount?: number
+          p_max_amount?: number
+          p_status?: string
+          p_sort_by?: string
+          p_sort_order?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: Json[]
+      }
+      get_all_author_payouts_count: {
+        Args: {
+          p_period?: string
+          p_min_amount?: number
+          p_max_amount?: number
+          p_status?: string
+        }
+        Returns: number
+      }
       get_author_payout_stats: {
         Args: {
           p_author_id: string
@@ -1537,6 +1816,14 @@ export type Database = {
           display_image_url: string
           ref: string
         }[]
+      }
+      get_prompt: {
+        Args: {
+          p_prompt_type: string
+          p_rule_id?: number
+          p_additional_context?: string
+        }
+        Returns: string
       }
       get_section_previews: {
         Args: {
@@ -1630,6 +1917,39 @@ export type Database = {
         }
         Returns: undefined
       }
+      insert_code_embedding: {
+        Args: {
+          p_id: string
+          p_item_id: number
+          p_item_type: string
+          p_embedding: string
+          p_code: string
+          p_metadata: Json
+        }
+        Returns: undefined
+      }
+      insert_embedding:
+        | {
+            Args: {
+              p_id: string
+              p_item_id: number
+              p_item_type: string
+              p_embedding: string
+              p_usage_description: string
+              p_metadata: Json
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_item_id: number
+              p_item_type: string
+              p_embedding: string
+              p_usage_description: string
+              p_metadata: Json
+            }
+            Returns: undefined
+          }
       is_trigger_operation: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1641,6 +1961,40 @@ export type Database = {
           p_liked: boolean
         }
         Returns: undefined
+      }
+      match_embeddings: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+          filter?: string
+          table_name?: string
+        }
+        Returns: {
+          id: string
+          item_id: number
+          item_type: string
+          embedding: string
+          similarity: number
+        }[]
+      }
+      match_embeddings_with_details: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          demo_slug: string
+          user_id: string
+          component_data: Json
+          user_data: Json
+          usage_data: Json
+        }[]
       }
       record_mcp_component_usage:
         | {
@@ -1763,11 +2117,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      vec_dim: {
+        Args: {
+          v: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       api_plan: "free" | "pro" | "enterprise"
       payment_status: "pending" | "paid" | "rejected"
       submission_status: "on_review" | "featured" | "posted"
+      user_role:
+        | "designer"
+        | "frontend_developer"
+        | "backend_developer"
+        | "product_manager"
+        | "entrepreneur"
     }
     CompositeTypes: {
       component_with_user: {

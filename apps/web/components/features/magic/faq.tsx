@@ -7,6 +7,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import Link from "next/link"
+import { PLAN_LIMITS } from "@/lib/config/subscription-plans"
+import { cn } from "@/lib/utils"
 
 const faqs = [
   {
@@ -36,8 +38,7 @@ const faqs = [
   },
   {
     question: "What happens if I run out of generations?",
-    answer:
-      "If you exceed your monthly generation limit, you'll be prompted to upgrade your plan. You can upgrade at any time to continue generating components. Your existing components will remain fully functional.",
+    answer: `If you exceed your monthly generation limit, you'll be prompted to upgrade your plan. The Hobby plan includes ${PLAN_LIMITS.free.generationsPerMonth} generations per month, Standard plan includes ${PLAN_LIMITS.standard.generationsPerMonth} generations, and Pro plan includes ${PLAN_LIMITS.pro.generationsPerMonth} generations. You can upgrade at any time to continue generating components.`,
   },
   {
     question: "How soon do new components get added to 21st.dev's library?",
@@ -51,46 +52,78 @@ const faqs = [
   },
   {
     question: "How can I get help with Magic AI Agent?",
-    answer:
+    answer: (
       <>
-        If you need assistance, you can contact us via email at support@21st.dev or join our{" "}
-        <Link href="https://discord.gg/Qx4rFunHfm" target="_blank" className="underline underline-offset-4">
+        If you need assistance, you can contact us via email at support@21st.dev
+        or join our{" "}
+        <Link
+          href="https://discord.gg/Qx4rFunHfm"
+          target="_blank"
+          className="underline underline-offset-4"
+        >
           Discord community
-        </Link>. We're here to help you get the most out of Magic AI Agent.
+        </Link>
+        . We're here to help you get the most out of Magic AI Agent.
       </>
+    ),
   },
 ]
 
-export function FAQ() {
-  return (
-    <section className="py-10 lg:py-24 px-4">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-neutral-200 sm:text-4xl">
-          Frequently Asked Questions
-        </h2>
-        <p className="mt-4 text-lg text-neutral-400">
-          Everything you need to know about Magic AI Agent
-        </p>
-      </div>
+interface FAQProps {
+  simplified?: boolean
+}
 
-      <div className="mx-auto mt-16 max-w-3xl space-y-4">
+export function FAQ({ simplified = false }: FAQProps) {
+  // Выбираем наиболее важные вопросы для simplified режима
+  const displayFaqs = simplified
+    ? faqs.slice(0, 5) // Показываем только первые 5 вопросов в simplified режиме
+    : faqs
+
+  return (
+    <section className={simplified ? "" : "py-10 lg:py-24 px-4"}>
+      {!simplified && (
+        <div className="text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-neutral-200 sm:text-4xl">
+            Frequently Asked Questions
+          </h2>
+          <p className="mt-4 text-lg text-neutral-400">
+            Everything you need to know about Magic AI Agent
+          </p>
+        </div>
+      )}
+
+      <div
+        className={cn("mx-auto space-y-4", simplified ? "" : "mt-16 max-w-3xl")}
+      >
         <Accordion type="single" collapsible className="w-full">
-          {faqs.map((faq, index) => (
+          {displayFaqs.map((faq, index) => (
             <AccordionItem
               key={index}
               value={`item-${index}`}
               className="rounded-lg border border-white/10 px-4 bg-background/5 mb-4 data-[state=open]:bg-background/10"
             >
-              <AccordionTrigger className="text-lg font-semibold text-neutral-200 hover:no-underline py-4">
+              <AccordionTrigger className="text-lg font-semibold text-neutral-200 hover:no-underline py-4 text-left w-full flex justify-between">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-neutral-400 pb-4">
-                {faq.answer}
+              <AccordionContent className="text-neutral-400 pb-4 !text-left">
+                <div className="text-left">{faq.answer}</div>
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
       </div>
+
+      <style jsx global>{`
+        .accordion-content {
+          text-align: left !important;
+        }
+        [data-radix-accordion-content] {
+          text-align: left !important;
+        }
+        [data-radix-accordion-content] p {
+          text-align: left !important;
+        }
+      `}</style>
     </section>
   )
 }
