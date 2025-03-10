@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
+import { NavigationMenuLink } from "@/components/ui/navigation-menu"
 import { atom } from "jotai"
 import {
   SignInButton,
@@ -89,6 +90,24 @@ export function Header({
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   })
 
+  // Fetch balance using React Query
+  const { data: balance, isLoading: isBalanceLoading } = useQuery({
+    queryKey: ["user", userId, "balance"],
+    queryFn: async () => {
+      if (!userId) return null
+      const { data } = await client
+        .from("usages")
+        .select("limit, usage")
+        .eq("user_id", userId)
+        .single()
+
+      if (!data || data.limit === null || data.usage === null) return null
+      return data.limit - data.usage
+    },
+    enabled: !!userId,
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+  })
+
   // Update global state when data changes
   useEffect(() => {
     setUserState((prev) => ({
@@ -98,6 +117,8 @@ export function Header({
       subscription: subscription || null,
       isSubscriptionLoading,
       clerkUser: clerkUser || null,
+      balance: balance || null,
+      isBalanceLoading,
       lastFetched: Date.now(),
     }))
   }, [
@@ -106,6 +127,8 @@ export function Header({
     subscription,
     isSubscriptionLoading,
     clerkUser,
+    balance,
+    isBalanceLoading,
     setUserState,
   ])
 
@@ -517,13 +540,14 @@ export function Header({
 
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<"a"> & { title: string }
+>(({ className, title, children, href, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
-        <a
+        <Link
           ref={ref}
+          href={href || "#"}
           className={cn(
             "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
             className,
@@ -536,7 +560,7 @@ const ListItem = React.forwardRef<
           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
             {children}
           </p>
-        </a>
+        </Link>
       </NavigationMenuLink>
     </li>
   )

@@ -9,6 +9,8 @@ interface UserState {
   isProfileLoading: boolean
   clerkUser: any | null
   lastFetched: number | null
+  balance: number | null
+  isBalanceLoading: boolean
 }
 
 export const userStateAtom = atom<UserState>({
@@ -18,6 +20,8 @@ export const userStateAtom = atom<UserState>({
   isProfileLoading: false,
   clerkUser: null,
   lastFetched: null,
+  balance: null,
+  isBalanceLoading: false,
 })
 
 // 5 minutes cache

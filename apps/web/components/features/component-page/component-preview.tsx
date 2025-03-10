@@ -298,7 +298,7 @@ export function ComponentPagePreview({
         },
       }}
     >
-      <motion.div className="relative flex-grow h-full relative rounded-lg overflow-hidden">
+      <motion.div className="relative flex-grow h-full rounded-lg overflow-hidden">
         <FullScreenButton />
 
         {previewError && (
