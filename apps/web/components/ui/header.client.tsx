@@ -4,9 +4,14 @@ import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
-
 import { atom } from "jotai"
-import { SignInButton, SignedIn, SignedOut, useClerk } from "@clerk/nextjs"
+import {
+  SignInButton,
+  SignedIn,
+  SignedOut,
+  useClerk,
+  useUser,
+} from "@clerk/nextjs"
 import { ChevronDown, Bookmark } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -17,20 +22,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { NavigationMenuLink } from "@/components/ui/navigation-menu"
-
 import { useIsMobile } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
-
 import { UserAvatar } from "./user-avatar"
 import { Icons } from "@/components/icons"
 import { EditProfileDialog } from "@/components/features/profile/edit-profile-dialog"
-import { useUserProfile } from "@/components/hooks/use-user-profile"
 import { useAnimation } from "motion/react"
 import { useAtom } from "jotai"
 import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 import { useTheme } from "next-themes"
-import { useSubscription } from "@/hooks/use-subscription"
+import { useAuth } from "@clerk/nextjs"
+import { userStateAtom } from "@/lib/store/user-store"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { useQuery } from "@tanstack/react-query"
 
 export const searchQueryAtom = atom("")
 
@@ -44,7 +48,6 @@ export function Header({
   const inputRef = React.useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
   const { signOut } = useClerk()
-  const { user: dbUser, clerkUser: user, isLoading } = useUserProfile()
   const [showEditProfile, setShowEditProfile] = useState(false)
   const searchParams = useSearchParams()
   const step = searchParams.get("step")
@@ -52,16 +55,59 @@ export function Header({
   const router = useRouter()
   const [open, setSidebarOpen] = useAtom(sidebarOpenAtom)
   const { theme, setTheme } = useTheme()
-  const { fetchSubscription } = useSubscription()
-  const [hasPro, setHasPro] = useState<boolean | null>(null)
+  const { userId } = useAuth()
+  const { user: clerkUser } = useUser()
+  const [userState, setUserState] = useAtom(userStateAtom)
+  const client = useClerkSupabaseClient()
 
+  // Fetch user profile using React Query
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
+    queryKey: ["user", userId, "profile"],
+    queryFn: async () => {
+      if (!userId) return null
+      const { data } = await client
+        .from("users")
+        .select("*")
+        .eq("id", userId)
+        .single()
+      return data
+    },
+    enabled: !!userId,
+  })
+
+  // Fetch subscription using React Query
+  const { data: subscription, isLoading: isSubscriptionLoading } = useQuery({
+    queryKey: ["user", userId, "subscription"],
+    queryFn: async () => {
+      const response = await fetch("/api/stripe/get-subscription")
+      if (!response.ok) {
+        throw new Error("Failed to fetch subscription")
+      }
+      return response.json()
+    },
+    enabled: !!userId,
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+  })
+
+  // Update global state when data changes
   useEffect(() => {
-    const checkSubscription = async () => {
-      const subscription = await fetchSubscription()
-      setHasPro(!!subscription)
-    }
-    checkSubscription()
-  }, [fetchSubscription])
+    setUserState((prev) => ({
+      ...prev,
+      profile: profile || null,
+      isProfileLoading,
+      subscription: subscription || null,
+      isSubscriptionLoading,
+      clerkUser: clerkUser || null,
+      lastFetched: Date.now(),
+    }))
+  }, [
+    profile,
+    isProfileLoading,
+    subscription,
+    isSubscriptionLoading,
+    clerkUser,
+    setUserState,
+  ])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -74,17 +120,14 @@ export function Header({
     }
 
     document.addEventListener("keydown", handleKeyDown)
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown)
-    }
+    return () => document.removeEventListener("keydown", handleKeyDown)
   }, [])
 
   const handleBookmarksClick = () => {
-    if (dbUser?.display_username) {
-      router.push(`/${dbUser.display_username}?tab=bookmarks`)
-    } else if (user?.externalAccounts?.[0]?.username) {
-      router.push(`/${dbUser?.username}?tab=bookmarks`)
+    if (userState.profile?.display_username) {
+      router.push(`/${userState.profile.display_username}?tab=bookmarks`)
+    } else if (clerkUser?.externalAccounts?.[0]?.username) {
+      router.push(`/${userState.profile?.username}?tab=bookmarks`)
     }
   }
 
@@ -157,19 +200,21 @@ export function Header({
                 >
                   <Bookmark size={18} />
                 </Button>
-                {!open && hasPro === false && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="mr-2 gap-1.5 bg-blue-600 text-white hover:bg-blue-700 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700"
-                    aria-label="Magic - AI Component Builder"
-                  >
-                    <Link href="/pricing">
-                      <span className="font-medium">Get Pro</span>
-                    </Link>
-                  </Button>
-                )}
+                {!open &&
+                  !userState.isSubscriptionLoading &&
+                  !userState.subscription && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="mr-2 gap-1.5 bg-blue-600 text-white hover:bg-blue-700 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700"
+                      aria-label="Magic - AI Component Builder"
+                    >
+                      <Link href="/pricing">
+                        <span className="font-medium">Get Pro</span>
+                      </Link>
+                    </Button>
+                  )}
                 <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse">
                   <Button
                     asChild
@@ -250,15 +295,23 @@ export function Header({
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer rounded-full ml-2">
                 <UserAvatar
-                  src={dbUser?.display_image_url || user?.imageUrl || undefined}
-                  alt={dbUser?.display_name || user?.fullName || undefined}
+                  src={
+                    userState.profile?.display_image_url ||
+                    clerkUser?.imageUrl ||
+                    undefined
+                  }
+                  alt={
+                    userState.profile?.display_name ||
+                    clerkUser?.fullName ||
+                    undefined
+                  }
                   size={32}
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[240px] p-0" align="end">
                 <div className="p-3 border-b border-border">
                   <p className="text-sm text-foreground">
-                    {user?.primaryEmailAddress?.emailAddress}
+                    {clerkUser?.primaryEmailAddress?.emailAddress}
                   </p>
                 </div>
 
@@ -266,10 +319,10 @@ export function Header({
                   <DropdownMenuItem
                     className="text-sm px-3 py-2 cursor-pointer"
                     onSelect={() => {
-                      if (dbUser?.display_username) {
-                        router.push(`/${dbUser.display_username}`)
-                      } else if (user?.externalAccounts?.[0]?.username) {
-                        router.push(`/${dbUser?.username}`)
+                      if (userState.profile?.display_username) {
+                        router.push(`/${userState.profile.display_username}`)
+                      } else if (clerkUser?.externalAccounts?.[0]?.username) {
+                        router.push(`/${userState.profile?.username}`)
                       }
                     }}
                   >
@@ -439,18 +492,18 @@ export function Header({
           </SignedOut>
         </div>
       </header>
-      {showEditProfile && dbUser && !isLoading && (
+      {showEditProfile && userState.profile && !isProfileLoading && (
         <EditProfileDialog
           isOpen={showEditProfile}
           setIsOpen={setShowEditProfile}
           user={{
-            name: user?.fullName || "",
-            username: user?.externalAccounts?.[0]?.username || "",
-            image_url: user?.imageUrl || "",
-            display_name: dbUser.display_name || null,
-            display_username: dbUser.display_username || null,
-            display_image_url: dbUser.display_image_url || null,
-            bio: dbUser.bio || null,
+            name: clerkUser?.fullName || "",
+            username: clerkUser?.externalAccounts?.[0]?.username || "",
+            image_url: clerkUser?.imageUrl || "",
+            display_name: userState.profile.display_name || null,
+            display_username: userState.profile.display_username || null,
+            display_image_url: userState.profile.display_image_url || null,
+            bio: userState.profile.bio || null,
           }}
           onUpdate={() => {
             setShowEditProfile(false)
