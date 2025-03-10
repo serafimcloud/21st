@@ -2,13 +2,16 @@ import { Button } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
 import { useRouter } from "next/navigation"
 import { useHotkeys } from "react-hotkeys-hook"
-import { Check } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 import { Component } from "@/types/global"
 import { ComponentAccessState } from "@/hooks/use-component-access"
 import { atomWithStorage } from "jotai/utils"
 import { useAtom } from "jotai"
 import { userStateAtom } from "@/lib/store/user-store"
 import type { PrimitiveAtom } from "jotai/vanilla"
+import { toast } from "sonner"
+import { usePathname } from "next/navigation"
+import { useState } from "react"
 
 // Атом для дебага состояний
 export const debugAccessStateAtom: PrimitiveAtom<ComponentAccessState | null> =
@@ -28,19 +31,59 @@ export function PayWall({ accessState, component }: PayWallProps) {
   const router = useRouter()
   const [, setDebugState] = useAtom(debugAccessStateAtom)
   const [userState] = useAtom(userStateAtom)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // Добавим дебаг-панель если включен режим разработки
   const showDebugPanel = process.env.NODE_ENV === "development"
 
-  const handleSubscribe = () => {
-    router.push("/pricing")
+  const handleUpgradePlan = async (
+    planId: string,
+    period: "monthly" | "yearly" = "monthly",
+  ) => {
+    if (isProcessing) return
+
+    setIsProcessing(true)
+    try {
+      const pathname = window.location.pathname
+      const response = await fetch("/api/stripe/create-checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "csrf-token": (window as any).__NEXT_DATA__?.props?.csrfToken || "",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          planId,
+          period,
+          successUrl: `${window.location.origin}${pathname}?success=true`,
+          cancelUrl: `${window.location.origin}${pathname}?canceled=true`,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(`Failed to create checkout session: ${errorData}`)
+      }
+
+      const data = await response.json()
+
+      if (!data.url) {
+        throw new Error("No checkout URL received from server")
+      }
+
+      window.location.href = data.url
+    } catch (error) {
+      console.error("Upgrade plan error:", error)
+      toast.error("Failed to initiate upgrade. Please try again later.")
+      setIsProcessing(false)
+    }
   }
 
   useHotkeys(
     ["meta+enter", "ctrl+enter"],
     () => {
       if (accessState === "REQUIRES_SUBSCRIPTION") {
-        handleSubscribe()
+        handleUpgradePlan("pro")
       }
     },
     { preventDefault: true },
@@ -68,13 +111,18 @@ export function PayWall({ accessState, component }: PayWallProps) {
 
       <div className="relative z-10 h-full w-full overflow-hidden rounded-sm flex flex-col items-center justify-between p-4 text-center">
         {accessState === "REQUIRES_SUBSCRIPTION" && (
-          <SubscriptionPaywall onSubscribe={handleSubscribe} />
+          <SubscriptionPaywall
+            isProcessing={isProcessing}
+            onUpgrade={() => handleUpgradePlan("pro")}
+          />
         )}
 
         {accessState === "REQUIRES_TOKENS" && (
-          <TokensLimitPaywall 
+          <TokensLimitPaywall
             requiredTokens={component.price}
             subscription={userState.subscription}
+            isProcessing={isProcessing}
+            onUpgrade={() => handleUpgradePlan("pro_plus")}
           />
         )}
       </div>
@@ -82,7 +130,13 @@ export function PayWall({ accessState, component }: PayWallProps) {
   )
 }
 
-function SubscriptionPaywall({ onSubscribe }: { onSubscribe: () => void }) {
+function SubscriptionPaywall({
+  isProcessing,
+  onUpgrade,
+}: {
+  isProcessing: boolean
+  onUpgrade: () => void
+}) {
   return (
     <div className="flex-1 w-full flex flex-col h-full">
       <div className="flex flex-col items-center justify-center flex-1 pt-20">
@@ -94,18 +148,28 @@ function SubscriptionPaywall({ onSubscribe }: { onSubscribe: () => void }) {
         </div>
 
         <Button
-          onClick={onSubscribe}
+          onClick={onUpgrade}
+          disabled={isProcessing}
           className="flex items-center justify-center gap-1.5 pr-1.5"
         >
-          Subscribe Now
-          <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
-            <span className="text-[11px] leading-none font-sans">
-              {navigator?.platform?.toLowerCase()?.includes("mac")
-                ? "⌘"
-                : "Ctrl"}
-            </span>
-            <Icons.enter className="h-2.5 w-2.5" />
-          </kbd>
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              Subscribe Now
+              <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                <span className="text-[11px] leading-none font-sans">
+                  {navigator?.platform?.toLowerCase()?.includes("mac")
+                    ? "⌘"
+                    : "Ctrl"}
+                </span>
+                <Icons.enter className="h-2.5 w-2.5" />
+              </kbd>
+            </>
+          )}
         </Button>
       </div>
 
@@ -147,22 +211,25 @@ function SubscriptionPaywall({ onSubscribe }: { onSubscribe: () => void }) {
 
 function TokensLimitPaywall({
   requiredTokens,
-  subscription
+  subscription,
+  isProcessing,
+  onUpgrade,
 }: {
   requiredTokens: number
   subscription: any
+  isProcessing: boolean
+  onUpgrade: () => void
 }) {
-  const router = useRouter()
   const isPro = subscription?.type === "pro"
-  
+
   // Calculate next token refresh date based on subscription period end
-  const nextRefreshDate = subscription?.current_period_end 
-    ? new Date(subscription.current_period_end).toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric', 
-        year: 'numeric'
+  const nextRefreshDate = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
       })
-    : 'next billing period'
+    : "next billing period"
 
   return (
     <div className="flex-1 w-full flex flex-col h-full">
@@ -186,18 +253,28 @@ function TokensLimitPaywall({
               </p>
               <div className="flex justify-center">
                 <Button
-                  onClick={() => router.push("/pricing")}
+                  onClick={onUpgrade}
+                  disabled={isProcessing}
                   className="flex items-center justify-center gap-1.5 pr-1.5"
                 >
-                  Upgrade to Pro Plus
-                  <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
-                    <span className="text-[11px] leading-none font-sans">
-                      {navigator?.platform?.toLowerCase()?.includes("mac")
-                        ? "⌘"
-                        : "Ctrl"}
-                    </span>
-                    <Icons.enter className="h-2.5 w-2.5" />
-                  </kbd>
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Upgrade to Pro Plus
+                      <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                        <span className="text-[11px] leading-none font-sans">
+                          {navigator?.platform?.toLowerCase()?.includes("mac")
+                            ? "⌘"
+                            : "Ctrl"}
+                        </span>
+                        <Icons.enter className="h-2.5 w-2.5" />
+                      </kbd>
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
