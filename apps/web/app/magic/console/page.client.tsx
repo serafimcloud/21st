@@ -120,7 +120,7 @@ export function ConsoleClient({
     planId: PlanType
   }>({
     open: false,
-    planId: "standard",
+    planId: "pro",
   })
 
   // Add state for the selected IDE
@@ -176,9 +176,9 @@ export function ConsoleClient({
   // Determine which plan to show as upgrade
   let upgradePlanId: PlanType | null = null
   if (currentPlanId === "free") {
-    upgradePlanId = "standard"
-  } else if (currentPlanId === "standard") {
     upgradePlanId = "pro"
+  } else if (currentPlanId === "pro") {
+    upgradePlanId = "pro_plus"
   }
 
   const handleUpgradePlan = async (
@@ -211,7 +211,7 @@ export function ConsoleClient({
       const data = await response.json()
 
       if (data.directly_upgraded) {
-        const planOrder = { pro: 3, standard: 2, free: 1 }
+        const planOrder = { pro_plus: 3, pro: 2, free: 1 }
         const isDowngrade = planOrder[planId] < planOrder[currentPlanId]
 
         toast.success(
@@ -507,7 +507,7 @@ export function ConsoleClient({
                     <p className="text-xs text-muted-foreground mt-1">
                       {subscription?.type === "free"
                         ? "Perfect for trying out"
-                        : subscription?.type === "standard"
+                        : subscription?.type === "pro"
                           ? "For professional developers"
                           : "For power users"}
                     </p>
@@ -587,7 +587,7 @@ export function ConsoleClient({
                 <div className="p-4 grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="text-sm font-medium">
-                      ${upgradePlanId === "standard" ? "10" : "30"} per month
+                      ${upgradePlanId === "pro" ? "10" : "30"} per month
                     </h4>
                     <p className="text-xs text-muted-foreground mt-1">
                       {PLAN_LIMITS[upgradePlanId].description}

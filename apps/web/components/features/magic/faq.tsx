@@ -48,7 +48,7 @@ const DEFAULT_FAQS = [
   },
   {
     question: "What happens if I run out of generations?",
-    answer: `If you exceed your monthly generation limit, you'll be prompted to upgrade your plan. The Hobby plan includes ${PLAN_LIMITS.free.generationsPerMonth} generations per month, Standard plan includes ${PLAN_LIMITS.standard.generationsPerMonth} generations, and Pro plan includes ${PLAN_LIMITS.pro.generationsPerMonth} generations. You can upgrade at any time to continue generating components.`,
+    answer: `If you exceed your monthly generation limit, you'll be prompted to upgrade your plan. The Hobby plan includes ${PLAN_LIMITS.free.generationsPerMonth} generations per month, Standard plan includes ${PLAN_LIMITS.pro.generationsPerMonth} generations, and Pro plan includes ${PLAN_LIMITS.pro.generationsPerMonth} generations. You can upgrade at any time to continue generating components.`,
   },
   {
     question: "How soon do new components get added to 21st.dev's library?",
@@ -86,7 +86,7 @@ export function FAQ({ simplified = false, faqs = DEFAULT_FAQS }: FAQProps) {
     : faqs
 
   return (
-    <section className={simplified ? "" : "py-10 lg:py-24 px-4"}>
+    <section className={simplified ? "" : "py-10 lg:py-24"}>
       {!simplified && (
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-neutral-200 sm:text-4xl">

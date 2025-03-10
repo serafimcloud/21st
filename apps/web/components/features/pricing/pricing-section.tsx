@@ -102,7 +102,7 @@ export function PricingSection({
 
   return (
     <div className="py-24">
-      <div className="mx-auto max-w-5xl px-6 lg:px-8">
+      <div className="mx-auto">
         <div className="mx-auto max-w-4xl text-center mb-8">
           <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl mb-3">
             Build UIs
@@ -119,7 +119,7 @@ export function PricingSection({
           <PricingTabs options={frequencies} discountOption="yearly" />
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-2 max-w-4xl mx-auto">
           <NumberFlowGroup>
             {tiers.map((tier) => {
               const priceValue =

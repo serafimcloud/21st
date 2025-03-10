@@ -20,7 +20,7 @@ export function FAQ({ simplified = false, faqs = [] }: FAQProps) {
   const displayFaqs = simplified ? faqs.slice(0, 5) : faqs
 
   return (
-    <section className={simplified ? "" : "py-10 lg:py-24 px-4"}>
+    <section className={simplified ? "" : "py-10 lg:py-24 px-4 !mt-0"}>
       {!simplified && (
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

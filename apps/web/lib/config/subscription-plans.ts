@@ -218,10 +218,10 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     description: "For professional developers",
     features: [
       "50 tokens per month",
+      "Premium 21st.dev Components (5 tokens each)",
       "AI Component Generation (1 token each)",
       "Unlimited UI Inspirations",
       "Unlimited SVG Logo Search",
-      "Premium Components (5 tokens each)",
       "Priority support",
     ],
     monthlyPrice: 10,
@@ -234,10 +234,10 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     description: "For power users",
     features: [
       "200 tokens per month",
+      "Premium 21st.dev Components (5 tokens each)",
       "AI Component Generation (1 token each)",
       "Unlimited UI Inspirations",
       "Unlimited SVG Logo Search",
-      "Premium Components (5 tokens each)",
       "Priority support + Private Discord channel",
     ],
     monthlyPrice: 30,
