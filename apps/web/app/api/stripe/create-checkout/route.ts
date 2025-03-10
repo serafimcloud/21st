@@ -5,12 +5,12 @@ import { z } from "zod"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
 const checkoutSchema = z.object({
-  planId: z.enum(["standard", "pro"]),
+  planId: z.enum(["pro", "pro_plus"]),
   successUrl: z.string().url(),
   cancelUrl: z.string().url(),
   period: z.enum(["monthly", "yearly"]).optional().default("monthly"),
   isUpgrade: z.boolean().optional(),
-  currentPlanId: z.enum(["free", "standard", "pro"]).optional(),
+  currentPlanId: z.enum(["free", "pro", "pro_plus"]).optional(),
   subscriptionId: z.string().optional(),
 })
 

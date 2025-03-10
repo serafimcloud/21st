@@ -80,22 +80,42 @@ const handleUpgradePlan = async (
   }
 
   try {
+    console.log("Attempting upgrade with:", { planId, period })
     const response = await fetch("/api/stripe/create-checkout", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // Ensure we have CSRF protection token if needed
+        "csrf-token": (window as any).__NEXT_DATA__?.props?.csrfToken || "",
+      },
+      credentials: "include", // Include cookies and authentication headers
       body: JSON.stringify({
-        planId: planId as PlanType,
+        planId,
         period,
-        successUrl: `${window.location.origin}?success=true`,
+        successUrl: `${window.location.origin}/dashboard?success=true`,
         cancelUrl: `${window.location.origin}/pricing?canceled=true`,
       }),
     })
 
-    if (!response.ok) throw new Error("Failed to create checkout session")
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error("Checkout creation failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+      })
+      throw new Error(`Failed to create checkout session: ${errorData}`)
+    }
 
     const data = await response.json()
+
+    if (!data.url) {
+      throw new Error("No checkout URL received from server")
+    }
+
     window.location.href = data.url
   } catch (error) {
+    console.error("Upgrade plan error:", error)
     toast.error("Failed to initiate upgrade. Please try again later.")
   }
 }
@@ -144,8 +164,6 @@ export function Pricing() {
 
     getSubscription()
   }, [fetchSubscription, isSignedIn])
-
-  
 
   const currentPlan = isSignedIn ? subscription?.type || "free" : "free"
   const currentFrequency = subscription?.period as
