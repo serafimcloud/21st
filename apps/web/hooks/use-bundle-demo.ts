@@ -16,12 +16,10 @@ export const useBundleDemo = (
   component: Component & { user: User } & { tags: Tag[] },
   shellCode: string[],
   demoId: number,
-  demoSlug: string,
   tailwindConfig?: string,
   globalCss?: string,
   existingBundleUrls?: BundleUrls | null,
 ) => {
-  const client = useClerkSupabaseClient()
   const [bundleUrls, setBundleUrls] = useState<BundleUrls | null>(
     existingBundleUrls ?? null,
   )
