@@ -585,9 +585,9 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
-          bundle_html_url?: string | null
           bundle_hash?: string | null
-          compiled_css: string | null
+          bundle_html_url?: string | null
+          compiled_css?: string | null
           component_id: number | null
           created_at: string | null
           demo_code: string
@@ -607,8 +607,8 @@ export type Database = {
         }
         Insert: {
           bookmarks_count?: number | null
-          bundle_html_url?: string | null
           bundle_hash?: string | null
+          bundle_html_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -629,8 +629,8 @@ export type Database = {
         }
         Update: {
           bookmarks_count?: number | null
-          bundle_html_url?: string | null
           bundle_hash?: string | null
+          bundle_html_url?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -686,36 +686,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      embedding_generation_status: {
-        Row: {
-          created_at: string | null
-          error: string | null
-          id: number
-          item_id: number
-          item_type: string
-          status: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          error?: string | null
-          id?: number
-          item_id: number
-          item_type: string
-          status: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          error?: string | null
-          id?: number
-          item_id?: number
-          item_type?: string
-          status?: string
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       feedback: {
         Row: {
@@ -1897,6 +1867,12 @@ export type Database = {
           user_data: Json
           component_user_data: Json
         }[]
+      }
+      get_user_state: {
+        Args: {
+          user_id_param: string
+        }
+        Returns: Json
       }
       increment: {
         Args: Record<PropertyKey, never>

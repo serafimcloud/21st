@@ -1,7 +1,6 @@
 import { useCallback } from "react"
 import { useAtom } from "jotai"
 import { userStateAtom } from "@/lib/store/user-store"
-import { toast } from "sonner"
 import { PlanType } from "@/lib/config/subscription-plans"
 
 export interface PlanInfo {

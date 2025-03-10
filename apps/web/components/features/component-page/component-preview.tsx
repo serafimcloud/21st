@@ -54,6 +54,9 @@ import styles from "./component-preview.module.css"
 import { FullScreenButton } from "../../ui/full-screen-button"
 import { useBundleDemo } from "@/hooks/use-bundle-demo"
 import { PayWall } from "./pay-wall"
+import { useComponentAccess } from "@/hooks/use-component-access"
+import { debugAccessStateAtom } from "./pay-wall"
+import { ComponentAccessState } from "@/hooks/use-component-access"
 
 export function ComponentPagePreview({
   component,
@@ -70,6 +73,7 @@ export function ComponentPagePreview({
   setIsEditDialogOpen,
   demo,
   compiledCss,
+  accessState,
 }: {
   component: Component & { user: User } & { tags: Tag[] }
   code: string
@@ -85,6 +89,8 @@ export function ComponentPagePreview({
   canEdit: boolean
   setIsEditDialogOpen: (value: boolean) => void
   demo: Demo
+  showPaywall: boolean
+  accessState: ComponentAccessState
 }) {
   const sandpackRef = useRef<HTMLDivElement>(null)
   const { user } = useUser()
@@ -93,6 +99,9 @@ export function ComponentPagePreview({
   const [isShowCode, setIsShowCode] = useAtom(isShowCodeAtom)
   const isDebug = useDebugMode()
   const [isFullScreen] = useAtom(isFullScreenAtom)
+  const [debugState] = useAtom(debugAccessStateAtom)
+
+  const effectiveAccessState = debugState || accessState
 
   const dumySandpackFiles = generateSandpackFiles({
     demoComponentNames,
@@ -281,9 +290,6 @@ export function ComponentPagePreview({
     ...({ fileLabels: customFileLabels } as any),
   }
 
-  // Mock check for component purchase - replace with actual check later
-  const hasComponentAccess = !component.is_paid
-
   return (
     <motion.div
       layout
@@ -370,7 +376,7 @@ export function ComponentPagePreview({
                     />
                     <div className="flex w-full h-full flex-col">
                       {isShowCode ? (
-                        hasComponentAccess ? (
+                        effectiveAccessState === "ACCESSIBLE" ? (
                           <>
                             <CopyCommandSection component={component} />
                             {isDebug && <SandpackFileExplorer />}
@@ -406,7 +412,10 @@ export function ComponentPagePreview({
                             </div>
                           </>
                         ) : (
-                          <PayWall />
+                          <PayWall
+                            accessState={effectiveAccessState}
+                            component={component}
+                          />
                         )
                       ) : (
                         <ComponentPageInfo component={component} />

@@ -5,7 +5,6 @@ import React, { Dispatch, SetStateAction, useEffect, useState } from "react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
 import { atom, useAtom } from "jotai"
-import { useQuery } from "@tanstack/react-query"
 import { SignedIn, SignedOut, SignInButton, useUser } from "@clerk/nextjs"
 
 import {
@@ -91,6 +90,7 @@ import {
 import { cn } from "@/lib/utils"
 import { addVersionToUrl } from "@/lib/utils/url"
 import { isEditingCodeAtom } from "@/components/ui/edit-component-dialog"
+import { useComponentAccess } from "@/hooks/use-component-access"
 
 export const isShowCodeAtom = atom(true)
 const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
@@ -277,43 +277,6 @@ const useKeyboardShortcuts = ({
   }, [setIsFullScreen])
 }
 
-const copyToClipboard = async (text: string) => {
-  if (typeof window === "undefined") {
-    return // Skip execution on server
-  }
-
-  try {
-    if (navigator?.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text)
-      return
-    }
-
-    // Fallback for Safari
-    const type = "text/plain"
-    const blob = new Blob([text], { type })
-    const data = [new ClipboardItem({ [type]: blob })]
-
-    if (navigator?.clipboard?.write) {
-      await navigator.clipboard.write(data)
-      return
-    }
-
-    // Fallback using document
-    const textarea = document.createElement("textarea")
-    textarea.value = text
-    textarea.style.position = "fixed"
-    textarea.style.opacity = "0"
-    textarea.style.whiteSpace = "pre"
-    document.body.appendChild(textarea)
-    textarea.focus()
-    textarea.select()
-    document.execCommand("copy")
-    document.body.removeChild(textarea)
-  } catch (err) {
-    throw new Error("Failed to copy text")
-  }
-}
-
 async function purgeCacheForDemo(
   previewUrl: string | null | undefined,
   videoUrl: string | null | undefined,
@@ -383,6 +346,9 @@ export default function ComponentPage({
   const { capture } = useSupabaseAnalytics()
   const canEdit = user?.id === component.user_id || isAdmin
   const router = useRouter()
+
+  const accessState = useComponentAccess(component)
+  const showPaywall = accessState !== "ACCESSIBLE"
 
   const { data: bookmarked } = useHasUserBookmarkedDemo(
     supabase,
@@ -624,9 +590,7 @@ export default function ComponentPage({
         if (data.debug.ruleApplied) debugMessage.push("rule applied")
         if (data.debug.contextApplied) debugMessage.push("context added")
 
-        toast.success(
-          `Prompt copied to clipboard`,
-        )
+        toast.success(`Prompt copied to clipboard`)
       } else {
         toast.success("AI prompt copied to clipboard")
       }
@@ -1039,60 +1003,43 @@ export default function ComponentPage({
               </Tooltip>
             </div>
             <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handlePromptAction}
-                    className="rounded-none shadow-none first:rounded-s-lg focus-visible:z-10"
-                  >
-                    {selectedPromptType === "v0-open" ? (
-                      <>
-                        <span className="mr-2">Open in</span>
-                        <div className="flex items-center justify-center w-[18px] h-[18px]">
-                          <Icons.v0Logo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center w-[22px] h-[22px]">
-                            {
-                              promptOptions.find(
-                                (opt): opt is PromptOptionBase =>
-                                  opt.type === "option" &&
-                                  opt.id === selectedPromptType,
-                              )?.icon
-                            }
-                          </div>
-                          <span>Copy prompt</span>
-                        </div>
-                      </>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2">
-                  <p className="flex items-center gap-1.5">
-                    {selectedPromptType === "v0-open"
-                      ? "Open in v0"
-                      : "Copy AI prompt"}
-                    <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 font-sans text-[11px] leading-none opacity-100 flex">
-                      <span className="text-[11px] leading-none font-sans text-muted-foreground">
-                        {navigator?.platform?.toLowerCase()?.includes("mac")
-                          ? "⌘"
-                          : "Ctrl"}
-                      </span>
-                      <span className="text-[11px] leading-none font-sans text-muted-foreground">
-                        X
-                      </span>
-                    </kbd>
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                onClick={showPaywall ? handlePromptAction : undefined}
+                className="rounded-none shadow-none first:rounded-s-lg focus-visible:z-10"
+                disabled={!showPaywall}
+                variant={!showPaywall ? "secondary" : "default"}
+              >
+                {!showPaywall ? (
+                  "Unlock to copy prompt"
+                ) : selectedPromptType === "v0-open" ? (
+                  <>
+                    <span className="mr-2">Open in</span>
+                    <div className="flex items-center justify-center w-[18px] h-[18px]">
+                      <Icons.v0Logo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-[22px] h-[22px]">
+                      {
+                        promptOptions.find(
+                          (opt): opt is PromptOptionBase =>
+                            opt.type === "option" &&
+                            opt.id === selectedPromptType,
+                        )?.icon
+                      }
+                    </div>
+                    <span>Copy prompt</span>
+                  </div>
+                )}
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     className="rounded-none shadow-none last:rounded-e-lg focus-visible:z-10"
                     size="icon"
+                    disabled={!showPaywall}
+                    variant={!showPaywall ? "secondary" : "default"}
                   >
                     <ChevronDown size={16} strokeWidth={2} />
                   </Button>
@@ -1119,10 +1066,11 @@ export default function ComponentPage({
                           opt.type === "option" &&
                           opt.id === PROMPT_TYPES.EXTENDED,
                       )
-                      if (copyOption) options.push({
-                        ...copyOption,
-                        label: "Copy prompt" // Override label for EXTENDED type
-                      })
+                      if (copyOption)
+                        options.push({
+                          ...copyOption,
+                          label: "Copy prompt", // Override label for EXTENDED type
+                        })
 
                       // Always add v0-open option
                       const v0Option = promptOptions.find(
@@ -1186,6 +1134,8 @@ export default function ComponentPage({
           canEdit={canEdit}
           setIsEditDialogOpen={setIsEditDialogOpen}
           demo={demo}
+          showPaywall={showPaywall}
+          accessState={accessState}
         />
       </div>
       <EditComponentDialog

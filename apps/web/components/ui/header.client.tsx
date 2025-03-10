@@ -37,6 +37,51 @@ import { userStateAtom } from "@/lib/store/user-store"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { useQuery } from "@tanstack/react-query"
 
+interface UserProfile {
+  id: string
+  display_name: string | null
+  display_username: string | null
+  display_image_url: string | null
+  bio: string | null
+  username: string | null
+  created_at: string
+  email: string
+  github_url: string | null
+  image_url: string | null
+  twitter_url: string | null
+  website_url: string | null
+  is_admin: boolean
+  manually_added: boolean
+  name: string | null
+  paypal_email: string | null
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  total_components: number
+  total_downloads: number
+  pro_banner_url: string | null
+  pro_referral_url: string | null
+  ref: string | null
+  role:
+    | "designer"
+    | "frontend_developer"
+    | "backend_developer"
+    | "product_manager"
+    | "entrepreneur"
+    | null
+  updated_at: string
+}
+
+interface UserUsage {
+  limit: number
+  usage: number
+  balance: number
+}
+
+interface UserStateResponse {
+  profile: UserProfile
+  usage: UserUsage
+}
+
 export const searchQueryAtom = atom("")
 
 export function Header({
@@ -61,20 +106,24 @@ export function Header({
   const [userState, setUserState] = useAtom(userStateAtom)
   const client = useClerkSupabaseClient()
 
-  // Fetch user profile using React Query
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
-    queryKey: ["user", userId, "profile"],
-    queryFn: async () => {
-      if (!userId) return null
-      const { data } = await client
-        .from("users")
-        .select("*")
-        .eq("id", userId)
-        .single()
-      return data
-    },
-    enabled: !!userId,
-  })
+  // Fetch combined user state using React Query
+  const { data: userData, isLoading: isUserDataLoading } =
+    useQuery<UserStateResponse | null>({
+      queryKey: ["user", userId, "state"],
+      queryFn: async () => {
+        if (!userId) return null
+        const { data, error } = await client.rpc("get_user_state", {
+          user_id_param: userId,
+        })
+        if (error) {
+          console.error("Error fetching user state:", error)
+          return null
+        }
+        return data as unknown as UserStateResponse
+      },
+      enabled: !!userId,
+      refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    })
 
   // Fetch subscription using React Query
   const { data: subscription, isLoading: isSubscriptionLoading } = useQuery({
@@ -90,45 +139,27 @@ export function Header({
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   })
 
-  // Fetch balance using React Query
-  const { data: balance, isLoading: isBalanceLoading } = useQuery({
-    queryKey: ["user", userId, "balance"],
-    queryFn: async () => {
-      if (!userId) return null
-      const { data } = await client
-        .from("usages")
-        .select("limit, usage")
-        .eq("user_id", userId)
-        .single()
-
-      if (!data || data.limit === null || data.usage === null) return null
-      return data.limit - data.usage
-    },
-    enabled: !!userId,
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
-  })
-
   // Update global state when data changes
   useEffect(() => {
-    setUserState((prev) => ({
-      ...prev,
-      profile: profile || null,
-      isProfileLoading,
-      subscription: subscription || null,
-      isSubscriptionLoading,
-      clerkUser: clerkUser || null,
-      balance: balance || null,
-      isBalanceLoading,
-      lastFetched: Date.now(),
-    }))
+    if (userData) {
+      setUserState((prev) => ({
+        ...prev,
+        profile: userData.profile,
+        isProfileLoading: isUserDataLoading,
+        subscription: subscription || null,
+        isSubscriptionLoading,
+        clerkUser: clerkUser || null,
+        balance: userData.usage?.balance || null,
+        isBalanceLoading: isUserDataLoading,
+        lastFetched: Date.now(),
+      }))
+    }
   }, [
-    profile,
-    isProfileLoading,
+    userData,
+    isUserDataLoading,
     subscription,
     isSubscriptionLoading,
     clerkUser,
-    balance,
-    isBalanceLoading,
     setUserState,
   ])
 
@@ -515,7 +546,7 @@ export function Header({
           </SignedOut>
         </div>
       </header>
-      {showEditProfile && userState.profile && !isProfileLoading && (
+      {showEditProfile && userState.profile && (
         <EditProfileDialog
           isOpen={showEditProfile}
           setIsOpen={setShowEditProfile}

@@ -1,6 +1,7 @@
-import { atom } from "jotai"
+import { atomWithStorage } from "jotai/utils"
 import { PlanInfo } from "@/hooks/use-subscription"
 import type { User } from "@/types/global"
+import type { PrimitiveAtom } from "jotai/vanilla"
 
 interface UserState {
   subscription: PlanInfo | null
@@ -13,7 +14,7 @@ interface UserState {
   isBalanceLoading: boolean
 }
 
-export const userStateAtom = atom<UserState>({
+export const userStateAtom: PrimitiveAtom<UserState> = atomWithStorage<UserState>("user_state", {
   subscription: null,
   isSubscriptionLoading: false,
   profile: null,
