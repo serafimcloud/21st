@@ -1,3 +1,3 @@
 import { startServer } from "./src/server"
 
-startServer()
+startServer(process.env.PORT ? parseInt(process.env.PORT) : 80)
