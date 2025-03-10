@@ -585,6 +585,8 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
+          bundle_html_url: string | null
+          bundle_hash: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -605,6 +607,8 @@ export type Database = {
         }
         Insert: {
           bookmarks_count?: number | null
+          bundle_html_url?: string | null
+          bundle_hash?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null
@@ -625,6 +629,8 @@ export type Database = {
         }
         Update: {
           bookmarks_count?: number | null
+          bundle_html_url?: string | null
+          bundle_hash?: string | null
           compiled_css?: string | null
           component_id?: number | null
           created_at?: string | null

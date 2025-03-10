@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect, useMemo } from "react"
 import { useAnimation, motion, AnimatePresence } from "motion/react"
 import { useAtom } from "jotai"
 import { useTheme } from "next-themes"
@@ -38,17 +38,13 @@ import {
   SandpackFileExplorer,
   SandpackProviderProps,
 } from "@codesandbox/sandpack-react"
-import {
-  SandpackProvider as SandpackProviderUnstyled,
-  SandpackPreview,
-} from "@codesandbox/sandpack-react/unstyled"
 
 import { useDebugMode } from "@/hooks/use-debug-mode"
 import { useCompileCss } from "@/hooks/use-compile-css"
 import { useIsMobile } from "@/hooks/use-media-query"
 
 import { Component, Tag, User, Demo } from "@/types/global"
-import { generateSandpackFiles } from "@/lib/sandpack"
+import { generateBundleFiles, generateSandpackFiles } from "@/lib/sandpack"
 import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
 import { getPackageRunner, cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -56,6 +52,7 @@ import { useUser } from "@clerk/nextjs"
 
 import styles from "./component-preview.module.css"
 import { FullScreenButton } from "../../ui/full-screen-button"
+import { useBundleDemo } from "@/hooks/use-bundle-demo"
 
 export function ComponentPagePreview({
   component,
@@ -106,15 +103,19 @@ export function ComponentPagePreview({
     css: "",
   })
 
-  const shellCode = Object.entries(dumySandpackFiles)
-    .filter(
-      ([key]) =>
-        key.endsWith(".tsx") ||
-        key.endsWith(".jsx") ||
-        key.endsWith(".ts") ||
-        key.endsWith(".js"),
-    )
-    .map(([, file]) => file)
+  const shellCode = useMemo(
+    () =>
+      Object.entries(dumySandpackFiles)
+        .filter(
+          ([key]) =>
+            key.endsWith(".tsx") ||
+            key.endsWith(".jsx") ||
+            key.endsWith(".ts") ||
+            key.endsWith(".js"),
+        )
+        .map(([, file]) => file),
+    [dumySandpackFiles],
+  )
 
   const css = useCompileCss(
     code,
@@ -144,6 +145,56 @@ export function ComponentPagePreview({
     }),
   }
 
+  const bundleFiles = useMemo(
+    () => ({
+      ...registryDependencies,
+      ...generateBundleFiles({
+        demoComponentNames,
+        componentSlug: component.component_slug,
+        relativeImportPath: `/components/${component.registry}`,
+        code,
+        demoCode,
+        css: css || "",
+        customTailwindConfig: tailwindConfig,
+        customGlobalCss: globalCss,
+      }),
+    }),
+    [
+      registryDependencies,
+      demoComponentNames,
+      component.component_slug,
+      component.registry,
+      code,
+      demoCode,
+      css,
+      tailwindConfig,
+      globalCss,
+    ],
+  )
+
+  const allDependencies = useMemo(
+    () => ({
+      "@radix-ui/react-select": "^1.0.0",
+      "lucide-react": "latest",
+      "tailwind-merge": "latest",
+      clsx: "latest",
+      ...dependencies,
+      ...demoDependencies,
+      ...npmDependenciesOfRegistryDependencies,
+    }),
+    [dependencies, demoDependencies, npmDependenciesOfRegistryDependencies],
+  )
+
+  const bundle = useBundleDemo(
+    bundleFiles,
+    allDependencies,
+    component,
+    shellCode,
+    demo.id,
+    tailwindConfig,
+    globalCss,
+  )
+
   const mainComponentFile = Object.keys(files).find((file) =>
     file.endsWith(`${component.component_slug}.tsx`),
   )
@@ -164,11 +215,13 @@ export function ComponentPagePreview({
     if (isLoading) {
       const timer = setTimeout(() => {
         setLoadingText(
-          "Loading is taking longer than usual. You may want to refresh the page...",
+          "Loading is taking longer than usual... you may want to refresh the page",
         )
-      }, 4000)
+      }, 10000)
 
-      return () => clearTimeout(timer)
+      return () => {
+        clearTimeout(timer)
+      }
     }
   }, [isLoading])
 
@@ -241,52 +294,45 @@ export function ComponentPagePreview({
         },
       }}
     >
-      <SandpackProviderUnstyled {...providerProps}>
-        <motion.div
-          layout="position"
-          className="flex-grow h-full relative rounded-lg overflow-hidden"
-          transition={{
-            layout: {
-              duration: 0.4,
-              ease: [0.4, 0, 0.2, 1],
-            },
-          }}
-        >
-          <FullScreenButton />
-          {previewError ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3">
-              <p className="text-muted-foreground text-sm">
-                Failed to load preview
-              </p>
-              <button
-                onClick={() => {
-                  setPreviewError(false)
-                  setIsLoading(true)
-                }}
-                className="text-sm underline text-muted-foreground hover:text-foreground"
-              >
-                Try again
-              </button>
-            </div>
-          ) : (
-            <SandpackPreview
-              showSandpackErrorOverlay={false}
-              showOpenInCodeSandbox={process.env.NODE_ENV === "development"}
-              showRefreshButton={false}
-              onLoad={() => setIsLoading(false)}
-              onError={() => {
-                setPreviewError(true)
-                setIsLoading(false)
+      <motion.div className="relative flex-grow h-full relative rounded-lg overflow-hidden">
+        <FullScreenButton />
+
+        {previewError && (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <p className="text-muted-foreground text-sm">
+              Failed to load preview
+            </p>
+            <button
+              onClick={() => {
+                setPreviewError(false)
+                setIsLoading(true)
               }}
-            />
-          )}
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-              <LoadingSpinner text={loadingText} />
-            </div>
-          )}
-        </motion.div>
-      </SandpackProviderUnstyled>
+              className="text-sm underline text-muted-foreground hover:text-foreground"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <LoadingSpinner text={loadingText} />
+          </div>
+        )}
+        {bundle?.html && (
+          <iframe
+            src={isDarkTheme ? `${bundle?.html}?dark=true` : bundle?.html}
+            className="w-full h-full"
+            onLoad={() => {
+              setIsLoading(false)
+            }}
+            onError={() => {
+              setPreviewError(true)
+              setIsLoading(false)
+            }}
+          />
+        )}
+      </motion.div>
 
       <AnimatePresence mode="popLayout">
         {!isFullScreen && (
