@@ -28,8 +28,32 @@ export const bundleReact = async ({
     console.log("Files to bundle:", Object.keys(files))
     console.log("\nDependencies:", dependencies)
 
+    const allFiles = {
+      ...files,
+      "main.tsx": endent`
+        import { createRoot } from "react-dom/client";
+        import { StrictMode } from "react";
+        import App from "./App";
+        import { ThemeProvider } from "./next-themes";
+        import "./globals.css";
+
+        const rootElement = document.getElementById("root");
+        const root = createRoot(rootElement);
+
+        root.render(
+          <StrictMode>
+            <ThemeProvider attribute="class" enableSystem={false}>
+              <App />
+            </ThemeProvider>
+          </StrictMode>
+        );
+      `,
+    }
+
+    console.log("CUSTOM TAILWIND CONFIG", customTailwindConfig)
+
     const bundledCss = await compileCSS({
-      jsx: files["main.tsx"],
+      jsx: allFiles["main.tsx"],
       baseTailwindConfig,
       baseGlobalCss,
       customTailwindConfig,
@@ -37,27 +61,7 @@ export const bundleReact = async ({
     })
 
     tempDir = await createTempProject({
-      files: {
-        ...files,
-        "main.tsx": endent`
-          import { createRoot } from "react-dom/client";
-          import { StrictMode } from "react";
-          import App from "./App";
-          import { ThemeProvider } from "./next-themes";
-          import "./globals.css";
-
-          const rootElement = document.getElementById("root");
-          const root = createRoot(rootElement);
-
-          root.render(
-            <StrictMode>
-              <ThemeProvider attribute="class" enableSystem={false}>
-                <App />
-              </ThemeProvider>
-            </StrictMode>
-          );
-        `,
-      },
+      files: allFiles,
       dependencies,
       tailwindConfig: baseTailwindConfig,
       globalCss: baseGlobalCss,
