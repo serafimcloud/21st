@@ -10,14 +10,21 @@ import { useAtom } from "jotai"
 import { userStateAtom } from "@/lib/store/user-store"
 import type { PrimitiveAtom } from "jotai/vanilla"
 import { toast } from "sonner"
-import { usePathname } from "next/navigation"
 import { useState } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { FeatureCards } from "@/components/features/component-page/feature-cards"
+import { cn } from "@/lib/utils"
 
-// Атом для дебага состояний
 export const debugAccessStateAtom: PrimitiveAtom<ComponentAccessState | null> =
   atomWithStorage<ComponentAccessState | null>("debug_access_state", null)
 
-// Атом для дебага баланса
 export const debugBalanceAtom: PrimitiveAtom<number | null> = atomWithStorage<
   number | null
 >("debug_balance", null)
@@ -32,8 +39,8 @@ export function PayWall({ accessState, component }: PayWallProps) {
   const [, setDebugState] = useAtom(debugAccessStateAtom)
   const [userState] = useAtom(userStateAtom)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false)
 
-  // Добавим дебаг-панель если включен режим разработки
   const showDebugPanel = process.env.NODE_ENV === "development"
 
   const handleUpgradePlan = async (
@@ -79,11 +86,43 @@ export function PayWall({ accessState, component }: PayWallProps) {
     }
   }
 
+  const handleUnlockComponent = async () => {
+    setIsProcessing(true)
+    // Mock unlock API call
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    toast.success("Component unlocked successfully!")
+    setIsProcessing(false)
+    setShowUnlockDialog(false)
+    // Here you would typically update the component access state
+  }
+
+  useHotkeys(
+    ["enter"],
+    () => {
+      // Only trigger if we're not in any dialog
+      const isInAnyDialog = document.querySelector('[role="dialog"]') !== null
+      if (accessState === "REQUIRES_UNLOCK" && !isInAnyDialog) {
+        setShowUnlockDialog(true)
+      }
+    },
+    { preventDefault: true },
+  )
+
   useHotkeys(
     ["meta+enter", "ctrl+enter"],
     () => {
+      // Check if we're in the unlock dialog
+      const isInUnlockDialog =
+        document.querySelector('[data-dialog-type="unlock-component"]') !== null
+
       if (accessState === "REQUIRES_SUBSCRIPTION") {
         handleUpgradePlan("pro")
+      } else if (accessState === "REQUIRES_UNLOCK") {
+        if (isInUnlockDialog) {
+          handleUnlockComponent()
+        } else if (!showUnlockDialog) {
+          setShowUnlockDialog(true)
+        }
       }
     },
     { preventDefault: true },
@@ -105,6 +144,7 @@ export function PayWall({ accessState, component }: PayWallProps) {
             <option value="ACCESSIBLE">Accessible</option>
             <option value="REQUIRES_SUBSCRIPTION">Needs Subscription</option>
             <option value="REQUIRES_TOKENS">Needs Tokens</option>
+            <option value="REQUIRES_UNLOCK">Ready to Unlock</option>
           </select>
         </div>
       )}
@@ -125,10 +165,173 @@ export function PayWall({ accessState, component }: PayWallProps) {
             onUpgrade={() => handleUpgradePlan("pro_plus")}
           />
         )}
+
+        {accessState === "REQUIRES_UNLOCK" && (
+          <UnlockPaywall
+            component={component}
+            balance={userState.balance || 0}
+            isProcessing={isProcessing}
+            onUnlock={() => setShowUnlockDialog(true)}
+          />
+        )}
       </div>
+
+      <Dialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
+        <DialogContent className="p-4" data-dialog-type="unlock-component">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold tracking-tight">
+              Unlock Component
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              You're about to unlock this component using your tokens.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Current Balance
+              </span>
+              <span className="text-sm font-medium">
+                {userState.balance} tokens
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Component Price
+              </span>
+              <span className="text-sm font-medium text-destructive">
+                -{component.price} tokens
+              </span>
+            </div>
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-foreground">
+                  Remaining Balance
+                </span>
+                <span className="text-sm font-medium text-foreground">
+                  {(userState.balance || 0) - component.price} tokens
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowUnlockDialog(false)}
+              className="text-sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUnlockComponent}
+              disabled={isProcessing}
+              className={cn("text-sm gap-1.5", isProcessing ? "" : "pr-1.5")}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Unlock
+                  <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                    <span className="text-[10px]">
+                      {navigator?.platform?.toLowerCase()?.includes("mac")
+                        ? "⌘"
+                        : "Ctrl"}
+                    </span>
+                    <Icons.enter className="h-2.5 w-2.5" />
+                  </kbd>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+
+function UnlockPaywall({
+  isProcessing,
+  onUnlock,
+}: {
+  component: Component
+  balance: number
+  isProcessing: boolean
+  onUnlock: () => void
+}) {
+  const features = [
+    {
+      title: "Full Source Code",
+      description: "Access to the complete component code",
+    },
+    {
+      title: "Lifetime Access",
+      description: "Unlock once, use forever",
+    },
+    {
+      title: "Updates Included",
+      description: "Get all future improvements",
+    },
+  ]
+
+  return (
+    <div className="flex-1 w-full flex flex-col h-full">
+      <div className="flex flex-col items-center justify-center flex-1 pt-20">
+        <div className="space-y-2 mb-8">
+          <h3 className="text-xl font-semibold">Premium Component</h3>
+          <p className="text-muted-foreground">
+            Unlock to get full access to the component
+          </p>
+        </div>
+
+        <Button
+          onClick={onUnlock}
+          disabled={isProcessing}
+          className={cn(
+            "flex items-center justify-center gap-1.5",
+            isProcessing ? "" : "pr-1.5",
+          )}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              Unlock
+              <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                <Icons.enter className="h-2.5 w-2.5" />
+              </kbd>
+            </>
+          )}
+        </Button>
+      </div>
+
+      <FeatureCards title="What's included" features={features} />
+    </div>
+  )
+}
+
+const features = [
+  {
+    title: "Premium Components",
+    description: "Access to premium components",
+  },
+  {
+    title: "AI Component Generation",
+    description: "Generate components with AI",
+  },
+  {
+    title: "Priority Support",
+    description: "Get help when you need it",
+  },
+]
 
 function SubscriptionPaywall({
   isProcessing,
@@ -150,7 +353,10 @@ function SubscriptionPaywall({
         <Button
           onClick={onUpgrade}
           disabled={isProcessing}
-          className="flex items-center justify-center gap-1.5 pr-1.5"
+          className={cn(
+            "flex items-center justify-center gap-1.5",
+            isProcessing ? "" : "pr-1.5",
+          )}
         >
           {isProcessing ? (
             <>
@@ -173,38 +379,7 @@ function SubscriptionPaywall({
         </Button>
       </div>
 
-      <div className="w-full border rounded-lg p-6 mt-auto text-start">
-        <h4 className="text-sm font-medium mb-6">What's included</h4>
-        <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm">Premium Components</span>
-              <span className="text-xs text-muted-foreground">
-                Up to 10 components per month
-              </span>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm">AI Component Generation</span>
-              <span className="text-xs text-muted-foreground">
-                Up to 50 generations per month
-              </span>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm">Priority Support</span>
-              <span className="text-xs text-muted-foreground">
-                Get help when you need it
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <FeatureCards title="What's included" features={features} />
     </div>
   )
 }
@@ -222,7 +397,6 @@ function TokensLimitPaywall({
 }) {
   const isPro = subscription?.type === "pro"
 
-  // Calculate next token refresh date based on subscription period end
   const nextRefreshDate = subscription?.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString("en-US", {
         month: "long",
@@ -255,7 +429,10 @@ function TokensLimitPaywall({
                 <Button
                   onClick={onUpgrade}
                   disabled={isProcessing}
-                  className="flex items-center justify-center gap-1.5 pr-1.5"
+                  className={cn(
+                    "flex items-center justify-center gap-1.5",
+                    isProcessing ? "" : "pr-1.5",
+                  )}
                 >
                   {isProcessing ? (
                     <>
@@ -282,40 +459,7 @@ function TokensLimitPaywall({
         </div>
       </div>
 
-      <div className="w-full border rounded-lg p-6 mt-auto text-start">
-        <h4 className="text-sm font-medium mb-6">
-          What's included in your plan
-        </h4>
-        <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm">Premium Components</span>
-              <span className="text-xs text-muted-foreground">
-                Up to 10 components per month
-              </span>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm">AI Component Generation</span>
-              <span className="text-xs text-muted-foreground">
-                Up to 50 generations per month
-              </span>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Check size={16} className="text-green-500 shrink-0 mt-0.5" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm">Priority Support</span>
-              <span className="text-xs text-muted-foreground">
-                Get help when you need it
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <FeatureCards title="What's included" features={features} />
     </div>
   )
 }

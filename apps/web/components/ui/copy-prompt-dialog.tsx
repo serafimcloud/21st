@@ -116,12 +116,20 @@ export function CopyPromptDialog({
   // Add useEffect for Enter key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return
+
       // Check if any select element is focused
       const activeElement = document.activeElement
       const isSelectFocused =
         activeElement?.closest('[role="combobox"]') !== null
 
-      if (e.key === "Enter" && !isSelectFocused) {
+      // Check if the event target is within this specific dialog
+      const isWithinCopyDialog =
+        (e.target as HTMLElement)?.closest(
+          '[data-dialog-type="copy-prompt"]',
+        ) !== null
+
+      if (e.key === "Enter" && !isSelectFocused && isWithinCopyDialog) {
         e.preventDefault()
         handleCopy()
       }
@@ -129,11 +137,14 @@ export function CopyPromptDialog({
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  }, [isOpen]) // Add isOpen to dependencies
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent
+        className="sm:max-w-[500px]"
+        data-dialog-type="copy-prompt"
+      >
         <DialogHeader>
           <DialogTitle>Copy AI Prompt</DialogTitle>
         </DialogHeader>

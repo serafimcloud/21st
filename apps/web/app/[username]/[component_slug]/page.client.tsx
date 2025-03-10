@@ -138,7 +138,6 @@ const useAnalytics = ({
     }
   }, [user])
 }
-
 const useKeyboardShortcuts = ({
   component,
   setIsShowCode,
@@ -155,6 +154,7 @@ const useKeyboardShortcuts = ({
   handlePromptAction: () => void
 }) => {
   const [, setIsFullScreen] = useAtom(isFullScreenAtom)
+  const [isEditingCode] = useAtom(isEditingCodeAtom)
 
   const handleShareClick = async () => {
     if (typeof window === "undefined") return
@@ -175,12 +175,20 @@ const useKeyboardShortcuts = ({
     }
   }
 
-  const [isEditingCode] = useAtom(isEditingCodeAtom)
-
+  // Toggle code view with [ and ]
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
+      // Check if we're not in an input/editing mode
+      if (isEditingCode || e.target instanceof Element && e.target.matches("input, textarea")) {
+        return
+      }
+
+      // Check for modifiers
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
+        return
+      }
+
       if (e.code === "BracketRight" || e.code === "BracketLeft") {
-        if (isEditingCode) return
         e.preventDefault()
         if (e.code === "BracketRight") {
           setIsShowCode(false)
@@ -202,34 +210,42 @@ const useKeyboardShortcuts = ({
     return () => window.removeEventListener("keydown", keyDownHandler)
   }, [isEditingCode, component.id, setIsShowCode])
 
+  // Edit component with E
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
-      if (
-        e.code === "KeyE" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        !e.shiftKey &&
-        !isEditDialogOpen &&
-        canEdit &&
-        e.target instanceof Element &&
-        !e.target.matches("input, textarea")
-      ) {
+      // Only if user can edit and dialog not already open
+      if (!canEdit || isEditDialogOpen) return
+
+      // Check if we're not in an input
+      if (e.target instanceof Element && e.target.matches("input, textarea")) {
+        return
+      }
+
+      // Check for no modifiers
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
+        return
+      }
+
+      if (e.code === "KeyE") {
         e.preventDefault()
         setIsEditDialogOpen(true)
       }
     }
 
     window.addEventListener("keydown", keyDownHandler)
-
-    return () => {
-      window.removeEventListener("keydown", keyDownHandler)
-    }
+    return () => window.removeEventListener("keydown", keyDownHandler)
   }, [isEditDialogOpen, setIsEditDialogOpen, canEdit])
 
+  // Prompt action with Cmd/Ctrl + X
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
-      if (e.code === "KeyX" && (e.metaKey || e.ctrlKey)) {
+      // Only with Cmd/Ctrl modifier
+      if (!e.metaKey && !e.ctrlKey) return
+
+      // No other modifiers
+      if (e.altKey || e.shiftKey) return
+
+      if (e.code === "KeyX") {
         e.preventDefault()
         handlePromptAction()
       }
@@ -239,9 +255,16 @@ const useKeyboardShortcuts = ({
     return () => document.removeEventListener("keydown", keyDownHandler)
   }, [handlePromptAction])
 
+  // Share with Cmd/Ctrl + Shift + C
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
-      if (e.code === "KeyC" && e.shiftKey && (e.metaKey || e.ctrlKey)) {
+      // Must have Cmd/Ctrl + Shift
+      if ((!e.metaKey && !e.ctrlKey) || !e.shiftKey) return
+
+      // No alt modifier
+      if (e.altKey) return
+
+      if (e.code === "KeyC") {
         e.preventDefault()
         handleShareClick()
       }
@@ -251,21 +274,25 @@ const useKeyboardShortcuts = ({
     return () => window.removeEventListener("keydown", keyDownHandler)
   }, [])
 
+  // Toggle fullscreen with F
   useEffect(() => {
     const keyDownHandler = (e: KeyboardEvent) => {
-      if (
-        e.code === "KeyF" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        !e.shiftKey &&
-        e.target instanceof Element &&
-        !e.target.matches("input, textarea")
-      ) {
+      // Check if we're not in an input
+      if (e.target instanceof Element && e.target.matches("input, textarea")) {
+        return
+      }
+
+      // Check for no modifiers
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
+        return
+      }
+
+      if (e.code === "KeyF") {
         e.preventDefault()
         setIsFullScreen((prev) => !prev)
       }
 
+      // Exit fullscreen with Escape
       if (e.code === "Escape") {
         e.preventDefault()
         setIsFullScreen(false)
@@ -348,7 +375,7 @@ export default function ComponentPage({
   const router = useRouter()
 
   const accessState = useComponentAccess(component)
-  const showPaywall = accessState !== "ACCESSIBLE"
+  const showPaywall = accessState !== "UNLOCKED"
 
   const { data: bookmarked } = useHasUserBookmarkedDemo(
     supabase,

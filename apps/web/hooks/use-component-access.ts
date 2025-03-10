@@ -3,9 +3,10 @@ import { userStateAtom } from "@/lib/store/user-store"
 import { Component } from "@/types/global"
 
 export type ComponentAccessState =
-  | "ACCESSIBLE" // Component is accessible (has subscription and tokens)
-  | "REQUIRES_SUBSCRIPTION" // Subscription required
+  | "UNLOCKED" // Component is accessible (has subscription and tokens)
+  | "REQUIRES_SUBSCRIPTION" // Subscription required 
   | "REQUIRES_TOKENS" // Has subscription but needs tokens
+  | "REQUIRES_UNLOCK" // Has subscription and tokens but needs to unlock
 
 export function useComponentAccess(component: Component) {
   const [userState] = useAtom(userStateAtom)
@@ -20,5 +21,11 @@ export function useComponentAccess(component: Component) {
     return "REQUIRES_TOKENS" as const
   }
 
-  return "ACCESSIBLE" as const
+  // Component needs to be unlocked with tokens
+  const hasEnoughTokens = balance !== null && balance >= component.price
+  if (hasEnoughTokens) {
+    return "REQUIRES_UNLOCK" as const
+  }
+
+  return "UNLOCKED" as const
 }

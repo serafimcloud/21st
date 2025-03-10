@@ -54,7 +54,6 @@ import styles from "./component-preview.module.css"
 import { FullScreenButton } from "../../ui/full-screen-button"
 import { useBundleDemo } from "@/hooks/use-bundle-demo"
 import { PayWall } from "./pay-wall"
-import { useComponentAccess } from "@/hooks/use-component-access"
 import { debugAccessStateAtom } from "./pay-wall"
 import { ComponentAccessState } from "@/hooks/use-component-access"
 
@@ -376,7 +375,7 @@ export function ComponentPagePreview({
                     />
                     <div className="flex w-full h-full flex-col">
                       {isShowCode ? (
-                        effectiveAccessState === "ACCESSIBLE" ? (
+                        effectiveAccessState === "UNLOCKED" ? (
                           <>
                             <CopyCommandSection component={component} />
                             {isDebug && <SandpackFileExplorer />}
