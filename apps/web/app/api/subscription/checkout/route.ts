@@ -5,7 +5,7 @@ import { z } from "zod"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
 const checkoutSchema = z.object({
-  type: z.enum(["standard", "pro"]),
+  type: z.enum(["pro", "pro_plus"]),
   period: z.enum(["monthly", "yearly"]),
 })
 

@@ -37,7 +37,7 @@ export function UpgradeConfirmationDialog({
               <>
                 You're about to upgrade to the{" "}
                 {PLAN_LIMITS[upgradePlanId].displayName} plan. You will be
-                charged ${upgradePlanId === "standard" ? "10" : "30"} for the
+                charged ${upgradePlanId === "pro" ? "10" : "30"} for the
                 first month.
               </>
             ) : (

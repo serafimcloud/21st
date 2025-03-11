@@ -10,7 +10,17 @@ import Link from "next/link"
 import { PLAN_LIMITS } from "@/lib/config/subscription-plans"
 import { cn } from "@/lib/utils"
 
-const faqs = [
+export interface FAQ {
+  question: string
+  answer: React.ReactNode
+}
+
+interface FAQProps {
+  simplified?: boolean
+  faqs?: FAQ[]
+}
+
+const DEFAULT_FAQS = [
   {
     question: "How does Magic AI Agent work?",
     answer:
@@ -38,7 +48,7 @@ const faqs = [
   },
   {
     question: "What happens if I run out of generations?",
-    answer: `If you exceed your monthly generation limit, you'll be prompted to upgrade your plan. The Hobby plan includes ${PLAN_LIMITS.free.generationsPerMonth} generations per month, Standard plan includes ${PLAN_LIMITS.standard.generationsPerMonth} generations, and Pro plan includes ${PLAN_LIMITS.pro.generationsPerMonth} generations. You can upgrade at any time to continue generating components.`,
+    answer: `If you exceed your monthly generation limit, you'll be prompted to upgrade your plan. The Hobby plan includes ${PLAN_LIMITS.free.generationsPerMonth} generations per month, Standard plan includes ${PLAN_LIMITS.pro.generationsPerMonth} generations, and Pro plan includes ${PLAN_LIMITS.pro.generationsPerMonth} generations. You can upgrade at any time to continue generating components.`,
   },
   {
     question: "How soon do new components get added to 21st.dev's library?",
@@ -69,18 +79,14 @@ const faqs = [
   },
 ]
 
-interface FAQProps {
-  simplified?: boolean
-}
-
-export function FAQ({ simplified = false }: FAQProps) {
+export function FAQ({ simplified = false, faqs = DEFAULT_FAQS }: FAQProps) {
   // Выбираем наиболее важные вопросы для simplified режима
   const displayFaqs = simplified
     ? faqs.slice(0, 5) // Показываем только первые 5 вопросов в simplified режиме
     : faqs
 
   return (
-    <section className={simplified ? "" : "py-10 lg:py-24 px-4"}>
+    <section className={simplified ? "" : "py-10 lg:py-24"}>
       {!simplified && (
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight text-neutral-200 sm:text-4xl">

@@ -6,12 +6,14 @@ import {
   getComponentDemos,
   getComponentWithDemo,
   getUserData,
+  hasUserPurchasedComponent,
 } from "@/lib/queries"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import { extractDemoComponentNames } from "@/lib/parsers"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import ComponentPage from "./page.client"
+import { auth } from "@clerk/nextjs/server"
 
 export const generateMetadata = async (props: {
   params: Promise<{ username: string; component_slug: string }>
@@ -134,6 +136,7 @@ export default async function ComponentPageServer(props: {
     redirect("/")
   }
 
+  const { userId } = await auth()
   const demo_slug = params.demo_slug || "default"
 
   try {
@@ -150,10 +153,14 @@ export default async function ComponentPageServer(props: {
 
     const { component, demo } = data
 
-    const { data: componentDemos, error: demosError } = await getComponentDemos(
-      supabaseWithAdminAccess,
-      component.id,
-    )
+    const [{ data: componentDemos }, hasPurchased] = await Promise.all([
+      getComponentDemos(supabaseWithAdminAccess, component.id),
+      hasUserPurchasedComponent(
+        supabaseWithAdminAccess,
+        userId,
+        component.id.toString(),
+      ),
+    ])
 
     const dependencies = (component.dependencies ?? {}) as Record<
       string,
@@ -266,6 +273,7 @@ export default async function ComponentPageServer(props: {
           globalCss={globalCssResult?.data as string}
           compiledCss={compiledCssResult?.data as string}
           submission={data.submission ?? undefined}
+          hasPurchased={hasPurchased}
         />
       </div>
     )

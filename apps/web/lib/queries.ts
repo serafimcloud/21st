@@ -19,6 +19,8 @@ import {
   Theme,
 } from "@/types/prompt-rules"
 import { Json } from "@/types/supabase"
+import { PurchaseComponentError } from "@/app/api/components/purchase/route"
+import { useAuth } from "@clerk/nextjs"
 
 export const componentReadableDbFields = `
   *,
@@ -808,4 +810,64 @@ export function usePromptRule(id: number | undefined) {
     },
     enabled: !!id,
   })
+}
+
+export function usePurchaseComponent(): UseMutationResult<
+  { success: true } | { success: false; error: PurchaseComponentError },
+  Error,
+  { componentId: number }
+> {
+  const queryClient = useQueryClient()
+  const { userId } = useAuth()
+
+  return useMutation({
+    mutationFn: async ({ componentId }) => {
+      const response = await fetch("/api/components/purchase", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ componentId }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to purchase component")
+      }
+
+      return response.json()
+    },
+    onSuccess: (_, { componentId }) => {
+      // Invalidate component purchase status
+      queryClient.invalidateQueries({
+        queryKey: ["component-purchase", componentId, userId],
+      })
+
+      // Invalidate user state (balance, etc)
+      queryClient.invalidateQueries({
+        queryKey: ["user", userId, "state"],
+      })
+
+      // Invalidate user components list
+      queryClient.invalidateQueries({
+        queryKey: ["userComponents"],
+      })
+    },
+  })
+}
+
+export async function hasUserPurchasedComponent(
+  supabase: SupabaseClient,
+  userId: string | null,
+  componentId: string,
+) {
+  if (!userId) return false
+
+  const { data } = await supabase
+    .from("components_purchases")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("component_id", componentId)
+    .single()
+
+  return !!data
 }

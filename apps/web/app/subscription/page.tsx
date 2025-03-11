@@ -9,11 +9,11 @@ import {
   PricingCardPlan,
 } from "@/lib/config/subscription-plans"
 
-type Plan = "standard" | "pro"
+type Plan = "pro" | "pro_plus"
 
 export default function SubscriptionPage() {
   const [isYearly, setIsYearly] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<Plan>("standard")
+  const [selectedPlan, setSelectedPlan] = useState<Plan>("pro")
 
   const getStripeCheckout = async (planType: Plan) => {
     try {

@@ -1,5 +1,6 @@
-import { useCallback, useState } from "react"
-import { toast } from "sonner"
+import { useCallback } from "react"
+import { useAtom } from "jotai"
+import { userStateAtom } from "@/lib/store/user-store"
 import { PlanType } from "@/lib/config/subscription-plans"
 
 export interface PlanInfo {
@@ -28,28 +29,14 @@ export interface PlanInfo {
 }
 
 export function useSubscription() {
-  const [isLoading, setIsLoading] = useState(false)
+  const [userState] = useAtom(userStateAtom)
 
-  const fetchSubscription = useCallback(async (): Promise<PlanInfo | null> => {
-    setIsLoading(true)
-    try {
-      const response = await fetch("/api/stripe/get-subscription")
-      if (!response.ok) {
-        throw new Error("Failed to fetch subscription")
-      }
-      const data = await response.json()
-      return data
-    } catch (error) {
-      toast.error("Failed to update subscription information")
-      console.error("Error fetching subscription:", error)
-      return null
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+  const fetchSubscription = useCallback(async () => {
+    return userState.subscription
+  }, [userState.subscription])
 
   return {
-    isLoading,
+    isLoading: userState.isSubscriptionLoading,
     fetchSubscription,
   }
 }

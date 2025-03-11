@@ -58,6 +58,8 @@ import { useUser } from "@clerk/nextjs"
 import styles from "./component-preview.module.css"
 import { FullScreenButton } from "../../ui/full-screen-button"
 import { useBundleDemo } from "@/hooks/use-bundle-demo"
+import { PayWall } from "./pay-wall"
+import { ComponentAccessState } from "@/hooks/use-component-access"
 
 export function ComponentPagePreview({
   component,
@@ -74,6 +76,7 @@ export function ComponentPagePreview({
   setIsEditDialogOpen,
   demo,
   compiledCss,
+  accessState,
 }: {
   component: Component & { user: User } & { tags: Tag[] }
   code: string
@@ -89,6 +92,8 @@ export function ComponentPagePreview({
   canEdit: boolean
   setIsEditDialogOpen: (value: boolean) => void
   demo: Demo
+  showPaywall: boolean
+  accessState: ComponentAccessState
 }) {
   const sandpackRef = useRef<HTMLDivElement>(null)
   const { user } = useUser()
@@ -97,6 +102,9 @@ export function ComponentPagePreview({
   const [isShowCode, setIsShowCode] = useAtom(isShowCodeAtom)
   const isDebug = useDebugMode()
   const [isFullScreen] = useAtom(isFullScreenAtom)
+
+  const effectiveAccessState = accessState
+
   const dumySandpackFiles = generateSandpackFiles({
     demoComponentNames,
     componentSlug: component.component_slug,
@@ -299,11 +307,11 @@ export function ComponentPagePreview({
       transition={{
         layout: {
           duration: 0.4,
-          ease: [0.4, 0, 0.2, 1], // ease-out-cubic
+          ease: [0.4, 0, 0.2, 1],
         },
       }}
     >
-      <motion.div className="relative flex-grow h-full relative rounded-lg overflow-hidden">
+      <motion.div className="relative flex-grow h-full rounded-lg overflow-hidden">
         <FullScreenButton />
 
         {previewError && (
@@ -373,40 +381,47 @@ export function ComponentPagePreview({
                     />
                     <div className="flex w-full h-full flex-col">
                       {isShowCode ? (
-                        <>
-                          <CopyCommandSection component={component} />
-                          {isDebug && <SandpackFileExplorer />}
-                          <div
-                            className={`overflow-auto ${styles.codeViewerWrapper} relative`}
-                          >
-                            <CopyCodeButton
-                              component_id={component.id}
-                              user_id={user?.id}
-                            />
-                            <Tabs
-                              value={activeFile}
-                              onValueChange={setActiveFile}
+                        effectiveAccessState === "UNLOCKED" ? (
+                          <>
+                            <CopyCommandSection component={component} />
+                            {isDebug && <SandpackFileExplorer />}
+                            <div
+                              className={`overflow-auto ${styles.codeViewerWrapper} relative`}
                             >
-                              <TabsList className="h-9 relative bg-muted dark:bg-background justify-start w-full gap-0.5 pb-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-border px-4 overflow-x-auto flex-nowrap hide-scrollbar">
-                                {visibleFiles.map((file) => (
-                                  <TabsTrigger
-                                    key={file}
-                                    value={file}
-                                    className="overflow-hidden data-[state=active]:rounded-b-none data-[state=active]:bg-white dark:data-[state=active]:bg-[#151515] data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
-                                  >
-                                    {file.split("/").pop()}
-                                  </TabsTrigger>
-                                ))}
-                              </TabsList>
-                              <div className="">
-                                <SandpackCodeViewer
-                                  wrapContent={true}
-                                  showTabs={false}
-                                />
-                              </div>
-                            </Tabs>
-                          </div>
-                        </>
+                              <CopyCodeButton
+                                component_id={component.id}
+                                user_id={user?.id}
+                              />
+                              <Tabs
+                                value={activeFile}
+                                onValueChange={setActiveFile}
+                              >
+                                <TabsList className="h-9 relative bg-muted dark:bg-background justify-start w-full gap-0.5 pb-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-border px-4 overflow-x-auto flex-nowrap hide-scrollbar">
+                                  {visibleFiles.map((file) => (
+                                    <TabsTrigger
+                                      key={file}
+                                      value={file}
+                                      className="overflow-hidden data-[state=active]:rounded-b-none data-[state=active]:bg-white dark:data-[state=active]:bg-[#151515] data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
+                                    >
+                                      {file.split("/").pop()}
+                                    </TabsTrigger>
+                                  ))}
+                                </TabsList>
+                                <div className="">
+                                  <SandpackCodeViewer
+                                    wrapContent={true}
+                                    showTabs={false}
+                                  />
+                                </div>
+                              </Tabs>
+                            </div>
+                          </>
+                        ) : (
+                          <PayWall
+                            accessState={effectiveAccessState}
+                            component={component}
+                          />
+                        )
                       ) : (
                         <ComponentPageInfo component={component} />
                       )}

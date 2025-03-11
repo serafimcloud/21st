@@ -88,7 +88,7 @@ export function BillingSettingsClient({
     planId: PlanType
   }>({
     open: false,
-    planId: "standard",
+    planId: "pro",
   })
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(false)
@@ -229,7 +229,7 @@ export function BillingSettingsClient({
       const data = await response.json()
 
       if (data.directly_upgraded) {
-        const planOrder = { pro: 3, standard: 2, free: 1 }
+        const planOrder = { pro_plus: 3, pro: 2, free: 1 }
         const isDowngrade = planOrder[planId] < planOrder[currentPlanId]
 
         toast.success(
@@ -308,7 +308,7 @@ export function BillingSettingsClient({
     }
 
     // Check if it's a downgrade (moving to a lower tier plan)
-    const planOrder = { pro: 3, standard: 2, free: 1 }
+    const planOrder = { pro_plus: 3, pro: 2, free: 1 }
     const isDowngrade = planOrder[selectedPlanId] < planOrder[currentPlanId]
 
     if (isDowngrade) {
@@ -349,9 +349,9 @@ export function BillingSettingsClient({
   // Determine which plan to show as upgrade
   let upgradePlanId: PlanType | null = null
   if (currentPlanId === "free") {
-    upgradePlanId = "standard"
-  } else if (currentPlanId === "standard") {
     upgradePlanId = "pro"
+  } else if (currentPlanId === "pro") {
+    upgradePlanId = "pro_plus"
   }
 
   // If showing pricing table
@@ -373,8 +373,6 @@ export function BillingSettingsClient({
   }
 
   const displayLimit = usageLimit
-  console.log("Displaying limit:", displayLimit)
-  console.log("Usage count:", usageCount)
 
   return (
     <div className="space-y-6">
@@ -445,7 +443,7 @@ export function BillingSettingsClient({
               <div className="text-xs text-muted-foreground mt-1 max-w-[200px] text-right">
                 {subscription?.cancel_at_period_end
                   ? "Your higher limit will remain active until the end of the billing period"
-                  : "Your limit differs from the standard plan limit due to a recent plan change"}
+                  : "Your limit differs from the pro plan limit due to a recent plan change"}
               </div>
             )}
           </div>
@@ -474,7 +472,7 @@ export function BillingSettingsClient({
             <div className="p-4 grid grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium">
-                  ${upgradePlanId === "standard" ? "10" : "30"} per month
+                  ${upgradePlanId === "pro" ? "10" : "30"} per month
                 </h4>
                 <p className="text-xs text-muted-foreground mt-1">
                   {PLAN_LIMITS[upgradePlanId].description}

@@ -4,9 +4,15 @@ import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
-
+import { NavigationMenuLink } from "@/components/ui/navigation-menu"
 import { atom } from "jotai"
-import { SignInButton, SignedIn, SignedOut, useClerk } from "@clerk/nextjs"
+import {
+  SignInButton,
+  SignedIn,
+  SignedOut,
+  useClerk,
+  useUser,
+} from "@clerk/nextjs"
 import { ChevronDown, Bookmark } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -17,19 +23,64 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { NavigationMenuLink } from "@/components/ui/navigation-menu"
-
 import { useIsMobile } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
-
 import { UserAvatar } from "./user-avatar"
 import { Icons } from "@/components/icons"
 import { EditProfileDialog } from "@/components/features/profile/edit-profile-dialog"
-import { useUserProfile } from "@/components/hooks/use-user-profile"
 import { useAnimation } from "motion/react"
 import { useAtom } from "jotai"
 import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 import { useTheme } from "next-themes"
+import { useAuth } from "@clerk/nextjs"
+import { userStateAtom } from "@/lib/store/user-store"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { useQuery } from "@tanstack/react-query"
+
+interface UserProfile {
+  id: string
+  display_name: string | null
+  display_username: string | null
+  display_image_url: string | null
+  bio: string | null
+  username: string | null
+  created_at: string
+  email: string
+  github_url: string | null
+  image_url: string | null
+  twitter_url: string | null
+  website_url: string | null
+  is_admin: boolean
+  manually_added: boolean
+  name: string | null
+  paypal_email: string | null
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  total_components: number
+  total_downloads: number
+  pro_banner_url: string | null
+  pro_referral_url: string | null
+  ref: string | null
+  role:
+    | "designer"
+    | "frontend_developer"
+    | "backend_developer"
+    | "product_manager"
+    | "entrepreneur"
+    | null
+  updated_at: string
+}
+
+interface UserUsage {
+  limit: number
+  usage: number
+  balance: number
+}
+
+interface UserStateResponse {
+  profile: UserProfile
+  usage: UserUsage
+}
 
 export const searchQueryAtom = atom("")
 
@@ -43,7 +94,6 @@ export function Header({
   const inputRef = React.useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
   const { signOut } = useClerk()
-  const { user: dbUser, clerkUser: user, isLoading } = useUserProfile()
   const [showEditProfile, setShowEditProfile] = useState(false)
   const searchParams = useSearchParams()
   const step = searchParams.get("step")
@@ -51,6 +101,67 @@ export function Header({
   const router = useRouter()
   const [open, setSidebarOpen] = useAtom(sidebarOpenAtom)
   const { theme, setTheme } = useTheme()
+  const { userId } = useAuth()
+  const { user: clerkUser } = useUser()
+  const [userState, setUserState] = useAtom(userStateAtom)
+  const client = useClerkSupabaseClient()
+
+  // Fetch combined user state using React Query
+  const { data: userData, isLoading: isUserDataLoading } =
+    useQuery<UserStateResponse | null>({
+      queryKey: ["user", userId, "state"],
+      queryFn: async () => {
+        if (!userId) return null
+        const { data, error } = await client.rpc("get_user_state", {
+          user_id_param: userId,
+        })
+        if (error) {
+          console.error("Error fetching user state:", error)
+          return null
+        }
+        return data as unknown as UserStateResponse
+      },
+      enabled: !!userId,
+      refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    })
+
+  // Fetch subscription using React Query
+  const { data: subscription, isLoading: isSubscriptionLoading } = useQuery({
+    queryKey: ["user", userId, "subscription"],
+    queryFn: async () => {
+      const response = await fetch("/api/stripe/get-subscription")
+      if (!response.ok) {
+        throw new Error("Failed to fetch subscription")
+      }
+      return response.json()
+    },
+    enabled: !!userId,
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+  })
+
+  // Update global state when data changes
+  useEffect(() => {
+    if (userData) {
+      setUserState((prev) => ({
+        ...prev,
+        profile: userData.profile,
+        isProfileLoading: isUserDataLoading,
+        subscription: subscription || null,
+        isSubscriptionLoading,
+        clerkUser: clerkUser || null,
+        balance: userData.usage?.balance || null,
+        isBalanceLoading: isUserDataLoading,
+        lastFetched: Date.now(),
+      }))
+    }
+  }, [
+    userData,
+    isUserDataLoading,
+    subscription,
+    isSubscriptionLoading,
+    clerkUser,
+    setUserState,
+  ])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -63,17 +174,14 @@ export function Header({
     }
 
     document.addEventListener("keydown", handleKeyDown)
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown)
-    }
+    return () => document.removeEventListener("keydown", handleKeyDown)
   }, [])
 
   const handleBookmarksClick = () => {
-    if (dbUser?.display_username) {
-      router.push(`/${dbUser.display_username}?tab=bookmarks`)
-    } else if (user?.externalAccounts?.[0]?.username) {
-      router.push(`/${dbUser?.username}?tab=bookmarks`)
+    if (userState.profile?.display_username) {
+      router.push(`/${userState.profile.display_username}?tab=bookmarks`)
+    } else if (clerkUser?.externalAccounts?.[0]?.username) {
+      router.push(`/${userState.profile?.username}?tab=bookmarks`)
     }
   }
 
@@ -137,22 +245,6 @@ export function Header({
           <SignedIn>
             {!isMobile && variant !== "publish" && (
               <>
-                {!open && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="mr-2 gap-1.5"
-                    aria-label="Magic - AI Component Builder"
-                  >
-                    <Link href="/magic/get-started">
-                      <span className="font-medium">Integrate in IDE</span>
-                      <span className="rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
-                        New
-                      </span>
-                    </Link>
-                  </Button>
-                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -162,6 +254,20 @@ export function Header({
                 >
                   <Bookmark size={18} />
                 </Button>
+                {!open &&
+                  !userState.isSubscriptionLoading &&
+                  !userState.subscription && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="gap-1.5 bg-blue-600 text-white hover:bg-blue-500 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700 hover:border-blue-800"
+                    >
+                      <Link href="/pricing">
+                        <span className="font-medium">Get Pro</span>
+                      </Link>
+                    </Button>
+                  )}
                 <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse">
                   <Button
                     asChild
@@ -242,15 +348,23 @@ export function Header({
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer rounded-full ml-2">
                 <UserAvatar
-                  src={dbUser?.display_image_url || user?.imageUrl || undefined}
-                  alt={dbUser?.display_name || user?.fullName || undefined}
+                  src={
+                    userState.profile?.display_image_url ||
+                    clerkUser?.imageUrl ||
+                    undefined
+                  }
+                  alt={
+                    userState.profile?.display_name ||
+                    clerkUser?.fullName ||
+                    undefined
+                  }
                   size={32}
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[240px] p-0" align="end">
                 <div className="p-3 border-b border-border">
                   <p className="text-sm text-foreground">
-                    {user?.primaryEmailAddress?.emailAddress}
+                    {clerkUser?.primaryEmailAddress?.emailAddress}
                   </p>
                 </div>
 
@@ -258,10 +372,10 @@ export function Header({
                   <DropdownMenuItem
                     className="text-sm px-3 py-2 cursor-pointer"
                     onSelect={() => {
-                      if (dbUser?.display_username) {
-                        router.push(`/${dbUser.display_username}`)
-                      } else if (user?.externalAccounts?.[0]?.username) {
-                        router.push(`/${dbUser?.username}`)
+                      if (userState.profile?.display_username) {
+                        router.push(`/${userState.profile.display_username}`)
+                      } else if (clerkUser?.externalAccounts?.[0]?.username) {
+                        router.push(`/${userState.profile?.username}`)
                       }
                     }}
                   >
@@ -425,24 +539,34 @@ export function Header({
           </SignedIn>
 
           <SignedOut>
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="gap-1.5 bg-blue-600 text-white hover:bg-blue-500 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700 hover:border-blue-800"
+            >
+              <Link href="/pricing">
+                <span className="font-medium">Get Pro</span>
+              </Link>
+            </Button>
             <SignInButton>
               <Button className="ml-2">Sign up</Button>
             </SignInButton>
           </SignedOut>
         </div>
       </header>
-      {showEditProfile && dbUser && !isLoading && (
+      {showEditProfile && userState.profile && (
         <EditProfileDialog
           isOpen={showEditProfile}
           setIsOpen={setShowEditProfile}
           user={{
-            name: user?.fullName || "",
-            username: user?.externalAccounts?.[0]?.username || "",
-            image_url: user?.imageUrl || "",
-            display_name: dbUser.display_name || null,
-            display_username: dbUser.display_username || null,
-            display_image_url: dbUser.display_image_url || null,
-            bio: dbUser.bio || null,
+            name: clerkUser?.fullName || "",
+            username: clerkUser?.externalAccounts?.[0]?.username || "",
+            image_url: clerkUser?.imageUrl || "",
+            display_name: userState.profile.display_name || null,
+            display_username: userState.profile.display_username || null,
+            display_image_url: userState.profile.display_image_url || null,
+            bio: userState.profile.bio || null,
           }}
           onUpdate={() => {
             setShowEditProfile(false)
@@ -456,13 +580,14 @@ export function Header({
 
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<"a"> & { title: string }
+>(({ className, title, children, href, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
-        <a
+        <Link
           ref={ref}
+          href={href || "#"}
           className={cn(
             "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
             className,
@@ -475,7 +600,7 @@ const ListItem = React.forwardRef<
           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
             {children}
           </p>
-        </a>
+        </Link>
       </NavigationMenuLink>
     </li>
   )
