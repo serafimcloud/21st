@@ -6,10 +6,10 @@ import { useUser } from "@clerk/nextjs"
 import { useQuery } from "@tanstack/react-query"
 
 export type ComponentAccessState =
-  | "UNLOCKED" // Component is accessible (has subscription and tokens)
-  | "REQUIRES_SUBSCRIPTION" // Subscription required
-  | "REQUIRES_TOKENS" // Has subscription but needs tokens
-  | "REQUIRES_UNLOCK" // Has subscription and tokens but needs to unlock
+  | "UNLOCKED" // Component is accessible (free or purchased)
+  | "REQUIRES_SUBSCRIPTION" // Subscription required for paid component
+  | "REQUIRES_TOKENS" // Has subscription but needs tokens for paid component
+  | "REQUIRES_UNLOCK" // Has subscription and tokens but needs to unlock paid component
 
 export function useComponentAccess(
   component: Component,
@@ -21,11 +21,12 @@ export function useComponentAccess(
   const { user, isSignedIn } = useUser()
   const supabase = useClerkSupabaseClient()
 
-  // If user is not signed in, they need to subscribe first
-  if (!isSignedIn) {
-    return "REQUIRES_SUBSCRIPTION" as const
+  // Free components are always accessible
+  if (!component.is_paid) {
+    return "UNLOCKED" as const
   }
 
+  // For paid components, check purchase status
   const { data: hasPurchased } = useQuery({
     queryKey: ["component-purchase", component.id, user?.id],
     queryFn: async () => {
@@ -48,7 +49,7 @@ export function useComponentAccess(
 
       return !!data
     },
-    enabled: !!user?.id && !!component.id,
+    enabled: !!user?.id && !!component.id && component.is_paid,
     initialData:
       initialHasPurchased ||
       (componentAccess.componentId === component.id &&
@@ -59,6 +60,12 @@ export function useComponentAccess(
     return "UNLOCKED" as const
   }
 
+  // If not signed in, require subscription
+  if (!isSignedIn) {
+    return "REQUIRES_SUBSCRIPTION" as const
+  }
+
+  // Check subscription and tokens for paid components
   if (!subscription) {
     return "REQUIRES_SUBSCRIPTION" as const
   }

@@ -381,7 +381,6 @@ export function ComponentPagePreview({
                     />
                     <div className="flex w-full h-full flex-col">
                       {isShowCode ? (
-                        !component.is_paid ||
                         effectiveAccessState === "UNLOCKED" ? (
                           <>
                             <CopyCommandSection component={component} />
