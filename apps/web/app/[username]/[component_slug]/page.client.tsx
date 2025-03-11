@@ -380,13 +380,14 @@ export default function ComponentPage({
   const router = useRouter()
 
   const accessState = useComponentAccess(component, hasPurchased)
-  const showPaywall = accessState !== "UNLOCKED"
+  const showPaywall = component.is_paid && accessState !== "UNLOCKED"
 
   console.log({
     hasPurchased,
     accessState,
     showPaywall,
     componentId: component.id,
+    is_paid: component.is_paid,
   })
 
   const { data: bookmarked } = useHasUserBookmarkedDemo(
