@@ -394,7 +394,7 @@ export function Header({
                       (window.location.href = "/settings/billing")
                     }
                   >
-                    Subscription
+                    Billing
                     <Icons.creditCard className="h-4 w-4" />
                   </DropdownMenuItem>
                 </div>
