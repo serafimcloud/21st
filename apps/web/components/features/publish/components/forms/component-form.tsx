@@ -85,7 +85,7 @@ export const ComponentDetailsForm = ({
   const registryId = useId()
   const licenseId = useId()
   const websiteId = useId()
-  const defaultRows = 3
+  const defaultRows = 2
 
   const handleTextareaInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = e.target
@@ -299,7 +299,7 @@ export const ComponentDetailsForm = ({
                   </svg>
                 </Link>
               </div>
-              <div className="border-input relative flex w-full items-start gap-2 rounded-md border p-4 shadow-xs outline-none has-data-[state=checked]:border-ring">
+              <div className="border-input relative flex w-full items-start gap-2 rounded-md border p-3 shadow-xs outline-none has-data-[state=checked]:border-ring">
                 <Switch
                   id="is-paid"
                   checked={form.watch("is_paid") || false}
@@ -315,7 +315,7 @@ export const ComponentDetailsForm = ({
                   }}
                   className="order-1 h-4 w-6 after:absolute after:inset-0 [&_span]:size-3 data-[state=checked]:[&_span]:translate-x-2 data-[state=checked]:[&_span]:rtl:-translate-x-2"
                 />
-                <div className="grid grow gap-2">
+                <div className="grid grow gap-[4px]">
                   <Label htmlFor="is-paid">
                     Paid Component{" "}
                     <span className="text-xs font-normal leading-[inherit] text-muted-foreground">
