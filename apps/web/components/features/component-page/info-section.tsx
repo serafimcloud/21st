@@ -72,6 +72,10 @@ export const ComponentPageInfo = ({
         directRegistryDependencies,
       ],
       queryFn: async () => {
+        if (!directRegistryDependencies?.length) {
+          return []
+        }
+
         const { data, error } = await supabase
           .from("components_with_username")
           .select("*")
@@ -92,9 +96,9 @@ export const ComponentPageInfo = ({
 
         return data ?? []
       },
-      enabled: directRegistryDependencies.length > 0,
-      staleTime: 1000 * 60 * 15, // Consider data fresh for 15 minutes
-      gcTime: 1000 * 60 * 60, // Keep unused data in cache for 1 hour
+      enabled: directRegistryDependencies?.length > 0,
+      staleTime: 1000 * 60 * 15,
+      gcTime: 1000 * 60 * 60,
       refetchOnWindowFocus: false,
     })
 
@@ -489,7 +493,7 @@ export const ComponentPageInfo = ({
           <div className="flex flex-col gap-2">
             <span className="text-muted-foreground">Tags</span>
             <div className="flex flex-wrap gap-2">
-              {component.tags.map((tag) => (
+              {(component.tags ?? []).map((tag) => (
                 <TagComponent key={tag.slug} slug={tag.slug} name={tag.name} />
               ))}
             </div>

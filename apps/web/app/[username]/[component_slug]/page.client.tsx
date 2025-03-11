@@ -356,20 +356,20 @@ export default function ComponentPage({
   demo: initialDemo,
   code,
   demoCode,
-  dependencies,
-  demoDependencies,
-  demoComponentNames,
-  registryDependencies,
-  npmDependenciesOfRegistryDependencies,
+  dependencies = {},
+  demoDependencies = {},
+  demoComponentNames = [],
+  registryDependencies = {},
+  npmDependenciesOfRegistryDependencies = {},
   tailwindConfig,
   globalCss,
   compiledCss,
-  componentDemos,
+  componentDemos = [],
   submission,
   hasPurchased = false,
 }: ComponentPageProps) {
   const [component, setComponent] = useState(initialComponent)
-  const demo = initialDemo
+  const demo = initialDemo ?? null
   const { user } = useUser()
   const supabase = useClerkSupabaseClient()
   const { theme } = useTheme()
@@ -782,7 +782,7 @@ export default function ComponentPage({
                       <CommandList className="flex-1 overflow-y-auto">
                         <CommandEmpty>No demos found.</CommandEmpty>
                         <CommandGroup>
-                          {componentDemos?.map((d) => (
+                          {(componentDemos ?? []).map((d) => (
                             <CommandItem
                               key={d.id}
                               value={`${d.id}-${d.demo_slug}`}
