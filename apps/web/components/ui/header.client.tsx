@@ -261,8 +261,7 @@ export function Header({
                       variant="ghost"
                       size="sm"
                       asChild
-                      className="mr-2 gap-1.5 bg-blue-600 text-white hover:bg-blue-700 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700"
-                      aria-label="Magic - AI Component Builder"
+                      className="gap-1.5 bg-blue-600 text-white hover:bg-blue-500 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700 hover:border-blue-800"
                     >
                       <Link href="/pricing">
                         <span className="font-medium">Get Pro</span>
@@ -540,6 +539,16 @@ export function Header({
           </SignedIn>
 
           <SignedOut>
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="gap-1.5 bg-blue-600 text-white hover:bg-blue-500 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700 hover:border-blue-800"
+            >
+              <Link href="/pricing">
+                <span className="font-medium">Get Pro</span>
+              </Link>
+            </Button>
             <SignInButton>
               <Button className="ml-2">Sign up</Button>
             </SignInButton>

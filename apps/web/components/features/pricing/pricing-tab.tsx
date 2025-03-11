@@ -28,7 +28,7 @@ export function PricingTab({
     <button
       onClick={() => setSelected(text)}
       className={cn(
-        "relative w-fit px-4 py-2 text-sm font-semibold capitalize",
+        "relative w-fit pl-4 pr-2 py-2 text-sm font-semibold capitalize",
         selected
           ? "text-foreground"
           : "text-muted-foreground hover:text-foreground/80",

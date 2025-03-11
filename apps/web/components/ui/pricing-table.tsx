@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-export type PlanLevel = "free" | "standard" | "pro" | "all" | string
+export type PlanLevel = "free" | "pro" | "pro_plus" | string
 
 export interface PricingFeature {
   name: string
@@ -50,7 +50,7 @@ export function PricingTable({
   plans,
   onPlanSelect,
   onBack,
-  defaultPlan = "standard",
+  defaultPlan = "pro",
   defaultInterval = "monthly",
   className,
   containerClassName,
@@ -115,7 +115,7 @@ export function PricingTable({
   }
 
   const isPlanUpgrade = (selected: PlanLevel, current: PlanLevel) => {
-    const levels = ["free", "standard", "pro", "all"]
+    const levels = ["free", "pro", "pro_plus", "all"]
     return levels.indexOf(selected) > levels.indexOf(current)
   }
 
@@ -347,18 +347,17 @@ function shouldShowCheck(
   level: string,
 ): boolean {
   if (included === "all") return true
-  if (included === "pro" && (level === "pro" || level === "all")) return true
+  if (included === "pro_plus" && (level === "pro_plus" || level === "all")) return true
   if (
-    included === "standard" &&
-    (level === "standard" || level === "pro" || level === "all")
+    included === "pro" &&
+    (level === "pro" || level === "pro_plus" || level === "all")
   )
     return true
   if (
     included === "free" &&
     (level === "free" ||
-      level === "standard" ||
       level === "pro" ||
-      level === "all")
+      level === "pro_plus")
   )
     return true
   return false

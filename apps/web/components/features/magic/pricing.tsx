@@ -23,7 +23,7 @@ const TIERS = [
     href: "/magic/get-started",
   },
   {
-    name: "Standard",
+    name: "Pro",
     price: {
       monthly: 10,
       yearly: 96,
@@ -42,7 +42,7 @@ const TIERS = [
     popular: true,
   },
   {
-    name: "Pro",
+    name: "Pro Plus",
     price: {
       monthly: 30,
       yearly: 288,

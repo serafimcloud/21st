@@ -45,8 +45,8 @@ export function PlanSelectorDialog({
   const { userId: authUserId } = useAuth()
   const [isYearly, setIsYearly] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<"standard" | "pro">(
-    "standard",
+  const [selectedPlan, setSelectedPlan] = useState<"pro" | "pro_plus">(
+    "pro",
   )
 
   // Use open or isOpen to determine dialog state
@@ -55,7 +55,7 @@ export function PlanSelectorDialog({
   // Use userId from props or from auth
   const effectiveUserId = userId || authUserId
 
-  const handleCheckout = async (planType: "standard" | "pro") => {
+  const handleCheckout = async (planType: "pro" | "pro_plus") => {
     if (!effectiveUserId) {
       toast.error("You must be logged in to subscribe")
       return
@@ -142,8 +142,8 @@ export function PlanSelectorDialog({
               isYearly={isYearly}
               isLoading={isLoading && selectedPlan === plan.type}
               onClick={() => {
-                setSelectedPlan(plan.type as "standard" | "pro")
-                handleCheckout(plan.type as "standard" | "pro")
+                setSelectedPlan(plan.type as "pro" | "pro_plus")
+                handleCheckout(plan.type as "pro" | "pro_plus")
               }}
               isFeatured={plan.type === "pro"}
               isActive={plan.type === currentPlan}

@@ -1,9 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Check, CheckCircle, LoaderCircle } from "lucide-react"
+import { Check, LoaderCircle } from "lucide-react"
 import { ApiKey } from "@/types/global"
-import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Icons } from "@/components/icons"
 import { toast } from "sonner"
@@ -16,16 +15,15 @@ interface UpgradeProStepProps {
 }
 
 export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
-  const isPro = apiKey?.plan === "pro" || apiKey?.plan === "enterprise"
   const currentPlan = (apiKey?.plan || "free") as PlanType
   const [isUpgradeLoading, setIsUpgradeLoading] = useState(false)
 
   // Determine which plan to show as upgrade
   let upgradePlan: PlanType | null = null
   if (currentPlan === "free") {
-    upgradePlan = "standard"
-  } else if (currentPlan === "standard") {
     upgradePlan = "pro"
+  } else if (currentPlan === "pro") {
+    upgradePlan = "pro_plus"
   }
 
   // Add keyboard shortcut for Enter key
