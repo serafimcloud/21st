@@ -18,8 +18,13 @@ export function useComponentAccess(
   const [userState] = useAtom(userStateAtom)
   const [componentAccess] = useAtom(componentAccessAtom)
   const { subscription, balance } = userState
-  const { user } = useUser()
+  const { user, isSignedIn } = useUser()
   const supabase = useClerkSupabaseClient()
+
+  // If user is not signed in, they need to subscribe first
+  if (!isSignedIn) {
+    return "REQUIRES_SUBSCRIPTION" as const
+  }
 
   const { data: hasPurchased } = useQuery({
     queryKey: ["component-purchase", component.id, user?.id],

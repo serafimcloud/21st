@@ -8,6 +8,7 @@ import { useAtom } from "jotai"
 import { userStateAtom, componentAccessAtom } from "@/lib/store/user-store"
 import { toast } from "sonner"
 import { useState } from "react"
+import { useUser } from "@clerk/nextjs"
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ import {
 import { FeatureCards } from "@/components/features/component-page/feature-cards"
 import { cn } from "@/lib/utils"
 import { usePurchaseComponent } from "@/lib/queries"
+import { useRouter } from "next/navigation"
 
 interface PayWallProps {
   accessState: ComponentAccessState
@@ -29,12 +31,18 @@ export function PayWall({ accessState, component }: PayWallProps) {
   const [userState] = useAtom(userStateAtom)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showUnlockDialog, setShowUnlockDialog] = useState(false)
+  const { isSignedIn } = useUser()
 
   const handleUpgradePlan = async (
     planId: string,
     period: "monthly" | "yearly" = "monthly",
   ) => {
     if (isProcessing) return
+
+    if (!isSignedIn) {
+      window.location.href = "/pricing"
+      return
+    }
 
     setIsProcessing(true)
     try {
@@ -353,6 +361,11 @@ function UnlockPaywall({
             <>
               Unlock
               <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                <span className="text-[10px]">
+                  {navigator?.platform?.toLowerCase()?.includes("mac")
+                    ? "⌘"
+                    : "Ctrl"}
+                </span>
                 <Icons.enter className="h-2.5 w-2.5" />
               </kbd>
             </>
@@ -464,22 +477,35 @@ function SubscriptionPaywall({
   isProcessing: boolean
   onUpgrade: () => void
 }) {
+  const { isSignedIn } = useUser()
+  const router = useRouter()
+
+  const handleAction = () => {
+    if (!isSignedIn) {
+      router.push("/pricing")
+      return
+    }
+    onUpgrade()
+  }
+
   return (
     <div className="flex-1 w-full flex flex-col h-full">
       <div className="flex flex-col items-center justify-center flex-1 pt-20">
         <div className="space-y-2 mb-8">
           <h3 className="text-xl font-semibold">Premium Component</h3>
           <p className="text-muted-foreground">
-            Subscribe to access this premium component and many others.
+            {isSignedIn
+              ? "Subscribe to access this premium component and many others."
+              : "Select a plan to access this premium component and many others."}
           </p>
         </div>
 
         <Button
-          onClick={onUpgrade}
+          onClick={handleAction}
           disabled={isProcessing}
           className={cn(
             "flex items-center justify-center gap-1.5",
-            isProcessing ? "" : "pr-1.5",
+            isProcessing || !isSignedIn ? "" : "pr-1.5",
           )}
         >
           {isProcessing ? (
@@ -489,15 +515,17 @@ function SubscriptionPaywall({
             </>
           ) : (
             <>
-              Subscribe Now
-              <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
-                <span className="text-[11px] leading-none font-sans">
-                  {navigator?.platform?.toLowerCase()?.includes("mac")
-                    ? "⌘"
-                    : "Ctrl"}
-                </span>
-                <Icons.enter className="h-2.5 w-2.5" />
-              </kbd>
+              {isSignedIn ? "Subscribe Now" : "Select Plan"}
+              {isSignedIn && (
+                <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                  <span className="text-[11px] leading-none font-sans">
+                    {navigator?.platform?.toLowerCase()?.includes("mac")
+                      ? "⌘"
+                      : "Ctrl"}
+                  </span>
+                  <Icons.enter className="h-2.5 w-2.5" />
+                </kbd>
+              )}
             </>
           )}
         </Button>
