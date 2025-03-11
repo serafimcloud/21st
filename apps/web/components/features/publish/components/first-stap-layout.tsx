@@ -125,6 +125,7 @@ export function NameSlugStep({
               isSlugReadOnly={false}
               publishAsUserId={publishAsUser?.id}
               placeholderName="Button"
+              isFirstStep={true}
             />
             <Button
               className="mt-4"

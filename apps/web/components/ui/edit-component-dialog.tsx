@@ -631,6 +631,7 @@ export function EditComponentDialog({
           isSubmitting={
             uploadToR2Mutation.isPending || updateMutation.isPending
           }
+          isFirstStep
         />
         <EditCodeFileCard
           iconSrc={isDarkTheme ? "/tsx-file-dark.svg" : "/tsx-file.svg"}
