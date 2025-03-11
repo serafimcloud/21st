@@ -13,6 +13,11 @@ import {
   ChevronDown,
 } from "lucide-react"
 
+import {
+  SandpackProvider as SandpackProviderUnstyled,
+  SandpackPreview,
+} from "@codesandbox/sandpack-react/unstyled"
+
 import { ComponentPageInfo } from "./info-section"
 import { Icons } from "@/components/icons"
 import { LoadingSpinner } from "../../ui/loading-spinner"
@@ -191,8 +196,8 @@ export function ComponentPagePreview({
     }),
     [dependencies, demoDependencies, npmDependenciesOfRegistryDependencies],
   )
-
-  const bundle = useBundleDemo(
+  const [previewError, setPreviewError] = useState(false)
+  const { bundle, error } = useBundleDemo(
     bundleFiles,
     allDependencies,
     component,
@@ -201,6 +206,12 @@ export function ComponentPagePreview({
     tailwindConfig,
     globalCss,
   )
+
+  useEffect(() => {
+    if (error) {
+      setPreviewError(true)
+    }
+  }, [error])
 
   const mainComponentFile = Object.keys(files).find((file) =>
     file.endsWith(`${component.component_slug}.tsx`),
@@ -214,7 +225,6 @@ export function ComponentPagePreview({
     demoComponentFile ?? mainComponentFile ?? "",
   )
 
-  const [previewError, setPreviewError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [loadingText, setLoadingText] = useState("Starting preview...")
 
@@ -305,20 +315,18 @@ export function ComponentPagePreview({
         <FullScreenButton />
 
         {previewError && (
-          <div className="flex flex-col items-center justify-center h-full gap-3">
-            <p className="text-muted-foreground text-sm">
-              Failed to load preview
-            </p>
-            <button
-              onClick={() => {
-                setPreviewError(false)
-                setIsLoading(true)
+          <SandpackProviderUnstyled {...providerProps}>
+            <SandpackPreview
+              showSandpackErrorOverlay={false}
+              showOpenInCodeSandbox={process.env.NODE_ENV === "development"}
+              showRefreshButton={false}
+              onLoad={() => setIsLoading(false)}
+              onError={() => {
+                setPreviewError(true)
+                setIsLoading(false)
               }}
-              className="text-sm underline text-muted-foreground hover:text-foreground"
-            >
-              Try again
-            </button>
-          </div>
+            />
+          </SandpackProviderUnstyled>
         )}
 
         {isLoading && (

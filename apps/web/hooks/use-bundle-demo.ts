@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react"
-import { useClerkSupabaseClient } from "@/lib/clerk"
 import { Component, Tag, User } from "@/types/global"
 import { defaultTailwindConfig } from "@/lib/sandpack"
 import { defaultGlobalCss } from "@/lib/sandpack"
@@ -23,6 +22,7 @@ export const useBundleDemo = (
   const [bundleUrls, setBundleUrls] = useState<BundleUrls | null>(
     existingBundleUrls ?? null,
   )
+  const [error, setError] = useState(null)
 
   const prevDepsRef = useRef({
     files: null as Record<string, string> | null,
@@ -106,6 +106,7 @@ export const useBundleDemo = (
       })
       .catch((error) => {
         console.error("Error in bundle generation:", error)
+        setError(error)
       })
   }, [
     files,
@@ -118,5 +119,5 @@ export const useBundleDemo = (
     bundleUrls,
   ])
 
-  return bundleUrls
+  return { bundle: bundleUrls, error }
 }
