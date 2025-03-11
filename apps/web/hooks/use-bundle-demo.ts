@@ -56,8 +56,6 @@ export const useBundleDemo = (
       demoId: demoIdChanged,
     }
 
-    console.log("Bundle dependencies changed:", changedDeps)
-
     prevDepsRef.current = {
       files,
       dependencies,
@@ -72,13 +70,9 @@ export const useBundleDemo = (
     const hasChanges = Object.values(changedDeps).some((changed) => changed)
 
     if (!isFirstRun && !hasChanges) {
-      console.log("Skipping fetch - no changes detected")
       return
     }
 
-    console.log("Fetching bundle - changes detected or first run")
-
-    // Use the new API endpoint
     fetch(`/api/bundle`, {
       method: "POST",
       headers: {
@@ -99,13 +93,11 @@ export const useBundleDemo = (
         if (data.error) {
           throw new Error(data.error)
         } else {
-          console.log("Bundle URLs received:", Object.keys(data))
           setBundleUrls(data)
           return data
         }
       })
       .catch((error) => {
-        console.error("Error in bundle generation:", error)
         setError(error)
       })
   }, [
