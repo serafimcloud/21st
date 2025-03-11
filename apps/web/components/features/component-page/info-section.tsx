@@ -277,6 +277,7 @@ export const ComponentPageInfo = ({
                         ""
                       }
                       size={22}
+                      skipLink={true}
                     />
                     <span className="ml-1 font-medium">
                       {hunterUser.display_name ||

@@ -18,6 +18,7 @@ interface UserAvatarProps
   user?: User
   isClickable?: boolean
   className?: string
+  skipLink?: boolean
 }
 
 export function UserAvatar({
@@ -27,6 +28,7 @@ export function UserAvatar({
   user,
   isClickable,
   className,
+  skipLink = false,
   ...props
 }: UserAvatarProps) {
   const avatarContent = (
@@ -37,6 +39,7 @@ export function UserAvatar({
         className,
       )}
       style={{ width: size, height: size }}
+      {...props}
     >
       <AvatarImage src={src || "/placeholder.svg"} alt={alt || "User avatar"} />
       <AvatarFallback>
@@ -55,16 +58,17 @@ export function UserAvatar({
     return avatarContent
   }
 
-  const wrappedAvatar = isClickable ? (
-    <Link
-      href={`/${user.display_username || user.username}`}
-      className="no-underline"
-    >
-      {avatarContent}
-    </Link>
-  ) : (
-    avatarContent
-  )
+  const wrappedAvatar =
+    isClickable && !skipLink ? (
+      <Link
+        href={`/${user.display_username || user.username}`}
+        className="no-underline"
+      >
+        {avatarContent}
+      </Link>
+    ) : (
+      avatarContent
+    )
 
   return (
     <HoverCard>

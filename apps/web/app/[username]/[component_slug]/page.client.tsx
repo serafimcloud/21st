@@ -731,6 +731,7 @@ export default function ComponentPage({
                   size={22}
                   isClickable={true}
                   user={component.user}
+                  skipLink={true}
                 />
               </Link>
               <p className="text-[14px] font-medium whitespace-nowrap">
