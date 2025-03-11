@@ -459,28 +459,6 @@ export function ConsoleClient({
             </div>
           </div>
 
-          {/* AI Rules section */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between pb-3 border-b mb-4">
-              <h3 className="font-medium">AI Rules</h3>
-              <Link
-                href="/settings/rules"
-                className="text-muted-foreground hover:text-primary text-sm"
-              >
-                Manage rules
-              </Link>
-            </div>
-            <div className="bg-background rounded-lg border border-border overflow-hidden">
-              <div className="p-4">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Select a context rule to enhance AI code generation with your
-                  project's tech stack, theme, and additional context.
-                </p>
-                <PromptRuleDisplay />
-              </div>
-            </div>
-          </div>
-
           {/* Current plan block */}
           <div className="space-y-2">
             <div className="flex items-center justify-between pb-3 border-b mb-4">
