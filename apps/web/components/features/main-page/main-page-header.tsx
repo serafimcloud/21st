@@ -26,6 +26,7 @@ const tabLabels = {
   categories: "Categories",
   authors: "Design Engineers",
   pro: "Pro",
+  collections: "Collections",
 } as const
 
 interface ComponentsHeaderProps {
@@ -35,13 +36,15 @@ interface ComponentsHeaderProps {
     | "authors"
     | "pro"
     | "templates"
+    | "collections"
   onTabChange: (
     tab:
       | "categories"
       | "components"
       | "authors"
       | "pro"
-      | "templates",
+      | "templates"
+      | "collections",
   ) => void
 }
 
@@ -94,6 +97,7 @@ export function ComponentsHeader({
         | "authors"
         | "pro"
         | "templates"
+        | "collections",
     )
   }
 
@@ -133,6 +137,12 @@ export function ComponentsHeader({
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
                   Pro
+                </TabsTrigger>
+                <TabsTrigger
+                  value="collections"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Collections
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -187,6 +197,12 @@ export function ComponentsHeader({
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
                   Pro
+                </TabsTrigger>
+                <TabsTrigger
+                  value="collections"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-primary data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Collections
                 </TabsTrigger>
               </TabsList>
             </Tabs>

@@ -218,3 +218,23 @@ export interface SVGCategory {
   category: string
   total: number
 }
+
+export interface CollectionWithUser {
+  id: string
+  name: string
+  description: string | null
+  cover_url: string | null
+  user_id: string
+  created_at: string
+  updated_at: string
+  is_public: boolean
+  slug: string
+  components_count: number
+  user_data: {
+    id: string
+    name: string | null
+    display_name: string | null
+    image_url: string | null
+    display_image_url: string | null
+  }
+}
