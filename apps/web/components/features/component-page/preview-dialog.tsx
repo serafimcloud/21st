@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   MoreVertical,
   Lock,
+  Share2,
 } from "lucide-react"
 import {
   Dialog,
@@ -216,6 +217,12 @@ export function ComponentPreviewDialog({
     window.location.href = componentUrl
   }
 
+  const handleShare = async () => {
+    const componentUrl = `${window.location.origin}/${demo.user.display_username || demo.user.username}/${demo.component.component_slug}/${demo.demo_slug || "default"}`
+    await navigator.clipboard.writeText(componentUrl)
+    toast.success("Link copied to clipboard")
+  }
+
   const toggleTheme = () => {
     setPreviewTheme((current) => (current === "dark" ? "light" : "dark"))
   }
@@ -228,7 +235,8 @@ export function ComponentPreviewDialog({
           className={cn(
             "focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70",
             // Only add rounded-none if not a single unlock button
-            !(demo.component.is_paid && accessState !== "UNLOCKED") && "first:rounded-s-lg rounded-none"
+            !(demo.component.is_paid && accessState !== "UNLOCKED") &&
+              "first:rounded-s-lg rounded-none",
           )}
         >
           <Tooltip>
@@ -338,20 +346,35 @@ export function ComponentPreviewDialog({
         )}
       </div>
 
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-8 w-8"
+          >
+            {previewTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Toggle theme</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleShare}
+            className="h-8 w-8"
+          >
+            <Share2 size={16} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Share component</TooltipContent>
+      </Tooltip>
+
       <SignedIn>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-8 w-8"
-            >
-              {previewTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Toggle theme</TooltipContent>
-        </Tooltip>
         <BookmarkButton
           demoId={demo.id}
           bookmarksCount={demo.bookmarks_count || 0}
@@ -361,19 +384,6 @@ export function ComponentPreviewDialog({
         />
       </SignedIn>
       <SignedOut>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-8 w-8"
-            >
-              {previewTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Toggle theme</TooltipContent>
-        </Tooltip>
         <SignInButton>
           <BookmarkButton
             demoId={demo.id}
@@ -488,6 +498,9 @@ export function ComponentPreviewDialog({
                     )}
                     <DropdownMenuItem onClick={toggleTheme}>
                       Toggle theme
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleShare}>
+                      Share component
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleOpenComponentPage}>
                       Open component page
