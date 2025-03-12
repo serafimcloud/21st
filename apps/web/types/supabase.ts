@@ -1948,6 +1948,29 @@ export type Database = {
           bookmarks_count: number
         }[]
       }
+      get_demos_list_v2: {
+        Args: {
+          p_sort_by: string
+          p_offset: number
+          p_limit: number
+          p_tag_slug?: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          total_count: number
+          view_count: number
+          bookmarks_count: number
+        }[]
+      }
       get_liked_components: {
         Args: {
           p_user_id: string

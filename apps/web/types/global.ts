@@ -23,6 +23,11 @@ export type DemoWithComponent = Demo & {
   pro_preview_image_url: string | null
   view_count: number | null
   bookmarks_count: number | null
+  bundle_url?: {
+    html: string
+    js?: string
+    css?: string
+  }
 }
 
 export type DemoWithTags = Demo & {

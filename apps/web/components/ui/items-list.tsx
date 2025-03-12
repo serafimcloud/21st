@@ -15,6 +15,7 @@ import { useHotkeys } from "react-hotkeys-hook"
 import { isMac } from "@/lib/utils"
 import { Icons } from "@/components/icons"
 import { ComponentCardSkeleton } from "./skeletons"
+import { ComponentPreviewDialog } from "../features/component-page/preview-dialog"
 
 type ComponentOrDemo =
   | DemoWithComponent
@@ -73,14 +74,14 @@ function useMainDemos(
     queryKey: ["filtered-demos", sortBy, tagSlug] as const,
     queryFn: async ({ pageParam = 0 }) => {
       const { data: filteredData, error } = await supabase.rpc(
-        "get_demos_list",
+        "get_demos_list_v2",
         {
           p_sort_by: sortBy,
           p_offset: Number(pageParam) * 24,
           p_limit: 24,
           p_tag_slug: tagSlug,
           p_include_private: false,
-        } as Database["public"]["Functions"]["get_demos_list"]["Args"],
+        } as Database["public"]["Functions"]["get_demos_list_v2"]["Args"],
       )
 
       if (error) throw error
@@ -322,6 +323,9 @@ export function ComponentsList({
   const [localSearchQuery, setLocalSearchQuery] = useAtom(tagPageSearchAtom)
   const router = useRouter()
   const loadMoreRef = React.useRef<HTMLDivElement>(null)
+  const [selectedDemo, setSelectedDemo] =
+    React.useState<DemoWithComponent | null>(null)
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = React.useState(false)
 
   let rawComponents: DemoWithComponent[] | undefined
   let isLoading = false
@@ -540,6 +544,16 @@ export function ComponentsList({
               <ComponentCard
                 key={`${component.id}-${component.updated_at}`}
                 demo={component}
+                onClick={() => {
+                  if (component.bundle_url?.html) {
+                    setSelectedDemo(component)
+                    setIsPreviewDialogOpen(true)
+                  } else {
+                    router.push(
+                      `/${component.user.username}/${component.component.component_slug}/${component.demo_slug}`,
+                    )
+                  }
+                }}
               />
             ))}
             {hasNextPage && (
@@ -555,6 +569,17 @@ export function ComponentsList({
         <div className="col-span-full flex justify-center pt-2 pb-4">
           <Loader2 className="h-5 w-5 animate-spin text-foreground/20 -mt-6" />
         </div>
+      )}
+
+      {/* Preview Dialog */}
+      {selectedDemo && (
+        <ComponentPreviewDialog
+          isOpen={isPreviewDialogOpen}
+          onClose={() => {
+            setIsPreviewDialogOpen(false)
+          }}
+          demo={selectedDemo}
+        />
       )}
     </>
   )

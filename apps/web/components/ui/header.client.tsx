@@ -476,24 +476,6 @@ export function Header({
                       <span>
                         <input
                           type="radio"
-                          id="theme-switch-system"
-                          value="system"
-                          className="sr-only peer"
-                          name="theme"
-                          checked={theme === "system"}
-                          onChange={() => setTheme("system")}
-                        />
-                        <label
-                          htmlFor="theme-switch-system"
-                          className="inline-flex items-center justify-center rounded-full p-1.5 text-sm cursor-pointer text-muted-foreground hover:text-foreground peer-checked:bg-accent peer-checked:text-foreground"
-                        >
-                          <span className="sr-only">system</span>
-                          <Icons.system className="h-4 w-4" />
-                        </label>
-                      </span>
-                      <span>
-                        <input
-                          type="radio"
                           id="theme-switch-light"
                           value="light"
                           name="theme"
