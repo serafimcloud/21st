@@ -58,6 +58,13 @@ const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
   PROMPT_TYPES.EXTENDED,
 )
 
+export function PreviewSkeleton() {
+  return (
+    <div className="flex-1 animate-pulse bg-muted">
+    </div>
+  )
+}
+
 export function ComponentPreviewDialog({
   isOpen,
   onClose,
@@ -69,6 +76,7 @@ export function ComponentPreviewDialog({
 }) {
   const { resolvedTheme } = useTheme()
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light")
+  const [isLoading, setIsLoading] = useState(true)
 
   // Add effect to sync preview theme with system theme
   useEffect(() => {
@@ -473,18 +481,22 @@ export function ComponentPreviewDialog({
           }}
         >
           {bundleUrl && (
-            <iframe
-              src={
-                previewTheme === "dark" ? `${bundleUrl}?dark=true` : bundleUrl
-              }
-              className="w-full h-full border-0"
-              style={{
-                flex: 1,
-                minHeight: 0,
-              }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+            <>
+              {isLoading && <PreviewSkeleton />}
+              <iframe
+                src={
+                  previewTheme === "dark" ? `${bundleUrl}?dark=true` : bundleUrl
+                }
+                className={cn("w-full h-full border-0", isLoading && "hidden")}
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onLoad={() => setIsLoading(false)}
+              />
+            </>
           )}
         </div>
       </DialogContent>
