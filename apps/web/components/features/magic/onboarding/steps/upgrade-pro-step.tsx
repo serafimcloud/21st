@@ -8,6 +8,11 @@ import { Icons } from "@/components/icons"
 import { toast } from "sonner"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 import { CircleProgress } from "@/components/ui/circle-progress"
+import {
+  trackAttribution,
+  ATTRIBUTION_SOURCE,
+  SOURCE_DETAIL,
+} from "@/lib/attribution-tracking"
 
 interface UpgradeProStepProps {
   apiKey: ApiKey | null
@@ -46,6 +51,9 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
   }, [onComplete, upgradePlan])
 
   const handleUpgradePlan = async (planId: PlanType) => {
+    // Track attribution when upgrading from onboarding
+    trackAttribution(ATTRIBUTION_SOURCE.MAGIC, SOURCE_DETAIL.MAGIC_ONBOARDING)
+
     setIsUpgradeLoading(true)
     try {
       const response = await fetch("/api/stripe/create-checkout", {
@@ -60,6 +68,8 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
           cancelUrl: `${window.location.origin}/settings/billing?canceled=true`,
           isUpgrade: true,
           currentPlanId: currentPlan,
+          attributionSource: ATTRIBUTION_SOURCE.MAGIC,
+          sourceDetail: SOURCE_DETAIL.MAGIC_ONBOARDING,
         }),
       })
 

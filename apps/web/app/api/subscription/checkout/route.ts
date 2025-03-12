@@ -7,6 +7,8 @@ import { supabaseWithAdminAccess } from "@/lib/supabase"
 const checkoutSchema = z.object({
   type: z.enum(["pro", "pro_plus"]),
   period: z.enum(["monthly", "yearly"]),
+  attributionSource: z.string().optional(),
+  sourceDetail: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -25,7 +27,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { type, period } = validationResult.data
+    const { type, period, attributionSource, sourceDetail } =
+      validationResult.data
 
     // Check authentication
     const authSession = await auth()
@@ -65,6 +68,8 @@ export async function POST(request: NextRequest) {
         mode: "subscription",
         metadata: {
           userId,
+          attributionSource: attributionSource || null,
+          sourceDetail: sourceDetail || null,
         },
         ...(user?.email && { customer_email: user.email }),
         allow_promotion_codes: true,
@@ -73,6 +78,8 @@ export async function POST(request: NextRequest) {
         subscription_data: {
           metadata: {
             userId,
+            attributionSource: attributionSource || null,
+            sourceDetail: sourceDetail || null,
           },
         },
       })

@@ -13,6 +13,11 @@ import { useRouter } from "next/navigation"
 import { Spinner } from "@/components/icons/spinner"
 import { Icons } from "@/components/icons"
 import { cn } from "@/lib/utils"
+import {
+  trackAttribution,
+  ATTRIBUTION_SOURCE,
+  SOURCE_DETAIL,
+} from "@/lib/attribution-tracking"
 
 type SpotlightProps = {
   gradientFirst?: string
@@ -155,6 +160,7 @@ export function Hero() {
       if (event.key === "Enter") {
         event.preventDefault()
         setIsLoading(true)
+        trackMagicGetStarted()
         setTimeout(() => {
           router.push("/magic/get-started")
         }, 800)
@@ -165,8 +171,13 @@ export function Hero() {
     return () => document.removeEventListener("keydown", handleKeyDown)
   }, [router])
 
+  const trackMagicGetStarted = () => {
+    trackAttribution(ATTRIBUTION_SOURCE.MAGIC, SOURCE_DETAIL.MAGIC_LANDING_HERO)
+  }
+
   const handleGetStartedClick = () => {
     setIsLoading(true)
+    trackMagicGetStarted()
     setTimeout(() => {
       router.push("/magic/get-started")
     }, 800)

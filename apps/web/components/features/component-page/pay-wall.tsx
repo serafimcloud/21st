@@ -21,6 +21,11 @@ import { FeatureCards } from "@/components/features/component-page/feature-cards
 import { cn } from "@/lib/utils"
 import { usePurchaseComponent } from "@/lib/queries"
 import { useRouter } from "next/navigation"
+import {
+  trackAttribution,
+  ATTRIBUTION_SOURCE,
+  SOURCE_DETAIL,
+} from "@/lib/attribution-tracking"
 
 interface PayWallProps {
   accessState: ComponentAccessState
@@ -38,6 +43,12 @@ export function PayWall({ accessState, component }: PayWallProps) {
     period: "monthly" | "yearly" = "monthly",
   ) => {
     if (isProcessing) return
+
+    // Track attribution before redirecting to pricing page
+    trackAttribution(
+      ATTRIBUTION_SOURCE.COMPONENT_LIBRARY,
+      SOURCE_DETAIL.PREMIUM_COMPONENT_CTA,
+    )
 
     if (!isSignedIn) {
       window.location.href = "/pricing"
@@ -59,6 +70,8 @@ export function PayWall({ accessState, component }: PayWallProps) {
           period,
           successUrl: `${window.location.origin}${pathname}?success=true`,
           cancelUrl: `${window.location.origin}${pathname}?canceled=true`,
+          attributionSource: ATTRIBUTION_SOURCE.COMPONENT_LIBRARY,
+          sourceDetail: SOURCE_DETAIL.PREMIUM_COMPONENT_CTA,
         }),
       })
 
@@ -481,6 +494,11 @@ function SubscriptionPaywall({
   const router = useRouter()
 
   const handleAction = () => {
+    // Track attribution before upgrade
+    trackAttribution(
+      ATTRIBUTION_SOURCE.COMPONENT_LIBRARY,
+      SOURCE_DETAIL.PREMIUM_COMPONENT_CTA,
+    )
     if (!isSignedIn) {
       router.push("/pricing")
       return

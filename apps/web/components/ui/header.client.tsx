@@ -36,6 +36,11 @@ import { useAuth } from "@clerk/nextjs"
 import { userStateAtom } from "@/lib/store/user-store"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { useQuery } from "@tanstack/react-query"
+import {
+  trackAttribution,
+  ATTRIBUTION_SOURCE,
+  SOURCE_DETAIL,
+} from "@/lib/attribution-tracking"
 
 interface UserProfile {
   id: string
@@ -267,7 +272,15 @@ export function Header({
                       asChild
                       className="gap-1.5 bg-blue-600 text-white hover:bg-blue-500 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700 hover:border-blue-800"
                     >
-                      <Link href="/pricing">
+                      <Link
+                        href="/pricing"
+                        onClick={() =>
+                          trackAttribution(
+                            ATTRIBUTION_SOURCE.HEADER,
+                            SOURCE_DETAIL.HEADER_GET_PRO_LINK,
+                          )
+                        }
+                      >
                         <span className="font-medium">Get Pro</span>
                       </Link>
                     </Button>
@@ -549,7 +562,15 @@ export function Header({
               asChild
               className="gap-1.5 bg-blue-600 text-white hover:bg-blue-500 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700 hover:border-blue-800"
             >
-              <Link href="/pricing">
+              <Link
+                href="/pricing"
+                onClick={() =>
+                  trackAttribution(
+                    ATTRIBUTION_SOURCE.HEADER,
+                    SOURCE_DETAIL.HEADER_GET_PRO_LINK,
+                  )
+                }
+              >
                 <span className="font-medium">Get Pro</span>
               </Link>
             </Button>
