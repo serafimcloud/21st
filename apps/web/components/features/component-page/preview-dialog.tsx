@@ -15,6 +15,7 @@ import {
   Moon,
   ArrowUpRight,
   MoreVertical,
+  Lock,
 } from "lucide-react"
 import {
   Dialog,
@@ -52,6 +53,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useIsMobile } from "@/hooks/use-media-query"
+import { PayWall } from "./pay-wall"
+import { useComponentAccess } from "@/hooks/use-component-access"
 
 const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
   "previewDialogSelectedPromptType",
@@ -66,14 +69,25 @@ export function ComponentPreviewDialog({
   isOpen,
   onClose,
   demo,
+  hasPurchased = false,
 }: {
   isOpen: boolean
   onClose: () => void
   demo: DemoWithComponent
+  hasPurchased?: boolean
 }) {
   const { resolvedTheme } = useTheme()
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light")
   const [isLoading, setIsLoading] = useState(true)
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false)
+  const accessState = useComponentAccess(demo.component, hasPurchased)
+
+  // Close unlock dialog when component becomes unlocked
+  useEffect(() => {
+    if (accessState === "UNLOCKED") {
+      setShowUnlockDialog(false)
+    }
+  }, [accessState])
 
   // Add effect to sync preview theme with system theme
   useEffect(() => {
@@ -129,6 +143,11 @@ export function ComponentPreviewDialog({
   }
 
   const handlePromptAction = async () => {
+    if (demo.component.is_paid && accessState !== "UNLOCKED") {
+      setShowUnlockDialog(true)
+      return
+    }
+
     if (selectedPromptType === "v0-open") {
       const formattedPrompt = encodeURIComponent(demo.component.name)
       window.open(`https://v0.dev/?q=${formattedPrompt}`, "_blank")
@@ -203,41 +222,51 @@ export function ComponentPreviewDialog({
 
   const renderDesktopActions = () => (
     <>
-      {!demo.component.is_paid && (
-        <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm">
-          <Button
-            onClick={handlePromptAction}
-            className="first:rounded-s-lg rounded-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70"
-            size="sm"
-          >
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center">
-                  {selectedPromptType === "v0-open" ? (
-                    <>
-                      <span className="mr-2">Open in</span>
-                      <div className="flex items-center justify-center w-[18px] h-[18px]">
-                        <Icons.v0Logo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Copy size={16} />
-                      <span>Copy prompt</span>
+      <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm">
+        <Button
+          onClick={handlePromptAction}
+          className={cn(
+            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70",
+            // Only add rounded-none if not a single unlock button
+            !(demo.component.is_paid && accessState !== "UNLOCKED") && "first:rounded-s-lg rounded-none"
+          )}
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2">
+                {demo.component.is_paid && accessState !== "UNLOCKED" ? (
+                  <>
+                    <Lock size={16} />
+                    <span>Unlock</span>
+                  </>
+                ) : selectedPromptType === "v0-open" ? (
+                  <>
+                    <span className="mr-2">Open in</span>
+                    <div className="flex items-center justify-center w-[18px] h-[18px]">
+                      <Icons.v0Logo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
                     </div>
-                  )}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="flex items-center gap-1.5">
-                {selectedPromptType === "v0-open"
+                  </>
+                ) : (
+                  <>
+                    <Copy size={16} />
+                    <span>Copy prompt</span>
+                  </>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-1.5">
+              {demo.component.is_paid && accessState !== "UNLOCKED"
+                ? "Unlock component"
+                : selectedPromptType === "v0-open"
                   ? "Open in v0"
                   : "Copy prompt"}
-                <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
-                  ⌘X
-                </kbd>
-              </TooltipContent>
-            </Tooltip>
-          </Button>
+              <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
+                ⌘X
+              </kbd>
+            </TooltipContent>
+          </Tooltip>
+        </Button>
+        {accessState === "UNLOCKED" && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -306,8 +335,8 @@ export function ComponentPreviewDialog({
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      )}
+        )}
+      </div>
 
       <SignedIn>
         <Tooltip>
@@ -507,6 +536,14 @@ export function ComponentPreviewDialog({
           )}
         </div>
       </DialogContent>
+
+      {showUnlockDialog && (
+        <Dialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
+          <DialogContent>
+            <PayWall accessState={accessState} component={demo.component} />
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   )
 }

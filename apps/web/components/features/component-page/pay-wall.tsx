@@ -348,7 +348,7 @@ function UnlockPaywall({
   ]
 
   return (
-    <div className="flex-1 w-full flex flex-col h-full">
+    <div className="flex-1 w-full flex flex-col h-full gap-10">
       <div className="flex flex-col items-center justify-center flex-1 pt-20">
         <div className="space-y-2 mb-8">
           <h3 className="text-xl font-semibold">Premium Component</h3>
@@ -507,7 +507,7 @@ function SubscriptionPaywall({
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col h-full">
+    <div className="flex-1 w-full flex flex-col h-full gap-10">
       <div className="flex flex-col items-center justify-center flex-1 pt-20">
         <div className="space-y-2 mb-8">
           <h3 className="text-xl font-semibold">Premium Component</h3>
@@ -576,7 +576,7 @@ function TokensLimitPaywall({
     : "next billing period"
 
   return (
-    <div className="flex-1 w-full flex flex-col h-full">
+    <div className="flex-1 w-full flex flex-col h-full gap-10">
       <div className="flex flex-col items-center justify-center flex-1 pt-20">
         <div className="space-y-2 mb-8 text-center">
           <h3 className="text-lg font-medium">Monthly Token Limit Reached</h3>
