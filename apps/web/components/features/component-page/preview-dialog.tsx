@@ -423,8 +423,12 @@ export function ComponentPreviewDialog({
             <div className="flex flex-col min-w-0">
               <DialogTitle className="text-md font-medium flex gap-1 items-center">
                 {demo.component.name}
-                <Icons.slash className="text-border w-[12px] h-[12px]" />
-                {demo.name}
+                {demo.name != "Default" && (
+                  <>
+                    <Icons.slash className="text-border w-[12px] h-[12px]" />
+                    {demo.name}
+                  </>
+                )}
               </DialogTitle>
               <Link
                 href={`/${demo.user.display_username || demo.user.username}`}
