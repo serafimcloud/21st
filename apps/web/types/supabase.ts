@@ -150,6 +150,57 @@ export type Database = {
         }
         Relationships: []
       }
+      collections: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          name: string
+          slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       component_analytics: {
         Row: {
           activity_type: string | null
@@ -580,6 +631,53 @@ export type Database = {
           },
         ]
       }
+      components_to_collections: {
+        Row: {
+          collection_id: string
+          component_id: number
+          created_at: string
+        }
+        Insert: {
+          collection_id: string
+          component_id: number
+          created_at?: string
+        }
+        Update: {
+          collection_id?: string
+          component_id?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "components_to_collections_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_to_collections_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_to_collections_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_to_collections_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_bookmarks: {
         Row: {
           bookmarked_at: string | null
@@ -647,7 +745,7 @@ export type Database = {
           bookmarks_count: number | null
           bundle_hash?: string | null
           bundle_html_url?: string | null
-          compiled_css?: string | null
+          compiled_css: string | null
           component_id: number | null
           created_at: string | null
           demo_code: string
@@ -1784,6 +1882,48 @@ export type Database = {
           p_author_id: string
         }
         Returns: Json
+      }
+      get_collection_components_v1: {
+        Args: {
+          p_collection_id: string
+          p_sort_by: string
+          p_offset: number
+          p_limit: number
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          total_count: number
+          view_count: number
+          bookmarks_count: number
+        }[]
+      }
+      get_collections_v1: {
+        Args: {
+          p_offset?: number
+          p_limit?: number
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: string
+          name: string
+          description: string
+          cover_url: string
+          user_id: string
+          created_at: string
+          updated_at: string
+          is_public: boolean
+          slug: string
+          components_count: number
+          user_data: Json
+        }[]
       }
       get_demos_list: {
         Args: {

@@ -21,6 +21,7 @@ import {
   MagicBanner,
   magicBannerVisibleAtom,
 } from "@/components/features/magic/magic-banner"
+import { CollectionsContainer } from "@/components/features/collections/collections-list"
 
 const MainContent = React.memo(function MainContent({
   activeTab,
@@ -37,6 +38,7 @@ const MainContent = React.memo(function MainContent({
     | "authors"
     | "pro"
     | "templates"
+    | "collections"
   selectedFilter: string
   setSelectedFilter: (filter: string) => void
   sortBy: SortOption
@@ -48,7 +50,8 @@ const MainContent = React.memo(function MainContent({
       | "components"
       | "authors"
       | "pro"
-      | "templates",
+      | "templates"
+      | "collections",
   ) => void
 }) {
   const renderContent = () => {
@@ -125,6 +128,12 @@ const MainContent = React.memo(function MainContent({
             <TemplatesContainer tagSlug={selectedFilter} />
           </>
         )
+      case "collections":
+        return (
+          <>
+            <CollectionsContainer tagSlug={selectedFilter} />
+          </>
+        )
       default:
         return null
     }
@@ -148,14 +157,20 @@ export function HomePageClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<
-    "categories" | "components" | "authors" | "pro" | "templates"
+    | "categories"
+    | "components"
+    | "authors"
+    | "pro"
+    | "templates"
+    | "collections"
   >(
     (searchParams.get("tab") as
       | "categories"
       | "components"
       | "authors"
       | "pro"
-      | "templates") || "components",
+      | "templates"
+      | "collections") || "components",
   )
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
@@ -202,7 +217,8 @@ export function HomePageClient() {
       | "components"
       | "authors"
       | "pro"
-      | "templates",
+      | "templates"
+      | "collections",
   ) => {
     setActiveTab(newTab)
     setSelectedFilter("all")

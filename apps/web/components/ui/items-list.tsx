@@ -50,11 +50,18 @@ interface SearchListProps extends BaseListProps {
   sortBy: SortOption
 }
 
+interface CollectionListProps extends BaseListProps {
+  type: "collection"
+  collectionId: string
+  sortBy: SortOption
+}
+
 type ComponentsListProps =
   | MainListProps
   | TagListProps
   | UserListProps
   | SearchListProps
+  | CollectionListProps
 
 function useMainDemos(
   sortBy: SortOption,
@@ -359,6 +366,72 @@ export function ComponentsList({
       isFetching = aiSearchQuery.isFetching
       hasNextPage = aiSearchQuery.hasNextPage
       fetchNextPage = aiSearchQuery.fetchNextPage
+      break
+    }
+    case "collection": {
+      console.log("[ComponentsList] Collection case:", {
+        collectionId: props.collectionId,
+        sortBy: props.sortBy,
+      })
+
+      const supabase = useClerkSupabaseClient()
+      const collectionQuery = useQuery({
+        queryKey: [
+          "collection-components",
+          props.collectionId,
+          props.sortBy,
+        ] as const,
+        queryFn: async () => {
+          console.log(
+            "[ComponentsList] Fetching collection components with params:",
+            {
+              p_collection_id: props.collectionId,
+              p_sort_by: props.sortBy,
+              p_offset: 0,
+              p_limit: 1000,
+            },
+          )
+          const { data: components, error } = await supabase.rpc(
+            "get_collection_components_v1",
+            {
+              p_collection_id: props.collectionId,
+              p_sort_by: props.sortBy,
+              p_offset: 0,
+              p_limit: 1000,
+            },
+          )
+
+          if (error) {
+            console.error("[ComponentsList] Error fetching components:", error)
+            throw error
+          }
+
+          console.log("[ComponentsList] Raw components data:", components)
+          const transformedData = (components || []).map(transformDemoResult)
+          console.log(
+            "[ComponentsList] Transformed components:",
+            transformedData,
+          )
+
+          return {
+            data: transformedData,
+            total_count: components?.length ?? 0,
+          }
+        },
+        initialData: initialData
+          ? {
+              data: initialData as DemoWithComponent[],
+              total_count: initialData.length,
+            }
+          : undefined,
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 30,
+      })
+
+      rawComponents = collectionQuery.data?.data
+      isLoading = collectionQuery.isLoading
+      isFetching = collectionQuery.isFetching
+      hasNextPage = false
       break
     }
   }
