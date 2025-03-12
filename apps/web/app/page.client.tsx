@@ -131,11 +131,6 @@ const MainContent = React.memo(function MainContent({
       case "collections":
         return (
           <>
-            <FilterChips
-              activeTab={activeTab}
-              selectedFilter={selectedFilter}
-              onFilterChange={setSelectedFilter}
-            />
             <CollectionsContainer tagSlug={selectedFilter} />
           </>
         )

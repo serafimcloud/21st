@@ -5,7 +5,7 @@ import { Header } from "@/components/ui/header.client"
 import { Footer } from "@/components/ui/footer"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { CollectionPageContent } from "./page.client"
-import { SortOption } from "@/types/global"
+import { SortOption, User } from "@/types/global"
 import { cookies } from "next/headers"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { unstable_cache } from "next/cache"
@@ -24,13 +24,7 @@ const getCachedCollectionInfo = unstable_cache(
       .select(
         `
         *,
-        user_data:users(
-          id,
-          name,
-          display_name,
-          image_url,
-          display_image_url
-        ),
+        user_data:users(*),
         components_count:components_to_collections(count)
       `,
       )
@@ -47,13 +41,7 @@ const getCachedCollectionInfo = unstable_cache(
 
     return {
       ...data,
-      user_data: data.user_data || {
-        id: "",
-        name: "",
-        display_name: "",
-        image_url: "",
-        display_image_url: "",
-      },
+      user_data: data.user_data as User,
       components_count: data.components_count?.[0]?.count || 0,
     }
   },

@@ -5,30 +5,7 @@ import { ComponentsList } from "@/components/ui/items-list"
 import { sortByAtom } from "@/components/features/main-page/main-page-header"
 import { CollectionWithUser, SortOption } from "@/types/global"
 import { useLayoutEffect } from "react"
-import { motion } from "motion/react"
-
-interface CollectionHeaderProps {
-  collection: CollectionWithUser
-}
-
-function CollectionHeader({ collection }: CollectionHeaderProps) {
-  return (
-    <div className="mb-8">
-      <h1 className="text-3xl font-bold mb-2">{collection.name}</h1>
-      {collection.description && (
-        <p className="text-muted-foreground">{collection.description}</p>
-      )}
-      <div className="flex items-center gap-2 mt-4">
-        <span className="text-sm text-muted-foreground">Created by</span>
-        <span className="text-sm font-medium">
-          {collection.user_data?.display_name ||
-            collection.user_data?.name ||
-            "Unknown"}
-        </span>
-      </div>
-    </div>
-  )
-}
+import { CollectionHeader } from "@/components/features/collections/collection-header"
 
 export function CollectionPageContent({
   initialSortBy,

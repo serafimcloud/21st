@@ -54,10 +54,6 @@ export const CollectionCard = React.memo(function CollectionCard({
               />
             </div>
           </div>
-          <div className="absolute top-2 left-2 z-20 bg-background/90 backdrop-blur rounded-sm px-2 py-1 pointer-events-none flex items-center gap-1">
-            <Layers size={16} className="text-foreground" />
-            <span className="text-xs">{collection.components_count}</span>
-          </div>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -87,16 +83,11 @@ export const CollectionCard = React.memo(function CollectionCard({
               <h3 className="text-sm font-medium truncate">
                 {collection.name}
               </h3>
-              <p className="text-xs text-muted-foreground truncate">
-                {collection.user_data?.display_name ||
-                  collection.user_data?.name}
-              </p>
             </div>
-            {collection.description && (
-              <div className="text-sm text-muted-foreground ml-3 truncate max-w-[120px]">
-                {collection.description}
-              </div>
-            )}
+            <div className="flex items-center gap-1 text-sm text-muted-foreground ml-3">
+              <Layers size={16} className="text-foreground" />
+              <span>{collection.components_count}</span>
+            </div>
           </div>
         </div>
       </div>

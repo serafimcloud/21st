@@ -230,11 +230,5 @@ export interface CollectionWithUser {
   is_public: boolean
   slug: string
   components_count: number
-  user_data: {
-    id: string
-    name: string | null
-    display_name: string | null
-    image_url: string | null
-    display_image_url: string | null
-  }
+  user_data: User
 }
