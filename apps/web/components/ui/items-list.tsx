@@ -382,7 +382,15 @@ export function ComponentsList({
           props.sortBy,
         ] as const,
         queryFn: async () => {
-          console.log("[ComponentsList] Fetching collection components...")
+          console.log(
+            "[ComponentsList] Fetching collection components with params:",
+            {
+              p_collection_id: props.collectionId,
+              p_sort_by: props.sortBy,
+              p_offset: 0,
+              p_limit: 1000,
+            },
+          )
           const { data: components, error } = await supabase.rpc(
             "get_collection_components_v1",
             {

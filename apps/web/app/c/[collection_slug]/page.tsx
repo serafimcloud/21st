@@ -21,7 +21,19 @@ const getCachedCollectionInfo = unstable_cache(
   async (collectionSlug: string) => {
     const { data, error } = await supabaseWithAdminAccess
       .from("collections")
-      .select("*, user:users(*)")
+      .select(
+        `
+        *,
+        user_data:users(
+          id,
+          name,
+          display_name,
+          image_url,
+          display_image_url
+        ),
+        components_count:components_to_collections(count)
+      `,
+      )
       .eq("slug", collectionSlug)
       .single()
 
@@ -29,7 +41,21 @@ const getCachedCollectionInfo = unstable_cache(
       throw error
     }
 
-    return data
+    if (!data) {
+      return null
+    }
+
+    return {
+      ...data,
+      user_data: data.user_data || {
+        id: "",
+        name: "",
+        display_name: "",
+        image_url: "",
+        display_image_url: "",
+      },
+      components_count: data.components_count?.[0]?.count || 0,
+    }
   },
   ["collection-info"],
   {
@@ -57,6 +83,12 @@ export default async function CollectionPage(props: CollectionPageProps) {
       redirect("/")
     }
 
+    console.log("[CollectionPage] Collection info:", {
+      id: collectionInfo.id,
+      name: collectionInfo.name,
+      slug: collectionInfo.slug,
+    })
+
     const savedSortBy = cookieStore.get("saved_sort_by")?.value as
       | SortOption
       | undefined
@@ -72,8 +104,8 @@ export default async function CollectionPage(props: CollectionPageProps) {
         <Header />
         <div className="flex-1">
           <CollectionPageContent
-            collectionSlug={collectionSlug}
             initialSortBy={sortByPreference}
+            collection={collectionInfo}
           />
         </div>
         <Footer />
@@ -101,7 +133,7 @@ export async function generateMetadata(
       name: `${collectionInfo.name} | 21st.dev - The NPM for Design Engineers`,
       description:
         collectionInfo.description ||
-        `A collection of React components by ${collectionInfo.user.name}`,
+        `A collection of React components by ${collectionInfo.user_data.name}`,
       url: `${process.env.NEXT_PUBLIC_APP_URL}/c/${params.collection_slug}`,
       mainEntity: {
         "@type": "ItemList",
@@ -113,12 +145,12 @@ export async function generateMetadata(
       title: `${collectionInfo.name} | 21st.dev - The NPM for Design Engineers`,
       description:
         collectionInfo.description ||
-        `A collection of React components by ${collectionInfo.user.name}`,
+        `A collection of React components by ${collectionInfo.user_data.name}`,
       openGraph: {
         title: `${collectionInfo.name} | 21st.dev - The NPM for Design Engineers`,
         description:
           collectionInfo.description ||
-          `A collection of React components by ${collectionInfo.user.name}`,
+          `A collection of React components by ${collectionInfo.user_data.name}`,
       },
       keywords: [
         "react components",

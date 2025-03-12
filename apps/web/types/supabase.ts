@@ -745,7 +745,7 @@ export type Database = {
           bookmarks_count: number | null
           bundle_hash?: string | null
           bundle_html_url?: string | null
-          compiled_css?: string | null
+          compiled_css: string | null
           component_id: number | null
           created_at: string | null
           demo_code: string
@@ -1886,31 +1886,23 @@ export type Database = {
       get_collection_components_v1: {
         Args: {
           p_collection_id: string
-          p_offset?: number
-          p_limit?: number
-          p_sort_by?: string
+          p_sort_by: string
+          p_offset: number
+          p_limit: number
         }
         Returns: {
           id: number
           name: string
-          description: string | null
-          preview_url: string | null
-          video_url: string | null
-          code: string
-          install_command: string | null
-          user_id: string
-          created_at: string
+          preview_url: string
+          video_url: string
           updated_at: string
-          downloads_count: number
-          likes_count: number
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          total_count: number
+          view_count: number
           bookmarks_count: number
-          user_data: {
-            id: string
-            name: string | null
-            display_name: string | null
-            image_url: string | null
-            display_image_url: string | null
-          }
         }[]
       }
       get_collections_v1: {
@@ -1928,8 +1920,9 @@ export type Database = {
           created_at: string
           updated_at: string
           is_public: boolean
-          user_data: Json
+          slug: string
           components_count: number
+          user_data: Json
         }[]
       }
       get_demos_list: {
