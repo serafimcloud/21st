@@ -32,6 +32,7 @@ export const transformDemoResult = (result: any): DemoWithComponent => {
     bookmarks_count: result.bookmarks_count || 0,
     embedding: result.embedding || null,
     embedding_oai: result.embedding_oai || null,
+    bundle_url: result.bundle_url || null,
   }
   return transformed
 }

@@ -32,10 +32,12 @@ export function ComponentCard({
   demo,
   isLoading,
   hideUser,
+  onClick,
 }: {
   demo?: DemoWithComponent | (Component & { user: User })
   isLoading?: boolean
   hideUser?: boolean
+  onClick?: () => void
 }) {
   if (isLoading || !demo) {
     return <ComponentCardSkeleton />
@@ -66,10 +68,8 @@ export function ComponentCard({
   const componentUrl = `/${username}/${componentSlug}/${isDemo ? demo.demo_slug || "default" : "default"}`
 
   const videoUrl = isDemo ? demo.video_url : null
-  
-  const bookmarksCount = isDemo
-    ? demo.bookmarks_count || 0
-    : 0
+
+  const bookmarksCount = isDemo ? demo.bookmarks_count || 0 : 0
 
   const viewCount = isDemo ? demo.view_count || 0 : 0
 
@@ -171,7 +171,10 @@ export function ComponentCard({
         <div
           className="block"
           onClick={(e) => {
-            if (e.metaKey || e.ctrlKey) {
+            if (onClick) {
+              e.preventDefault()
+              onClick()
+            } else if (e.metaKey || e.ctrlKey) {
               e.preventDefault()
               window.open(componentUrl, "_blank")
               toast.success(`${componentName} was opened in a new tab`)
@@ -212,7 +215,9 @@ export function ComponentCard({
             </div>
             {isDemo && demo.component?.is_paid && (
               <div className="absolute top-2 right-2 z-20">
-                <span className="inline-block text-xs font-medium bg-blue-100 text-blue-600 px-2 py-1 rounded-md">PRO</span>
+                <span className="inline-block text-xs font-medium bg-blue-100 text-blue-600 px-2 py-1 rounded-md">
+                  PRO
+                </span>
               </div>
             )}
           </div>
