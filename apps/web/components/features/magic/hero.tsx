@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "motion/react"
 import NumberFlow from "@number-flow/react"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Mockup, MockupFrame } from "@/components/ui/mockup"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Spinner } from "@/components/icons/spinner"
+import { Icons } from "@/components/icons"
+import { cn } from "@/lib/utils"
 
 type SpotlightProps = {
   gradientFirst?: string
@@ -138,11 +142,35 @@ const Spotlight = ({
 }
 
 export function Hero() {
-  const [count, setCount] = useState(3046)
+  const [count, setCount] = useState(7046)
+  const [isLoading, setIsLoading] = useState(false)
   const [ref, isIntersecting] = useIntersectionObserver({
     threshold: 0,
     rootMargin: "-80px",
   })
+  const router = useRouter()
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        event.preventDefault()
+        setIsLoading(true)
+        setTimeout(() => {
+          router.push("/magic/get-started")
+        }, 800)
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [router])
+
+  const handleGetStartedClick = () => {
+    setIsLoading(true)
+    setTimeout(() => {
+      router.push("/magic/get-started")
+    }, 800)
+  }
 
   return (
     <div className="relative min-h-screen bg-black/[0.96] antialiased bg-grid-purple/[0.02] overflow-hidden">
@@ -198,10 +226,26 @@ export function Hero() {
           >
             <div className="flex justify-center">
               <Button
-                asChild
-                className="min-h-[48px] sm:h-12 whitespace-nowrap bg-white/10 px-8 text-neutral-200 hover:bg-white/20 backdrop-blur-sm border-none"
+                onClick={handleGetStartedClick}
+                disabled={isLoading}
+                className={cn(
+                  "whitespace-nowrap bg-white/10 text-neutral-200 hover:bg-white/20 backdrop-blur-sm border-none",
+                  isLoading ? "" : "pr-1.5",
+                )}
               >
-                <Link href="/magic/get-started">Get Started</Link>
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Spinner size={16} />
+                    Getting Started...
+                  </div>
+                ) : (
+                  <>
+                    Get Started
+                    <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                      <Icons.enter className="h-2.5 w-2.5" />
+                    </kbd>
+                  </>
+                )}
               </Button>
             </div>
 
