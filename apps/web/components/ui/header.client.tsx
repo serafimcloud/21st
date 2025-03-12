@@ -122,7 +122,9 @@ export function Header({
         return data as unknown as UserStateResponse
       },
       enabled: !!userId,
-      refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+      staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+      refetchInterval: 5 * 60 * 1000,
     })
 
   // Fetch subscription using React Query
@@ -136,7 +138,9 @@ export function Header({
       return response.json()
     },
     enabled: !!userId,
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchInterval: 5 * 60 * 1000,
   })
 
   // Update global state when data changes

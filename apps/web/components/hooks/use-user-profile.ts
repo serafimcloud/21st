@@ -59,6 +59,9 @@ export function useUserProfile(): {
       return data as UserProfile | null
     },
     enabled: !!clerkUser?.id,
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchInterval: 5 * 60 * 1000, 
   })
 
   return {
