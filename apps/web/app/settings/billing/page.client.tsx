@@ -11,7 +11,10 @@ import {
   PLAN_FEATURES,
   PRICING_PLANS,
 } from "@/lib/config/subscription-plans"
-import { PricingTable, PlanLevel } from "@/components/ui/pricing-table"
+import {
+  PricingTable,
+  PlanLevel,
+} from "@/components/features/settings/billing/pricing-table"
 import { BillingHeader } from "@/components/features/settings/billing/billing-header"
 import { ConfirmationDialog } from "@/components/features/settings/billing/confirmation-dialog"
 import { UpgradeConfirmationDialog } from "@/components/features/settings/billing/upgrade-confirmation-dialog"
@@ -19,6 +22,11 @@ import { InvoicesList } from "@/components/features/settings/billing/invoices-li
 import { useSubscription, PlanInfo } from "@/hooks/use-subscription"
 import { useAuth } from "@clerk/nextjs"
 import { CircleProgress } from "@/components/ui/circle-progress"
+import {
+  trackAttribution,
+  ATTRIBUTION_SOURCE,
+  SOURCE_DETAIL,
+} from "@/lib/attribution-tracking"
 
 interface Invoice {
   id: string
@@ -163,6 +171,12 @@ export function BillingSettingsClient({
   }
 
   const handleCancelSubscription = async () => {
+    // Track attribution when subscription is cancelled
+    trackAttribution(
+      ATTRIBUTION_SOURCE.SETTINGS,
+      SOURCE_DETAIL.SETTINGS_BILLING,
+    )
+
     setIsLoading(true)
     try {
       const response = await fetch("/api/stripe/cancel-subscription", {
@@ -203,6 +217,12 @@ export function BillingSettingsClient({
     planId: PlanType,
     period: "monthly" | "yearly" = "monthly",
   ) => {
+    // Track attribution when plan is upgraded with plan ID and current subscription info
+    trackAttribution(
+      ATTRIBUTION_SOURCE.SETTINGS,
+      SOURCE_DETAIL.SETTINGS_BILLING,
+    )
+
     setIsUpgradeLoading(true)
     try {
       const response = await fetch("/api/stripe/create-checkout", {
@@ -218,6 +238,8 @@ export function BillingSettingsClient({
           isUpgrade: true,
           currentPlanId: currentPlanId,
           subscriptionId: subscription?.stripe_subscription_id,
+          attributionSource: ATTRIBUTION_SOURCE.SETTINGS,
+          sourceDetail: SOURCE_DETAIL.SETTINGS_BILLING,
         }),
       })
 
@@ -268,6 +290,12 @@ export function BillingSettingsClient({
   }
 
   const confirmUpgrade = (planId: PlanType) => {
+    // Track attribution when upgrade button is clicked
+    trackAttribution(
+      ATTRIBUTION_SOURCE.SETTINGS,
+      SOURCE_DETAIL.SETTINGS_BILLING,
+    )
+
     setUpgradeConfirmation({
       open: true,
       planId,
@@ -287,6 +315,12 @@ export function BillingSettingsClient({
 
   const handlePlanSelect = async (plan: PlanLevel, isYearly = false) => {
     const selectedPlanId = plan as PlanType
+
+    // Track attribution when plan is selected
+    trackAttribution(
+      ATTRIBUTION_SOURCE.SETTINGS,
+      SOURCE_DETAIL.SETTINGS_BILLING,
+    )
 
     if (
       selectedPlanId === currentPlanId &&
@@ -416,9 +450,7 @@ export function BillingSettingsClient({
                     <span className="text-[22px] leading-none">∞</span>
                   </div>
                 </div>
-                <div className="text-sm text-foreground">
-                  UI Inspirations
-                </div>
+                <div className="text-sm text-foreground">UI Inspirations</div>
               </div>
               <span className="bg-muted/80 text-accent-foreground px-2 py-0.5 rounded-sm text-xs border shadow-inner">
                 unlimited
@@ -431,9 +463,7 @@ export function BillingSettingsClient({
                     <span className="text-[22px] leading-none">∞</span>
                   </div>
                 </div>
-                <div className="text-sm text-foreground">
-                  SVG Logo Searches
-                </div>
+                <div className="text-sm text-foreground">SVG Logo Searches</div>
               </div>
               <span className="bg-muted/80 text-accent-foreground px-2 py-0.5 rounded-sm text-xs border shadow-inner">
                 unlimited

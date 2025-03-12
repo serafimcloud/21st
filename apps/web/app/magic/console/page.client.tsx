@@ -28,6 +28,11 @@ import { FeedbackDialog } from "@/components/features/magic/feedback-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import Image from "next/image"
 import { PromptRuleDisplay } from "@/components/features/prompt-rules/prompt-rule-display"
+import {
+  trackAttribution,
+  ATTRIBUTION_SOURCE,
+  SOURCE_DETAIL,
+} from "@/lib/attribution-tracking"
 
 interface ConsoleClientProps {
   subscription: PlanInfo | null
@@ -185,6 +190,9 @@ export function ConsoleClient({
     planId: PlanType,
     period: "monthly" | "yearly" = "monthly",
   ) => {
+    // Track attribution when upgrading plan from Magic console
+    trackAttribution(ATTRIBUTION_SOURCE.MAGIC, SOURCE_DETAIL.MAGIC_CONSOLE)
+
     setIsUpgradeLoading(true)
     try {
       const response = await fetch("/api/stripe/create-checkout", {
@@ -200,6 +208,8 @@ export function ConsoleClient({
           isUpgrade: true,
           currentPlanId: currentPlanId,
           subscriptionId: subscription?.stripe_subscription_id,
+          attributionSource: ATTRIBUTION_SOURCE.MAGIC,
+          sourceDetail: SOURCE_DETAIL.MAGIC_CONSOLE,
         }),
       })
 
@@ -253,6 +263,9 @@ export function ConsoleClient({
   }
 
   const confirmUpgrade = (planId: PlanType) => {
+    // Track attribution when clicking upgrade button in Magic console
+    trackAttribution(ATTRIBUTION_SOURCE.MAGIC, SOURCE_DETAIL.MAGIC_CONSOLE)
+
     setUpgradeConfirmation({
       open: true,
       planId,
