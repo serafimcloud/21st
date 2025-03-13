@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Sun,
   Moon,
-  ArrowUpRight,
   MoreVertical,
   Lock,
   Share2,
@@ -56,6 +55,7 @@ import {
 import { useIsMobile } from "@/hooks/use-media-query"
 import { PayWall } from "./pay-wall"
 import { useComponentAccess } from "@/hooks/use-component-access"
+import { Spinner } from "@/components/icons/spinner"
 
 const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
   "previewDialogSelectedPromptType",
@@ -63,7 +63,11 @@ const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
 )
 
 export function PreviewSkeleton() {
-  return <div className="flex-1 animate-pulse bg-muted"></div>
+  return (
+    <div className="flex-1 animate-pulse bg-muted flex items-center justify-center">
+      <Spinner />
+    </div>
+  )
 }
 
 export function ComponentPreviewDialog({
@@ -113,9 +117,11 @@ export function ComponentPreviewDialog({
     demo?.id,
     user?.id,
   )
-
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Only handle keyboard shortcuts if dialog is open
+      if (!isOpen) return
+
       // Check if target is an input/textarea element
       const target = e.target as HTMLElement
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
@@ -133,11 +139,17 @@ export function ComponentPreviewDialog({
         e.preventDefault()
         handlePromptAction()
       }
+
+      // Handle Enter key for opening component page
+      if (e.code === "Enter" && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault()
+        handleOpenComponentPage()
+      }
     }
 
     window.addEventListener("keydown", handleKeyPress)
     return () => window.removeEventListener("keydown", handleKeyPress)
-  }, [])
+  }, [isOpen])
 
   if (!bundleUrl) {
     return null
@@ -232,6 +244,7 @@ export function ComponentPreviewDialog({
       <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm">
         <Button
           onClick={handlePromptAction}
+          variant="ghost"
           className={cn(
             "focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70",
             // Only add rounded-none if not a single unlock button
@@ -280,7 +293,7 @@ export function ComponentPreviewDialog({
               <Button
                 className="rounded-none shadow-none last:rounded-e-lg focus-visible:z-10"
                 size="icon"
-                variant="default"
+                variant="ghost"
               >
                 <ChevronDown size={16} strokeWidth={2} />
               </Button>
@@ -413,19 +426,16 @@ export function ComponentPreviewDialog({
         </TooltipContent>
       </Tooltip>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleOpenComponentPage}
-            className="h-8 w-8"
-          >
-            <ArrowUpRight size={16} />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Open component page</TooltipContent>
-      </Tooltip>
+      <Button
+        onClick={handleOpenComponentPage}
+        className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70"
+        autoFocus
+      >
+        <span>Open component</span>
+        <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+          <Icons.enter className="h-2.5 w-2.5" />
+        </kbd>
+      </Button>
     </>
   )
 
