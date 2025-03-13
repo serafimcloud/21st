@@ -25,6 +25,11 @@ const TIERS = [
       monthly: PLAN_LIMITS.pro.monthlyPrice || 10,
       yearly: PLAN_LIMITS.pro.yearlyPrice || 96,
     },
+    tokenPrice: {
+      monthly: PLAN_LIMITS.pro.tokenPricing.pricePerToken.monthly,
+      yearly: PLAN_LIMITS.pro.tokenPricing.pricePerToken.yearly,
+    },
+    tokens: 50,
     description: PLAN_LIMITS.pro.description,
     features: PLAN_LIMITS.pro.features,
     cta: "Upgrade",
@@ -38,6 +43,11 @@ const TIERS = [
       monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 30,
       yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 288,
     },
+    tokenPrice: {
+      monthly: PLAN_LIMITS.pro_plus.tokenPricing.pricePerToken.monthly,
+      yearly: PLAN_LIMITS.pro_plus.tokenPricing.pricePerToken.yearly,
+    },
+    tokens: 200,
     description: PLAN_LIMITS.pro_plus.description,
     features: PLAN_LIMITS.pro_plus.features,
     cta: "Upgrade Plus",

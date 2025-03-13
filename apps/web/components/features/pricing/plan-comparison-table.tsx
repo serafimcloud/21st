@@ -12,7 +12,14 @@ import { SignInButton } from "@clerk/nextjs"
 export interface ComparisonFeature {
   name: string
   section?: string
-  values: Record<PlanType, React.ReactNode>
+  values: Record<
+    PlanType,
+    | string
+    | {
+        monthly: string
+        yearly: string
+      }
+  >
 }
 
 export interface Plan {
@@ -22,6 +29,11 @@ export interface Plan {
     monthly: number | string
     yearly: number | string
   }
+  tokenPrice: {
+    monthly: number
+    yearly: number
+  }
+  tokens: number
   popular?: boolean
   buttonText: string
   buttonAction?: () => void
@@ -53,11 +65,9 @@ const getButtonText = (
   currentFrequency: "monthly" | "yearly",
   frequency: "monthly" | "yearly",
 ) => {
-
   const isDowngrade =
     (planOrder[tierType] ?? 0) < (planOrder[currentPlan || "free"] ?? 0)
   const isCurrentPlan = tierType === currentPlan
-
 
   // Always show "Current Plan" for free plan regardless of frequency
   if (tierType === "free" && currentPlan === "free") {
@@ -93,6 +103,29 @@ const handlePlanSelect = (
   }
 }
 
+// Add helper function at the top of the file
+function formatPriceFeature(feature: string, frequency: string): string {
+  if (!feature.includes("monthly / $")) {
+    return feature
+  }
+
+  try {
+    const [prefix, pricesSection] = feature.split("($")
+    if (!pricesSection) return feature
+
+    const prices = pricesSection.replace(")", "")
+    const [monthlyPrice, restOfPrice] = prices.split(" / $")
+    if (!monthlyPrice || !restOfPrice) return feature
+
+    const [yearlyPrice, suffix] = restOfPrice.split(" per ")
+    if (!suffix) return feature
+
+    return `${prefix}($${frequency === "yearly" ? yearlyPrice : monthlyPrice} per ${suffix})`
+  } catch {
+    return feature
+  }
+}
+
 export function PlanComparisonTable({
   features,
   plans,
@@ -123,10 +156,38 @@ export function PlanComparisonTable({
   const sectionNames = Object.keys(featureSections)
 
   // Function to render the feature value
-  const renderFeatureValue = (value: React.ReactNode) => {
+  const renderFeatureValue = (
+    value: string | { monthly: string; yearly: string },
+    planType: PlanType,
+    featureName: string,
+  ) => {
     if (value === "check") {
       return <CheckValue />
     }
+
+    // Show appropriate values for Premium Components and AI Generation in free plan
+    if (planType === "free") {
+      if (featureName === "Premium Components") {
+        return "-"
+      }
+      if (featureName === "AI Component Generation") {
+        return "5 free generation"
+      }
+    }
+
+    if (typeof value === "string") {
+      return value
+    }
+
+    if (
+      value &&
+      typeof value === "object" &&
+      "monthly" in value &&
+      "yearly" in value
+    ) {
+      return value[frequency]
+    }
+
     return value
   }
 
@@ -192,6 +253,7 @@ export function PlanComparisonTable({
               }
             : "per mo"
 
+          const tokenPriceFormatted = plan.tokenPrice[frequency].toFixed(2)
 
           return (
             <div key={plan.type} className="col-span-1 flex flex-col">
@@ -204,22 +266,32 @@ export function PlanComparisonTable({
                 )}
               </div>
 
-              <div className="mb-6 flex gap-2 items-end">
-                <div className="flex">
-                  <span className="text-4xl font-bold">
-                    {typeof price === "number" ? `$${price}` : `$${price}`}
-                  </span>
+              <div className="mb-6 flex flex-col gap-2">
+                <div className="flex gap-2 items-end">
+                  <div className="flex">
+                    <span className="text-4xl font-bold">
+                      {typeof price === "number" ? `$${price}` : `$${price}`}
+                    </span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {typeof period === "string" ? (
+                      period
+                    ) : (
+                      <>
+                        <div>{period.primary}</div>
+                        <div>{period.secondary}</div>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {typeof period === "string" ? (
-                    period
-                  ) : (
-                    <>
-                      <div>{period.primary}</div>
-                      <div>{period.secondary}</div>
-                    </>
-                  )}
-                </div>
+                {plan.tokens && (
+                  <div className="text-sm text-muted-foreground">
+                    {plan.type === "free" 
+                      ? `${plan.tokens} tokens included`
+                      : `${plan.tokens} tokens included ($${tokenPriceFormatted}/token)`
+                    }
+                  </div>
+                )}
               </div>
 
               {renderUpgradeButton(plan)}
@@ -253,7 +325,11 @@ export function PlanComparisonTable({
                     key={`${feature.name}-${plan.type}`}
                     className="col-span-1 flex items-center justify-P"
                   >
-                    {renderFeatureValue(feature.values[plan.type])}
+                    {renderFeatureValue(
+                      feature.values[plan.type],
+                      plan.type,
+                      feature.name,
+                    )}
                   </div>
                 ))}
               </div>

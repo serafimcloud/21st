@@ -19,6 +19,11 @@ interface PricingProps {
     price: {
       [key: string]: string | number
     }
+    tokenPrice: {
+      monthly: number
+      yearly: number
+    }
+    tokens: number
     description: string
     features: string[]
     cta: string
@@ -34,6 +39,26 @@ interface PricingProps {
 }
 
 const planOrder = { free: 1, pro: 2, pro_plus: 3 }
+
+function formatPriceFeature(feature: string, frequency: string): string {
+  if (!feature.includes("monthly / $")) {
+    return feature
+  }
+
+  try {
+    const [prefix, pricesSection] = feature.split("($")
+    if (!pricesSection) return feature
+
+    const prices = pricesSection.replace(")", "")
+    const [monthlyPrice, yearlyPrice] = prices.split(" / $")
+
+    if (!monthlyPrice || !yearlyPrice) return feature
+
+    return `${prefix}($${frequency === "yearly" ? yearlyPrice : monthlyPrice})`
+  } catch {
+    return feature
+  }
+}
 
 export function PricingSection({
   frequencies,
@@ -100,6 +125,22 @@ export function PricingSection({
     return buttonContent
   }
 
+  const formatFeatureWithPrice = (
+    feature: string,
+    tier: PricingProps["tiers"][0],
+  ) => {
+    if (feature.includes("Premium 21st.dev Components")) {
+      return "Premium 21st.dev Components"
+    }
+    if (feature.includes("AI Component Generation")) {
+      return "AI Component Generation"
+    }
+    if (feature.includes("tokens per month")) {
+      return `${tier.tokens} tokens included ($${tier.tokenPrice[frequency].toFixed(2)}/token)`
+    }
+    return feature
+  }
+
   return (
     <div className="py-24">
       <div className="mx-auto">
@@ -153,7 +194,7 @@ export function PricingSection({
                     <p className="mt-1 text-sm text-muted-foreground">
                       {tier.description}
                     </p>
-                    <div className="">
+                    <div className="mt-4">
                       <div className="flex items-baseline">
                         <span className="text-5xl font-bold">
                           <NumberFlow
@@ -183,7 +224,7 @@ export function PricingSection({
                         <li key={feature} className="flex items-start">
                           <Check className="h-5 w-5 flex-shrink-0 text-foreground mt-0.5" />
                           <span className="ml-3 text-sm text-muted-foreground">
-                            {feature}
+                            {formatFeatureWithPrice(feature, tier)}
                           </span>
                         </li>
                       ))}
