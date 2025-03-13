@@ -21,12 +21,7 @@ export function useComponentAccess(
   const { user, isSignedIn } = useUser()
   const supabase = useClerkSupabaseClient()
 
-  // Free components are always accessible
-  if (!component.is_paid) {
-    return "UNLOCKED" as const
-  }
-
-  // For paid components, check purchase status
+  // Query for purchase status - always run this query but control when it's enabled
   const { data: hasPurchased } = useQuery({
     queryKey: ["component-purchase", component.id, user?.id],
     queryFn: async () => {
@@ -56,16 +51,15 @@ export function useComponentAccess(
         componentAccess.accessState === "UNLOCKED"),
   })
 
-  if (hasPurchased) {
+  // Determine access state based on component and user state
+  if (!component.is_paid || hasPurchased) {
     return "UNLOCKED" as const
   }
 
-  // If not signed in, require subscription
   if (!isSignedIn) {
     return "REQUIRES_SUBSCRIPTION" as const
   }
 
-  // Check subscription and tokens for paid components
   if (!subscription) {
     return "REQUIRES_SUBSCRIPTION" as const
   }
