@@ -52,7 +52,11 @@ export function useComponentAccess(
   })
 
   // Determine access state based on component and user state
-  if (!component.is_paid || hasPurchased) {
+  if (
+    !component.is_paid ||
+    hasPurchased ||
+    (user?.id && component.user_id === user.id)
+  ) {
     return "UNLOCKED" as const
   }
 
