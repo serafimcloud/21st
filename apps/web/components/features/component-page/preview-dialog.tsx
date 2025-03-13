@@ -6,7 +6,6 @@ import { useTheme } from "next-themes"
 import { useUser } from "@clerk/nextjs"
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs"
 import {
-  X,
   Maximize,
   Minimize,
   Copy,
@@ -17,6 +16,7 @@ import {
   MoreVertical,
   Lock,
   Share2,
+  ArrowLeft,
 } from "lucide-react"
 import {
   Dialog,
@@ -442,85 +442,51 @@ export function ComponentPreviewDialog({
         )}
         hideCloseButton
       >
-        <DialogHeader className="h-14 flex flex-row items-center justify-between border-b text-sm pl-4 pr-2.5 space-y-0 flex-shrink-0">
-          <div className="flex items-center gap-2 min-w-0 text-left">
-            <UserAvatar
-              src={
-                demo.user.display_image_url ||
-                demo.user.image_url ||
-                "/placeholder.svg"
-              }
-              alt={
-                demo.user.display_name ||
-                demo.user.name ||
-                demo.user.username ||
-                ""
-              }
-              size={24}
-              isClickable={true}
-              user={demo.user}
-            />
-            <div className="flex flex-col min-w-0">
-              <DialogTitle className="text-md font-medium flex gap-1 items-center">
-                {demo.component.name}
-                {demo.name != "Default" && (
-                  <>
-                    <Icons.slash className="text-border w-[12px] h-[12px]" />
-                    {demo.name}
-                  </>
-                )}
-              </DialogTitle>
-              <Link
-                href={`/${demo.user.display_username || demo.user.username}`}
-                className="text-xs text-muted-foreground hover:underline truncate"
-              >
-                {demo.user.display_name || demo.user.name || demo.user.username}
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex items-center h-full gap-2">
-            {isMobile ? (
-              <>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreVertical size={16} />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {!demo.component.is_paid && (
-                      <DropdownMenuItem onClick={handlePromptAction}>
-                        {selectedPromptType === "v0-open"
-                          ? "Open in v0"
-                          : "Copy prompt"}
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={toggleTheme}>
-                      Toggle theme
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleShare}>
-                      Share component
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleOpenComponentPage}>
-                      Open component page
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="h-8 w-8"
+        {!isMobile && (
+          <DialogHeader className="h-14 flex flex-row items-center justify-between border-b text-sm pl-4 pr-2.5 space-y-0 flex-shrink-0">
+            <div className="flex items-center gap-2 min-w-0 text-left">
+              <UserAvatar
+                src={
+                  demo.user.display_image_url ||
+                  demo.user.image_url ||
+                  "/placeholder.svg"
+                }
+                alt={
+                  demo.user.display_name ||
+                  demo.user.name ||
+                  demo.user.username ||
+                  ""
+                }
+                size={24}
+                isClickable={true}
+                user={demo.user}
+              />
+              <div className="flex flex-col min-w-0">
+                <DialogTitle className="text-md font-medium flex gap-1 items-center">
+                  {demo.component.name}
+                  {demo.name != "Default" && (
+                    <>
+                      <Icons.slash className="text-border w-[12px] h-[12px]" />
+                      {demo.name}
+                    </>
+                  )}
+                </DialogTitle>
+                <Link
+                  href={`/${demo.user.display_username || demo.user.username}`}
+                  className="text-xs text-muted-foreground hover:underline truncate"
                 >
-                  <X size={16} />
-                </Button>
-              </>
-            ) : (
-              renderDesktopActions()
-            )}
-          </div>
-        </DialogHeader>
+                  {demo.user.display_name ||
+                    demo.user.name ||
+                    demo.user.username}
+                </Link>
+              </div>
+            </div>
+
+            <div className="flex items-center h-full gap-2">
+              {renderDesktopActions()}
+            </div>
+          </DialogHeader>
+        )}
 
         <div
           className="flex-1 flex flex-col overflow-hidden"
@@ -548,6 +514,93 @@ export function ComponentPreviewDialog({
             </>
           )}
         </div>
+
+        {isMobile && (
+          <div className="h-14 flex flex-row items-center justify-between border-t text-sm px-4 space-y-0 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8"
+              >
+                <ArrowLeft size={16} />
+              </Button>
+              <UserAvatar
+                src={
+                  demo.user.display_image_url ||
+                  demo.user.image_url ||
+                  "/placeholder.svg"
+                }
+                alt={
+                  demo.user.display_name ||
+                  demo.user.name ||
+                  demo.user.username ||
+                  ""
+                }
+                size={24}
+                isClickable={true}
+                user={demo.user}
+              />
+              <div className="flex flex-col min-w-0">
+                <DialogTitle className="text-md font-medium flex gap-1 items-center">
+                  {demo.component.name}
+                  {demo.name != "Default" && (
+                    <>
+                      <Icons.slash className="text-border w-[12px] h-[12px]" />
+                      {demo.name}
+                    </>
+                  )}
+                </DialogTitle>
+                <Link
+                  href={`/${demo.user.display_username || demo.user.username}`}
+                  className="text-xs text-muted-foreground hover:underline truncate"
+                >
+                  {demo.user.display_name ||
+                    demo.user.name ||
+                    demo.user.username}
+                </Link>
+              </div>
+            </div>
+
+            <div className="flex items-center h-full gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {demo.component.is_paid && accessState !== "UNLOCKED" ? (
+                    <DropdownMenuItem onClick={handlePromptAction}>
+                      <div className="flex items-center gap-2">
+                        <Lock size={16} />
+                        <span>Unlock</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ) : (
+                    !demo.component.is_paid && (
+                      <DropdownMenuItem onClick={handlePromptAction}>
+                        {selectedPromptType === "v0-open"
+                          ? "Open in v0"
+                          : "Copy prompt"}
+                      </DropdownMenuItem>
+                    )
+                  )}
+                  <DropdownMenuItem onClick={toggleTheme}>
+                    Toggle theme
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleShare}>
+                    Share component
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleOpenComponentPage}>
+                    Open component page
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        )}
       </DialogContent>
 
       {showUnlockDialog && (
