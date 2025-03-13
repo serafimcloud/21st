@@ -207,6 +207,14 @@ export interface PlanLimits {
   features: string[]
   monthlyPrice?: number
   yearlyPrice?: number
+  tokenPricing: {
+    pricePerToken: {
+      monthly: number
+      yearly: number
+    }
+    componentCost: number
+    generationCost: number
+  }
 }
 
 export interface SVGLogo {

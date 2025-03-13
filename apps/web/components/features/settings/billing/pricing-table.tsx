@@ -281,7 +281,7 @@ export function PricingTable({
                         <span className="sm:hidden text-xs text-zinc-500">
                           {plan.name}:
                         </span>
-                        {getFeatureValue(feature, plan.level)}
+                        {getFeatureValue(feature, plan.level, isYearly)}
                       </div>
                     ))}
                   </div>
@@ -334,9 +334,29 @@ export function PricingTable({
 function getFeatureValue(
   feature: PricingFeature,
   planLevel: string,
+  isYearly: boolean,
 ): React.ReactNode {
   if (feature.valueByPlan && feature.valueByPlan[planLevel as PlanLevel]) {
     const value = feature.valueByPlan[planLevel as PlanLevel]
+
+    // Handle dynamic pricing for AI Generation
+    if (feature.name === "AI Generation") {
+      if (planLevel === "free") return "$0.20 per generation"
+      if (planLevel === "pro")
+        return isYearly ? "$0.16 per generation" : "$0.20 per generation"
+      if (planLevel === "pro_plus")
+        return isYearly ? "$0.12 per generation" : "$0.15 per generation"
+    }
+
+    // Handle dynamic pricing for Premium Component
+    if (feature.name === "Premium Component") {
+      if (planLevel === "free") return "Not available"
+      if (planLevel === "pro")
+        return isYearly ? "$0.80 per component" : "$1.00 per component"
+      if (planLevel === "pro_plus")
+        return isYearly ? "$0.60 per component" : "$0.75 per component"
+    }
+
     if (value === "✓") {
       return <Check className="h-4 w-4 text-blue-500" />
     }
@@ -345,7 +365,7 @@ function getFeatureValue(
     }
     // Handle special values like "5/m", "50/m", etc.
     if (value?.endsWith("/m")) {
-      return <span className="  ">{value}</span>
+      return <span>{value}</span>
     }
     // Handle "Unlimited" value
     if (value === "Unlimited") {

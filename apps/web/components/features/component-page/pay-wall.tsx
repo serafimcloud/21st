@@ -26,10 +26,16 @@ import {
   ATTRIBUTION_SOURCE,
   SOURCE_DETAIL,
 } from "@/lib/attribution-tracking"
+import { PlanType } from "@/lib/config/subscription-plans"
 
 interface PayWallProps {
   accessState: ComponentAccessState
   component: Component
+}
+
+interface SubscriptionInfo {
+  type: PlanType
+  current_period_end?: string
 }
 
 export function PayWall({ accessState, component }: PayWallProps) {
@@ -148,7 +154,7 @@ export function PayWall({ accessState, component }: PayWallProps) {
           />
         )}
 
-        {accessState === "REQUIRES_TOKENS" && (
+        {accessState === "REQUIRES_TOKENS" && userState.subscription && (
           <TokensLimitPaywall
             requiredTokens={component.price}
             subscription={userState.subscription}
@@ -163,6 +169,7 @@ export function PayWall({ accessState, component }: PayWallProps) {
             balance={userState.balance || 0}
             isProcessing={isProcessing}
             onUnlock={() => setShowUnlockDialog(true)}
+            subscription={userState.subscription ?? undefined}
           />
         )}
       </div>
@@ -246,19 +253,36 @@ export function PayWall({ accessState, component }: PayWallProps) {
   )
 }
 
+function getTokenPrice(
+  planType?: PlanType,
+  period: "monthly" | "yearly" = "monthly",
+) {
+  switch (planType) {
+    case "pro_plus":
+      return 30 / 200 // $0.15 per token
+    case "pro":
+      return 10 / 50 // $0.2 per token
+    default:
+      return 10 / 50 // Default to Pro plan price
+  }
+}
+
 function UnlockPaywall({
   component,
   balance,
+  subscription,
 }: {
   component: Component
   balance: number
   isProcessing: boolean
   onUnlock: () => void
+  subscription?: SubscriptionInfo
 }) {
   const purchaseMutation = usePurchaseComponent()
   const [showUnlockDialog, setShowUnlockDialog] = useState(false)
   const [, setComponentAccess] = useAtom(componentAccessAtom)
   const [userState, setUserState] = useAtom(userStateAtom)
+  const tokenPrice = getTokenPrice(subscription?.type, "monthly")
 
   const handleUnlockComponent = async () => {
     try {
@@ -353,7 +377,8 @@ function UnlockPaywall({
         <div className="space-y-2 mb-8">
           <h3 className="text-xl font-semibold">Premium Component</h3>
           <p className="text-muted-foreground">
-            Unlock to get full access to the component
+            Unlock for {component.price} tokens ($
+            {(component.price * tokenPrice).toFixed(2)}) to get full access
           </p>
         </div>
 
@@ -513,8 +538,8 @@ function SubscriptionPaywall({
           <h3 className="text-xl font-semibold">Premium Component</h3>
           <p className="text-muted-foreground">
             {isSignedIn
-              ? "Subscribe to access this premium component and many others."
-              : "Select a plan to access this premium component and many others."}
+              ? "Subscribe to access this premium component and many others. Get 50 tokens for $10/mo."
+              : "Select a plan to access premium components. Starting at 50 tokens for $10/mo."}
           </p>
         </div>
 
@@ -561,11 +586,12 @@ function TokensLimitPaywall({
   onUpgrade,
 }: {
   requiredTokens: number
-  subscription: any
+  subscription: SubscriptionInfo
   isProcessing: boolean
   onUpgrade: () => void
 }) {
   const isPro = subscription?.type === "pro"
+  const tokenPrice = getTokenPrice(subscription?.type, "monthly")
 
   const nextRefreshDate = subscription?.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString("en-US", {
@@ -581,7 +607,9 @@ function TokensLimitPaywall({
         <div className="space-y-2 mb-8 text-center">
           <h3 className="text-lg font-medium">Monthly Token Limit Reached</h3>
           <p className="text-sm text-muted-foreground">
-            You need {requiredTokens} tokens to unlock this component.
+            You need {requiredTokens} tokens ($
+            {(requiredTokens * tokenPrice).toFixed(2)}) to unlock this
+            component.
             <br />
             Your token balance will refresh on {nextRefreshDate}.
           </p>

@@ -3,69 +3,172 @@
  * This file contains all information about subscription plans, including limits, features, and pricing
  */
 
-import {
-  PlanType,
-  PlanPrice,
-  PlanFeature,
-  PricingPlan,
-  PlanLimits,
-} from "@/types/global"
+import { PlanType, PlanPrice, PlanFeature, PricingPlan } from "@/types/global"
 import { ReactNode } from "react"
 
 export type { PlanType }
 
+// Plan limits and basic information
+export interface PlanLimits {
+  generationsPerMonth: number
+  displayName: string
+  name: string
+  description: string
+  features: string[]
+  monthlyPrice?: number
+  yearlyPrice?: number
+  tokenPricing: {
+    pricePerToken: {
+      monthly: number
+      yearly: number
+    }
+    componentCost: number
+    generationCost: number
+  }
+}
+
+export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
+  free: {
+    generationsPerMonth: 5,
+    displayName: "Free",
+    name: "Free",
+    description: "Perfect for trying out",
+    features: [
+      "5 free tokens per month",
+      "AI Component Generation",
+      "Unlimited UI Inspirations",
+      "Unlimited SVG Logo Search",
+      "Community support",
+    ],
+    tokenPricing: {
+      pricePerToken: {
+        monthly: 0,
+        yearly: 0,
+      },
+      componentCost: 5,
+      generationCost: 1,
+    },
+  },
+  pro: {
+    generationsPerMonth: 50,
+    displayName: "Pro",
+    name: "Pro",
+    description: "For professional developers",
+    features: [
+      "50 tokens per month",
+      "Premium 21st.dev Components",
+      "AI Component Generation",
+      "Unlimited UI Inspirations",
+      "Unlimited SVG Logo Search",
+      "Priority support",
+    ],
+    monthlyPrice: 10,
+    yearlyPrice: 96,
+    tokenPricing: {
+      pricePerToken: {
+        monthly: 0.2,
+        yearly: 0.16,
+      },
+      componentCost: 5,
+      generationCost: 1,
+    },
+  },
+  pro_plus: {
+    generationsPerMonth: 200,
+    displayName: "Pro Plus",
+    name: "Pro Plus",
+    description: "For power users",
+    features: [
+      "200 tokens per month",
+      "Premium 21st.dev Components",
+      "AI Component Generation",
+      "Unlimited UI Inspirations",
+      "Unlimited SVG Logo Search",
+      "Priority support + Private Discord channel",
+    ],
+    monthlyPrice: 30,
+    yearlyPrice: 288,
+    tokenPricing: {
+      pricePerToken: {
+        monthly: 0.15,
+        yearly: 0.12,
+      },
+      componentCost: 5,
+      generationCost: 1,
+    },
+  },
+}
+
+// Move Plan interface and COMPARISON_PLANS here, after PLAN_LIMITS
 export interface Plan {
   name: string
   type: PlanType
   price: PlanPrice
+  tokenPrice: {
+    monthly: number
+    yearly: number
+  }
+  tokens: number
   buttonText: string
   buttonHref?: string
   disabled?: boolean
   popular?: boolean
 }
 
-export interface ComparisonFeature {
-  name: string
-  section: string
-  values: Record<PlanType, ReactNode>
-}
-
-export const FREE_USAGE_LIMIT = 5
-
-// Comparison plans configuration for the comparison table
 export const COMPARISON_PLANS: Plan[] = [
   {
-    name: "Free",
+    name: PLAN_LIMITS.free.displayName,
     type: "free",
     price: {
       monthly: 0,
       yearly: 0,
     },
+    tokenPrice: PLAN_LIMITS.free.tokenPricing.pricePerToken,
+    tokens: PLAN_LIMITS.free.generationsPerMonth,
     buttonText: "Current Plan",
     disabled: true,
   },
   {
-    name: "Pro",
+    name: PLAN_LIMITS.pro.displayName,
     type: "pro",
     price: {
-      monthly: 10,
-      yearly: 96,
+      monthly: PLAN_LIMITS.pro.monthlyPrice || 10,
+      yearly: PLAN_LIMITS.pro.yearlyPrice || 96,
     },
+    tokenPrice: PLAN_LIMITS.pro.tokenPricing.pricePerToken,
+    tokens: PLAN_LIMITS.pro.generationsPerMonth,
     popular: true,
-    buttonText: "Upgrade to pro_plus",
+    buttonText: "Upgrade to Pro",
     buttonHref: "/upgrade",
   },
   {
-    name: "Pro Plus",
+    name: PLAN_LIMITS.pro_plus.displayName,
     type: "pro_plus",
     price: {
-      monthly: 30,
-      yearly: 288,
+      monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 30,
+      yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 288,
     },
-    buttonText: "Upgrade to pro_plus Plus",
+    tokenPrice: PLAN_LIMITS.pro_plus.tokenPricing.pricePerToken,
+    tokens: PLAN_LIMITS.pro_plus.generationsPerMonth,
+    buttonText: "Upgrade to Pro Plus",
     buttonHref: "/pro_plus/create",
   },
 ]
+
+export interface ComparisonFeature {
+  name: string
+  section: string
+  values: Record<
+    PlanType,
+    | string
+    | {
+        monthly: string
+        yearly: string
+      }
+  >
+}
+
+export const FREE_USAGE_LIMIT = 5
 
 // Comparison features configuration for the comparison table
 export const COMPARISON_FEATURES: ComparisonFeature[] = [
@@ -73,7 +176,7 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
     name: "Monthly Tokens",
     section: "Usage",
     values: {
-      free: "5 tokens",
+      free: "5 free tokens",
       pro: "50 tokens",
       pro_plus: "200 tokens",
     },
@@ -83,17 +186,29 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
     section: "21st.dev",
     values: {
       free: "-",
-      pro: "5 tokens each",
-      pro_plus: "5 tokens each",
+      pro: {
+        monthly: "$1.00 per component",
+        yearly: "$0.80 per component",
+      },
+      pro_plus: {
+        monthly: "$0.75 per component",
+        yearly: "$0.60 per component",
+      },
     },
   },
   {
     name: "AI Component Generation",
     section: "Magic MCP",
     values: {
-      free: "1 token per generation",
-      pro: "1 token per generation",
-      pro_plus: "1 token per generation",
+      free: "$0.20 per generation",
+      pro: {
+        monthly: "$0.20 per generation",
+        yearly: "$0.16 per generation",
+      },
+      pro_plus: {
+        monthly: "$0.15 per generation",
+        yearly: "$0.12 per generation",
+      },
     },
   },
   {
@@ -133,7 +248,7 @@ export const PLAN_FEATURES: PlanFeature[] = [
     included: "free",
     category: "Resources",
     valueByPlan: {
-      free: "5 tokens",
+      free: "5 free tokens",
       pro: "50 tokens",
       pro_plus: "200 tokens",
     },
@@ -145,9 +260,9 @@ export const PLAN_FEATURES: PlanFeature[] = [
     included: "free",
     category: "Resources",
     valueByPlan: {
-      free: "1 token per generation",
-      pro: "1 token per generation",
-      pro_plus: "1 token per generation",
+      free: "$0.20 per generation",
+      pro: "$0.20 monthly / $0.16 yearly per generation",
+      pro_plus: "$0.15 monthly / $0.12 yearly per generation",
     },
   },
   {
@@ -156,8 +271,8 @@ export const PLAN_FEATURES: PlanFeature[] = [
     category: "Resources",
     valueByPlan: {
       free: "Not available",
-      pro: "5 tokens each",
-      pro_plus: "5 tokens each",
+      pro: "$1.00 monthly / $0.80 yearly per component",
+      pro_plus: "$0.75 monthly / $0.60 yearly per component",
     },
   },
 
@@ -195,55 +310,6 @@ export const PLAN_FEATURES: PlanFeature[] = [
     },
   },
 ]
-
-// Plan limits and basic information
-export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
-  free: {
-    generationsPerMonth: FREE_USAGE_LIMIT,
-    displayName: "Free",
-    name: "Free",
-    description: "Perfect for trying out",
-    features: [
-      "5 tokens per month",
-      "AI Component Generation (1 token each)",
-      "Unlimited UI Inspirations",
-      "Unlimited SVG Logo Search",
-      "Community support",
-    ],
-  },
-  pro: {
-    generationsPerMonth: 50,
-    displayName: "Pro",
-    name: "Pro",
-    description: "For professional developers",
-    features: [
-      "50 tokens per month",
-      "Premium 21st.dev Components (5 tokens each)",
-      "AI Component Generation (1 token each)",
-      "Unlimited UI Inspirations",
-      "Unlimited SVG Logo Search",
-      "Priority support",
-    ],
-    monthlyPrice: 10,
-    yearlyPrice: 96,
-  },
-  pro_plus: {
-    generationsPerMonth: 200,
-    displayName: "Pro Plus",
-    name: "Pro Plus",
-    description: "For power users",
-    features: [
-      "200 tokens per month",
-      "Premium 21st.dev Components (5 tokens each)",
-      "AI Component Generation (1 token each)",
-      "Unlimited UI Inspirations",
-      "Unlimited SVG Logo Search",
-      "Priority support + Private Discord channel",
-    ],
-    monthlyPrice: 30,
-    yearlyPrice: 288,
-  },
-}
 
 // Pricing plans configuration for the pricing table
 export const PRICING_PLANS: PricingPlan[] = [
@@ -351,4 +417,28 @@ export function getPricingCardPlans(options?: {
       popular: true,
     },
   ]
+}
+
+export function getTokenPrice(
+  planType: PlanType,
+  billingPeriod: "monthly" | "yearly" = "monthly",
+): number {
+  return (
+    PLAN_LIMITS[planType]?.tokenPricing?.pricePerToken[billingPeriod] ||
+    PLAN_LIMITS.pro.tokenPricing.pricePerToken[billingPeriod]
+  )
+}
+
+export function getComponentCost(planType: PlanType): number {
+  return (
+    PLAN_LIMITS[planType]?.tokenPricing?.componentCost ||
+    PLAN_LIMITS.pro.tokenPricing!.componentCost
+  )
+}
+
+export function getGenerationCost(planType: PlanType): number {
+  return (
+    PLAN_LIMITS[planType]?.tokenPricing?.generationCost ||
+    PLAN_LIMITS.pro.tokenPricing!.generationCost
+  )
 }
