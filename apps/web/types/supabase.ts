@@ -1969,6 +1969,7 @@ export type Database = {
           total_count: number
           view_count: number
           bookmarks_count: number
+          bundle_url: Json
         }[]
       }
       get_liked_components: {
@@ -2049,6 +2050,17 @@ export type Database = {
           user_data: Json
           downloads_count: number
           likes_count: number
+        }[]
+      }
+      get_top_components_for_email: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          description: string
+          username: string
+          component_slug: string
+          preview_url: string
         }[]
       }
       get_user_bookmarks_list: {
