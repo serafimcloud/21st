@@ -6,7 +6,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: components } = await supabaseWithAdminAccess
     .from("components")
-    .select("component_slug, user:users!inner(username), updated_at")
+    .select(
+      "component_slug, user_id, users!components_user_id_fkey(username), updated_at",
+    )
     .eq("is_public", true)
 
   const { data: tags } = await supabaseWithAdminAccess
@@ -16,18 +18,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: users } = await supabaseWithAdminAccess
     .from("users")
     .select("username, updated_at")
-  const componentUrls = (components || []).map(
-    (component: {
-      component_slug: string
-      user: { username: string | null }
-      updated_at: string
-    }) => ({
-      url: `${baseUrl}/${component.user.username}/${component.component_slug}`,
-      lastModified: component.updated_at,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    }),
-  )
+
+  const componentUrls = (components || []).map((component) => ({
+    url: `${baseUrl}/${component.users?.username}/${component.component_slug}`,
+    lastModified: component.updated_at,
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+  }))
 
   const tagUrls = (tags || []).map((tag) => ({
     url: `${baseUrl}/s/${tag.slug}`,
