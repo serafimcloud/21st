@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ApiKey } from "@/types/global"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { useQuery } from "@tanstack/react-query"
@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { motion, AnimatePresence } from "motion/react"
 import { toast } from "sonner"
+import { useAuth } from "@clerk/nextjs"
 
 // Define the onboarding steps
 export type OnboardingStep =
@@ -43,6 +44,49 @@ const defaultOnboardingState: OnboardingState = {
 
 // Local storage key
 const ONBOARDING_STATE_KEY = "magic_onboarding_state"
+
+// Helper to safely interact with localStorage
+const safeStorage = {
+  isAvailable: () => {
+    try {
+      const testKey = "test_storage"
+      localStorage.setItem(testKey, testKey)
+      localStorage.removeItem(testKey)
+      return true
+    } catch (e) {
+      return false
+    }
+  },
+  getItem: (key: string): string | null => {
+    try {
+      if (!safeStorage.isAvailable()) return null
+      return localStorage.getItem(key)
+    } catch (e) {
+      console.error("Failed to get item from localStorage:", e)
+      return null
+    }
+  },
+  setItem: (key: string, value: string): boolean => {
+    try {
+      if (!safeStorage.isAvailable()) return false
+      localStorage.setItem(key, value)
+      return true
+    } catch (e) {
+      console.error("Failed to set item in localStorage:", e)
+      return false
+    }
+  },
+  removeItem: (key: string): boolean => {
+    try {
+      if (!safeStorage.isAvailable()) return false
+      localStorage.removeItem(key)
+      return true
+    } catch (e) {
+      console.error("Failed to remove item from localStorage:", e)
+      return false
+    }
+  },
+}
 
 interface OnboardingClientProps {
   initialApiKey: ApiKey | null
@@ -95,39 +139,114 @@ const UpgradeProStep = dynamic(
 
 export function OnboardingClient({
   initialApiKey,
-  userId,
+  userId: initialUserId,
 }: OnboardingClientProps) {
   const [apiKey, setApiKey] = useState<ApiKey | null>(initialApiKey)
   const [onboardingState, setOnboardingState] = useState<OnboardingState>(
     defaultOnboardingState,
   )
   const [isCreatingApiKey, setIsCreatingApiKey] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [detectedOs, setDetectedOs] = useState<OsType>("mac")
+  const { userId: clerkUserId, isLoaded: isAuthLoaded } = useAuth()
+
+  const currentUserId = clerkUserId || initialUserId
+  const initRef = useRef(false)
+
   const supabase = useClerkSupabaseClient()
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Check if user has created components
-  const { data: hasCreatedComponent } = useQuery({
-    queryKey: ["hasCreatedComponent", userId],
-    queryFn: async () => {
-      if (!userId) return false
+  // Detect OS once on mount
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent.toLowerCase()
+    let os: OsType = "mac"
 
-      const { data, error } = await supabase
-        .from("mcp_generation_requests")
-        .select("id")
-        .eq("user_id", userId)
-        .limit(1)
+    if (userAgent.includes("windows")) {
+      os = "windows"
+    } else if (userAgent.includes("linux")) {
+      os = "linux"
+    }
 
-      if (error) {
-        console.error("Error checking generation requests:", error)
-        return false
+    setDetectedOs(os)
+  }, [])
+
+  // Handle authentication changes
+  useEffect(() => {
+    if (!isAuthLoaded) return
+
+    // If no user is authenticated, clear localStorage to prevent state leakage
+    if (!currentUserId) {
+      safeStorage.removeItem(ONBOARDING_STATE_KEY)
+      setOnboardingState((prev) => ({
+        ...defaultOnboardingState,
+        osType: prev.osType, // Preserve OS detection
+      }))
+    }
+
+    // Initialize state after auth is loaded
+    if (!initRef.current) {
+      initializeState()
+      initRef.current = true
+    }
+
+    // Cleanup function
+    return () => {
+      initRef.current = false
+    }
+  }, [currentUserId, isAuthLoaded])
+
+  // Initialize state from localStorage and URL
+  const initializeState = () => {
+    // Check URL params for step
+    const stepParam = searchParams.get("step") as OnboardingStep | null
+
+    // Get stored state from localStorage (only if user is authenticated)
+    let parsedState: OnboardingState | null = null
+
+    if (currentUserId) {
+      const savedState = safeStorage.getItem(ONBOARDING_STATE_KEY)
+
+      if (savedState) {
+        try {
+          parsedState = JSON.parse(savedState) as OnboardingState
+        } catch (e) {
+          console.error("Failed to parse onboarding state:", e)
+        }
+      }
+    }
+
+    // If we have a valid step in URL, use it
+    if (stepParam && VALID_STEPS.includes(stepParam)) {
+      const baseState = parsedState || defaultOnboardingState
+
+      const newState = {
+        ...baseState,
+        osType: detectedOs,
+        currentStep: stepParam,
       }
 
-      return data && data.length > 0
-    },
-    enabled: !!userId,
-    refetchInterval: 5000, // Check every 5 seconds
-  })
+      setOnboardingState(newState)
+
+      if (currentUserId) {
+        safeStorage.setItem(ONBOARDING_STATE_KEY, JSON.stringify(newState))
+      }
+    } else if (parsedState) {
+      // Use parsed state
+      setOnboardingState({
+        ...parsedState,
+        osType: detectedOs,
+      })
+    } else {
+      // Use default state
+      setOnboardingState({
+        ...defaultOnboardingState,
+        osType: detectedOs,
+      })
+    }
+
+    setIsInitialized(true)
+  }
 
   // Define valid steps array
   const VALID_STEPS = [
@@ -139,70 +258,42 @@ export function OnboardingClient({
     "upgrade-pro",
   ] as const
 
-  // Initialize onboarding state from localStorage and URL params
+  // Re-initialize when URL changes
   useEffect(() => {
-    // Detect OS
-    const userAgent = window.navigator.userAgent.toLowerCase()
-    let detectedOs: OsType = "mac"
-
-    if (userAgent.includes("windows")) {
-      detectedOs = "windows"
-    } else if (userAgent.includes("linux")) {
-      detectedOs = "linux"
-    }
-
-    // Check URL params for step
-    const stepParam = searchParams.get("step") as OnboardingStep | null
-
-    // If we have a valid step in URL, use it as the base for state
-    if (stepParam && VALID_STEPS.includes(stepParam)) {
-      const savedState = localStorage.getItem(ONBOARDING_STATE_KEY)
-      let baseState: OnboardingState
-
-      try {
-        baseState = savedState ? JSON.parse(savedState) : defaultOnboardingState
-      } catch (e) {
-        baseState = defaultOnboardingState
-      }
-
-      const newState = {
-        ...baseState,
-        osType: detectedOs,
-        currentStep: stepParam,
-      }
-
-      setOnboardingState(newState)
-      localStorage.setItem(ONBOARDING_STATE_KEY, JSON.stringify(newState))
-      return
-    }
-
-    // If no valid URL param, fall back to localStorage
-    const savedState = localStorage.getItem(ONBOARDING_STATE_KEY)
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState) as OnboardingState
-        setOnboardingState({
-          ...parsedState,
-          osType: detectedOs,
-        })
-      } catch (e) {
-        setOnboardingState({
-          ...defaultOnboardingState,
-          osType: detectedOs,
-        })
-      }
-    } else {
-      setOnboardingState({
-        ...defaultOnboardingState,
-        osType: detectedOs,
-      })
+    if (isInitialized && isAuthLoaded) {
+      initializeState()
     }
   }, [searchParams])
 
   // Save onboarding state to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem(ONBOARDING_STATE_KEY, JSON.stringify(onboardingState))
-  }, [onboardingState])
+    if (!isInitialized || !currentUserId) return
+
+    safeStorage.setItem(ONBOARDING_STATE_KEY, JSON.stringify(onboardingState))
+  }, [onboardingState, currentUserId, isInitialized])
+
+  // Check if user has created components
+  const { data: hasCreatedComponent } = useQuery({
+    queryKey: ["hasCreatedComponent", currentUserId],
+    queryFn: async () => {
+      if (!currentUserId) return false
+
+      const { data, error } = await supabase
+        .from("mcp_generation_requests")
+        .select("id")
+        .eq("user_id", currentUserId)
+        .limit(1)
+
+      if (error) {
+        console.error("Error checking generation requests:", error)
+        return false
+      }
+
+      return data && data.length > 0
+    },
+    enabled: !!currentUserId && isInitialized,
+    refetchInterval: 5000, // Check every 5 seconds
+  })
 
   // Handle step completion
   const completeStep = (step: OnboardingStep, nextStep: OnboardingStep) => {
@@ -277,6 +368,11 @@ export function OnboardingClient({
     }
   }
 
+  // Don't render until auth is loaded
+  if (!isAuthLoaded) {
+    return null
+  }
+
   // Render the current step
   const renderCurrentStep = () => {
     switch (onboardingState.currentStep) {
@@ -285,8 +381,8 @@ export function OnboardingClient({
           <WelcomeStep
             onComplete={async () => {
               // Generate API key when welcome step is completed (if user is authenticated and doesn't have one)
-              if (userId && !apiKey) {
-                const createdKey = await createApiKeyForUser(userId)
+              if (currentUserId && !apiKey) {
+                const createdKey = await createApiKeyForUser(currentUserId)
                 if (!createdKey) {
                   // If the API key creation fails, show an error but allow to continue
                   toast.error(
@@ -296,7 +392,7 @@ export function OnboardingClient({
               }
               completeStep("welcome", "select-ide")
             }}
-            isAuthenticated={!!userId}
+            isAuthenticated={!!currentUserId}
           />
         )
       case "select-ide":
@@ -315,8 +411,8 @@ export function OnboardingClient({
             selectedIde={onboardingState.selectedIde || "cursor"}
             osType={onboardingState.osType}
             onGenerateApiKey={async () => {
-              if (userId) {
-                const createdKey = await createApiKeyForUser(userId)
+              if (currentUserId) {
+                const createdKey = await createApiKeyForUser(currentUserId)
                 if (createdKey) {
                   toast.success("API key generated successfully!")
                 }
@@ -396,7 +492,7 @@ export function OnboardingClient({
                   ...new Set([...onboardingState.completedSteps, upgradePro]),
                 ],
               }
-              localStorage.setItem(
+              safeStorage.setItem(
                 ONBOARDING_STATE_KEY,
                 JSON.stringify(updatedState),
               )
