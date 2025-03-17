@@ -30,6 +30,13 @@ function AddDemoContent() {
           return
         }
 
+        const componentIdNum = parseInt(componentId, 10)
+
+        if (isNaN(componentIdNum)) {
+          setError("Invalid component ID")
+          return
+        }
+
         const { data: component, error: supabaseError } = await supabase
           .from("components")
           .select(
@@ -38,7 +45,7 @@ function AddDemoContent() {
             user:users!components_user_id_fkey(*)
           `,
           )
-          .eq("id", componentId)
+          .eq("id", componentIdNum)
           .single()
 
         if (supabaseError) {
