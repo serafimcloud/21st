@@ -4,6 +4,6 @@ export function Code({
 }: {
   children: React.ReactNode
   className?: string
-}): JSX.Element {
+}): React.ReactElement {
   return <code className={className}>{children}</code>
 }

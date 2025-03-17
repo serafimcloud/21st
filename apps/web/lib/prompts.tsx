@@ -12,7 +12,7 @@ interface PromptOptionBase {
   label: string
   description: string
   action: "copy" | "open"
-  icon: JSX.Element
+  icon: React.ReactElement
 }
 
 interface PromptSeparator {
