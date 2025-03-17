@@ -21,7 +21,7 @@ export function AppProviders({
   children,
 }: {
   children: React.ReactNode
-}): JSX.Element {
+}): React.ReactElement {
   const [open, setOpen] = useAtom(sidebarOpenAtom)
   const shouldShowSidebar = useSidebarVisibility()
 
