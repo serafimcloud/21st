@@ -186,6 +186,7 @@ export function UserComponentsHeader({
             </TabsList>
           </Tabs>
         </div>
+        
 
         <div className="flex items-center gap-2 md:w-auto min-w-0">
           <div className="relative flex-1 min-w-0 lg:min-w-[250px] md:min-w-[100px]">
