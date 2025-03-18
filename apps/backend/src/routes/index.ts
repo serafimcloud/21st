@@ -11,11 +11,14 @@ import { editorHTML } from "../server/editor"
 export const setupRoutes = (req: Request) => {
   const url = new URL(req.url)
   const origin = req.headers.get("origin")
-  const allowedOrigins = ["http://localhost:3000", "https://21st.dev"]
+
+  const staticAllowedOrigins = ["http://localhost:3000", "https://21st.dev"]
+
+  const isAllowedOrigin =
+    origin && (staticAllowedOrigins.includes(origin) || isLocalDomain(origin))
+
   const headers = {
-    "Access-Control-Allow-Origin": allowedOrigins.includes(origin ?? "")
-      ? (origin ?? "")
-      : "",
+    "Access-Control-Allow-Origin": isAllowedOrigin ? origin : "",
     "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
     "Access-Control-Allow-Headers": "Content-Type",
   }
@@ -78,16 +81,20 @@ async function handleCompileCss(req: Request, headers: Record<string, string>) {
       .join("\n")
 
     const filteredDemoCode = demoCode
-      .split("\n")
-      .filter((line: string) => !line.trim().startsWith("import"))
-      .join("\n")
+      ? demoCode
+          .split("\n")
+          .filter((line: string) => !line.trim().startsWith("import"))
+          .join("\n")
+      : ""
 
-    const filteredDependencies = dependencies.map((dep: string) =>
-      dep
-        .split("\n")
-        .filter((line: string) => !line.trim().startsWith("import"))
-        .join("\n"),
-    )
+    const filteredDependencies = dependencies
+      ? dependencies.map((dep: string) =>
+          dep
+            .split("\n")
+            .filter((line: string) => !line.trim().startsWith("import"))
+            .join("\n"),
+        )
+      : []
 
     try {
       const css = await compileCSS({
@@ -267,5 +274,29 @@ async function handleStaticFile(url: URL, headers: Record<string, string>) {
     })
   } catch (error) {
     return new Response("Not Found", { status: 404, headers })
+  }
+}
+
+function isLocalDomain(origin: string) {
+  if (!origin) return false
+
+  try {
+    const url = new URL(origin)
+
+    // Allow any localhost regardless of port
+    if (url.hostname === "localhost") return true
+
+    // Allow local IP addresses (192.168.x.x)
+    if (url.hostname.startsWith("192.168.")) return true
+
+    // Allow local IP addresses (127.0.0.x)
+    if (url.hostname.startsWith("127.0.0.")) return true
+
+    // Allow local hostname variations (*.local)
+    if (url.hostname.endsWith(".local")) return true
+
+    return false
+  } catch {
+    return false
   }
 }
