@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { SearchResponseMCP } from "@/types/global"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import fetchFileTextContent from "@/lib/utils/fetchFileTextContent"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
 
 interface SearchResult {
   id: number
@@ -29,11 +30,22 @@ export async function POST(request: NextRequest) {
       { api_key: apiKey },
     )
     if (keyError) {
-      console.error("API key check error:", keyError)
-      return NextResponse.json(
-        { error: "Error validating API key" },
-        { status: 401 },
-      )
+      // Check API key in api_keys table
+      const { data: apiKeyData, error: apiKeyError } =
+        await supabaseWithAdminAccess
+          .from("api_keys")
+          .select("*")
+          .eq("key", apiKey)
+          .eq("is_active", true)
+          .single()
+
+      // If key is not found or inactive
+      if (apiKeyError || !apiKeyData) {
+        return NextResponse.json(
+          { success: false, error: "Invalid or inactive API key" },
+          { status: 401 },
+        )
+      }
     }
 
     if (!keyCheck?.valid) {
