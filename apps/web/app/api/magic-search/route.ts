@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       "check_api_key",
       { api_key: apiKey },
     )
-    if (keyError) {
+    if (keyError || !keyCheck?.valid) {
       // Check API key in api_keys table
       const { data: apiKeyData, error: apiKeyError } =
         await supabaseWithAdminAccess
@@ -46,13 +46,6 @@ export async function POST(request: NextRequest) {
           { status: 401 },
         )
       }
-    }
-
-    if (!keyCheck?.valid) {
-      return NextResponse.json(
-        { error: keyCheck?.error || "Invalid API key" },
-        { status: 401 },
-      )
     }
 
     const body = await request.json()
