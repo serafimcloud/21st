@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { LoaderCircle, ExternalLink, ArrowRight, Check } from "lucide-react"
 
@@ -20,7 +20,6 @@ import { ConfirmationDialog } from "@/components/features/settings/billing/confi
 import { UpgradeConfirmationDialog } from "@/components/features/settings/billing/upgrade-confirmation-dialog"
 import { InvoicesList } from "@/components/features/settings/billing/invoices-list"
 import { useSubscription, PlanInfo } from "@/hooks/use-subscription"
-import { useAuth } from "@clerk/nextjs"
 import { CircleProgress } from "@/components/ui/circle-progress"
 import {
   trackAttribution,
@@ -70,7 +69,6 @@ export function BillingSettingsClient({
   successParam = false,
   canceledParam = false,
 }: BillingSettingsClientProps) {
-  const { userId } = useAuth()
   const [subscription, setSubscription] = useState(initialSubscription)
   const { fetchSubscription } = useSubscription()
   const [isLoading, setIsLoading] = useState(false)
