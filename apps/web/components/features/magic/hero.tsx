@@ -252,7 +252,7 @@ export function Hero() {
                 ) : (
                   <>
                     Get Started
-                    <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-muted leading-none opacity-100 flex">
+                    <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100 flex">
                       <Icons.enter className="h-2.5 w-2.5" />
                     </kbd>
                   </>
