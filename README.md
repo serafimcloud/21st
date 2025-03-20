@@ -287,3 +287,5 @@ To ensure your component gets featured, follow these guidelines:
 Remember: Quality over quantity! We'd rather have fewer, well-crafted components than many that don't meet our standards.
 
 ---
+
+21st Labs Inc.
