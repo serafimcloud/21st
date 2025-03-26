@@ -11,6 +11,12 @@ import Image from "next/image"
 
 import { Copy, Check, RefreshCw, AlertTriangle, Hammer } from "lucide-react"
 import { useState } from "react"
+import {
+  getInstallCommand,
+  getMcpConfigJson,
+  IdeOption,
+} from "@/lib/config/magic-mcp"
+import { toast } from "sonner"
 
 interface IdeInstructionsProps {
   apiKey: ApiKey | null
@@ -22,30 +28,16 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
   const [copiedCommand, setCopiedCommand] = useState(false)
   const [copiedApiKey, setCopiedApiKey] = useState(false)
   const [copiedConfig, setCopiedConfig] = useState(false)
-  const [activeTab, setActiveTab] = useState("cursor")
+  const [activeTab, setActiveTab] = useState<IdeOption>("cursor")
 
-  const getCommandForTab = (tab: string) => {
-    if (!apiKey) return ""
-
-    const windowsPrefix =
-      selectedOS === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""
-
-    switch (tab) {
-      case "cursor":
-        return `${windowsPrefix}npx -y @smithery/cli@latest run @21st-dev/magic-mcp --config "{\\\"TWENTY_FIRST_API_KEY\\\":\\\"${apiKey.key}\\\"}"`
-      case "windsurf":
-        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf`
-      case "cline":
-        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline`
-      default:
-        return ""
-    }
-  }
+  const command = apiKey
+    ? getInstallCommand(activeTab, apiKey.key, selectedOS)
+    : ""
 
   const handleCopy = async () => {
     if (!apiKey) return
     try {
-      await navigator.clipboard.writeText(getCommandForTab(activeTab))
+      await navigator.clipboard.writeText(command)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
@@ -78,29 +70,22 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
     }
   }
 
-  const handleCopyConfig = async () => {
+  const handleCopyConfig = () => {
     if (!apiKey) return
     try {
-      const config = `{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey?.key || "YOUR_API_KEY"}\\\\"}\\"" 
-      ]
-    }
-  }
-}`
-      await navigator.clipboard.writeText(config)
+      const config = getMcpConfigJson(apiKey.key)
+      const textArea = document.createElement("textarea")
+      textArea.value = config
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
       setCopiedConfig(true)
+      toast.success("Configuration copied to clipboard")
       setTimeout(() => setCopiedConfig(false), 2000)
     } catch (err) {
       console.error("Failed to copy config:", err)
+      toast.error("Failed to copy configuration")
     }
   }
 
@@ -116,7 +101,7 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
       <Tabs
         defaultValue="cursor"
         className="space-y-4"
-        onValueChange={setActiveTab}
+        onValueChange={(value) => setActiveTab(value as IdeOption)}
       >
         <TabsList className="min-h-[56px] rounded-md p-0.5 h-auto flex-wrap gap-2 sm:h-[56px] w-full sm:w-auto">
           <TabsTrigger
@@ -237,7 +222,7 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                           <input
                             type="text"
                             readOnly
-                            value={getCommandForTab("cursor")}
+                            value={command}
                             className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                           />
                           <button
@@ -355,21 +340,7 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                     {apiKey ? (
                       <div className="relative">
                         <Code
-                          code={`{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey.key}\\\\"}\\"" 
-      ]
-    }
-  }
-}`}
+                          code={getMcpConfigJson(apiKey.key)}
                           language="json"
                           className="overflow-x-auto bg-muted"
                           display="block"

@@ -33,6 +33,7 @@ import {
   ATTRIBUTION_SOURCE,
   SOURCE_DETAIL,
 } from "@/lib/attribution-tracking"
+import { getInstallCommand, getMcpConfigJson } from "@/lib/config/magic-mcp"
 
 interface ConsoleClientProps {
   subscription: PlanInfo | null
@@ -273,23 +274,9 @@ export function ConsoleClient({
   }
 
   // Function to get the IDE installation command
-  const getCommandForIde = () => {
-    if (!apiKey) return ""
-
-    const windowsPrefix =
-      osType === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""
-
-    switch (selectedIde) {
-      case "cursor":
-        return `${windowsPrefix}npx -y @smithery/cli@latest run @21st-dev/magic-mcp --config "{\\\"TWENTY_FIRST_API_KEY\\\":\\\"${apiKey.key}\\\"}"`
-      case "windsurf":
-        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf`
-      case "cline":
-        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline`
-      default:
-        return ""
-    }
-  }
+  const command = apiKey
+    ? getInstallCommand(selectedIde, apiKey.key, osType)
+    : ""
 
   // Function to mask API key with dots
   const getMaskedApiKey = (key: string) => {
@@ -362,7 +349,7 @@ export function ConsoleClient({
     if (!apiKey) return
     try {
       const textArea = document.createElement("textarea")
-      textArea.value = getCommandForIde()
+      textArea.value = command
       document.body.appendChild(textArea)
       textArea.select()
       document.execCommand("copy")
@@ -399,21 +386,7 @@ export function ConsoleClient({
   const handleCopyConfig = () => {
     if (!apiKey) return
     try {
-      const config = `{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey.key}\\\\\\\"}\\\""
-      ]
-    }
-  }
-}`
+      const config = getMcpConfigJson(apiKey.key)
       const textArea = document.createElement("textarea")
       textArea.value = config
       document.body.appendChild(textArea)
@@ -708,7 +681,7 @@ export function ConsoleClient({
                               <input
                                 type="text"
                                 readOnly
-                                value={getCommandForIde()}
+                                value={command}
                                 className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                               />
                               <Button
@@ -939,7 +912,7 @@ export function ConsoleClient({
                               <input
                                 type="text"
                                 readOnly
-                                value={getCommandForIde()}
+                                value={command}
                                 className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                               />
                               <Button

@@ -17,6 +17,7 @@ import Image from "next/image"
 import { Icons } from "@/components/icons"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { toast } from "sonner"
+import { getInstallCommand, getMcpConfigJson } from "@/lib/config/magic-mcp"
 
 interface InstallIdeStepProps {
   apiKey: ApiKey | null
@@ -76,23 +77,9 @@ export function InstallIdeStep({
     return () => window.removeEventListener("focus", handleFocus)
   }, [selectedIde, clineState, apiKey])
 
-  const getCommandForIde = () => {
-    if (!apiKey) return ""
-
-    const windowsPrefix =
-      osType === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""
-
-    switch (selectedIde) {
-      case "cursor":
-        return `${windowsPrefix}npx -y @smithery/cli@latest run @21st-dev/magic-mcp --config "{\\\"TWENTY_FIRST_API_KEY\\\":\\\"${apiKey.key}\\\"}"`
-      case "windsurf":
-        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client windsurf`
-      case "cline":
-        return `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline`
-      default:
-        return ""
-    }
-  }
+  const command = apiKey
+    ? getInstallCommand(selectedIde, apiKey.key, osType)
+    : ""
 
   // Add keyboard shortcut for Enter key
   useEffect(() => {
@@ -120,7 +107,7 @@ export function InstallIdeStep({
     if (!apiKey) return
     try {
       const textArea = document.createElement("textarea")
-      textArea.value = getCommandForIde()
+      textArea.value = command
       document.body.appendChild(textArea)
       textArea.select()
       document.execCommand("copy")
@@ -136,21 +123,7 @@ export function InstallIdeStep({
   const handleCopyConfig = () => {
     if (!apiKey) return
     try {
-      const config = `{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "${osType === "windows" ? "C:\\\\Windows\\\\System32\\\\cmd.exe" : "npx"}",
-      "args": [
-        ${osType === "windows" ? '"/c",' : ""} ${osType === "windows" ? '"npx",' : ""}"-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey?.key}\\\\\\\"}\\\""
-      ]
-    }
-  }
-}`
+      const config = getMcpConfigJson(apiKey.key)
       const textArea = document.createElement("textarea")
       textArea.value = config
       document.body.appendChild(textArea)
@@ -158,10 +131,11 @@ export function InstallIdeStep({
       document.execCommand("copy")
       document.body.removeChild(textArea)
       setCopiedConfig(true)
-      toast.success("MCP Configuration copied to clipboard")
+      toast.success("Configuration copied to clipboard")
       setTimeout(() => setCopiedConfig(false), 2000)
     } catch (err) {
       console.error("Failed to copy config:", err)
+      toast.error("Failed to copy configuration")
     }
   }
 
@@ -277,7 +251,7 @@ export function InstallIdeStep({
                             <input
                               type="text"
                               readOnly
-                              value={getCommandForIde()}
+                              value={command}
                               className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                             />
                             <button
