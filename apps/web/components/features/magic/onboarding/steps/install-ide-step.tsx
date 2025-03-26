@@ -170,202 +170,183 @@ export function InstallIdeStep({
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="auto" className="flex flex-col gap-4">
-                <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                  <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                    1
-                  </div>
-                  <div className="space-y-3 flex-1">
-                    <h3 className="font-medium text-base sm:text-lg">
-                      Open Cursor Settings
-                    </h3>
-                    <div className="text-sm text-muted-foreground space-y-2">
-                      <p>Use keyboard shortcut:</p>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-1">
-                          <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
-                            {osType === "windows" ? "Ctrl" : "⌘"}
-                          </kbd>
-                          +
-                          <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[13px] leading-none font-sans">
-                            ,
-                          </kbd>
-                        </div>
-                        <span className="text-xs">
-                          (
-                          {osType === "windows"
-                            ? "Windows"
-                            : osType === "mac"
-                              ? "Mac"
-                              : "Linux"}
-                          )
-                        </span>
-                      </div>
-                      <p className="mt-2">Navigate to:</p>
-                      <p className="text-primary font-medium break-words text-sm sm:text-base">
-                        Cursor → Full Settings → MCP
-                      </p>
+                <div className="space-y-6">
+                  {/* Step 1 */}
+                  <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                    <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                      1
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                    2
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="font-medium">Add MCP Server</h3>
-                    <div className="text-sm text-muted-foreground space-y-2">
-                      <p>Click "+ Add New MCP Server" and fill in:</p>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Name:</span>
-                          <Code
-                            className="text-primary bg-muted px-2 py-0.5 rounded text-xs"
-                            code={"Magic"}
+                    <div className="space-y-3 w-full">
+                      <h3 className="font-medium">Run Installation Command</h3>
+                      <div className="text-sm text-muted-foreground space-y-2">
+                        <p>Run this command in your terminal:</p>
+                        <div className="bg-muted rounded-md flex items-center w-full group relative">
+                          <input
+                            type="text"
+                            readOnly
+                            value={getInstallCommand(
+                              selectedIde,
+                              apiKey?.key || "",
+                              osType,
+                            )}
+                            className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                           />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Type:</span>
-                          <Code
-                            className="text-primary bg-muted px-2 py-0.5 rounded text-xs"
-                            code={"command"}
-                          />
+                          <button
+                            className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors shrink-0 mr-1"
+                            onClick={handleCopy}
+                          >
+                            {copied ? (
+                              <>
+                                <Check className="h-3.5 w-3.5 text-green-500" />
+                                <span className="text-xs text-green-500">
+                                  Copied!
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3.5 w-3.5" />
+                                <span className="text-xs">Copy</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                    3
-                  </div>
-                  <div className="space-y-3 w-full">
-                    <h3 className="font-medium">Add Magic Command</h3>
-                    <div className="text-sm text-muted-foreground space-y-2">
-                      <p>Paste into Command field:</p>
-                      {apiKey ? (
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <div className="bg-muted rounded-md flex-1 flex items-center w-full group relative">
-                            <input
-                              type="text"
-                              readOnly
-                              value={getInstallCommand(
-                                selectedIde,
-                                apiKey.key,
-                                osType,
-                              )}
-                              className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
-                            />
-                            <button
-                              className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors shrink-0 mr-1"
-                              onClick={handleCopy}
-                            >
-                              {copied ? (
-                                <>
-                                  <Check className="h-3.5 w-3.5 text-green-500" />
-                                  <span className="text-xs text-green-500">
-                                    Copied
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="h-3.5 w-3.5" />
-                                  <span className="text-xs">Copy</span>
-                                </>
-                              )}
-                            </button>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                      2
+                    </div>
+                    <div className="space-y-3 w-full">
+                      <h3 className="font-medium text-base sm:text-lg">
+                        Verify Connection
+                      </h3>
+                      <div className="text-sm text-muted-foreground space-y-2">
+                        <p>Use keyboard shortcut to open settings:</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
+                              {osType === "windows" ? "Ctrl" : "⌘"}
+                            </kbd>
+                            +
+                            <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[13px] leading-none font-sans">
+                              ,
+                            </kbd>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="text-yellow-500 flex items-center gap-2 text-sm">
-                          <span>
-                            API key not found. Please go back and get an API key
-                            first.
+                          <span className="text-xs">
+                            (
+                            {osType === "windows"
+                              ? "Windows"
+                              : osType === "mac"
+                                ? "Mac"
+                                : "Linux"}
+                            )
                           </span>
                         </div>
-                      )}
+                        <p className="mt-2">Navigate to:</p>
+                        <p className="text-primary font-medium break-words text-sm sm:text-base">
+                          Cursor → Full Settings → MCP
+                        </p>
+                        <div className="flex items-center gap-2 text-sm mt-4">
+                          <Check className="h-3.5 w-3.5 text-green-500" />
+                          <span>
+                            Magic MCP should now be available in the server list
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </TabsContent>
               <TabsContent value="manual" className="mt-4">
                 <div className="text-sm text-muted-foreground space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="font-medium text-sm">
-                      Edit MCP Configuration File
-                    </h3>
-                    <p>
-                      Create or edit the file{" "}
-                      <span className="text-primary bg-muted px-2 py-0.5 rounded text-xs break-all">
-                        .cursor/mcp.json
-                      </span>{" "}
-                      in your project root and add the following configuration:
-                    </p>
-                    {apiKey ? (
-                      <div className="relative">
-                        <Code
-                          language="json"
-                          className="overflow-x-auto bg-muted"
-                          display="block"
-                          code={getMcpConfigJson(apiKey.key, osType)}
-                        />
-                        <button
-                          className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors"
-                          onClick={handleCopyConfig}
-                        >
-                          {copiedConfig ? (
-                            <>
-                              <Check className="h-3.5 w-3.5 text-green-500" />
-                              <span className="text-xs text-green-500">
-                                Copied!
-                              </span>
-                            </>
+                  <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                        1
+                      </div>
+                      <div className="space-y-3 w-full">
+                        <h3 className="font-medium">Open MCP Settings</h3>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                          <p>Use keyboard shortcut to open settings:</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 inline-flex text-[11px] leading-none font-sans">
+                                {osType === "windows" ? "Ctrl" : "⌘"}
+                              </kbd>
+                              +
+                              <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 inline-flex text-[13px] leading-none font-sans">
+                                ,
+                              </kbd>
+                            </div>
+                          </div>
+                          <p className="mt-2">Navigate to:</p>
+                          <p className="text-primary font-medium break-words text-sm sm:text-base">
+                            Cursor → Full Settings → MCP
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
+                        2
+                      </div>
+                      <div className="space-y-3 w-full">
+                        <h3 className="font-medium">
+                          Add MCP Server Configuration
+                        </h3>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                          <div className="flex items-start gap-2.5 text-sm">
+                            <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span>
+                              Click "+ Add new global MCP server" button
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-2.5 text-sm">
+                            <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span>
+                              Copy paste this code into opened mcp.json
+                            </span>
+                          </div>
+                          {apiKey ? (
+                            <div className="relative">
+                              <Code
+                                language="json"
+                                className="overflow-x-auto bg-muted"
+                                display="block"
+                                code={getMcpConfigJson(apiKey.key, osType)}
+                              />
+                              <button
+                                className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors"
+                                onClick={handleCopyConfig}
+                              >
+                                {copiedConfig ? (
+                                  <>
+                                    <Check className="h-3.5 w-3.5 text-green-500" />
+                                    <span className="text-xs text-green-500">
+                                      Copied!
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-3.5 w-3.5" />
+                                    <span className="text-xs">Copy</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           ) : (
-                            <>
-                              <Copy className="h-3.5 w-3.5" />
-                              <span className="text-xs">Copy</span>
-                            </>
+                            <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+                              Generate an API key first
+                            </div>
                           )}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-                        Generate an API key first
-                      </div>
-                    )}
-                    <div className="space-y-3 mt-4">
-                      <h4 className="text-sm font-medium">Next steps:</h4>
-                      <div className="flex items-start gap-2.5 text-sm">
-                        <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span>
-                          Save the configuration file to your project root
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2.5 text-sm">
-                        <RefreshCw className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                        <span>
-                          Cursor will automatically detect the configuration
-                          file and initialize the MCP server
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2.5 text-sm">
-                        <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <span>Enable MCP in Cursor settings:</span>
-                          <div className="mt-1.5 flex items-center gap-1.5">
-                            <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 inline-flex text-[11px] leading-none font-sans">
-                              {osType === "windows" ? "Ctrl" : "⌘"}
-                            </kbd>
-                            <span>+</span>
-                            <kbd className="pointer-events-none h-5 min-w-5 justify-center text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 inline-flex text-[13px] leading-none font-sans">
-                              ,
-                            </kbd>
-                            <span className="text-muted-foreground">→</span>
-                            <span className="font-medium">MCP</span>
-                            <span className="text-muted-foreground">→</span>
-                            <span className="text-green-500 font-medium">
-                              Enable
+                          <div className="flex items-start gap-2.5 text-sm">
+                            <RefreshCw className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                            <span>
+                              Cursor will automatically detect and initialize
+                              the MCP server
                             </span>
                           </div>
                         </div>
@@ -562,54 +543,6 @@ export function InstallIdeStep({
                             )}
                           </button>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="rounded-md bg-primary/10 p-1.5 text-primary h-7 w-7 flex items-center justify-center shrink-0">
-                      2
-                    </div>
-                    <div className="space-y-3 w-full">
-                      <h3 className="font-medium">Add API Key</h3>
-                      <div className="text-sm text-muted-foreground space-y-2">
-                        <p>When prompted for API key, paste your API key:</p>
-                        {apiKey ? (
-                          <div className="bg-muted rounded-md flex items-center w-full group relative">
-                            <input
-                              type="text"
-                              readOnly
-                              value={apiKey.key
-                                .split("")
-                                .map(() => "•")
-                                .join("")}
-                              className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
-                            />
-                            <button
-                              className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors shrink-0 mr-1"
-                              onClick={handleCopyApiKey}
-                            >
-                              {copiedApiKey ? (
-                                <>
-                                  <Check className="h-3.5 w-3.5 text-green-500" />
-                                  <span className="text-xs text-green-500">
-                                    Copied!
-                                  </span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="h-3.5 w-3.5" />
-                                  <span className="text-xs">Copy</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-                            Generate an API key first
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
