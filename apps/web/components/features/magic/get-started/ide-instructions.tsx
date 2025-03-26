@@ -426,7 +426,11 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                             <input
                               type="text"
                               readOnly
-                              value={`${selectedOS === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline`}
+                              value={getInstallCommand(
+                                activeTab,
+                                apiKey?.key || "",
+                                selectedOS,
+                              )}
                               className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                             />
                             <button
@@ -542,23 +546,10 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                           <Code
                             language="json"
                             className="overflow-x-auto bg-muted text-xs"
-                            code={`{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "${selectedOS === "windows" ? "C:\\\\Windows\\\\System32\\\\cmd.exe" : "npx"}",
-      "args": [
-        ${selectedOS === "windows" ? '"/c",' : ""} 
-        ${selectedOS === "windows" ? '"npx",' : ""}
-        "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\"{\\\\"TWENTY_FIRST_API_KEY\\\\":\\\\"${apiKey?.key || "YOUR_API_KEY"}\\\\"}\\"" 
-      ]
-    }
-  }
-}`}
+                            code={getMcpConfigJson(
+                              apiKey?.key || "YOUR_API_KEY",
+                              selectedOS,
+                            )}
                           />
                           <button
                             className="flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors mt-2"

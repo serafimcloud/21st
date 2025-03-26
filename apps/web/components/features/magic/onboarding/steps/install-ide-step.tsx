@@ -308,21 +308,7 @@ export function InstallIdeStep({
                           language="json"
                           className="overflow-x-auto bg-muted"
                           display="block"
-                          code={`{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "${osType === "windows" ? "C:\\\\Windows\\\\System32\\\\cmd.exe" : "npx"}",
-      "args": [
-        ${osType === "windows" ? '"/c",' : ""} ${osType === "windows" ? '"npx",' : ""}"-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey?.key}\\\\\\\"}\\\""
-      ]
-    }
-  }
-}`}
+                          code={getMcpConfigJson(apiKey.key, osType)}
                         />
                         <button
                           className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors"
@@ -468,21 +454,7 @@ export function InstallIdeStep({
                           language="json"
                           className="overflow-x-auto bg-muted"
                           display="block"
-                          code={`{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "${osType === "windows" ? "C:\\\\Windows\\\\System32\\\\cmd.exe" : "npx"}",
-      "args": [
-        ${osType === "windows" ? '"/c",' : ""} ${osType === "windows" ? '"npx",' : ""}"-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey?.key}\\\\\\\"}\\\""
-      ]
-    }
-  }
-}`}
+                          code={getMcpConfigJson(apiKey.key, osType)}
                         />
                         <button
                           className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors"
@@ -687,21 +659,7 @@ export function InstallIdeStep({
                               language="json"
                               className="overflow-x-auto bg-muted"
                               display="block"
-                              code={`{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "${osType === "windows" ? "C:\\\\Windows\\\\System32\\\\cmd.exe" : "npx"}",
-      "args": [
-        ${osType === "windows" ? '"/c",' : ""} ${osType === "windows" ? '"npx",' : ""}"-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey?.key}\\\\\\\"}\\\""
-      ]
-    }
-  }
-}`}
+                              code={getMcpConfigJson(apiKey.key, osType)}
                             />
                             <button
                               className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 hover:bg-primary/10 rounded-md transition-colors"

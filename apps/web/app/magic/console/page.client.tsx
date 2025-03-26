@@ -386,7 +386,7 @@ export function ConsoleClient({
   const handleCopyConfig = () => {
     if (!apiKey) return
     try {
-      const config = getMcpConfigJson(apiKey.key)
+      const config = getMcpConfigJson(apiKey.key, osType)
       const textArea = document.createElement("textarea")
       textArea.value = config
       document.body.appendChild(textArea)
@@ -719,21 +719,7 @@ export function ConsoleClient({
                                     language="json"
                                     className="overflow-x-auto bg-muted"
                                     display="block"
-                                    code={`{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey?.key}\\\\\\"}\\\""
-      ]
-    }
-  }
-}`}
+                                    code={getMcpConfigJson(apiKey?.key, osType)}
                                   />
                                   <Button
                                     variant="ghost"
@@ -847,21 +833,7 @@ export function ConsoleClient({
                         </p>
                         <div className="relative">
                           <Code
-                            code={`{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey.key}\\\\\\\"}\\\""
-      ]
-    }
-  }
-}`}
+                            code={getMcpConfigJson(apiKey.key, osType)}
                             language="json"
                             className="overflow-x-auto bg-muted"
                             display="block"
@@ -987,21 +959,7 @@ export function ConsoleClient({
                                     language="json"
                                     className="overflow-x-auto bg-muted"
                                     display="block"
-                                    code={`{
-  "mcpServers": {
-    "@21st-dev-magic-mcp": {
-      "command": "${osType === "windows" ? "C:\\\\Windows\\\\System32\\\\cmd.exe" : "npx"}",
-      "args": [
-        ${osType === "windows" ? '"/c",' : ""} ${osType === "windows" ? '"npx",' : ""}"-y",
-        "@smithery/cli@latest",
-        "run",
-        "@21st-dev/magic-mcp",
-        "--config",
-        "\\\"{\\\\\\\"TWENTY_FIRST_API_KEY\\\\\\\":\\\\\\\"${apiKey?.key}\\\\\\\"}\\\""
-      ]
-    }
-  }
-}`}
+                                    code={getMcpConfigJson(apiKey?.key, osType)}
                                   />
                                   <Button
                                     variant="ghost"
