@@ -46,11 +46,10 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
   }
 
   const handleCopyCommand = async () => {
+    if (!apiKey) return
     try {
-      const windowsPrefix =
-        selectedOS === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""
       await navigator.clipboard.writeText(
-        `${windowsPrefix}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client ${activeTab === "windsurf" ? "windsurf" : "cline"}`,
+        getInstallCommand(activeTab, apiKey.key, selectedOS),
       )
       setCopiedCommand(true)
       setTimeout(() => setCopiedCommand(false), 2000)
@@ -70,16 +69,11 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
     }
   }
 
-  const handleCopyConfig = () => {
+  const handleCopyConfig = async () => {
     if (!apiKey) return
     try {
-      const config = getMcpConfigJson(apiKey.key)
-      const textArea = document.createElement("textarea")
-      textArea.value = config
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand("copy")
-      document.body.removeChild(textArea)
+      const config = getMcpConfigJson(apiKey.key, selectedOS)
+      await navigator.clipboard.writeText(config)
       setCopiedConfig(true)
       toast.success("Configuration copied to clipboard")
       setTimeout(() => setCopiedConfig(false), 2000)
@@ -222,7 +216,11 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                           <input
                             type="text"
                             readOnly
-                            value={command}
+                            value={getInstallCommand(
+                              activeTab,
+                              apiKey.key,
+                              selectedOS,
+                            )}
                             className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                           />
                           <button
@@ -340,7 +338,7 @@ export function IdeInstructions({ apiKey, selectedOS }: IdeInstructionsProps) {
                     {apiKey ? (
                       <div className="relative">
                         <Code
-                          code={getMcpConfigJson(apiKey.key)}
+                          code={getMcpConfigJson(apiKey.key, selectedOS)}
                           language="json"
                           className="overflow-x-auto bg-muted"
                           display="block"

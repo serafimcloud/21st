@@ -6,9 +6,14 @@ interface McpCommandConfig {
   args: string[]
 }
 
+const PACKAGE_NAMES = {
+  CLI: "@21st-dev/cli@latest",
+  MAGIC_MCP: "@21st-dev/magic-mcp",
+} as const
+
 export const getMcpConfig = (apiKey: string): McpCommandConfig => ({
   command: "npx",
-  args: ["-y", "@21st-dev/magic@latest", `API_KEY="${apiKey}"`],
+  args: ["-y", PACKAGE_NAMES.CLI, `API_KEY="${apiKey}"`],
 })
 
 export const getInstallCommand = (
@@ -19,23 +24,21 @@ export const getInstallCommand = (
   const windowsPrefix =
     osType === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""
 
-  switch (ide) {
-    case "cursor":
-      return `${windowsPrefix}npx -y @21st-dev/cli@latest install cursor --api-key "${apiKey}"`
-    case "windsurf":
-      return `${windowsPrefix}npx -y @21st-dev/cli@latest install windsurf --api-key "${apiKey}"`
-    case "cline":
-      return `${windowsPrefix}npx -y @21st-dev/cli@latest install cline --api-key "${apiKey}"`
-    default:
-      return ""
-  }
+  return `${windowsPrefix}npx -y ${PACKAGE_NAMES.CLI} install ${ide} --api-key "${apiKey}"`
 }
 
-export const getMcpConfigJson = (apiKey: string): string => {
+export const getMcpConfigJson = (apiKey: string, osType: OsType): string => {
   const config = {
     mcpServers: {
       "@21st-dev-magic-mcp": {
-        ...getMcpConfig(apiKey),
+        command:
+          osType === "windows" ? "C:\\Windows\\System32\\cmd.exe" : "npx",
+        args: [
+          ...(osType === "windows" ? ["/c", "npx"] : []),
+          "-y",
+          PACKAGE_NAMES.CLI,
+          `API_KEY="${apiKey}"`,
+        ],
       },
     },
   }

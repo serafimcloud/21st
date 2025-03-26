@@ -123,7 +123,7 @@ export function InstallIdeStep({
   const handleCopyConfig = () => {
     if (!apiKey) return
     try {
-      const config = getMcpConfigJson(apiKey.key)
+      const config = getMcpConfigJson(apiKey.key, osType)
       const textArea = document.createElement("textarea")
       textArea.value = config
       document.body.appendChild(textArea)
@@ -135,7 +135,6 @@ export function InstallIdeStep({
       setTimeout(() => setCopiedConfig(false), 2000)
     } catch (err) {
       console.error("Failed to copy config:", err)
-      toast.error("Failed to copy configuration")
     }
   }
 
@@ -251,7 +250,11 @@ export function InstallIdeStep({
                             <input
                               type="text"
                               readOnly
-                              value={command}
+                              value={getInstallCommand(
+                                selectedIde,
+                                apiKey.key,
+                                osType,
+                              )}
                               className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                             />
                             <button
@@ -561,7 +564,11 @@ export function InstallIdeStep({
                           <input
                             type="text"
                             readOnly
-                            value={`${osType === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""}npx -y @smithery/cli@latest install @21st-dev/magic-mcp --client cline`}
+                            value={getInstallCommand(
+                              selectedIde,
+                              apiKey?.key || "",
+                              osType,
+                            )}
                             className="bg-transparent px-3 py-2 text-xs w-full font-mono focus:outline-none overflow-x-auto"
                           />
                           <button
