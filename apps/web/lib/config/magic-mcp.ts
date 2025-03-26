@@ -8,7 +8,7 @@ interface McpCommandConfig {
 
 const PACKAGE_NAMES = {
   CLI: "@21st-dev/cli@latest",
-  MAGIC_MCP: "@21st-dev/magic-mcp",
+  MAGIC_MCP: "@21st-dev/magic@latest",
 } as const
 
 export const getMcpConfig = (apiKey: string): McpCommandConfig => ({
@@ -19,28 +19,45 @@ export const getMcpConfig = (apiKey: string): McpCommandConfig => ({
 export const getInstallCommand = (
   ide: IdeOption,
   apiKey: string,
-  osType: OsType,
+  osType: OsType = "mac",
 ): string => {
-  const windowsPrefix =
-    osType === "windows" ? "C:\\Windows\\System32\\cmd.exe /c " : ""
+  const platformCmd = createPlatformCommand(
+    ["-y", PACKAGE_NAMES.CLI, "install", ide, `--api-key "${apiKey}"`],
+    osType,
+  )
 
-  return `${windowsPrefix}npx -y ${PACKAGE_NAMES.CLI} install ${ide} --api-key "${apiKey}"`
+  return `${platformCmd.command} ${platformCmd.args.join(" ")}`
 }
 
-export const getMcpConfigJson = (apiKey: string, osType: OsType): string => {
+export const getMcpConfigJson = (
+  apiKey: string,
+  osType: OsType = "mac",
+): string => {
+  const platformCmd = createPlatformCommand(
+    ["-y", PACKAGE_NAMES.MAGIC_MCP, `API_KEY="${apiKey}"`],
+    osType,
+  )
+
   const config = {
     mcpServers: {
-      "@21st-dev-magic-mcp": {
-        command:
-          osType === "windows" ? "C:\\Windows\\System32\\cmd.exe" : "npx",
-        args: [
-          ...(osType === "windows" ? ["/c", "npx"] : []),
-          "-y",
-          PACKAGE_NAMES.CLI,
-          `API_KEY="${apiKey}"`,
-        ],
-      },
+      "@21st-dev/magic": platformCmd,
     },
   }
   return JSON.stringify(config, null, 2)
+}
+
+export const createPlatformCommand = (
+  args: string[],
+  osType: OsType = "mac",
+) => {
+  if (osType === "windows") {
+    return {
+      command: "cmd",
+      args: ["/c", "npx", ...args],
+    }
+  }
+  return {
+    command: "npx",
+    args,
+  }
 }
