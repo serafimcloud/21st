@@ -7,7 +7,9 @@ import { SupportedEditors } from "@/components/features/magic/supported-editors"
 import { Features } from "@/components/features/magic/features"
 import { SignInButton, SignedOut, SignedIn } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
+import { GitHubStarsBasic } from "@/components/ui/github-stars-number"
 import Link from "next/link"
+import { Icons } from "@/components/icons"
 
 export const metadata: Metadata = {
   title:
@@ -64,6 +66,24 @@ export default function MagicPage() {
           </span>
         </div>
         <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 px-2.5 text-sm font-medium text-white hover:text-gray-300 hover:bg-accent/10"
+            asChild
+          >
+            <a
+              href="https://github.com/21st-dev/magic-mcp"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icons.gitHub className="h-4 w-4" />
+              <GitHubStarsBasic
+                repo="21st-dev/magic-mcp"
+                className="text-white"
+              />
+            </a>
+          </Button>
           <Button
             variant="ghost"
             className="text-white text-[14px] hover:text-gray-300 hover:bg-accent/10"
