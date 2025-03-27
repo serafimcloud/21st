@@ -56,8 +56,8 @@ export function HeroSection() {
             className="flex items-center gap-6 bg-background/50 backdrop-blur-sm pl-4 pr-6 py-3 rounded-full border border-border/40"
           >
             <div className="flex items-center gap-3">
-              <div className="h-7 w-7 rounded-full bg-foreground" />
-              <span className="text-lg font-semibold text-foreground">
+              <div className="h-6 w-6 rounded-full bg-foreground" />
+              <span className="font-semibold text-foreground">
                 21st.dev
               </span>
             </div>
