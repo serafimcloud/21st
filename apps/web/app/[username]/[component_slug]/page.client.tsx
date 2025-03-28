@@ -29,7 +29,6 @@ import {
   AMPLITUDE_EVENTS,
 } from "@/lib/amplitude"
 import {
-  getComponentInstallPrompt,
   formatV0Prompt,
   promptOptions,
   type PromptOptionBase,
@@ -49,8 +48,6 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import { UserAvatar } from "../../../components/ui/user-avatar"
 import { BookmarkButton } from "@/components/ui/bookmark-button"
@@ -59,7 +56,6 @@ import { ComponentPagePreview } from "../../../components/features/component-pag
 import { EditComponentDialog } from "../../../components/ui/edit-component-dialog"
 import { usePublishAs } from "../../../components/features/publish/hooks/use-publish-as"
 import { Icons } from "@/components/icons"
-import Image from "next/image"
 import { CopyPromptDialog } from "@/components/ui/copy-prompt-dialog"
 
 import {
@@ -788,11 +784,10 @@ export default function ComponentPage({
                               className="flex items-center gap-2"
                             >
                               <div className="relative w-[80px] h-[60px] flex-shrink-0">
-                                <Image
+                                <img
                                   src={d.preview_url || "/placeholder.svg"}
                                   alt={d.name || ""}
-                                  fill
-                                  className="rounded-sm object-cover"
+                                  className="rounded-sm object-cover absolute inset-0 w-full h-full"
                                 />
                               </div>
                               <div className="flex flex-col min-w-0">

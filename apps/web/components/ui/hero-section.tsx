@@ -12,7 +12,7 @@ import { AuroraBackground } from "./aurora-background"
 import { Button } from "./button"
 import { Icons } from "../icons"
 import { GitHubStarsBasic } from "./github-stars-number"
-import Image from "next/image"
+
 export function HeroSection() {
   const router = useRouter()
   const isMobile = useIsMobile()
@@ -167,7 +167,7 @@ export function HeroSection() {
                       <Icons.vscode className="w-6 h-6 mr-1" />
                       <span className="text-sm text-muted-foreground">+</span>
                       <div className="flex items-center gap-2 bg-gradient-to-b from-[#0E0F0F] to-[#0C0C0C] overflow-hidden rounded-xl border border-white/10 w-[36px] h-[36px]">
-                        <Image
+                        <img
                           src="https://avatars.githubusercontent.com/u/184127137?s=200&v=4"
                           alt="Cline"
                           width={36}

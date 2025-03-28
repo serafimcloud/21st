@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 
 interface ComponentPreviewImageProps {
   src: string
@@ -25,16 +24,17 @@ export default function ComponentPreviewImage({
   }, [src, fallbackSrc])
 
   return (
-    <Image
+    <img
       src={imgSrc}
       alt={alt}
-      fill
       className={className}
       onError={() => {
         setImgSrc(fallbackSrc)
         setIsPlaceholder(true)
       }}
       style={{
+        width: "100%",
+        height: "100%",
         objectFit: "cover",
         backgroundColor: isPlaceholder ? "transparent" : "",
       }}

@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { useState } from "react"
 
 interface CategoryPreviewImageProps {
@@ -19,14 +18,13 @@ export function CategoryPreviewImage({
   const [error, setError] = useState(false)
 
   return (
-    <Image
+    <img
       src={error ? fallbackSrc : src}
       alt={alt}
       width={400}
       height={300}
       className={className}
       onError={() => setError(true)}
-      priority={true}
     />
   )
 }

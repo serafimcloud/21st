@@ -8,7 +8,6 @@ import { useIntersectionObserver } from "@/hooks/use-intersection-observer"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Mockup, MockupFrame } from "@/components/ui/mockup"
 import { GitHubStarsBasic } from "@/components/ui/github-stars-number"
-import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Spinner } from "@/components/icons/spinner"
@@ -333,13 +332,10 @@ export function Hero() {
                       </svg>
                     </a>
                   </div>
-                  <Image
+                  <img
                     src="https://vucvdpamtrjkzmubwlts.supabase.co/storage/v1/object/public/images//screenshot_magic.png"
                     alt="Magic Agent Demo"
-                    fill
                     className="object-cover object-center"
-                    priority
-                    quality={100}
                   />
                 </div>
               </Mockup>

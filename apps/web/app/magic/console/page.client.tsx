@@ -26,8 +26,6 @@ import { cn } from "@/lib/utils"
 import React from "react"
 import { FeedbackDialog } from "@/components/features/magic/feedback-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import Image from "next/image"
-import { PromptRuleDisplay } from "@/components/features/prompt-rules/prompt-rule-display"
 import {
   trackAttribution,
   ATTRIBUTION_SOURCE,
@@ -935,12 +933,9 @@ export function ConsoleClient({
                                 In the Cline extension, locate and click the MCP
                                 Server tab.
                               </p>
-                              <Image
+                              <img
                                 src="/cline-first-step.png"
                                 alt="Cline MCP Server Panel"
-                                width={0}
-                                height={0}
-                                sizes="100vw"
                                 className="rounded-lg border w-full h-auto mix-blend-difference"
                               />
                             </div>
