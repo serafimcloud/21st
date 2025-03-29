@@ -56,8 +56,8 @@ export function HeroSection() {
             className="flex items-center gap-6 bg-background/50 backdrop-blur-sm pl-4 pr-6 py-3 rounded-full border border-border/40"
           >
             <div className="flex items-center gap-3">
-              <div className="h-7 w-7 rounded-full bg-foreground" />
-              <span className="text-lg font-semibold text-foreground">
+              <div className="h-6 w-6 rounded-full bg-foreground" />
+              <span className="font-semibold text-foreground">
                 21st.dev
               </span>
             </div>
@@ -124,7 +124,7 @@ export function HeroSection() {
               <Button onClick={onEnterWebsite}>
                 Browse components
                 {!isMobile && (
-                  <kbd className="-me-1 ms-3 inline-flex h-5 max-h-full items-center rounded border border-muted-foreground/70 bg-muted-foreground/10 px-1.5 text-[0.625rem] font-medium text-background/70">
+                  <kbd className="-me-1 ms-3 inline-flex h-5 max-h-full items-center rounded border border-muted-foreground/70 bg-muted-foreground/10 px-1.5 text-[0.625rem] font-medium text-white">
                     <Icons.enter className="h-2.5 w-2.5" />
                   </kbd>
                 )}
@@ -150,25 +150,52 @@ export function HeroSection() {
               className="text-center"
             >
               <p className="text-muted-foreground mb-2">Optimized for</p>
-              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 md:gap-12 text-foreground max-w-[350px] md:max-w-[800px] mx-auto">
-                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
-                  <Icons.cursorAnimatedLogo />
-                  <Icons.cursorLogo className="h-3 sm:h-4 w-auto" />
+              <div className="flex flex-col gap-8">
+                {/* IDE Logos */}
+                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 md:gap-12 text-foreground max-w-[350px] md:max-w-[800px] mx-auto">
+                  <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
+                    <Icons.cursorAnimatedLogo />
+                    <Icons.cursorLogo className="h-3 sm:h-4 w-auto" />
+                  </div>
+                  <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
+                    <div className="w-[24px] h-[24px] sm:w-[32px] sm:h-[32px]">
+                      <Icons.windsurfTealLogo className="w-full h-full" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
+                    <div className="flex items-center gap-3">
+                      <Icons.vscode className="w-6 h-6 mr-1" />
+                      <span className="text-sm text-muted-foreground">+</span>
+                      <div className="flex items-center gap-2 bg-gradient-to-b from-[#0E0F0F] to-[#0C0C0C] overflow-hidden rounded-xl border border-white/10 w-[36px] h-[36px]">
+                        <img
+                          src="https://avatars.githubusercontent.com/u/184127137?s=200&v=4"
+                          alt="Cline"
+                          width={36}
+                          height={36}
+                          className="mix-blend-hard-light"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
-                  <Icons.v0Logo className="h-6 sm:h-8 w-auto" />
-                </div>
-                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
-                  <Icons.boltLogo className="h-5 sm:h-6 w-auto" />
-                </div>
-                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[45%] sm:basis-auto justify-center">
-                  <Icons.lovableLogo className="h-5 sm:h-6 w-auto" />
-                  <span className="text-[16px] sm:text-[20px] font-bold">
-                    lovable
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[45%] sm:basis-auto justify-center overflow-hidden max-w-[100px]">
-                  <Icons.replitWithText className="h-12 sm:h-16 w-auto min-w-[120px] sm:min-w-[150px]" />
+
+                {/* Other Company Logos */}
+                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 md:gap-12 text-foreground max-w-[350px] md:max-w-[800px] mx-auto">
+                  <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
+                    <Icons.v0Logo className="h-6 sm:h-8 w-auto" />
+                  </div>
+                  <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">
+                    <Icons.boltLogo className="h-5 sm:h-6 w-auto" />
+                  </div>
+                  <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[45%] sm:basis-auto justify-center">
+                    <Icons.lovableLogo className="h-5 sm:h-6 w-auto" />
+                    <span className="text-[16px] sm:text-[20px] font-bold">
+                      lovable
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[45%] sm:basis-auto justify-center overflow-hidden max-w-[100px]">
+                    <Icons.replitWithText className="h-12 sm:h-16 w-auto min-w-[120px] sm:min-w-[150px]" />
+                  </div>
                 </div>
               </div>
             </motion.div>

@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-import Image from "next/image"
 import { Layers } from "lucide-react"
 import { toast } from "sonner"
 
@@ -41,16 +40,14 @@ export const CollectionCard = React.memo(function CollectionCard({
         <div className="relative aspect-[16/10] mb-3">
           <div className="absolute inset-0">
             <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
-              <Image
+              <img
                 src={collection.cover_url || "/placeholder.svg"}
                 alt={collection.name}
-                fill
                 className="object-cover rounded-lg"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.src = "/placeholder.svg"
                 }}
-                priority
               />
             </div>
           </div>

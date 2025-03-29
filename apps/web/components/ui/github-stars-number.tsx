@@ -4,32 +4,26 @@ import { useQuery } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
-// Version with styles
-export function GitHubStars({ className }: { className?: string }) {
-  const { data: stars, isLoading } = useQuery({
-    queryKey: ["github-stars"],
-    queryFn: async () => {
-      const res = await fetch("https://api.github.com/repos/serafimcloud/21st")
-      const data = await res.json()
-      return data.stargazers_count as number
-    },
-    staleTime: 1000 * 60 * 5,
-    retry: 2,
-  })
-
-  return (
-    <span className="relative ms-3 inline-flex h-full items-center justify-center rounded-full px-3 text-xs font-medium text-muted-foreground before:absolute before:inset-0 before:left-0 before:w-px before:bg-input">
-      {isLoading ? <Skeleton className="h-4 w-4" /> : stars}
-    </span>
-  )
+type GitHubStarsProps = {
+  className?: string
+  repo?: string
 }
 
-// Version without styles using cn
-export function GitHubStarsBasic({ className }: { className?: string }) {
+const formatNumber = (num: number): string => {
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}k`.replace(".0k", "k")
+  }
+  return num.toString()
+}
+
+export function GitHubStarsBasic({
+  className,
+  repo = "serafimcloud/21st",
+}: GitHubStarsProps) {
   const { data: stars, isLoading } = useQuery({
-    queryKey: ["github-stars"],
+    queryKey: ["github-stars", repo],
     queryFn: async () => {
-      const res = await fetch("https://api.github.com/repos/serafimcloud/21st")
+      const res = await fetch(`https://api.github.com/repos/${repo}`)
       const data = await res.json()
       return data.stargazers_count as number
     },
@@ -39,7 +33,7 @@ export function GitHubStarsBasic({ className }: { className?: string }) {
 
   return (
     <span className={cn("inline-flex items-center", className)}>
-      {isLoading ? <Skeleton className="h-4 w-4" /> : stars}
+      {isLoading ? <Skeleton className="h-5 w-8" /> : formatNumber(stars || 0)}
     </span>
   )
 }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Mockup, MockupFrame } from "@/components/ui/mockup"
-import Image from "next/image"
+import { GitHubStarsBasic } from "@/components/ui/github-stars-number"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Spinner } from "@/components/icons/spinner"
@@ -147,7 +147,7 @@ const Spotlight = ({
 }
 
 export function Hero() {
-  const [count, setCount] = useState(7046)
+  const [count, setCount] = useState(20114)
   const [isLoading, setIsLoading] = useState(false)
   const [ref, isIntersecting] = useIntersectionObserver({
     threshold: 0,
@@ -235,7 +235,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-10 w-full max-w-md"
           >
-            <div className="flex justify-center">
+            <div className="flex justify-center items-center gap-2">
               <Button
                 onClick={handleGetStartedClick}
                 disabled={isLoading}
@@ -257,6 +257,24 @@ export function Hero() {
                     </kbd>
                   </>
                 )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 px-2.5 text-sm font-medium text-neutral-200 hover:text-neutral-50"
+                asChild
+              >
+                <a
+                  href="https://github.com/21st-dev/magic-mcp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Icons.gitHub className="h-4 w-4" />
+                  <GitHubStarsBasic
+                    repo="21st-dev/magic-mcp"
+                    className="text-neutral-200"
+                  />
+                </a>
               </Button>
             </div>
 
@@ -314,13 +332,10 @@ export function Hero() {
                       </svg>
                     </a>
                   </div>
-                  <Image
+                  <img
                     src="https://vucvdpamtrjkzmubwlts.supabase.co/storage/v1/object/public/images//screenshot_magic.png"
                     alt="Magic Agent Demo"
-                    fill
                     className="object-cover object-center"
-                    priority
-                    quality={100}
                   />
                 </div>
               </Mockup>

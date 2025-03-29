@@ -6,6 +6,9 @@ module.exports = {
   parserOptions: {
     project: true,
   },
+  rules: {
+    "@next/next/no-img-element": "off",
+  },
   overrides: [
     {
       files: ["tailwind.config.js"],

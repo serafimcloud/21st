@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import { NavigationMenuLink } from "@/components/ui/navigation-menu"
+import { TextShimmer } from "@/components/ui/text-shimmer"
 import { atom } from "jotai"
 import {
   SignInButton,
@@ -270,7 +271,7 @@ export function Header({
                       variant="ghost"
                       size="sm"
                       asChild
-                      className="gap-1.5 bg-blue-600 text-white hover:bg-blue-500 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700 hover:border-blue-800"
+                      className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
                     >
                       <Link
                         href="/pricing"
@@ -280,6 +281,7 @@ export function Header({
                             SOURCE_DETAIL.HEADER_GET_PRO_LINK,
                           )
                         }
+                        className="bg-gradient-to-r from-[hsl(var(--primary-gradient-start))] to-[hsl(var(--primary-gradient-end))] bg-clip-text text-transparent"
                       >
                         <span className="font-medium">Get Pro</span>
                       </Link>
@@ -542,7 +544,7 @@ export function Header({
               variant="ghost"
               size="sm"
               asChild
-              className="gap-1.5 bg-blue-600 text-white hover:bg-blue-500 hover:text-white outline-offset-2 focus-visible:outline focus-visible:outline-ring/70 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 border border-blue-700 hover:border-blue-800"
+              className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
             >
               <Link
                 href="/pricing"
@@ -553,7 +555,13 @@ export function Header({
                   )
                 }
               >
-                <span className="font-medium">Get Pro</span>
+                <TextShimmer
+                  className="font-medium [--base-color:hsl(var(--primary-gradient-start))] [--base-gradient-color:hsl(var(--primary-gradient-end))] dark:[--base-color:hsl(var(--primary-gradient-start))] dark:[--base-gradient-color:hsl(var(--primary-gradient-end))]"
+                  duration={1.2}
+                  spread={2}
+                >
+                  Get Pro
+                </TextShimmer>
               </Link>
             </Button>
             <SignInButton>
