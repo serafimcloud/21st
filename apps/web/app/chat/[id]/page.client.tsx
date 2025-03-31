@@ -8,6 +8,7 @@ import type { Chat } from "@/app/api/chat/[id]/route"
 import { notFound } from "next/navigation"
 import { TextShimmer } from "@/components/ui/text-shimmer"
 import { motion } from "motion/react"
+import { ChatComponentPreview } from "@/components/features/chat/ChatComponentPreview"
 
 interface ChatClientProps {
   chatId: string
@@ -183,32 +184,10 @@ export function ChatClient({ chatId }: ChatClientProps) {
 
       {/* Middle area: component preview or loading state */}
       <div className="flex-1 mx-4 mb-4">
-        {!generating && (
-          <div className="flex h-full items-center justify-center border-2 border-dashed border-muted-foreground/20 rounded-lg">
-            {componentGenerated ? (
-              <div className="text-center p-6">
-                <h3 className="text-lg font-medium mb-2">Component Preview</h3>
-                <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                  Here's your generated component based on the prompt above. You
-                  can modify it using the input field below.
-                </p>
-              </div>
-            ) : (
-              <div className="text-center p-6">
-                <h3 className="text-lg font-medium mb-2">Component Preview</h3>
-                <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                  Describe the UI component you want to build in the input field
-                  below. Once generated, the preview will appear here.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-        {generating && (
-          <div className="flex h-full items-center justify-center">
-            <Spinner />
-          </div>
-        )}
+        <ChatComponentPreview
+          generating={generating}
+          componentGenerated={componentGenerated}
+        />
       </div>
 
       {/* Bottom area: input field */}
