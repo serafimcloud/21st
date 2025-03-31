@@ -1,6 +1,6 @@
 import { Spinner } from "@/components/icons/spinner"
 import { motion } from "motion/react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 interface ChatComponentPreviewProps {
@@ -13,6 +13,9 @@ export function ChatComponentPreview({
   componentGenerated,
 }: ChatComponentPreviewProps) {
   const [selectedVersion, setSelectedVersion] = useState(0)
+  const [isFrameLoading, setIsFrameLoading] = useState(true)
+  const [loadedFrames, setLoadedFrames] = useState<Record<number, boolean>>({})
+  const iframeRefs = useRef<(HTMLIFrameElement | null)[]>([null, null, null])
 
   // Define different source URLs for each version
   const previewSources = [
@@ -20,6 +23,34 @@ export function ChatComponentPreview({
     "https://cdn.21st.dev/bundled/1313.html", // Version 2
     "https://cdn.21st.dev/bundled/829.html", // Version 3
   ]
+
+  // Preload all iframes
+  useEffect(() => {
+    if (!componentGenerated) return
+
+    // Mark the selected version as loading initially
+    setIsFrameLoading(true)
+
+    // Check if iframes are loaded on mount
+    const checkIfLoaded = () => {
+      iframeRefs.current.forEach((iframe, index) => {
+        if (iframe && iframe.contentDocument?.readyState === "complete") {
+          setLoadedFrames((prev) => ({ ...prev, [index]: true }))
+          if (index === selectedVersion) {
+            setIsFrameLoading(false)
+          }
+        }
+      })
+    }
+
+    // Initial check
+    checkIfLoaded()
+
+    // Set up interval to check loading state
+    const interval = setInterval(checkIfLoaded, 100)
+
+    return () => clearInterval(interval)
+  }, [componentGenerated, selectedVersion])
 
   // Handle keyboard shortcuts for switching versions
   useEffect(() => {
@@ -34,6 +65,19 @@ export function ChatComponentPreview({
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [componentGenerated])
+
+  // Handle version change
+  const handleVersionChange = (version: number) => {
+    if (version === selectedVersion) return
+    setIsFrameLoading(true)
+    setSelectedVersion(version)
+
+    // Check if this version is already loaded
+    if (loadedFrames[version]) {
+      // Use a short timeout to allow for state update and give visual feedback
+      setTimeout(() => setIsFrameLoading(false), 100)
+    }
+  }
 
   if (generating) {
     return (
@@ -58,14 +102,33 @@ export function ChatComponentPreview({
   }
 
   return (
-    <div className="flex h-full rounded-lg shadow-base overflow-hidden">
+    <div className="flex h-full rounded-lg shadow-base">
       {/* Main preview area - shows the currently selected version */}
       <div className="flex-1 relative">
-        <iframe
-          src={previewSources[selectedVersion]}
-          className="w-full h-full border-0"
-          title="Component Preview"
-        />
+        {isFrameLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+            <Spinner />
+          </div>
+        )}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+          className="h-full"
+        >
+          <iframe
+            ref={(el) => {
+              iframeRefs.current[selectedVersion] = el
+            }}
+            src={previewSources[selectedVersion]}
+            className="w-full h-full border-0"
+            title="Component Preview"
+            onLoad={() => {
+              setLoadedFrames((prev) => ({ ...prev, [selectedVersion]: true }))
+              setIsFrameLoading(false)
+            }}
+          />
+        </motion.div>
       </div>
 
       {/* Sidebar with version options */}
@@ -86,8 +149,9 @@ export function ChatComponentPreview({
                 ? "border-primary ring-1 ring-primary"
                 : "border-border/50",
             )}
-            onClick={() => setSelectedVersion(version)}
+            onClick={() => handleVersionChange(version)}
             whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}
           >
             <div className="absolute inset-0 flex items-center justify-center">
@@ -103,9 +167,15 @@ export function ChatComponentPreview({
                   }}
                 >
                   <iframe
+                    ref={(el) => {
+                      iframeRefs.current[version] = el
+                    }}
                     src={previewSources[version]}
                     className="w-full h-full border-0 pointer-events-none"
                     title={`Version ${version + 1}`}
+                    onLoad={() => {
+                      setLoadedFrames((prev) => ({ ...prev, [version]: true }))
+                    }}
                   />
                 </div>
               </div>

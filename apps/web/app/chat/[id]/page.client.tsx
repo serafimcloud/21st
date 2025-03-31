@@ -9,6 +9,7 @@ import { notFound } from "next/navigation"
 import { TextShimmer } from "@/components/ui/text-shimmer"
 import { motion } from "motion/react"
 import { ChatComponentPreview } from "@/components/features/chat/ChatComponentPreview"
+import { Icons } from "@/components/icons"
 
 interface ChatClientProps {
   chatId: string
@@ -148,20 +149,16 @@ export function ChatClient({ chatId }: ChatClientProps) {
     if (!currentPrompt) return null
 
     return (
-      <div className="py-6 text-center">
+      <div className="max-w-2xl">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
           {generating ? (
-            <TextShimmer className="font-medium max-w-2xl mx-auto">
-              {currentPrompt}
-            </TextShimmer>
+            <TextShimmer className="font-medium">{currentPrompt}</TextShimmer>
           ) : (
-            <span className="font-medium max-w-2xl mx-auto">
-              {currentPrompt}
-            </span>
+            <span className="font-medium">{currentPrompt}</span>
           )}
         </motion.div>
       </div>
@@ -178,42 +175,54 @@ export function ChatClient({ chatId }: ChatClientProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Top area: user prompt with shimmer effect during generation */}
-      {promptDisplay}
+    <div className="flex flex-col h-full relative">
+      {/* Header with logo, slash, and prompt display */}
+      <div className="flex items-center gap-2 p-4 z-10">
+        <div className="size-7 rounded-full bg-foreground"></div>
+        <Icons.slash className="text-muted-foreground" />
+        {promptDisplay}
+      </div>
 
-      {/* Middle area: component preview or loading state */}
-      <div className="flex-1 mx-4 mb-4">
+      {/* Component preview that takes up all available space */}
+      <div className="flex-1 h-full w-full">
         <ChatComponentPreview
           generating={generating}
           componentGenerated={componentGenerated}
         />
       </div>
 
-      {/* Bottom area: input field */}
-      <div className="p-4 mt-auto">
-        {componentGenerated && !generating ? (
-          <PromptInput onSubmit={handleSubmit} className="bg-muted/50">
-            <input
-              type="text"
-              className="flex h-10 w-full rounded-md bg-transparent px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="Modify this component (e.g., 'make it darker', 'add a search bar')..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              disabled={generating}
-            />
-          </PromptInput>
-        ) : (
-          <PromptInput onSubmit={handleSubmit}>
-            <PromptInputTextarea
-              placeholder="Describe the UI component you want to build..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              disabled={generating}
-              style={{ color: "inherit" }}
-            />
-          </PromptInput>
-        )}
+      {/* Bottom area: input field positioned absolutely */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+        <div className="max-w-3xl mx-auto w-full">
+          {componentGenerated && !generating ? (
+            <PromptInput
+              onSubmit={handleSubmit}
+              className="bg-muted/80 backdrop-blur-sm border border-border/50 shadow-lg"
+            >
+              <input
+                type="text"
+                className="flex h-10 w-full rounded-md bg-transparent px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Modify this component (e.g., 'make it darker', 'add a search bar')..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                disabled={generating}
+              />
+            </PromptInput>
+          ) : (
+            <PromptInput
+              onSubmit={handleSubmit}
+              className="bg-muted/80 backdrop-blur-sm border border-border/50 shadow-lg"
+            >
+              <PromptInputTextarea
+                placeholder="Describe the UI component you want to build..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                disabled={generating}
+                style={{ color: "inherit" }}
+              />
+            </PromptInput>
+          )}
+        </div>
       </div>
     </div>
   )
