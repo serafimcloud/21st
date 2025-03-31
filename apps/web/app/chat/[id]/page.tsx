@@ -1,13 +1,11 @@
 "use client"
 
 import { motion } from "motion/react"
-import { Card } from "@/components/ui/card"
 import { notFound, useParams } from "next/navigation"
 import { ChatContainer } from "@/components/ui/chat-container"
 import { PromptInput, PromptInputTextarea } from "@/components/ui/prompt-input"
 import { Message, MessageAvatar, MessageContent } from "@/components/ui/message"
 import { Loader } from "@/components/ui/loader"
-import { ResponseStream } from "@/components/ui/response-stream"
 import { useEffect, useState } from "react"
 import { chatApi, type Chat, type ChatMessage } from "@/lib/chat-service"
 import { Header } from "@/components/ui/header.client"
@@ -31,11 +29,6 @@ export default function ChatPage({ params }: ChatPageProps) {
 
   useEffect(() => {
     async function loadChat() {
-      if (chatId === "new") {
-        setLoading(false)
-        return
-      }
-
       try {
         const chatData = await chatApi.getChat(chatId)
         if (!chatData) {
@@ -57,44 +50,22 @@ export default function ChatPage({ params }: ChatPageProps) {
 
     try {
       setSending(true)
+      // Add message to existing chat
+      await chatApi.addMessage(chatId, message, "user")
+      // Get the updated chat
+      const updatedChat = await chatApi.getChat(chatId)
+      setChat(updatedChat)
+      setMessage("")
 
-      if (!chat) {
-        // If no chat exists yet (like in a new chat), create one
-        const newChat = await chatApi.createChat()
-        await chatApi.addMessage(newChat.id, message, "user")
-        // Get the updated chat
-        const updatedChat = await chatApi.getChat(newChat.id)
-        setChat(updatedChat)
-        setMessage("")
-
-        // TODO: In a real app, you'd then call your AI API here
-        // For now, let's just add a mock response
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        await chatApi.addMessage(
-          newChat.id,
-          "I'm a mock AI response to your message: " + message,
-          "assistant",
-        )
-        const finalChat = await chatApi.getChat(newChat.id)
-        setChat(finalChat)
-      } else {
-        // Add message to existing chat
-        await chatApi.addMessage(chat.id, message, "user")
-        // Get the updated chat
-        const updatedChat = await chatApi.getChat(chat.id)
-        setChat(updatedChat)
-        setMessage("")
-
-        // Add mock AI response
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        await chatApi.addMessage(
-          chat.id,
-          "I'm a mock AI response to your message: " + message,
-          "assistant",
-        )
-        const finalChat = await chatApi.getChat(chat.id)
-        setChat(finalChat)
-      }
+      // Add mock AI response
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await chatApi.addMessage(
+        chatId,
+        "I'm a mock AI response to your message: " + message,
+        "assistant",
+      )
+      const finalChat = await chatApi.getChat(chatId)
+      setChat(finalChat)
     } catch (error) {
       console.error("Failed to send message:", error)
     } finally {
@@ -122,78 +93,67 @@ export default function ChatPage({ params }: ChatPageProps) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1">
-        <div className="container mx-auto py-8 pt-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-6"
-          >
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold">
-                {chat ? chat.title : "New Chat"}
-              </h1>
-            </div>
+      <main className="flex-1 flex flex-col">
+        <div className="container mx-auto py-4 pt-20 h-full">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">{chat?.title}</h1>
+          </div>
 
-            <Card className="p-6">
-              <ChatContainer className="min-h-[600px]">
-                <div className="flex flex-col h-full">
-                  <div className="flex-1 space-y-4 overflow-y-auto p-2">
-                    {chat && chat.messages.length > 0 ? (
-                      chat.messages.map((msg) => (
-                        <Message key={msg.id}>
-                          <MessageAvatar
-                            src={
-                              msg.role === "assistant"
-                                ? "/assistant-avatar.png"
-                                : "/user-avatar.png"
-                            }
-                            alt={
-                              msg.role === "assistant" ? "Assistant" : "User"
-                            }
-                            fallback={msg.role === "assistant" ? "AI" : "U"}
-                          />
-                          <MessageContent>{msg.content}</MessageContent>
-                        </Message>
-                      ))
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-muted-foreground">
-                          Start a new conversation...
-                        </p>
-                      </div>
-                    )}
-                    {sending && (
-                      <Message>
+          <div className="w-full h-[calc(100vh-160px)]">
+            <ChatContainer className="h-full">
+              <div className="flex flex-col h-full">
+                <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                  {chat && chat.messages.length > 0 ? (
+                    chat.messages.map((msg) => (
+                      <Message key={msg.id}>
                         <MessageAvatar
-                          src="/assistant-avatar.png"
-                          alt="Assistant"
-                          fallback="AI"
+                          src={
+                            msg.role === "assistant"
+                              ? "/assistant-avatar.png"
+                              : "/user-avatar.png"
+                          }
+                          alt={msg.role === "assistant" ? "Assistant" : "User"}
+                          fallback={msg.role === "assistant" ? "AI" : "U"}
                         />
-                        <div className="flex items-center space-x-2 p-4">
-                          <Loader size="sm" />
-                          <span className="text-muted-foreground text-sm">
-                            Thinking...
-                          </span>
-                        </div>
+                        <MessageContent>{msg.content}</MessageContent>
                       </Message>
-                    )}
-                  </div>
-                  <div className="mt-4">
-                    <PromptInput onSubmit={handleSubmit}>
-                      <PromptInputTextarea
-                        placeholder="Type your message..."
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        disabled={sending}
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-muted-foreground">
+                        Start a new conversation...
+                      </p>
+                    </div>
+                  )}
+                  {sending && (
+                    <Message>
+                      <MessageAvatar
+                        src="/assistant-avatar.png"
+                        alt="Assistant"
+                        fallback="AI"
                       />
-                    </PromptInput>
-                  </div>
+                      <div className="flex items-center space-x-2 p-4">
+                        <Loader size="sm" />
+                        <span className="text-muted-foreground text-sm">
+                          Thinking...
+                        </span>
+                      </div>
+                    </Message>
+                  )}
                 </div>
-              </ChatContainer>
-            </Card>
-          </motion.div>
+                <div className="p-4">
+                  <PromptInput onSubmit={handleSubmit}>
+                    <PromptInputTextarea
+                      placeholder="Type your message..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      disabled={sending}
+                    />
+                  </PromptInput>
+                </div>
+              </div>
+            </ChatContainer>
+          </div>
         </div>
       </main>
       <Footer />
