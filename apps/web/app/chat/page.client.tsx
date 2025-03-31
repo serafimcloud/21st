@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { PromptInput, PromptInputTextarea } from "@/components/ui/prompt-input"
+import {
+  PromptInput,
+  PromptInputAction,
+  PromptInputActions,
+  PromptInputTextarea,
+} from "@/components/ui/prompt-input"
+import { Button } from "@/components/ui/button"
+import { ArrowUp, Square } from "lucide-react"
 import { chatApi } from "@/lib/chat-service"
 import { useAuth, useClerk } from "@clerk/nextjs"
 
@@ -48,7 +55,6 @@ export function ChatClient() {
       // Redirect to the chat page
       router.push(`/chat/${chat.id}`)
     } catch (error) {
-      console.error("Failed to create chat:", error)
       setIsCreating(false)
     }
   }
@@ -71,20 +77,45 @@ export function ChatClient() {
   }
 
   return (
-    <div className="container max-w-[600px] mx-auto px-4">
+    <div className="container max-w-[700px] mx-auto px-4">
       <div className="flex flex-col items-center text-center mb-8">
-        <h1 className="text-3xl font-bold mb-4">Start a new conversation</h1>
-        <p className="text-muted-foreground">
-          Type your message below to start a new chat
+        <h1 className="text-3xl font-bold mb-4">
+          Create a Custom UI Component
+        </h1>
+        <p className="text-muted-foreground mb-2">
+          Describe the UI component you want to create, inspired by the work of
+          21st.dev creators
         </p>
       </div>
-      <PromptInput onSubmit={handleSubmit}>
+
+      <PromptInput onSubmit={handleSubmit} className="w-full">
         <PromptInputTextarea
-          placeholder="Ask me anything..."
+          placeholder="Describe your UI component idea..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={isCreating}
         />
+        <PromptInputActions className="justify-end pt-2">
+          <PromptInputAction
+            tooltip={
+              isCreating ? "Creating component..." : "Generate component"
+            }
+          >
+            <Button
+              variant="default"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={handleSubmit}
+              disabled={isCreating}
+            >
+              {isCreating ? (
+                <Square className="size-5 fill-current" />
+              ) : (
+                <ArrowUp className="size-5" />
+              )}
+            </Button>
+          </PromptInputAction>
+        </PromptInputActions>
       </PromptInput>
     </div>
   )
