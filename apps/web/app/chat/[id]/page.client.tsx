@@ -193,25 +193,24 @@ export function ChatClient({ chatId }: ChatClientProps) {
 
       {/* Bottom area: input field positioned absolutely */}
       <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-        <div className="max-w-3xl mx-auto w-full">
+        <div className="max-w-3xl mx-auto w-full bg-muted/80 backdrop-blur-sm border border-border/50 shadow-lg p-1 rounded-[1.75rem]">
           {componentGenerated && !generating ? (
             <PromptInput
               onSubmit={handleSubmit}
-              className="bg-muted/80 backdrop-blur-sm border border-border/50 shadow-lg"
+              className="bg-background"
             >
-              <input
-                type="text"
-                className="flex h-10 w-full rounded-md bg-transparent px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              <PromptInputTextarea
                 placeholder="Modify this component (e.g., 'make it darker', 'add a search bar')..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 disabled={generating}
+                style={{ color: "inherit" }}
               />
             </PromptInput>
           ) : (
             <PromptInput
               onSubmit={handleSubmit}
-              className="bg-muted/80 backdrop-blur-sm border border-border/50 shadow-lg"
+              className="bg-background"
             >
               <PromptInputTextarea
                 placeholder="Describe the UI component you want to build..."

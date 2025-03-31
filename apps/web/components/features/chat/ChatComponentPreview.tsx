@@ -102,7 +102,7 @@ export function ChatComponentPreview({
   }
 
   return (
-    <div className="flex h-full rounded-lg shadow-base">
+    <div className="flex h-full rounded-lg shadow-base overflow-hidden">
       {/* Main preview area - shows the currently selected version */}
       <div className="flex-1 relative">
         {isFrameLoading && (
