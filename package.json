@@ -22,9 +22,11 @@
   },
   "dependencies": {
     "@radix-ui/react-radio-group": "^1.2.3",
+    "@types/uuid": "^10.0.0",
     "emblor": "^1.4.7",
     "jotai": "2.8.0",
-    "next": "^15.2.1"
+    "next": "^15.2.1",
+    "uuid": "^11.1.0"
   },
   "resolutions": {
     "jotai": "2.8.0"
