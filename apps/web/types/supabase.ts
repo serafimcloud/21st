@@ -1855,6 +1855,27 @@ export type Database = {
           total_count: number
         }[]
       }
+      get_admin_liked_demos_v1: {
+        Args: {
+          p_user_id: string
+          p_limit?: number
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          total_count: number
+          view_count: number
+          bookmarks_count: number
+          bundle_url: Json
+        }[]
+      }
       get_all_author_payouts: {
         Args: {
           p_period?: string
@@ -1969,6 +1990,7 @@ export type Database = {
           total_count: number
           view_count: number
           bookmarks_count: number
+          bundle_url: Json
         }[]
       }
       get_liked_components: {
@@ -2049,6 +2071,21 @@ export type Database = {
           user_data: Json
           downloads_count: number
           likes_count: number
+        }[]
+      }
+      get_top_components_for_email: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          description: string
+          username: string
+          component_slug: string
+          preview_url: string
+          demo_slug: string
+          demo_preview_url: string
+          is_paid: boolean
+          is_current_week: boolean
         }[]
       }
       get_user_bookmarks_list: {
