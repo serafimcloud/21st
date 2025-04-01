@@ -41,7 +41,11 @@ import { DemoWithComponent } from "@/types/global"
 import { cn } from "@/lib/utils"
 import { PROMPT_TYPES, PromptType } from "@/types/global"
 import { promptOptions } from "@/lib/prompts"
-import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
+import {
+  AMPLITUDE_EVENTS,
+  trackEvent,
+  trackPageProperties,
+} from "@/lib/amplitude"
 import { useSupabaseAnalytics } from "@/hooks/use-analytics"
 import { AnalyticsActivityType } from "@/types/global"
 import { toast } from "sonner"
@@ -109,6 +113,33 @@ export function ComponentPreviewDialog({
   )
   const isMobile = useIsMobile()
   const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Add analytics tracking
+  useEffect(() => {
+    if (!isOpen) return // Only track when dialog is open
+
+    trackPageProperties({
+      componentId: demo.component.id,
+      componentName: demo.component.name,
+      authorId: demo.component.user_id,
+      isPublic: demo.component.is_public,
+      tags: [],
+      downloadsCount: demo.component.downloads_count,
+      hasDemo: !!demo.component.demo_code,
+      deviceType: window.innerWidth < 768 ? "mobile" : "desktop",
+    })
+    capture(demo.component.id, AnalyticsActivityType.COMPONENT_VIEW, user?.id)
+  }, [
+    isOpen,
+    demo.component.id,
+    demo.component.name,
+    demo.component.user_id,
+    demo.component.is_public,
+    demo.component.downloads_count,
+    demo.component.demo_code,
+    user?.id,
+    capture,
+  ])
 
   const bundleUrl = demo.bundle_url?.html
 
