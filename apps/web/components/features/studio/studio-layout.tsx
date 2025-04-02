@@ -5,6 +5,7 @@ import { Footer } from "@/components/ui/footer"
 import { StudioSidebar } from "./studio-sidebar"
 import { User } from "@/types/global"
 import { ReactNode } from "react"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 interface StudioLayoutProps {
   user: User
@@ -15,9 +16,11 @@ export function StudioLayout({ user, children }: StudioLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex flex-1 pt-14">
-        <StudioSidebar user={user} />
-        <main className="flex-1 overflow-y-auto p-8">{children}</main>
+      <div className="flex-1 pt-14">
+        <SidebarProvider defaultOpen={true}>
+          <StudioSidebar user={user} />
+          <SidebarInset className="p-8">{children}</SidebarInset>
+        </SidebarProvider>
       </div>
       <Footer />
     </div>
