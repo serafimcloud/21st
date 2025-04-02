@@ -292,7 +292,17 @@ export function Header({
                     asChild
                     className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
                   >
-                    <Link href="/publish">Add new</Link>
+                    <Link
+                      href={
+                        userState.profile?.display_username
+                          ? `/studio/${userState.profile.display_username}`
+                          : userState.profile?.username
+                            ? `/studio/${userState.profile.username}`
+                            : "/studio"
+                      }
+                    >
+                      Add new
+                    </Link>
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -315,7 +325,16 @@ export function Header({
                       align="end"
                     >
                       <DropdownMenuItem asChild>
-                        <Link href="/publish" className="cursor-pointer">
+                        <Link
+                          href={
+                            userState.profile?.display_username
+                              ? `/studio/${userState.profile.display_username}`
+                              : userState.profile?.username
+                                ? `/studio/${userState.profile.username}`
+                                : "/studio"
+                          }
+                          className="cursor-pointer"
+                        >
                           <div className="flex flex-col gap-1">
                             <span className="text-sm font-medium">
                               Publish component
@@ -399,6 +418,23 @@ export function Header({
                     }}
                   >
                     View Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer flex items-center justify-between"
+                    onSelect={() => {
+                      if (userState.profile?.display_username) {
+                        router.push(
+                          `/studio/${userState.profile.display_username}`,
+                        )
+                      } else if (userState.profile?.username) {
+                        router.push(`/studio/${userState.profile.username}`)
+                      } else {
+                        router.push("/studio")
+                      }
+                    }}
+                  >
+                    Studio
+                    <Icons.layoutDashboard className="h-4 w-4" />
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-sm px-3 py-2 cursor-pointer flex items-center justify-between"

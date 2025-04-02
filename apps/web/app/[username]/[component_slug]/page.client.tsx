@@ -54,7 +54,7 @@ import { BookmarkButton } from "@/components/ui/bookmark-button"
 import { ThemeToggle } from "../../../components/ui/theme-toggle"
 import { ComponentPagePreview } from "../../../components/features/component-page/component-preview"
 import { EditComponentDialog } from "../../../components/ui/edit-component-dialog"
-import { usePublishAs } from "../../../components/features/publish/hooks/use-publish-as"
+import { usePublishAs } from "../../../components/features/publish-old/hooks/use-publish-as"
 import { Icons } from "@/components/icons"
 import { CopyPromptDialog } from "@/components/ui/copy-prompt-dialog"
 

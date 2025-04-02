@@ -9,6 +9,7 @@ import {
   CalendarIcon,
   Settings,
   Info,
+  LayoutDashboard,
 } from "lucide-react"
 import { LovableLogo } from "./lovable"
 import { SitebrewLogo } from "./sitebrew"
@@ -158,17 +159,21 @@ export const Icons = {
   ),
   slash: (props: LucideProps) => (
     <svg
-      height="16"
-      strokeLinejoin="round"
-      viewBox="0 0 16 16"
+      aria-hidden="true"
+      focusable="false"
+      data-prefix="fas"
+      data-icon="slash"
+      role="img"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 640 512"
       width="16"
+      height="16"
+      fill="currentColor"
       {...props}
     >
       <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M4.01526 15.3939L4.3107 14.7046L10.3107 0.704556L10.6061 0.0151978L11.9849 0.606077L11.6894 1.29544L5.68942 15.2954L5.39398 15.9848L4.01526 15.3939Z"
         fill="currentColor"
+        d="M594.53 508.63L6.18 53.9a15.41 15.41 0 0 1-4.07-9.81a14.89 14.89 0 0 1 4.07-9.8L30.77 8.7c5.36-5.41 14.55-5.41 20.07 0l588.36 454.73c5.52 5.41 5.52 14.56 0 20.07l-24.59 25.13c-5.5 5.41-14.69 5.41-20.08 0z"
       />
     </svg>
   ),
@@ -290,4 +295,5 @@ export const Icons = {
   calendar: CalendarIcon,
   settings: Settings,
   info: Info,
+  layoutDashboard: LayoutDashboard,
 }
