@@ -582,9 +582,7 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
         <div className="flex items-center justify-between gap-8">
           {/* Results per page */}
           <div className="flex items-center gap-3">
-            <Label htmlFor={id} className="max-sm:sr-only">
-              Rows per page
-            </Label>
+            <Label htmlFor={id} className="max-sm:sr-only whitespace-nowrap">Rows per page</Label>
             <Select
               value={table.getState().pagination.pageSize.toString()}
               onValueChange={(value) => {

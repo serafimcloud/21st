@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation"
-import { Footer } from "@/components/ui/footer"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { auth } from "@clerk/nextjs/server"
 import { unstable_cache } from "next/cache"

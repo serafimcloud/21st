@@ -1,7 +1,6 @@
 "use client"
 
 import { Header } from "@/components/ui/header.client"
-import { Footer } from "@/components/ui/footer"
 import { StudioSidebar } from "./studio-sidebar"
 import { User } from "@/types/global"
 import { ReactNode } from "react"
@@ -22,7 +21,6 @@ export function StudioLayout({ user, children }: StudioLayoutProps) {
           <SidebarInset className="p-8">{children}</SidebarInset>
         </SidebarProvider>
       </div>
-      <Footer />
     </div>
   )
 }
