@@ -12,10 +12,23 @@ const openai = new OpenAI({
 const MOCK_RESPONSE = {
   componentName: "ExampleComponent",
   registryType: "ui",
-  shadcnImports: ["Button", "Dialog", "Input"],
-  nonStandardImports: ["SomeCustomComponent"],
+  shadcnComponentsImports: ["Button", "Dialog", "Input"],
+  nonShadcnComponentsImports: ["SomeCustomComponent"],
   npmDependencies: ["react", "next", "lucide-react"],
-  requiresAdditionalStyles: false,
+  additionalStyles: {
+    required: false,
+    tailwindExtensions: {
+      colors: {},
+      animations: {},
+      fontFamily: {},
+      borderRadius: {},
+      boxShadow: {},
+      spacing: {},
+    },
+    cssVariables: [],
+    keyframes: [],
+    utilities: [],
+  },
 }
 
 export async function POST(request: Request) {
@@ -137,9 +150,17 @@ async function preprocessComponent(code: string) {
 	49.	Toggle Group
 	50.	Tooltip
 )
-4. Identify any non-shadcn/ui component imports (including @/hooks and @/components/[registry]/ components, excluding standart shadcn files like { cn } from "@/lib/utils)
+4. Identify any non-shadcn/ui component imports (including @/hooks and @/components/[registry]/ components, excluding npm packages and standard shadcn utilities). 
+   IMPORTANT: DO NOT include imports like { cn } from "@/lib/utils" or any other utility functions. Only include actual component imports.
+
 5. List all npm package dependencies used in the component (excluding react, react-dom, tailwindcss, and any packages starting with 'next' or '@/')
-6. Analyze if the component requires additional CSS styles beyond what's provided in the default shadcn/ui Tailwind configuration and globals CSS.
+6. Analyze if the component requires additional CSS styles that are NOT already provided in the default shadcn/ui Tailwind configuration and globals CSS.
+
+IMPORTANT: Only include styles that are NOT already covered by the default tailwind.config.js and globals.css files provided below. 
+- DO NOT include any standard Tailwind classes like 'flex', 'p-4', 'text-sm', etc.
+- DO NOT include CSS variables that are already defined in the globals.css provided
+- DO NOT include any shadcn/ui component styles, as those are already available
+- ONLY include custom CSS variables, custom keyframes, or custom utilities that the user has defined and would need to be added to make the component work correctly
 
 Here's the default Tailwind configuration:
 \`\`\`js
@@ -155,10 +176,51 @@ Respond in JSON format only with the following structure:
 {
   "componentName": "string",
   "registryType": "ui|hooks|blocks",
-  "shadcnImports": ["string"],
-  "nonStandardImports": ["string"],
+  "shadcnComponentsImports": ["string"],
+  "nonShadcnComponentsImports": ["string"],
   "npmDependencies": ["string"],
-  "requiresAdditionalStyles": boolean
+  "additionalStyles": {
+    "required": boolean,
+    "tailwindExtensions": {
+      "colors": {
+        "color-name": "color-value" // ONLY colors not in default config
+      },
+      "animations": {
+        "animation-name": "animation-definition" // ONLY animations not in default config
+      },
+      "fontFamily": {
+        "font-name": ["font-stack"] // ONLY font families not in default config
+      },
+      "borderRadius": {
+        "radius-name": "radius-value" // ONLY border radius values not in default config
+      },
+      "boxShadow": {
+        "shadow-name": "shadow-value" // ONLY shadows not in default config
+      },
+      "spacing": {
+        "spacing-name": "spacing-value" // ONLY spacing values not in default config
+      }
+    },
+    "cssVariables": [
+      {
+        "name": "--variable-name", // ONLY CSS variables not already defined in globals.css
+        "value": "variable-value",
+        "where": "root|.dark|.component-class|etc"
+      }
+    ],
+    "keyframes": [
+      {
+        "name": "keyframe-name", // ONLY keyframes not already defined in globals.css
+        "definition": "@keyframes keyframe-name { 0% { ... } 100% { ... } }"
+      }
+    ],
+    "utilities": [
+      {
+        "className": ".class-name", // ONLY utility classes not covered by Tailwind or globals.css
+        "definition": "{ property: value; property2: value2; }"
+      }
+    ]
+  }
 }`,
       },
       {
