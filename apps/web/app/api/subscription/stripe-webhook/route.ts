@@ -204,6 +204,33 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
   }
 }
 
+async function handleFraudWarning(event: Stripe.Event) {
+  const earlyFraudWarning = event.data.object as Stripe.Radar.EarlyFraudWarning
+  const paymentIntentId = earlyFraudWarning.payment_intent
+
+  if (!paymentIntentId) {
+    throw new Error("No payment intent found in the event")
+  }
+
+  const refund = await stripe.refunds.create({
+    payment_intent: paymentIntentId as string,
+  })
+  console.log(`Refund created: ${refund.id}`)
+
+  const paymentIntent = await stripe.paymentIntents.retrieve(
+    paymentIntentId as string,
+  )
+
+  if (paymentIntent.customer) {
+    const deletedCustomer = await stripe.customers.del(
+      paymentIntent.customer as string,
+    )
+    console.log(
+      `Customer ${paymentIntent.customer} deleted: ${deletedCustomer.deleted}`,
+    )
+  }
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const body = await req.text()
   const sig = req.headers.get("stripe-signature")
@@ -226,11 +253,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  const eventObject = event.data.object;
-  let userId;
-  
-  if ('metadata' in eventObject && eventObject.metadata?.userId) {
-    userId = eventObject.metadata.userId;
+  const eventObject = event.data.object
+  let userId
+
+  if ("metadata" in eventObject && eventObject.metadata?.userId) {
+    userId = eventObject.metadata.userId
   } else {
     return NextResponse.json(
       { error: "No userId found in event object metadata" },
@@ -246,6 +273,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         break
       case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event)
+        break
+      case "radar.early_fraud_warning.created":
+        await handleFraudWarning(event)
         break
     }
 
