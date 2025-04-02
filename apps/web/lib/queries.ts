@@ -5,7 +5,7 @@ import {
   useQueryClient,
   useQuery,
 } from "@tanstack/react-query"
-import { makeSlugFromName } from "@/components/features/publish/hooks/use-is-check-slug-available"
+import { makeSlugFromName } from "@/components/features/publish-old/hooks/use-is-check-slug-available"
 import { SupabaseClient, createClient } from "@supabase/supabase-js"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { useUser } from "@clerk/nextjs"
