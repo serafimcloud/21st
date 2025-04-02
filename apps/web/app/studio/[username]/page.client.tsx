@@ -3,7 +3,7 @@
 import { User, DemoWithComponent } from "@/types/global"
 import { StudioLayout } from "@/components/features/studio/studio-layout"
 import { ComponentsTable } from "@/components/features/studio/components-table"
-import { PublishDialog } from "@/components/features/studio/publish-dialog"
+import { PublishDialog } from "@/components/features/studio/publish/publish-dialog"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
