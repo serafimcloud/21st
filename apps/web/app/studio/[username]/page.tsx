@@ -5,6 +5,7 @@ import { auth } from "@clerk/nextjs/server"
 import { unstable_cache } from "next/cache"
 import { getUserData } from "@/lib/queries"
 import { StudioUsernameClient } from "./page.client"
+import { transformDemoResult } from "@/lib/utils/transformData"
 
 // Get user data by username
 const getCachedUser = unstable_cache(
@@ -19,20 +20,27 @@ const getCachedUser = unstable_cache(
   },
 )
 
-// Get components by user ID
-const getCachedUserComponents = unstable_cache(
+// Get demos by user ID
+const getCachedUserDemos = unstable_cache(
   async (userId: string) => {
-    const { data: components } = await supabaseWithAdminAccess
-      .from("components")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-    return components || []
+    const { data: demos, error } = await supabaseWithAdminAccess.rpc(
+      "get_user_profile_demo_list_v2",
+      {
+        p_user_id: userId,
+      },
+    )
+
+    if (error) {
+      console.error("Error fetching user demos:", error)
+      return []
+    }
+
+    return demos ? demos.map(transformDemoResult) : []
   },
-  ["user-components"],
+  ["user-demos"],
   {
     revalidate: 30,
-    tags: ["user-components"],
+    tags: ["user-demos"],
   },
 )
 
@@ -91,14 +99,14 @@ export default async function StudioUsernamePage({
     redirect("/studio")
   }
 
-  // Get components for the specified user
-  const components = await getCachedUserComponents(user.id)
+  // Get demos for the specified user
+  const demos = await getCachedUserDemos(user.id)
 
   // Pass everything to the client component
   return (
     <StudioUsernameClient
       user={user}
-      components={components}
+      demos={demos}
       isAdmin={isAdmin}
       isOwnProfile={isOwnProfile}
     />

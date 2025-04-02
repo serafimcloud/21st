@@ -33,6 +33,9 @@ export const transformDemoResult = (result: any): DemoWithComponent => {
     embedding: result.embedding || null,
     embedding_oai: result.embedding_oai || null,
     bundle_url: result.bundle_url || null,
+    is_private: result.is_private || false,
+    submission_status: result.submission_status || "featured",
+    moderators_feedback: result.moderators_feedback || null,
   }
   return transformed
 }

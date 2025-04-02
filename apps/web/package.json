@@ -59,6 +59,7 @@
     "@tabler/icons-react": "^3.26.0",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/react-query": "^5.59.0",
+    "@tanstack/react-table": "^8.21.2",
     "@types/prismjs": "^1.26.4",
     "autoprefixer": "^10.4.20",
     "cheerio": "^1.0.0",

@@ -2128,6 +2128,30 @@ export type Database = {
           component_user_data: Json
         }[]
       }
+      get_user_profile_demo_list_v2: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          created_at: string
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          total_count: number
+          view_count: number
+          bookmarks_count: number
+          bundle_url: Json
+          is_private: boolean
+          submission_status: string
+          moderators_feedback: string
+        }[]
+      }
       get_user_state: {
         Args: {
           user_id_param: string

@@ -3,7 +3,6 @@ import { redirect } from "next/navigation"
 import { auth } from "@clerk/nextjs/server"
 import Link from "next/link"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { headers } from "next/headers"
 
 export const metadata = {
   title: "Creator Studio | 21st.dev - The NPM for Design Engineers",
