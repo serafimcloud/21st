@@ -9,8 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -225,7 +223,7 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
         )
       },
       size: 100,
-      sortingFn: "status",
+      sortingFn: "alphanumeric",
     },
     {
       header: "Visibility",
@@ -249,7 +247,7 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
         )
       },
       size: 100,
-      sortingFn: "visibility",
+      sortingFn: "alphanumeric",
     },
     {
       header: "Created",
@@ -276,7 +274,7 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
         }
       },
       size: 150,
-      sortingFn: "updated-at",
+      sortingFn: "alphanumeric",
     },
     {
       header: "Views",
@@ -303,7 +301,7 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
         )
       },
       size: 80,
-      sortingFn: "view-count",
+      sortingFn: "alphanumeric",
     },
     {
       header: "Likes",
@@ -332,7 +330,7 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
         )
       },
       size: 80,
-      sortingFn: "bookmarks-count",
+      sortingFn: "alphanumeric",
     },
   ]
 
@@ -391,8 +389,6 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
       sorting,
       pagination,
     },
-    // Custom sort functions for specific columns
-    getSortedRowModel: getSortedRowModel(),
     sortingFns: {
       "updated-at": (rowA, rowB, columnId) => {
         const a = rowA.original.updated_at || rowA.original.created_at || ""
