@@ -94,17 +94,13 @@ export default async function StudioUsernamePage({
   // Get components for the specified user
   const components = await getCachedUserComponents(user.id)
 
+  // Pass everything to the client component
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-1">
-        <StudioUsernameClient
-          user={user}
-          components={components}
-          isAdmin={isAdmin}
-          isOwnProfile={isOwnProfile}
-        />
-      </div>
-      <Footer />
-    </div>
+    <StudioUsernameClient
+      user={user}
+      components={components}
+      isAdmin={isAdmin}
+      isOwnProfile={isOwnProfile}
+    />
   )
 }
