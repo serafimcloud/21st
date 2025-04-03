@@ -391,12 +391,16 @@ export default function App() {
             <SandpackProvider {...sandpackConfig}>
               <OpenInCodeSandboxButton />
               <SandpackLayout style={{ height: "100%" }}>
-                <FileExplorer />
-                <div className="flex-1">
-                  <CodeEditor
-                    componentPath={getComponentFilePath()}
-                    onCodeChange={setComponentCode}
-                  />
+                <div className="flex w-full h-full">
+                  <div className="w-64 border-r border-border">
+                    <FileExplorer />
+                  </div>
+                  <div className="flex-1">
+                    <CodeEditor
+                      componentPath={getComponentFilePath()}
+                      onCodeChange={setComponentCode}
+                    />
+                  </div>
                 </div>
               </SandpackLayout>
             </SandpackProvider>
