@@ -14,6 +14,26 @@ export function TroubleshootingSection({
   selectedIde = "cursor",
 }: TroubleshootingSectionProps) {
   const [os, setOs] = useState<"windows" | "mac">(selectedOS)
+  const [latestVersion, setLatestVersion] = useState<string>("0.0.34")
+
+  // Fetch latest version from npm registry
+  useEffect(() => {
+    async function fetchLatestVersion() {
+      try {
+        const response = await fetch(
+          "https://registry.npmjs.org/@21st-dev/magic",
+        )
+        const data = await response.json()
+        if (data && data["dist-tags"] && data["dist-tags"].latest) {
+          setLatestVersion(data["dist-tags"].latest)
+        }
+      } catch (error) {
+        console.error("Failed to fetch latest version", error)
+      }
+    }
+
+    fetchLatestVersion()
+  }, [])
 
   // Log the selectedIde value to debug
   useEffect(() => {
@@ -21,6 +41,13 @@ export function TroubleshootingSection({
   }, [selectedIde])
 
   const commonIssues = [
+    {
+      problem: "Client closed",
+      solutions: [
+        `Go to MCP configuration`,
+        `Use explicit version number: "npx -y @21st-dev/magic@${latestVersion}" instead of "@latest"`,
+      ],
+    },
     {
       problem: "No tools found error",
       solutions: [
@@ -131,10 +158,7 @@ export function TroubleshootingSection({
         <h4 className="text-lg font-medium mb-2">Common Issues</h4>
         <div className="space-y-4">
           {commonIssues.map((issue, index) => (
-            <div
-              key={index}
-              className="rounded-md border bg-card p-3"
-            >
+            <div key={index} className="rounded-md border bg-card p-3">
               <p className="font-medium mb-2">{issue.problem}</p>
               <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                 {issue.solutions.map((solution, sIndex) => (
@@ -153,10 +177,7 @@ export function TroubleshootingSection({
         <div className="space-y-4">
           {(os === "windows" ? windowsIssues : macIssues).map(
             (issue, index) => (
-              <div
-                key={index}
-                className="rounded-md border bg-card p-3"
-              >
+              <div key={index} className="rounded-md border bg-card p-3">
                 <p className="font-medium mb-2">{issue.problem}</p>
                 <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   {issue.solutions.map((solution, sIndex) => (
@@ -170,9 +191,7 @@ export function TroubleshootingSection({
       </div>
 
       <div>
-        <h4 className="text-lg font-medium mb-2">
-          IDE-Specific Issues
-        </h4>
+        <h4 className="text-lg font-medium mb-2">IDE-Specific Issues</h4>
         <Tabs defaultValue={selectedIde} className="w-full">
           <TabsList className="grid grid-cols-3 mb-4 rounded-md h-7 p-0.5">
             <TabsTrigger className="text-xs h-6" value="cursor">
@@ -188,10 +207,7 @@ export function TroubleshootingSection({
           {Object.entries(ideIssues).map(([ide, issues]) => (
             <TabsContent key={ide} value={ide} className="space-y-4">
               {issues.map((issue, index) => (
-                <div
-                  key={index}
-                  className="rounded-md border bg-card p-3"
-                >
+                <div key={index} className="rounded-md border bg-card p-3">
                   <p className="font-medium mb-2">{issue.problem}</p>
                   <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                     {issue.solutions.map((solution, sIndex) => (
