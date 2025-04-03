@@ -15,6 +15,7 @@ const MOCK_RESPONSE = {
   shadcnComponentsImports: ["Button", "Dialog", "Input"],
   nonShadcnComponentsImports: ["SomeCustomComponent"],
   npmDependencies: ["react", "next", "lucide-react"],
+  environmentVariables: [],
   additionalStyles: {
     required: false,
     tailwindExtensions: {
@@ -154,7 +155,8 @@ async function preprocessComponent(code: string) {
    IMPORTANT: DO NOT include imports like { cn } from "@/lib/utils" or any other utility functions. Only include actual component imports.
 
 5. List all npm package dependencies used in the component (excluding react, react-dom, tailwindcss, and any packages starting with 'next' or '@/')
-6. Analyze if the component requires additional CSS styles that are NOT already provided in the default shadcn/ui Tailwind configuration and globals CSS.
+6. Identify any environment variables (process.env.*) that the component requires to function correctly.
+7. Analyze if the component requires additional CSS styles that are NOT already provided in the default shadcn/ui Tailwind configuration and globals CSS.
 
 IMPORTANT: Only include styles that are NOT already covered by the default tailwind.config.js and globals.css files provided below. 
 - DO NOT include any standard Tailwind classes like 'flex', 'p-4', 'text-sm', etc.
@@ -179,6 +181,13 @@ Respond in JSON format only with the following structure:
   "shadcnComponentsImports": ["string"],
   "nonShadcnComponentsImports": ["string"],
   "npmDependencies": ["string"],
+  "environmentVariables": [
+    {
+      "name": "VARIABLE_NAME",
+      "description": "What this variable is used for",
+      "required": boolean
+    }
+  ],
   "additionalStyles": {
     "required": boolean,
     "tailwindExtensions": {
