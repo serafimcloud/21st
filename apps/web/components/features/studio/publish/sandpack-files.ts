@@ -6,6 +6,8 @@ interface GenerateFilesOptions {
   componentCode: string
   processedData: any | null
   dependencies?: Record<string, string>
+  customTailwindConfig?: string | null
+  customGlobalCss?: string | null
 }
 
 export function generateSandpackFiles({
@@ -13,6 +15,8 @@ export function generateSandpackFiles({
   componentCode,
   processedData,
   dependencies = {},
+  customTailwindConfig = null,
+  customGlobalCss = null,
 }: GenerateFilesOptions): SandpackFiles {
   const files: SandpackFiles = {
     [componentPath]: {
@@ -65,7 +69,7 @@ root.render(
 );`,
     },
     "/globals.css": {
-      code: defaultGlobalCss,
+      code: customGlobalCss || defaultGlobalCss,
     },
     "/tsconfig.json": {
       code: JSON.stringify(
@@ -150,14 +154,14 @@ export function cn(...inputs: ClassValue[]) {
 }`,
     },
     "/tailwind.config.js": {
-      code: defaultTailwindConfig,
+      code: customTailwindConfig || defaultTailwindConfig,
     },
     "/node_modules/next/package.json": {
       code: `{
   "name": "next",
   "version": "latest",
   "main": "index.js"
-}`
+}`,
     },
     "/node_modules/next/index.js": {
       code: `export { default as Image } from './image';
@@ -167,7 +171,7 @@ export { default as Head } from './head';
 export { default as Script } from './script';
 export { default as dynamic } from './dynamic';
 export { Roboto } from './font';
-export { default as Document } from './document';`
+export { default as Document } from './document';`,
     },
     "/node_modules/next/image.js": {
       code: `import React from 'react';
@@ -176,7 +180,7 @@ const Image = ({ src, alt, width, height, ...props }) => (
   <img src={src} alt={alt} width={width} height={height} {...props} />
 );
 
-export default Image;`
+export default Image;`,
     },
     "/node_modules/next/link.js": {
       code: `import React from 'react';
@@ -185,7 +189,7 @@ const Link = ({ href, children, ...props }) => (
   <a href={href} {...props}>{children}</a>
 );
 
-export default Link;`
+export default Link;`,
     },
     "/node_modules/next/head.js": {
       code: `import React from 'react';
@@ -194,7 +198,7 @@ const Head = ({ children }) => {
   return <div>{children}</div>;
 };
 
-export default Head;`
+export default Head;`,
     },
     "/node_modules/next/script.js": {
       code: `import React from 'react';
@@ -203,7 +207,7 @@ const Script = ({ src, strategy, children, ...props }) => {
   return <script src={src} {...props}>{children}</script>;
 };
 
-export default Script;`
+export default Script;`,
     },
     "/node_modules/next/router.js": {
       code: `import React, { createContext, useContext } from 'react';
@@ -237,7 +241,7 @@ export const RouterProvider = ({ children }) => {
       {children}
     </RouterContext.Provider>
   );
-};`
+};`,
     },
     "/node_modules/next/dynamic.js": {
       code: `import React, { Suspense } from 'react';
@@ -254,12 +258,12 @@ const dynamic = (importFunc, options = {}) => {
   );
 };
 
-export default dynamic;`
+export default dynamic;`,
     },
     "/node_modules/next/font.js": {
       code: `export const Roboto = {
   className: 'font-roboto',
-};`
+};`,
     },
     "/node_modules/next/document.js": {
       code: `import React from 'react';
@@ -279,11 +283,11 @@ export default function Document() {
       </body>
     </Html>
   );
-}`
+}`,
     },
     "/node_modules/next/navigation.js": {
-      code: `export { usePathname } from './router';`
-    }
+      code: `export { usePathname } from './router';`,
+    },
   }
 
   return files
