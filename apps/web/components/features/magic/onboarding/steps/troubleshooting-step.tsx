@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { IdeOption, OsType } from "@/app/magic/onboarding/page.client"
 import { ArrowLeft } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Icons } from "@/components/icons"
 import { OnboardingStep } from "@/app/magic/onboarding/page.client"
 
@@ -20,6 +20,26 @@ export function TroubleshootingStep({
   previousStep,
   onComplete,
 }: TroubleshootingStepProps) {
+  const [latestVersion, setLatestVersion] = useState<string>("0.0.34")
+
+  useEffect(() => {
+    async function fetchLatestVersion() {
+      try {
+        const response = await fetch(
+          "https://registry.npmjs.org/@21st-dev/magic",
+        )
+        const data = await response.json()
+        if (data && data["dist-tags"] && data["dist-tags"].latest) {
+          setLatestVersion(data["dist-tags"].latest)
+        }
+      } catch (error) {
+        console.error("Failed to fetch latest version", error)
+      }
+    }
+
+    fetchLatestVersion()
+  }, [])
+
   // Add keyboard shortcut for Enter key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -39,6 +59,12 @@ export function TroubleshootingStep({
 
   // Common issues for all IDEs
   const commonIssues = [
+    {
+      problem: "Client closed",
+      solutions: [
+        `Go to MCP config and use explicit version number: npx -y @21st-dev/magic@${latestVersion} instead of latest`,
+      ],
+    },
     {
       problem: "No tools found error",
       solutions: [
@@ -155,10 +181,7 @@ export function TroubleshootingStep({
           <h4 className="text-lg font-medium mb-4">Common Issues</h4>
           <div className="space-y-4">
             {commonIssues.map((issue, index) => (
-              <div
-                key={index}
-                className="rounded-md border bg-card p-4"
-              >
+              <div key={index} className="rounded-md border bg-card p-4">
                 <p className="font-medium mb-2">{issue.problem}</p>
                 <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   {issue.solutions.map((solution, sIndex) => (
@@ -177,10 +200,7 @@ export function TroubleshootingStep({
           </h4>
           <div className="space-y-4">
             {currentOsIssues.map((issue, index) => (
-              <div
-                key={index}
-                className="rounded-md border bg-card p-4"
-              >
+              <div key={index} className="rounded-md border bg-card p-4">
                 <p className="font-medium mb-2">{issue.problem}</p>
                 <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   {issue.solutions.map((solution, sIndex) => (
@@ -204,10 +224,7 @@ export function TroubleshootingStep({
           </h4>
           <div className="space-y-4">
             {currentIdeIssues.map((issue, index) => (
-              <div
-                key={index}
-                className="rounded-md border bg-card p-4"
-              >
+              <div key={index} className="rounded-md border bg-card p-4">
                 <p className="font-medium mb-2">{issue.problem}</p>
                 <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
                   {issue.solutions.map((solution, sIndex) => (
