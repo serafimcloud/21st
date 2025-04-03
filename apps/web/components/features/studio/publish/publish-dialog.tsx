@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -8,12 +8,38 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { PlusCircle } from "lucide-react"
 import { Spinner } from "@/components/icons/spinner"
+import {
+  SandpackProvider,
+  SandpackCodeEditor,
+  SandpackProviderProps,
+  useSandpack,
+} from "@codesandbox/sandpack-react"
+import { useTheme } from "next-themes"
+
+// Custom component that monitors code changes in the editor
+function CodeEditorWithUpdates() {
+  const { sandpack } = useSandpack()
+
+  // When files change in sandpack (from user editing), update the parent
+  useEffect(() => {
+    const activeFile = sandpack.activeFile
+    const code = sandpack.files[activeFile]?.code || ""
+
+    // Update the parent state using the updateFile to notify parent
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("SANDPACK_CODE_CHANGE", { detail: { code } }),
+      )
+    }
+  }, [sandpack.files, sandpack.activeFile])
+
+  return <SandpackCodeEditor />
+}
 
 interface PublishDialogProps {
   userId: string
@@ -27,6 +53,29 @@ export function PublishDialog({ userId }: PublishDialogProps) {
   const [processedData, setProcessedData] = useState<any>(null)
   const supabase = useClerkSupabaseClient()
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
+  const isDarkTheme = resolvedTheme === "dark"
+  const [sandpackKey, setSandpackKey] = useState(Date.now())
+
+  // Listen for code changes from the Sandpack editor
+  useEffect(() => {
+    const handleCodeChange = (event: CustomEvent) => {
+      const { code } = event.detail
+      setComponentCode(code)
+    }
+
+    window.addEventListener(
+      "SANDPACK_CODE_CHANGE",
+      handleCodeChange as EventListener,
+    )
+
+    return () => {
+      window.removeEventListener(
+        "SANDPACK_CODE_CHANGE",
+        handleCodeChange as EventListener,
+      )
+    }
+  }, [])
 
   const handlePreprocess = async () => {
     if (!componentCode.trim()) {
@@ -99,71 +148,88 @@ export function PublishDialog({ userId }: PublishDialogProps) {
     }
   }
 
+  const defaultCode = `export default function Component() {
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <div>
+      {/* Your component code here */}
+    </div>
+  )
+}`
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open)
+    if (!open) {
+      setComponentCode("")
+      setProcessedData(null)
+    } else {
+      // Force re-mount of Sandpack when dialog opens
+      setSandpackKey(Date.now())
+    }
+  }
+
+  const sandpackFiles = {
+    "/App.tsx": componentCode || defaultCode,
+  }
+
+  const providerProps: SandpackProviderProps = {
+    theme: isDarkTheme ? "dark" : "light",
+    template: "react-ts",
+    files: sandpackFiles,
+    options: {
+      activeFile: "/App.tsx",
+      visibleFiles: ["/App.tsx"],
+    },
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
           Publish Component
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[725px]">
-        <DialogHeader>
-          <DialogTitle>Publish New Component</DialogTitle>
-          <DialogDescription>
-            Paste your component code below. Make sure it follows our guidelines
-            and includes all necessary imports.
-          </DialogDescription>
+      <DialogContent
+        className="sm:max-w-[800px] h-[80vh] flex flex-col"
+        hideCloseButton
+      >
+        <DialogHeader className="flex flex-row items-start justify-between border-b pb-4">
+          <div>
+            <DialogTitle>Publish New Component</DialogTitle>
+            <DialogDescription>
+              Enter your component code below. Make sure it follows our
+              guidelines and includes all necessary imports.
+            </DialogDescription>
+          </div>
+          <Button
+            onClick={handlePreprocess}
+            disabled={isProcessing || !componentCode.trim()}
+            className="ml-auto !mt-0"
+          >
+            {isProcessing ? (
+              <>
+                <span className="mr-2">
+                  <Spinner size={16} />
+                </span>
+                Processing...
+              </>
+            ) : (
+              "Process Component"
+            )}
+          </Button>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Textarea
-            placeholder="Paste your component code here..."
-            value={componentCode}
-            onChange={(e) => setComponentCode(e.target.value)}
-            className="h-[400px] font-mono"
-          />
 
-          <div className="flex gap-2">
-            <Button
-              onClick={handlePreprocess}
-              disabled={isProcessing || !componentCode.trim()}
-              className="flex-1"
-              variant="outline"
-            >
-              {isProcessing ? (
-                <>
-                  <span className="mr-2">
-                    <Spinner size={16} />
-                  </span>
-                  Processing...
-                </>
-              ) : (
-                "Process Component"
-              )}
-            </Button>
-
-            <Button
-              onClick={handlePublish}
-              disabled={isPublishing || !componentCode.trim()}
-              className="flex-1"
-            >
-              {isPublishing ? (
-                <>
-                  <span className="mr-2">
-                    <Spinner size={16} />
-                  </span>
-                  Publishing...
-                </>
-              ) : (
-                "Publish Component"
-              )}
-            </Button>
+        <div className="flex-grow overflow-hidden flex flex-col h-full py-4">
+          <div className="h-full min-h-[500px] rounded-md border overflow-hidden">
+            <SandpackProvider key={sandpackKey} {...providerProps}>
+              <CodeEditorWithUpdates />
+            </SandpackProvider>
           </div>
 
           {processedData && (
-            <div className="mt-4 rounded-md border p-4">
+            <div className="mt-4 rounded-md border p-4 overflow-auto max-h-[200px]">
               <h3 className="mb-2 font-medium">Processed Component Data:</h3>
-              <pre className="max-h-[200px] overflow-auto rounded-md bg-slate-100 p-2 text-xs">
+              <pre className="text-xs">
                 {JSON.stringify(processedData, null, 2)}
               </pre>
             </div>
