@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
 import type { SandpackFiles } from "@codesandbox/sandpack-react"
+import { generateSandpackFiles } from "./sandpack-files"
 
 interface UsePublishDialogProps {
   userId: string
@@ -19,133 +20,14 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
 
   // Get component file path
   const getComponentFilePath = useCallback(() => {
-    if (!processedData) return "/src/components/ui/component.tsx"
+    if (!processedData) return "/components/ui/component.tsx"
 
     const registryType = processedData.registryType || "ui"
     const fileName = processedData.slug
       ? `${processedData.slug}.tsx`
       : "component.tsx"
-    return `/src/components/${registryType}/${fileName}`
+    return `/components/${registryType}/${fileName}`
   }, [processedData])
-
-  // Create files structure
-  const files = useMemo(() => {
-    const componentPath = getComponentFilePath()
-    const files: SandpackFiles = {
-      [componentPath]: {
-        code: componentCode,
-      },
-      "/package.json": {
-        code: JSON.stringify(
-          {
-            name: "component-project",
-            dependencies: {
-              react: "^18.2.0",
-              "react-dom": "^18.2.0",
-              ...(processedData?.npmDependencies || []).reduce(
-                (acc: Record<string, string>, dep: string) => ({
-                  ...acc,
-                  [dep]: "latest",
-                }),
-                {},
-              ),
-            },
-          },
-          null,
-          2,
-        ),
-      },
-      "/index.html": {
-        code: `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Component Preview</title>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>`,
-      },
-      "/index.tsx": {
-        code: `import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App";
-
-const rootElement = document.getElementById("root");
-const root = createRoot(rootElement!);
-
-root.render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);`,
-      },
-      "/styles.css": {
-        code: `* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
-    "Helvetica Neue", sans-serif;
-  margin: 0;
-  padding: 1rem;
-}`,
-      },
-      "/tsconfig.json": {
-        code: JSON.stringify(
-          {
-            compilerOptions: {
-              target: "es5",
-              lib: ["dom", "dom.iterable", "esnext"],
-              allowJs: true,
-              skipLibCheck: true,
-              esModuleInterop: true,
-              allowSyntheticDefaultImports: true,
-              strict: true,
-              forceConsistentCasingInFileNames: true,
-              noFallthroughCasesInSwitch: true,
-              module: "esnext",
-              moduleResolution: "node",
-              resolveJsonModule: true,
-              isolatedModules: true,
-              noEmit: true,
-              jsx: "react-jsx",
-            },
-            include: ["src"],
-          },
-          null,
-          2,
-        ),
-      },
-      "/App.tsx": {
-        code: processedData
-          ? `import ${processedData.componentName || "Component"} from "./src/components/${
-              processedData.registryType || "ui"
-            }/${processedData.slug?.replace(".tsx", "") || "component"}";
-
-export default function App() {
-  return (
-    <div className="container">
-      <${processedData.componentName || "Component"} />
-    </div>
-  );
-}`
-          : `import Component from "${getComponentFilePath().replace(".tsx", "")}";
-
-export default function App() {
-  return (
-    <div className="container">
-      <Component />
-    </div>
-  );
-}`,
-      },
-    }
-    return files
-  }, [componentCode, processedData, getComponentFilePath])
 
   // Reset dialog state
   const resetState = useCallback(() => {
@@ -198,13 +80,36 @@ export default function App() {
     }
   }
 
+  // Generate files for Sandpack
+  const files = useMemo(() => {
+    const componentPath = getComponentFilePath()
+    return generateSandpackFiles({
+      componentPath,
+      componentCode,
+      processedData,
+      dependencies: processedData?.npmDependencies?.reduce(
+        (acc: Record<string, string>, dep: string) => ({
+          ...acc,
+          [dep]: "latest",
+        }),
+        {},
+      ),
+    })
+  }, [componentCode, processedData, getComponentFilePath])
+
   // Sandpack configuration
   const sandpackConfig = useMemo(
     () => ({
       files,
       options: {
         activeFile: getComponentFilePath(),
-        visibleFiles: Object.keys(files),
+        visibleFiles: [
+          getComponentFilePath(),
+          "/components",
+          "/tailwind.config.js",
+          "/globals.css",
+          "/package.json",
+        ],
         recompileMode: "delayed" as const,
         recompileDelay: 300,
       },
