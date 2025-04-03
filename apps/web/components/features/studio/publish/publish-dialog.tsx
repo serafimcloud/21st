@@ -44,7 +44,6 @@ function CodeEditor({
 
   return (
     <SandpackCodeEditor
-      showTabs={true}
       showLineNumbers={true}
       showInlineErrors={true}
       className="h-full"
@@ -56,8 +55,6 @@ function CodeEditor({
 
 // File explorer with controlled selection
 function FileExplorer() {
-  const { sandpack } = useSandpack()
-
   return (
     <div className="w-64 border-r overflow-auto">
       <div className="p-2 text-xs font-medium text-muted-foreground">
@@ -271,42 +268,6 @@ export default function App() {
     }
   }
 
-  // Publish component
-  const handlePublishComponent = async () => {
-    if (!componentCode.trim() || !processedData) {
-      toast.error("Component must be processed before publishing")
-      return
-    }
-
-    setIsPublishing(true)
-
-    try {
-      const { error } = await supabase.from("components").insert({
-        code: componentCode,
-        name: processedData.componentName || "New Component",
-        component_names: {},
-        component_slug: processedData.slug || "new-component",
-        preview_url: "https://placeholder.com",
-        user_id: userId,
-        direct_registry_dependencies: {},
-        demo_direct_registry_dependencies: {},
-      })
-
-      if (error) throw error
-
-      toast.success("Component published successfully")
-      setOpen(false)
-      resetState()
-      router.refresh()
-    } catch (error) {
-      toast.error(
-        `Publishing failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      )
-    } finally {
-      setIsPublishing(false)
-    }
-  }
-
   // Sandpack configuration
   const sandpackConfig = useMemo(
     () => ({
@@ -343,11 +304,11 @@ export default function App() {
       </DialogTrigger>
 
       <DialogContent
-        className="sm:max-w-[90vw] h-[80vh] flex flex-col"
+        className="sm:max-w-[90vw] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden"
         hideCloseButton
       >
-        <DialogHeader className="flex flex-row items-start justify-between border-b pb-4">
-          <div>
+        <DialogHeader className="flex flex-row p-4 gap-8 items-start justify-between border-b bg-muted ">
+          <div className="flex flex-col gap-2">
             <DialogTitle>Publish New Component</DialogTitle>
             <DialogDescription>
               Enter your component code below. Make sure it follows our
@@ -373,23 +334,13 @@ export default function App() {
           </Button>
         </DialogHeader>
 
-        <div className="flex-grow overflow-hidden flex flex-col h-full py-4">
-          {processedData && (
-            <div className="mb-2 px-2 py-1 bg-muted text-muted-foreground text-xs rounded flex items-center">
-              <span className="font-medium">Component processed:</span>
-              <span className="ml-1">
-                {processedData.componentName || "Component"}
-              </span>
-              <span className="ml-auto text-xs text-muted-foreground">
-                {processedData.registryType || "ui"}/
-                {processedData.slug || "component"}
-              </span>
-            </div>
-          )}
+        <div className="flex-grow overflow-hidden flex flex-col h-full">
 
-          <div className="h-full min-h-[400px] rounded-md border overflow-hidden flex-grow">
+          <div className="h-full min-h-[400px] overflow-hidden flex-grow">
             <SandpackProvider {...sandpackConfig}>
-              <OpenInCodeSandboxButton />
+              <div className="absolute bottom-2 right-2">
+                <OpenInCodeSandboxButton />
+              </div>
               <SandpackLayout style={{ height: "100%" }}>
                 <div className="flex w-full h-full">
                   <div className="w-64 border-r border-border">
@@ -404,27 +355,6 @@ export default function App() {
                 </div>
               </SandpackLayout>
             </SandpackProvider>
-          </div>
-
-          <div className="mt-4 flex justify-end">
-            {processedData && (
-              <Button
-                onClick={handlePublishComponent}
-                disabled={isPublishing || !componentCode.trim()}
-                className="ml-2"
-              >
-                {isPublishing ? (
-                  <>
-                    <span className="mr-2">
-                      <Spinner size={16} />
-                    </span>
-                    Publishing...
-                  </>
-                ) : (
-                  "Publish Component"
-                )}
-              </Button>
-            )}
           </div>
         </div>
       </DialogContent>
