@@ -76,25 +76,7 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
     return num.toString()
   }
 
-  // Log all preview URLs on component mount for debugging - consolidated into one log
   useEffect(() => {
-    const demosWithoutPreviews = demos.filter((c) => !c.preview_url)
-    const demosWithPreviews = demos.filter((c) => c.preview_url)
-
-    console.log(
-      `Preview status: ${demosWithPreviews.length} with previews, ${demosWithoutPreviews.length} without previews`,
-    )
-
-    if (demosWithoutPreviews.length > 0) {
-      console.log(
-        "Demos missing previews:",
-        demosWithoutPreviews.map((c) => ({
-          id: c.id,
-          name: c.name,
-        })),
-      )
-    }
-
     // Process all preview images at once instead of in each cell
     demos.forEach((demo) => {
       if (demo.preview_url) {
@@ -280,22 +262,10 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
       header: "Views",
       id: "view_count",
       accessorFn: (row) => {
-        // Match exactly how card.tsx gets viewCount
         return row.view_count || 0
       },
       cell: ({ row }) => {
-        // Get view count exactly as card.tsx does it
         const viewCount = row.original.view_count || 0
-
-        // Log this row's view count on first render
-        if (row.index === 0) {
-          console.log(`Row ${row.index} view_count:`, {
-            original: row.original.view_count,
-            formatted: formatNumber(viewCount),
-            componentDownloads: row.original.component?.downloads_count,
-          })
-        }
-
         return (
           <div className="text-right">{formatNumberWithSpaces(viewCount)}</div>
         )
@@ -307,22 +277,10 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
       header: "Likes",
       id: "bookmarks_count",
       accessorFn: (row) => {
-        // Match exactly how card.tsx gets bookmarksCount
         return row.bookmarks_count || 0
       },
       cell: ({ row }) => {
-        // Get bookmarks count exactly as card.tsx does it
         const bookmarksCount = row.original.bookmarks_count || 0
-
-        // Log this row's bookmarks count on first render
-        if (row.index === 0) {
-          console.log(`Row ${row.index} bookmarks_count:`, {
-            original: row.original.bookmarks_count,
-            formatted: formatNumber(bookmarksCount),
-            componentLikes: row.original.component?.likes_count,
-          })
-        }
-
         return (
           <div className="text-right">
             {formatNumberWithSpaces(bookmarksCount)}
@@ -336,45 +294,6 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
 
   // Ensure demos is always an array
   const safeData = Array.isArray(demos) ? demos : []
-
-  // Debug the first demo to see its structure
-  useEffect(() => {
-    if (safeData.length > 0) {
-      // Create a sample demo object for debugging
-      const sampleDemo = safeData[0] as ExtendedDemoWithComponent
-
-      // Compare all data access methods
-      console.log("DEBUG - Data access methods comparison:", {
-        // Direct access (used in table)
-        directViewCount: sampleDemo.view_count || 0,
-        directBookmarksCount: sampleDemo.bookmarks_count || 0,
-
-        // Card.tsx method simulation
-        cardViewCount: sampleDemo.view_count || 0,
-        cardBookmarksCount: sampleDemo.bookmarks_count || 0,
-
-        // Check if nested component properties exist
-        componentDownloads: sampleDemo.component?.downloads_count,
-        componentLikes: sampleDemo.component?.likes_count,
-
-        // Raw values for comparison
-        rawViewCount: sampleDemo.view_count,
-        rawBookmarksCount: sampleDemo.bookmarks_count,
-
-        // New fields from v2 function
-        isPrivate: sampleDemo.is_private,
-        submissionStatus: sampleDemo.submission_status,
-        moderatorsFeedback: sampleDemo.moderators_feedback,
-
-        // Demo structure overview
-        id: sampleDemo.id,
-        name: sampleDemo.name,
-        updated_at: sampleDemo.updated_at,
-        created_at: sampleDemo.created_at,
-        keys: Object.keys(sampleDemo),
-      })
-    }
-  }, [safeData])
 
   const table = useReactTable({
     data: safeData,
@@ -401,13 +320,11 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
         return dateA > dateB ? 1 : dateA < dateB ? -1 : 0
       },
       "view-count": (rowA, rowB, columnId) => {
-        // Match exactly how card.tsx gets viewCount
         const a = rowA.original.view_count || 0
         const b = rowB.original.view_count || 0
         return a > b ? 1 : a < b ? -1 : 0
       },
       "bookmarks-count": (rowA, rowB, columnId) => {
-        // Match exactly how card.tsx gets bookmarksCount
         const a = rowA.original.bookmarks_count || 0
         const b = rowB.original.bookmarks_count || 0
         return a > b ? 1 : a < b ? -1 : 0
