@@ -17,6 +17,7 @@ import {
 
 import { CodeEditor } from "./code-editor"
 import { FileExplorer } from "./file-explorer"
+import { CustomFileExplorer } from "./custom-file-explorer"
 import { usePublishDialog } from "./use-publish-dialog"
 
 interface PublishDialogProps {
@@ -83,8 +84,9 @@ export function PublishDialog({ userId }: PublishDialogProps) {
               </div>
               <SandpackLayout style={{ height: "100%" }}>
                 <div className="flex w-full h-full">
-                  <div className="w-64 border-r border-border">
+                  <div className="flex border-r border-border">
                     <FileExplorer />
+                    <CustomFileExplorer />
                   </div>
                   <div className="flex-1">
                     <CodeEditor
