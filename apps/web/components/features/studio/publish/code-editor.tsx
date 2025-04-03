@@ -22,6 +22,7 @@ export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
 
   return (
     <SandpackCodeEditor
+      showTabs={false}
       showLineNumbers={true}
       showInlineErrors={true}
       className="h-full"
