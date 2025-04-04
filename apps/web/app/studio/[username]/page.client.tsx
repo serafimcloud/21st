@@ -1,9 +1,9 @@
 "use client"
 
 import { User, DemoWithComponent } from "@/types/global"
-import { StudioLayout } from "@/components/features/studio/studio-layout"
-import { ComponentsTable } from "@/components/features/studio/components-table"
-import { PublishDialog } from "@/components/features/studio/publish/publish-dialog"
+import { StudioLayout } from "@/components/features/studio/layout/studio-layout"
+import { DemosTable } from "@/components/features/studio/components-table"
+import { EditorDialog} from "@/components/features/studio/component-editor"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
@@ -34,10 +34,10 @@ export function StudioUsernameClient({
             <h1 className="text-xl font-bold">Components</h1>
           </div>
 
-          {(isOwnProfile || isAdmin) && <PublishDialog userId={user.id} />}
+          {(isOwnProfile || isAdmin) && <EditorDialog userId={user.id} />}
         </div>
 
-        <ComponentsTable demos={demos} />
+        <DemosTable demos={demos} />
       </div>
     </StudioLayout>
   )

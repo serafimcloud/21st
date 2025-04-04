@@ -20,14 +20,14 @@ import { CodeEditor } from "./code-editor"
 import { FileExplorer } from "./file-explorer-sandpack"
 import { CustomFileExplorer } from "./file-explorer"
 import { CustomComponentView } from "./unknown-component-view"
-import { usePublishDialog } from "./hooks/use-publish-dialog"
+import { usePublishDialog } from "./hooks/use-editor-dialog"
 import React from "react"
 
-interface PublishDialogProps {
+interface EditorDialogProps {
   userId: string
 }
 
-export function PublishDialog({ userId }: PublishDialogProps) {
+export function EditorDialog({ userId }: EditorDialogProps) {
   const {
     open,
     componentCode,
@@ -53,7 +53,7 @@ export function PublishDialog({ userId }: PublishDialogProps) {
       </DialogTrigger>
 
       <DialogContent
-        className="sm:max-w-[90vw] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden"
+        className="sm:max-w-[1200px] sm:w-[90vw] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden"
         hideCloseButton
       >
         <DialogHeader className="flex flex-row p-4 gap-8 items-start justify-between border-b bg-muted">
@@ -132,7 +132,7 @@ function SandpackContent({
 
   // Log Sandpack state changes
   React.useEffect(() => {
-    console.log("[PublishDialog] Current Sandpack state:", {
+    console.log("[EditorDialog] Current Sandpack state:", {
       activeFile: sandpack.activeFile,
       files: Object.keys(sandpack.files),
       visibleFiles: sandpack.visibleFiles,
@@ -145,7 +145,7 @@ function SandpackContent({
   // Set initial file only once when component mounts
   React.useEffect(() => {
     if (!activePreview) {
-      console.log("[PublishDialog] Setting initial file:", {
+      console.log("[EditorDialog] Setting initial file:", {
         componentPath,
         currentSandpackFile: sandpack.activeFile,
         stackTrace: new Error().stack,
@@ -159,8 +159,8 @@ function SandpackContent({
   }, [componentPath, onPreviewSelect, sandpack, activePreview])
 
   const handleFileSelect = (path: string) => {
-    console.log("[PublishDialog] File selected:", path)
-    console.log("[PublishDialog] Current editor state:", {
+    console.log("[EditorDialog] File selected:", path)
+    console.log("[EditorDialog] Current editor state:", {
       activeFile: sandpack.activeFile,
       selectedPath: path,
       activePreview: activePreview,
@@ -172,7 +172,7 @@ function SandpackContent({
 
     // If the file is already selected, don't do anything
     if (activePreview?.filePath === path) {
-      console.log("[PublishDialog] File already selected, skipping", {
+      console.log("[EditorDialog] File already selected, skipping", {
         path,
         activePreview,
         sandpackFile: sandpack.activeFile,
@@ -182,7 +182,7 @@ function SandpackContent({
 
     // Check if this is an unknown component
     if (isUnknownComponent(path)) {
-      console.log("[PublishDialog] Handling unknown component selection:", {
+      console.log("[EditorDialog] Handling unknown component selection:", {
         path,
         currentSandpackFile: sandpack.activeFile,
         stackTrace: new Error().stack,
@@ -193,7 +193,7 @@ function SandpackContent({
       )?.name
 
       if (componentName) {
-        console.log("[PublishDialog] Setting unknown component preview:", {
+        console.log("[EditorDialog] Setting unknown component preview:", {
           componentName,
           path,
           currentSandpackFile: sandpack.activeFile,
@@ -206,7 +206,7 @@ function SandpackContent({
         })
       }
     } else {
-      console.log("[PublishDialog] Setting regular file preview:", {
+      console.log("[EditorDialog] Setting regular file preview:", {
         path,
         currentSandpackFile: sandpack.activeFile,
         fileContent: sandpack.files[path]?.code?.slice(0, 50) + "...",
@@ -218,7 +218,7 @@ function SandpackContent({
       })
 
       // Update the Sandpack editor file
-      console.log("[PublishDialog] Updating Sandpack editor file to:", {
+      console.log("[EditorDialog] Updating Sandpack editor file to:", {
         from: sandpack.activeFile,
         to: path,
         hasFileContent: Boolean(sandpack.files[path]?.code),
@@ -235,7 +235,7 @@ function SandpackContent({
       activePreview.filePath &&
       sandpack.activeFile !== activePreview.filePath
     ) {
-      console.log("[PublishDialog] Syncing editor file:", {
+      console.log("[EditorDialog] Syncing editor file:", {
         from: sandpack.activeFile,
         to: activePreview.filePath,
         activePreviewType: activePreview.type,
