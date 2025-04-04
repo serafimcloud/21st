@@ -22,6 +22,7 @@ import { CustomFileExplorer } from "./file-explorer"
 import { CustomComponentView } from "./unknown-component-view"
 import { usePublishDialog } from "./hooks/use-editor-dialog"
 import React from "react"
+import { CodeEditorComponent } from "./code-editor-component"
 
 interface EditorDialogProps {
   userId: string
@@ -85,16 +86,37 @@ export function EditorDialog({ userId }: EditorDialogProps) {
 
         <div className="flex-grow overflow-hidden flex flex-col h-full">
           <div className="h-full min-h-[400px] overflow-hidden flex-grow">
-            <SandpackProvider {...sandpackConfig}>
-              <SandpackContent
-                activePreview={activePreview}
-                onPreviewSelect={handlePreviewSelect}
+            {/* If we have active preview and processed data, use the new CodeEditorComponent */}
+            {processedData ? (
+              <CodeEditorComponent
+                initialFiles={sandpackConfig.files}
+                mainComponentPath={getComponentFilePath()}
                 nonShadcnComponents={processedData?.nonShadcnComponentsImports}
-                getComponentFilePath={getComponentFilePath}
-                setComponentCode={setComponentCode}
-                isUnknownComponent={isUnknownComponent}
+                onCodeChange={(path, content) => {
+                  if (path === getComponentFilePath()) {
+                    setComponentCode(content)
+                  }
+                }}
+                isUnknownComponentFn={isUnknownComponent}
+                activePath={activePreview?.filePath}
+                sandpackTemplate={sandpackConfig.template}
+                dependencies={sandpackConfig.customSetup?.dependencies}
               />
-            </SandpackProvider>
+            ) : (
+              /* Otherwise use the original SandpackContent */
+              <SandpackProvider {...sandpackConfig}>
+                <SandpackContent
+                  activePreview={activePreview}
+                  onPreviewSelect={handlePreviewSelect}
+                  nonShadcnComponents={
+                    processedData?.nonShadcnComponentsImports
+                  }
+                  getComponentFilePath={getComponentFilePath}
+                  setComponentCode={setComponentCode}
+                  isUnknownComponent={isUnknownComponent}
+                />
+              </SandpackProvider>
+            )}
           </div>
         </div>
       </DialogContent>

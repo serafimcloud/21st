@@ -1,18 +1,28 @@
-import { useEffect } from "react"
+import React, { useEffect } from "react"
 import {
   SandpackCodeEditor,
   useActiveCode,
   useSandpack,
 } from "@codesandbox/sandpack-react"
+import { useCodeManager } from "./code-manager"
 
 interface CodeEditorProps {
-  onCodeChange: (code: string) => void
+  onCodeChange?: (code: string) => void
   componentPath: string
 }
 
 export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
   const { code } = useActiveCode()
   const { sandpack } = useSandpack()
+
+  // Try to use CodeManager if available (for the new flow)
+  let codeManager
+  try {
+    codeManager = useCodeManager()
+  } catch (error) {
+    // No code manager available, will use the original flow
+    codeManager = null
+  }
 
   // Log detailed Sandpack state on every render
   console.log("[CodeEditor] Current full state:", {
@@ -27,6 +37,7 @@ export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
       hasCode: Boolean(code),
       codeLength: code?.length,
     },
+    usingCodeManager: Boolean(codeManager),
     stackTrace: new Error().stack,
   })
 
@@ -43,6 +54,7 @@ export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
     })
   }, [componentPath, sandpack.activeFile, code, sandpack.files])
 
+  // Handle code changes with or without CodeManager
   useEffect(() => {
     if (code && sandpack.activeFile === componentPath) {
       console.log("[CodeEditor] Updating code for:", {
@@ -50,9 +62,19 @@ export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
         codeLength: code.length,
         activeFile: sandpack.activeFile,
         codePreview: code.slice(0, 50) + "...",
+        usingCodeManager: Boolean(codeManager),
         stackTrace: new Error().stack,
       })
-      onCodeChange(code)
+
+      // If we have a code manager, update it
+      if (codeManager && componentPath) {
+        codeManager.updateFileContent(componentPath, code)
+      }
+
+      // Always call the original onCodeChange prop if provided
+      if (onCodeChange) {
+        onCodeChange(code)
+      }
     } else {
       console.log("[CodeEditor] Skipped code update because:", {
         hasCode: Boolean(code),
@@ -62,7 +84,7 @@ export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
         codePreview: code?.slice(0, 50) + "...",
       })
     }
-  }, [code, onCodeChange, sandpack.activeFile, componentPath])
+  }, [code, onCodeChange, sandpack.activeFile, componentPath, codeManager])
 
   // Log when active file changes in Sandpack
   useEffect(() => {
