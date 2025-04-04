@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils"
 
-interface CustomComponentViewProps {
+interface UnknownComponentViewProps {
   componentName: string
   className?: string
 }
 
-export function CustomComponentView({
+export function UnknownComponentView({
   componentName,
   className,
-}: CustomComponentViewProps) {
+}: UnknownComponentViewProps) {
   return (
     <div
       className={cn(
@@ -16,7 +16,7 @@ export function CustomComponentView({
         className,
       )}
     >
-      <div className="text-2xl font-semibold mb-4">Custom Component</div>
+      <div className="text-2xl font-semibold mb-4">Unknown Component</div>
       <div className="text-xl text-muted-foreground">{componentName}</div>
     </div>
   )

@@ -7,7 +7,7 @@ import {
 import { CodeManagerProvider, useCodeManager } from "./code-manager"
 import { CodeEditor } from "./code-editor"
 import { CustomFileExplorer } from "./file-explorer"
-import { CustomComponentView } from "./unknown-component-view"
+import { UnknownComponentView } from "./unknown-component-view"
 
 interface CodeEditorComponentProps {
   initialFiles: SandpackFiles
@@ -78,27 +78,7 @@ function EditorContent({ visiblePaths }: EditorContentProps) {
     isUnknownComponent,
     getComponentName,
     nonShadcnComponents,
-    allFiles,
   } = useCodeManager()
-
-  // Filter files based on visiblePaths if provided
-  const filteredFiles = React.useMemo(() => {
-    if (!visiblePaths || visiblePaths.length === 0) {
-      return allFiles
-    }
-
-    return allFiles.filter((path) => {
-      // Check if path matches any of the visible paths patterns
-      return visiblePaths.some((visiblePath) => {
-        // Handle directory patterns like "/components/"
-        if (visiblePath.endsWith("/")) {
-          return path.startsWith(visiblePath)
-        }
-        // Handle exact file paths
-        return path === visiblePath
-      })
-    })
-  }, [allFiles, visiblePaths])
 
   // Handle file selection
   const handleFileSelect = (path: string) => {
@@ -118,7 +98,7 @@ function EditorContent({ visiblePaths }: EditorContentProps) {
         </div>
         <div className="flex-1">
           {activeFile && isUnknownComponent(activeFile) ? (
-            <CustomComponentView
+            <UnknownComponentView
               componentName={getComponentName(activeFile) || "Component"}
             />
           ) : (

@@ -18,19 +18,10 @@ interface UsePublishDialogProps {
   userId: string
 }
 
-// Define a type for registry dependencies
-interface RegistryDependency {
-  code: string
-  registry: string
-}
-
-// Define a type for file content
-type FileContent = string | { code: string }
-
 export function usePublishDialog({ userId }: UsePublishDialogProps) {
   // Dialog state
   const [open, setOpen] = useState(false)
-  const [componentCode, setComponentCode] = useState("")
+  const [componentCode, setComponentCode] = useState("// Paste your code here")
   const [processedData, setProcessedData] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
@@ -216,6 +207,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
               path,
               preview: (() => {
                 const content = files[path]
+                if (!content) return "not found"
                 return (
                   (typeof content === "string" ? content : content.code).slice(
                     0,
@@ -335,6 +327,13 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
 
       const data = await response.json()
       setProcessedData(data)
+
+      // Set the processed component as active file
+      const newComponentPath = `/components/${data.registryType || "ui"}/${data.slug ? `${data.slug}.tsx` : "component.tsx"}`
+      handlePreviewSelect({
+        type: "regular",
+        filePath: newComponentPath,
+      })
 
       // If we have shadcn component dependencies, resolve them
       if (data.shadcnComponentsImports?.length > 0) {

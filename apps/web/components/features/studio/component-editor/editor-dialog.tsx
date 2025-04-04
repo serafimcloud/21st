@@ -17,9 +17,8 @@ import {
 } from "@codesandbox/sandpack-react"
 
 import { CodeEditor } from "./code-editor"
-import { FileExplorer } from "./file-explorer-sandpack"
 import { CustomFileExplorer } from "./file-explorer"
-import { CustomComponentView } from "./unknown-component-view"
+import { UnknownComponentView } from "./unknown-component-view"
 import { usePublishDialog } from "./hooks/use-editor-dialog"
 import React from "react"
 import { CodeEditorComponent } from "./code-editor-component"
@@ -299,7 +298,7 @@ function SandpackContent({
           </div>
           <div className="flex-1">
             {activePreview?.type === "unknown" ? (
-              <CustomComponentView
+              <UnknownComponentView
                 componentName={activePreview.componentName || ""}
               />
             ) : (

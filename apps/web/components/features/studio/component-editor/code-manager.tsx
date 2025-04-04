@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { useSandpack } from "@codesandbox/sandpack-react"
 
 // Define the types for our context
@@ -56,7 +55,6 @@ export function CodeManagerProvider({
   const [userModifiedFiles, setUserModifiedFiles] = useState<
     Record<string, boolean>
   >({})
-  const router = useRouter()
 
   // Initialize with the main component file
   useEffect(() => {
