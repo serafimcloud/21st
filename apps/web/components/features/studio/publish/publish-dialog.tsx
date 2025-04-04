@@ -17,10 +17,10 @@ import {
 } from "@codesandbox/sandpack-react"
 
 import { CodeEditor } from "./code-editor"
-import { FileExplorer } from "./file-explorer"
-import { CustomFileExplorer } from "./custom-file-explorer"
-import { CustomComponentView } from "./custom-component-view"
-import { usePublishDialog } from "./use-publish-dialog"
+import { FileExplorer } from "./file-explorer-sandpack"
+import { CustomFileExplorer } from "./file-explorer"
+import { CustomComponentView } from "./unknown-component-view"
+import { usePublishDialog } from "./hooks/use-publish-dialog"
 import React from "react"
 
 interface PublishDialogProps {
@@ -33,15 +33,14 @@ export function PublishDialog({ userId }: PublishDialogProps) {
     componentCode,
     processedData,
     isProcessing,
-    selectedCustomComponent,
-    selectedFile,
+    activePreview,
     handleOpenChange,
     handleProcessComponent,
-    handleCustomComponentClick,
-    handleFileClick,
+    handlePreviewSelect,
     setComponentCode,
     sandpackConfig,
     getComponentFilePath,
+    isUnknownComponent,
   } = usePublishDialog({ userId })
 
   return (
@@ -88,13 +87,12 @@ export function PublishDialog({ userId }: PublishDialogProps) {
           <div className="h-full min-h-[400px] overflow-hidden flex-grow">
             <SandpackProvider {...sandpackConfig}>
               <SandpackContent
-                selectedCustomComponent={selectedCustomComponent}
-                selectedFile={selectedFile}
-                onFileSelect={handleFileClick}
-                onCustomComponentClick={handleCustomComponentClick}
+                activePreview={activePreview}
+                onPreviewSelect={handlePreviewSelect}
                 nonShadcnComponents={processedData?.nonShadcnComponentsImports}
                 getComponentFilePath={getComponentFilePath}
                 setComponentCode={setComponentCode}
+                isUnknownComponent={isUnknownComponent}
               />
             </SandpackProvider>
           </div>
@@ -105,73 +103,94 @@ export function PublishDialog({ userId }: PublishDialogProps) {
 }
 
 interface SandpackContentProps {
-  selectedCustomComponent: string | null
-  selectedFile: string | null
-  onFileSelect: (path: string) => void
-  onCustomComponentClick: (name: string) => void
+  activePreview: {
+    type: "regular" | "unknown"
+    filePath: string
+    componentName?: string
+  } | null
+  onPreviewSelect: (preview: {
+    type: "regular" | "unknown"
+    filePath: string
+    componentName?: string
+  }) => void
   nonShadcnComponents?: Array<{ name: string; path: string }>
   getComponentFilePath: () => string
   setComponentCode: (code: string) => void
+  isUnknownComponent: (path: string) => boolean
 }
 
 function SandpackContent({
-  selectedCustomComponent,
-  selectedFile,
-  onFileSelect,
-  onCustomComponentClick,
+  activePreview,
+  onPreviewSelect,
   nonShadcnComponents,
   getComponentFilePath,
   setComponentCode,
+  isUnknownComponent,
 }: SandpackContentProps) {
   const { sandpack } = useSandpack()
   const componentPath = getComponentFilePath()
-
   // Set initial file only once when component mounts
   React.useEffect(() => {
-    if (!selectedFile && !selectedCustomComponent) {
+    if (!activePreview) {
+      console.log("[PublishDialog] Setting initial file:", componentPath)
       sandpack.setActiveFile(componentPath)
-      onFileSelect(componentPath)
+      onPreviewSelect({
+        type: "regular",
+        filePath: componentPath,
+      })
     }
-  }, [
-    componentPath,
-    onFileSelect,
-    sandpack,
-    selectedFile,
-    selectedCustomComponent,
-  ])
+  }, [componentPath, onPreviewSelect, sandpack, activePreview])
 
   const handleFileSelect = (path: string) => {
-    // Check if this is an unknown component
-    const isUnknownComponent = nonShadcnComponents?.some(
-      (comp) => comp.path === path,
-    )
+    console.log("[PublishDialog] File selected:", path)
+    
+    // If the file is already selected, don't do anything
+    if (activePreview?.filePath === path) {
+      console.log("[PublishDialog] File already selected, skipping")
+      return
+    }
 
-    if (isUnknownComponent) {
-      // For unknown components, don't change the editor file
+    // Check if this is an unknown component
+    if (isUnknownComponent(path)) {
+      console.log("[PublishDialog] Handling unknown component selection")
+      // For unknown components, get the component name
       const componentName = nonShadcnComponents?.find(
         (comp) => comp.path === path,
       )?.name
+
       if (componentName) {
-        onCustomComponentClick(componentName)
-        onFileSelect(path) // Update selectedFile to highlight in tree
+        console.log("[PublishDialog] Setting unknown component preview:", componentName)
+        // Set as unknown component type preview
+        onPreviewSelect({
+          type: "unknown",
+          filePath: path,
+          componentName,
+        })
       }
     } else {
-      // For regular files, update both the editor and selection
-      onFileSelect(path)
+      console.log("[PublishDialog] Setting regular file preview:", path)
+      // Set as regular file type preview
+      onPreviewSelect({
+        type: "regular",
+        filePath: path,
+      })
+
+      // Update the Sandpack editor file
       sandpack.setActiveFile(path)
     }
   }
 
-  // Keep editor file in sync with selection for non-custom components
+  // Keep editor file in sync with selection for regular files
   React.useEffect(() => {
     if (
-      !selectedCustomComponent &&
-      selectedFile &&
-      sandpack.activeFile !== selectedFile
+      activePreview?.type === "regular" &&
+      activePreview.filePath &&
+      sandpack.activeFile !== activePreview.filePath
     ) {
-      sandpack.setActiveFile(selectedFile)
+      console.log("[PublishDialog] Syncing editor file:", activePreview.filePath)
+      sandpack.setActiveFile(activePreview.filePath)
     }
-  }, [selectedFile, selectedCustomComponent, sandpack.activeFile])
+  }, [activePreview, sandpack.activeFile])
 
   return (
     <>
@@ -184,17 +203,18 @@ function SandpackContent({
             <FileExplorer />
             <CustomFileExplorer
               nonShadcnComponents={nonShadcnComponents}
-              onCustomComponentClick={onCustomComponentClick}
               onFileSelect={handleFileSelect}
-              selectedFile={selectedFile}
+              selectedFile={activePreview?.filePath || null}
             />
           </div>
           <div className="flex-1">
-            {selectedCustomComponent ? (
-              <CustomComponentView componentName={selectedCustomComponent} />
+            {activePreview?.type === "unknown" ? (
+              <CustomComponentView
+                componentName={activePreview.componentName || ""}
+              />
             ) : (
               <CodeEditor
-                componentPath={selectedFile || componentPath}
+                componentPath={activePreview?.filePath || componentPath}
                 onCodeChange={setComponentCode}
               />
             )}

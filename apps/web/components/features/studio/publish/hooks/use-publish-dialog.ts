@@ -1,10 +1,17 @@
 import { useState, useCallback, useMemo } from "react"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
-import { generateSandpackFiles } from "./sandpack-files"
+import { generateSandpackFiles } from "../sandpack-files"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/sandpack"
+
+// Define a type for the active preview
+type ActivePreview = {
+  type: "regular" | "unknown" // "regular" for normal files, "unknown" for custom components
+  filePath: string // The file path (always set)
+  componentName?: string // Only set for unknown components
+}
 
 interface UsePublishDialogProps {
   userId: string
@@ -17,10 +24,10 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   const [processedData, setProcessedData] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<string | null>(null)
-  const [selectedCustomComponent, setSelectedCustomComponent] = useState<
-    string | null
-  >(null)
+
+  // Unified active preview state
+  const [activePreview, setActivePreview] = useState<ActivePreview | null>(null)
+
   const [registryDependencies, setRegistryDependencies] = useState<
     Record<string, { code: string; registry: string }>
   >({})
@@ -53,8 +60,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     setProcessedData(null)
     setIsProcessing(false)
     setIsPublishing(false)
-    setSelectedCustomComponent(null)
-    setSelectedFile(null)
+    setActivePreview(null)
     setRegistryDependencies({})
     setNpmDependenciesOfRegistryDependencies({})
     setMergedTailwindConfig(null)
@@ -70,10 +76,29 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     [resetState],
   )
 
-  // Handle custom component selection
-  const handleCustomComponentClick = useCallback((componentName: string) => {
-    setSelectedCustomComponent(componentName)
-  }, [])
+  // Unified handler for preview selection (both files and custom components)
+  const handlePreviewSelect = useCallback(
+    (newPreview: ActivePreview) => {
+      setActivePreview(newPreview)
+
+      // Update component code if needed
+      if (
+        newPreview.type === "regular" &&
+        newPreview.filePath !== getComponentFilePath()
+      ) {
+        const fileContent = files[newPreview.filePath]
+        if (fileContent) {
+          const newCode =
+            typeof fileContent === "string" ? fileContent : fileContent.code
+
+          if (newCode) {
+            setComponentCode(newCode)
+          }
+        }
+      }
+    },
+    [getComponentFilePath],
+  )
 
   // Generate files for Sandpack
   const files = useMemo(() => {
@@ -110,41 +135,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     mergedTailwindConfig,
     mergedGlobalCss,
   ])
-
-  // Handle file selection
-  const handleFileClick = useCallback(
-    (path: string) => {
-      if (path === selectedFile) return // Prevent unnecessary updates if clicking the same file
-
-      setSelectedFile(path)
-
-      // Only reset custom component if we're not clicking a custom component file
-      const isCustomComponent = Object.values(registryDependencies).some(
-        (dep) => dep.registry && path === dep.registry,
-      )
-
-      if (!isCustomComponent) {
-        setSelectedCustomComponent(null)
-      }
-
-      // Only update component code if necessary
-      if (path === getComponentFilePath()) {
-        return // Don't update code when clicking main component file
-      }
-
-      // For other files, get the code from Sandpack files
-      const fileContent = files[path]
-      if (fileContent) {
-        const newCode =
-          typeof fileContent === "string" ? fileContent : fileContent.code
-
-        if (newCode) {
-          setComponentCode(newCode)
-        }
-      }
-    },
-    [selectedFile, registryDependencies, files, getComponentFilePath],
-  )
 
   // Merge styles from dependencies
   const mergeStyles = useCallback(
@@ -236,25 +226,14 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       }
 
       const data = await response.json()
-      console.log("Preprocessing Response:", {
-        componentName: data.componentName,
-        registryType: data.registryType,
-        shadcnComponents: data.shadcnComponentsImports,
-        npmDeps: data.npmDependencies,
-        fullResponse: data,
-      })
-
       setProcessedData(data)
 
       // If we have shadcn component dependencies, resolve them
       if (data.shadcnComponentsImports?.length > 0) {
-        console.log("Found shadcn components:", data.shadcnComponentsImports)
-
         const slugs = data.shadcnComponentsImports.map(
           (component: { name: string }) =>
             `shadcn/${component.name.toLowerCase().replace(/\s+/g, "-")}`,
         )
-        console.log("Generated slugs for resolution:", slugs)
 
         const result = await resolveRegistryDependencyTree({
           supabase,
@@ -268,13 +247,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
             `Failed to resolve dependencies: ${result.error.message}`,
           )
         }
-
-        console.log("Registry Dependencies Resolution:", {
-          filesReceived: Object.keys(result.data.filesWithRegistry),
-          npmDepsReceived: result.data.npmDependencies,
-          stylesReceived: result.data.styles,
-          fullResponse: result.data,
-        })
 
         setRegistryDependencies(result.data.filesWithRegistry)
         setNpmDependenciesOfRegistryDependencies(result.data.npmDependencies)
@@ -300,12 +272,27 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     }
   }
 
+  // Helper to check if a file is an unknown component
+  const isUnknownComponent = useCallback(
+    (path: string) => {
+      return (
+        processedData?.nonShadcnComponentsImports?.some(
+          (comp: { path: string }) => comp.path === path,
+        ) ?? false
+      )
+    },
+    [processedData],
+  )
+
   // Sandpack configuration
   const sandpackConfig = useMemo(
     () => ({
       files,
       options: {
-        activeFile: selectedFile || getComponentFilePath(),
+        activeFile:
+          activePreview?.type === "regular"
+            ? activePreview.filePath
+            : getComponentFilePath(),
         visibleFiles: [
           getComponentFilePath(),
           "/components",
@@ -335,7 +322,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     [
       files,
       getComponentFilePath,
-      selectedFile,
+      activePreview,
       registryDependencies,
       processedData?.npmDependencies,
       npmDependenciesOfRegistryDependencies,
@@ -349,14 +336,13 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     processedData,
     isProcessing,
     isPublishing,
-    selectedCustomComponent,
-    selectedFile,
+    activePreview,
     handleOpenChange,
     handleProcessComponent,
-    handleCustomComponentClick,
-    handleFileClick,
+    handlePreviewSelect,
     setComponentCode,
     sandpackConfig,
     getComponentFilePath,
+    isUnknownComponent,
   }
 }
