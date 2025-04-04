@@ -9,6 +9,11 @@ import {
   FileWarning,
 } from "lucide-react"
 import { useState, useMemo, useCallback } from "react"
+import { Spinner } from "@/components/icons/spinner"
+import ShadcnFile from "@/components/icons/shadcn-file"
+import { isShadcnComponentPath } from "@/lib/shadcn-components"
+import { TextShimmer } from "@/components/ui/text-shimmer"
+import React from "react"
 
 interface FileTreeItem {
   name: string
@@ -16,6 +21,7 @@ interface FileTreeItem {
   type: "file" | "directory"
   children?: FileTreeItem[]
   isUnknownComponent?: boolean
+  isLoading?: boolean
 }
 
 export interface FileExplorerProps {
@@ -23,12 +29,14 @@ export interface FileExplorerProps {
   onFileSelect?: (path: string) => void
   selectedFile?: string | null
   visibleFiles?: string[]
+  loadingFiles?: string[]
 }
 
 function buildFileTree(
   files: string[],
   unknownComponents: Array<{ name: string; path: string }> = [],
   visibleFilesFilter?: string[],
+  loadingFiles: string[] = [],
 ): {
   tree: FileTreeItem[]
   directories: Set<string>
@@ -38,6 +46,10 @@ function buildFileTree(
 
   const isFileVisible = (path: string) => {
     if (unknownComponents.some((comp) => comp.path === path)) {
+      return true
+    }
+
+    if (loadingFiles.includes(path)) {
       return true
     }
 
@@ -86,6 +98,7 @@ function buildFileTree(
           if (isUnknownComponent) {
             existingItem.isUnknownComponent = true
           }
+          existingItem.isLoading = loadingFiles.includes(path)
         }
         current = existingItem.children || []
       } else {
@@ -95,6 +108,7 @@ function buildFileTree(
           type: isLast ? "file" : "directory",
           children: isLast ? undefined : [],
           isUnknownComponent: isLast ? isUnknownComponent : undefined,
+          isLoading: isLast ? loadingFiles.includes(path) : undefined,
         }
 
         const insertIndex = current.findIndex((item) => {
@@ -123,6 +137,19 @@ function buildFileTree(
 
   unknownComponents.forEach((comp) => {
     addToTree(comp.path, true, comp.name)
+  })
+
+  console.log("[buildFileTree] Processing loading files:", loadingFiles)
+  loadingFiles.forEach((path) => {
+    const pathParts = path.split("/")
+    const fileName = pathParts[pathParts.length - 1] || ""
+    const componentName = fileName.replace(".tsx", "")
+
+    console.log(
+      `[buildFileTree] Adding loading file: ${path} (${componentName})`,
+    )
+
+    addToTree(path, false, componentName)
   })
 
   const sortTreeRecursively = (items: FileTreeItem[]) => {
@@ -162,6 +189,16 @@ function FileTreeNode({
 }) {
   const isExpanded = expandedDirs.has(item.path)
   const isActive = activeFile === item.path
+  const isShadcnFile = item.type === "file" && isShadcnComponentPath(item.path)
+
+  // Log when we encounter loading items
+  React.useEffect(() => {
+    if (item.isLoading) {
+      console.log(
+        `[FileTreeNode] Loading item detected: ${item.name} (${item.path})`,
+      )
+    }
+  }, [item.isLoading, item.name, item.path])
 
   return (
     <div>
@@ -195,19 +232,31 @@ function FileTreeNode({
           ) : (
             <Folder className="h-4 w-4 text-blue-500" />
           )
+        ) : item.isLoading ? (
+          <div className="h-4 w-4 flex items-center justify-center">
+            <Spinner size={14} />
+          </div>
         ) : item.isUnknownComponent ? (
           <FileWarning className="h-4 w-4 text-yellow-500" />
+        ) : isShadcnFile ? (
+          <ShadcnFile className="h-4 w-4 text-primary" />
         ) : (
           <File className="h-4 w-4 text-gray-500" />
         )}
-        <span
-          className={cn(
-            "truncate",
-            item.isUnknownComponent && "text-yellow-600",
-          )}
-        >
-          {item.name}
-        </span>
+        {item.isLoading ? (
+          <TextShimmer className="truncate text-sm">
+            {item.name}
+          </TextShimmer>
+        ) : (
+          <span
+            className={cn(
+              "truncate",
+              item.isUnknownComponent && "text-yellow-600",
+            )}
+          >
+            {item.name}
+          </span>
+        )}
       </button>
 
       {item.type === "directory" && isExpanded && item.children && (
@@ -237,14 +286,26 @@ export function FileExplorer({
   onFileSelect,
   selectedFile,
   visibleFiles,
+  loadingFiles = [],
 }: FileExplorerProps) {
   const { sandpack } = useSandpack()
   const { visibleFiles: sandpackVisibleFiles } = sandpack
 
+  React.useEffect(() => {
+    if (loadingFiles && loadingFiles.length > 0) {
+      console.log("[FileExplorer] Received loading files:", loadingFiles)
+    }
+  }, [loadingFiles])
+
   const { tree: fileTree, directories } = useMemo(
     () =>
-      buildFileTree(sandpackVisibleFiles, nonShadcnComponents, visibleFiles),
-    [sandpackVisibleFiles, nonShadcnComponents, visibleFiles],
+      buildFileTree(
+        sandpackVisibleFiles,
+        nonShadcnComponents,
+        visibleFiles,
+        loadingFiles,
+      ),
+    [sandpackVisibleFiles, nonShadcnComponents, visibleFiles, loadingFiles],
   )
 
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(directories)

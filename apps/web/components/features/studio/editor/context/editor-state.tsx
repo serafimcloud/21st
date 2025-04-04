@@ -5,6 +5,7 @@ import { useSandpack } from "@codesandbox/sandpack-react"
 // Define atoms for state management (single source of truth)
 export const activeFileAtom = atom<string | null>(null)
 export const userModifiedFilesAtom = atom<Record<string, boolean>>({})
+export const loadingComponentsAtom = atom<string[]>([])
 
 // Define the types for our context
 interface CodeManagerContextType {
@@ -26,6 +27,10 @@ interface CodeManagerContextType {
   // File metadata
   allFiles: string[]
   nonShadcnComponents: Array<{ name: string; path: string }> | undefined
+
+  // Loading state
+  loadingComponents: string[]
+  setLoadingComponents: (paths: string[]) => void
 }
 
 const CodeManagerContext = createContext<CodeManagerContextType | null>(null)
@@ -71,6 +76,9 @@ export function CodeManagerProvider({
   const [userModifiedFiles, setUserModifiedFiles] = useAtom(
     userModifiedFilesAtom,
   )
+  const [loadingComponents, setLoadingComponents] = useAtom(
+    loadingComponentsAtom,
+  )
 
   // Initialize with the main component file
   useEffect(() => {
@@ -79,14 +87,21 @@ export function CodeManagerProvider({
     }
   }, [initialComponentPath])
 
+  // Update the loading components from the CodeManager
+  useEffect(() => {
+    // This is where we would sync with external loading components, if needed
+    console.log("[CodeManager] Loading components:", loadingComponents)
+  }, [loadingComponents])
+
   // Log state changes in development
   useEffect(() => {
     console.log("[CodeManager] Current state:", {
       activeFile,
       files: Object.keys(sandpack.files),
       userModifiedFiles,
+      loadingComponents,
     })
-  }, [sandpack.files, activeFile, userModifiedFiles])
+  }, [sandpack.files, activeFile, userModifiedFiles, loadingComponents])
 
   // File selection
   const selectFile = (path: string) => {
@@ -230,6 +245,10 @@ export function CodeManagerProvider({
     // File metadata
     allFiles: Object.keys(sandpack.files),
     nonShadcnComponents,
+
+    // Loading state
+    loadingComponents,
+    setLoadingComponents,
   }
 
   return (

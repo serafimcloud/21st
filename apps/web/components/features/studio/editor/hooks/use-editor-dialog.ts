@@ -44,6 +44,11 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   const isDarkTheme = resolvedTheme === "dark"
   const supabase = useClerkSupabaseClient()
 
+  // Add new state to track loading components
+  const [loadingShadcnComponents, setLoadingShadcnComponents] = useState<
+    string[]
+  >([])
+
   // Get component file path
   const getComponentFilePath = useCallback(() => {
     if (!processedData) return "/components/ui/component.tsx"
@@ -326,6 +331,22 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       }
 
       const data = await response.json()
+
+      // Immediately set loading state for shadcn components if any
+      if (data.shadcnComponentsImports?.length > 0) {
+        // Set the loading state for shadcn components
+        const loadingPaths = data.shadcnComponentsImports.map(
+          (component: { name: string }) =>
+            `/components/ui/${component.name.toLowerCase()}.tsx`,
+        )
+        console.log(
+          "[usePublishDialog] Setting loading components:",
+          loadingPaths,
+        )
+        setLoadingShadcnComponents(loadingPaths)
+      }
+
+      // Set processed data after setting loading state
       setProcessedData(data)
 
       // Set the processed component as active file
@@ -366,6 +387,15 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
           setMergedTailwindConfig(tailwindConfig)
           setMergedGlobalCss(globalCss)
         }
+
+        // Delay clearing the loading state to give UI time to render spinners
+        // This ensures the spinners are visible for a reasonable amount of time
+        setTimeout(() => {
+          console.log(
+            "[usePublishDialog] Clearing loading components with delay",
+          )
+          setLoadingShadcnComponents([])
+        }, 1000) // 1 second delay to ensure UX is smooth
       }
 
       toast.success("Component processed successfully")
@@ -374,6 +404,13 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         `Processing failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       )
       console.error("Error processing component:", error)
+      // Clear loading state in case of error with a small delay
+      setTimeout(() => {
+        console.log(
+          "[usePublishDialog] Clearing loading components after error",
+        )
+        setLoadingShadcnComponents([])
+      }, 500)
     } finally {
       setIsProcessing(false)
     }
@@ -450,6 +487,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     isProcessing,
     isPublishing,
     activePreview,
+    loadingShadcnComponents,
     handleOpenChange,
     handleProcessComponent,
     handlePreviewSelect,

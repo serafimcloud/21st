@@ -19,6 +19,7 @@ interface EditorProps {
   sandpackTemplate?: "react" | "react-ts" | "vanilla" | "vanilla-ts"
   dependencies?: Record<string, string>
   visiblePaths?: string[]
+  loadingFiles?: string[]
 }
 
 export function Editor({
@@ -31,6 +32,7 @@ export function Editor({
   sandpackTemplate = "react-ts",
   dependencies = {},
   visiblePaths,
+  loadingFiles = [],
 }: EditorProps) {
   // Setup sandpack configuration
   const sandpackConfig = {
@@ -60,7 +62,10 @@ export function Editor({
         isUnknownComponentFn={isUnknownComponentFn}
       >
         <div className="flex flex-col h-full">
-          <EditorContent visiblePaths={visiblePaths} />
+          <EditorContent
+            visiblePaths={visiblePaths}
+            loadingFiles={loadingFiles}
+          />
         </div>
       </CodeManagerProvider>
     </SandpackProvider>
@@ -69,31 +74,72 @@ export function Editor({
 
 interface EditorContentProps {
   visiblePaths?: string[]
+  loadingFiles?: string[]
 }
 
-function EditorContent({ visiblePaths }: EditorContentProps) {
+function EditorContent({
+  visiblePaths,
+  loadingFiles = [],
+}: EditorContentProps) {
   const {
     activeFile,
     selectFile,
     isUnknownComponent,
     getComponentName,
     nonShadcnComponents,
+    loadingComponents,
   } = useCodeManager()
+
+  // Log loading files for debugging with React.useEffect instead of just useEffect
+  React.useEffect(() => {
+    if (loadingFiles.length > 0) {
+      console.log("[EditorContent] Received loading files:", loadingFiles)
+
+      // Force a re-render to ensure loading files are displayed immediately
+      const filesExplorerElement = document.querySelector(
+        "[data-file-explorer]",
+      )
+      if (filesExplorerElement) {
+        filesExplorerElement.classList.add("loading-files-active")
+        setTimeout(() => {
+          filesExplorerElement.classList.remove("loading-files-active")
+        }, 100)
+      }
+    }
+  }, [loadingFiles])
 
   // Handle file selection
   const handleFileSelect = (path: string) => {
     selectFile(path)
   }
 
+  // Combine loading files from props and from context
+  const allLoadingFiles = React.useMemo(() => {
+    const combinedFiles = [...loadingFiles]
+    if (loadingComponents && loadingComponents.length > 0) {
+      console.log(
+        "[EditorContent] Combined with context loading files:",
+        loadingComponents,
+      )
+      loadingComponents.forEach((file) => {
+        if (!combinedFiles.includes(file)) {
+          combinedFiles.push(file)
+        }
+      })
+    }
+    return combinedFiles
+  }, [loadingFiles, loadingComponents])
+
   return (
     <SandpackLayout style={{ height: "100%", border: "none" }}>
       <div className="flex w-full h-full">
-        <div className="flex border-r border-border">
+        <div className="flex border-r border-border" data-file-explorer>
           <FileExplorer
             nonShadcnComponents={nonShadcnComponents}
             onFileSelect={handleFileSelect}
             selectedFile={activeFile}
             visibleFiles={visiblePaths}
+            loadingFiles={allLoadingFiles}
           />
         </div>
         <div className="flex-1">

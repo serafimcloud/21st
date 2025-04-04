@@ -18,10 +18,11 @@ import {
 
 import { FileExplorer } from "./file-explorer"
 import { FallbackComponentView } from "./fallback-component-view"
-import { SimpleEditor } from "./editor-code-panel"
+import { SimpleEditor, EditorCodePanel } from "./editor-code-panel"
 import { usePublishDialog } from "./hooks/use-editor-dialog"
 import React from "react"
 import { Editor } from "./editor"
+import { CodeManagerProvider } from "./context/editor-state"
 
 interface ComponentPublishDialogProps {
   userId: string
@@ -36,6 +37,7 @@ export function ComponentPublishDialog({
     processedData,
     isProcessing,
     activePreview,
+    loadingShadcnComponents,
     handleOpenChange,
     handleProcessComponent,
     handlePreviewSelect,
@@ -44,6 +46,38 @@ export function ComponentPublishDialog({
     getComponentFilePath,
     isUnknownComponent,
   } = usePublishDialog({ userId })
+
+  // Simplified useEffect just for logging
+  React.useEffect(() => {
+    if (loadingShadcnComponents.length > 0) {
+      console.log(
+        "[ComponentPublishDialog] Active loading components detected:",
+        loadingShadcnComponents,
+      )
+
+      // Check if our loadingShadcnComponents has paths that match any existing files
+      if (processedData?.shadcnComponentsImports) {
+        const matchingFiles = processedData.shadcnComponentsImports
+          .filter((comp: any) => {
+            const path = `/components/ui/${comp.name.toLowerCase()}.tsx`
+            const isLoading = loadingShadcnComponents.includes(path)
+            console.log(
+              `[ComponentPublishDialog] Component ${comp.name} loading status:`,
+              isLoading,
+            )
+            return isLoading
+          })
+          .map((comp: any) => comp.name)
+
+        if (matchingFiles.length > 0) {
+          console.log(
+            "[ComponentPublishDialog] Currently loading components:",
+            matchingFiles,
+          )
+        }
+      }
+    }
+  }, [loadingShadcnComponents, processedData])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -89,31 +123,36 @@ export function ComponentPublishDialog({
           <div className="h-full min-h-[400px] overflow-hidden flex-grow">
             {/* If we have active preview and processed data, use the new CodeEditorComponent */}
             {processedData ? (
-              <Editor
-                initialFiles={sandpackConfig.files}
-                mainComponentPath={getComponentFilePath()}
-                nonShadcnComponents={processedData?.nonShadcnComponentsImports}
-                onCodeChange={(path, content) => {
-                  if (path === getComponentFilePath()) {
-                    setComponentCode(content)
+              <SandpackProvider {...sandpackConfig}>
+                <Editor
+                  initialFiles={sandpackConfig.files}
+                  mainComponentPath={getComponentFilePath()}
+                  nonShadcnComponents={
+                    processedData?.nonShadcnComponentsImports
                   }
-                }}
-                isUnknownComponentFn={isUnknownComponent}
-                activePath={activePreview?.filePath}
-                sandpackTemplate={sandpackConfig.template}
-                dependencies={sandpackConfig.customSetup?.dependencies}
-                visiblePaths={
-                  Array.isArray(sandpackConfig.options?.visibleFiles)
-                    ? sandpackConfig.options.visibleFiles
-                    : [
-                        getComponentFilePath(),
-                        "/components/",
-                        "/tailwind.config.js",
-                        "/globals.css",
-                        "/package.json",
-                      ]
-                }
-              />
+                  onCodeChange={(path: string, content: string) => {
+                    if (path === getComponentFilePath()) {
+                      setComponentCode(content)
+                    }
+                  }}
+                  isUnknownComponentFn={isUnknownComponent}
+                  activePath={activePreview?.filePath}
+                  sandpackTemplate={sandpackConfig.template}
+                  dependencies={sandpackConfig.customSetup?.dependencies}
+                  visiblePaths={
+                    Array.isArray(sandpackConfig.options?.visibleFiles)
+                      ? sandpackConfig.options.visibleFiles
+                      : [
+                          getComponentFilePath(),
+                          "/components/",
+                          "/tailwind.config.js",
+                          "/globals.css",
+                          "/package.json",
+                        ]
+                  }
+                  loadingFiles={loadingShadcnComponents}
+                />
+              </SandpackProvider>
             ) : (
               /* Otherwise use the original SandpackContent */
               <SandpackProvider {...sandpackConfig}>
@@ -126,6 +165,7 @@ export function ComponentPublishDialog({
                   getComponentFilePath={getComponentFilePath}
                   setComponentCode={setComponentCode}
                   isUnknownComponent={isUnknownComponent}
+                  loadingFiles={loadingShadcnComponents}
                 />
               </SandpackProvider>
             )}
@@ -151,6 +191,7 @@ interface SandpackContentProps {
   getComponentFilePath: () => string
   setComponentCode: (code: string) => void
   isUnknownComponent: (path: string) => boolean
+  loadingFiles?: string[]
 }
 
 function SandpackContent({
@@ -160,6 +201,7 @@ function SandpackContent({
   getComponentFilePath,
   setComponentCode,
   isUnknownComponent,
+  loadingFiles = [],
 }: SandpackContentProps) {
   const { sandpack } = useSandpack()
   const componentPath = getComponentFilePath()
@@ -246,19 +288,11 @@ function SandpackContent({
         fileContent: sandpack.files[path]?.code?.slice(0, 50) + "...",
       })
       // Set as regular file type preview
+      sandpack.setActiveFile(path)
       onPreviewSelect({
         type: "regular",
         filePath: path,
       })
-
-      // Update the Sandpack editor file
-      console.log("[EditorDialog] Updating Sandpack editor file to:", {
-        from: sandpack.activeFile,
-        to: path,
-        hasFileContent: Boolean(sandpack.files[path]?.code),
-        stackTrace: new Error().stack,
-      })
-      sandpack.setActiveFile(path)
     }
   }
 
@@ -284,33 +318,26 @@ function SandpackContent({
   }, [activePreview, sandpack.activeFile, sandpack.files])
 
   return (
-    <>
-      <div className="absolute bottom-2 right-2">
-        <OpenInCodeSandboxButton />
-      </div>
-      <SandpackLayout style={{ height: "100%" }}>
-        <div className="flex w-full h-full">
-          <div className="flex border-r border-border">
-            {/* <FileExplorer /> */}
-            <FileExplorer
-              nonShadcnComponents={nonShadcnComponents}
-              onFileSelect={handleFileSelect}
-              selectedFile={activePreview?.filePath || null}
-            />
-          </div>
-          <div className="flex-1">
-            {activePreview?.type === "unknown" ? (
-              <FallbackComponentView
-                componentName={activePreview.componentName || ""}
-              />
-            ) : (
-              <div className="h-full w-full">
-                <SimpleEditor onChange={setComponentCode} />
-              </div>
-            )}
-          </div>
+    <SandpackLayout style={{ height: "100%", border: "none" }}>
+      <div className="flex w-full h-full">
+        <div className="flex border-r border-border">
+          <FileExplorer
+            nonShadcnComponents={nonShadcnComponents}
+            onFileSelect={handleFileSelect}
+            selectedFile={activePreview?.filePath || componentPath}
+            loadingFiles={loadingFiles}
+          />
         </div>
-      </SandpackLayout>
-    </>
+        <div className="flex-1">
+          {activePreview && isUnknownComponent(activePreview.filePath) ? (
+            <FallbackComponentView
+              componentName={activePreview.componentName || "Component"}
+            />
+          ) : (
+            <SimpleEditor onChange={setComponentCode} />
+          )}
+        </div>
+      </div>
+    </SandpackLayout>
   )
 }
