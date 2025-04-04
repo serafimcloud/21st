@@ -101,6 +101,17 @@ export function EditorDialog({ userId }: EditorDialogProps) {
                 activePath={activePreview?.filePath}
                 sandpackTemplate={sandpackConfig.template}
                 dependencies={sandpackConfig.customSetup?.dependencies}
+                visiblePaths={
+                  Array.isArray(sandpackConfig.options?.visibleFiles)
+                    ? sandpackConfig.options.visibleFiles
+                    : [
+                        getComponentFilePath(),
+                        "/components/",
+                        "/tailwind.config.js",
+                        "/globals.css",
+                        "/package.json",
+                      ]
+                }
               />
             ) : (
               /* Otherwise use the original SandpackContent */

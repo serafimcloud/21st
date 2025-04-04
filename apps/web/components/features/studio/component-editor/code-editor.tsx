@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useRef } from "react"
 import {
   SandpackCodeEditor,
   useActiveCode,
@@ -14,6 +14,8 @@ interface CodeEditorProps {
 export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
   const { code } = useActiveCode()
   const { sandpack } = useSandpack()
+  const prevCodeRef = useRef<string>()
+  const updatingRef = useRef(false)
 
   // Try to use CodeManager if available (for the new flow)
   let codeManager
@@ -38,6 +40,7 @@ export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
       codeLength: code?.length,
     },
     usingCodeManager: Boolean(codeManager),
+    updating: updatingRef.current,
     stackTrace: new Error().stack,
   })
 
@@ -56,6 +59,23 @@ export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
 
   // Handle code changes with or without CodeManager
   useEffect(() => {
+    // Skip if we're in the middle of updating
+    if (updatingRef.current) {
+      console.log(
+        "[CodeEditor] Skipping update because we're in the middle of updating",
+      )
+      return
+    }
+
+    // Skip if code is the same as before
+    if (prevCodeRef.current === code) {
+      console.log("[CodeEditor] Skipping update because code is the same")
+      return
+    }
+
+    // Update the previous code ref
+    prevCodeRef.current = code
+
     if (code && sandpack.activeFile === componentPath) {
       console.log("[CodeEditor] Updating code for:", {
         file: componentPath,
@@ -68,7 +88,21 @@ export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
 
       // If we have a code manager, update it
       if (codeManager && componentPath) {
-        codeManager.updateFileContent(componentPath, code)
+        try {
+          // Set the updating flag to prevent infinite loops
+          updatingRef.current = true
+
+          // Update the file content
+          codeManager.updateFileContent(componentPath, code)
+
+          // Clear the updating flag after a short delay
+          setTimeout(() => {
+            updatingRef.current = false
+          }, 50)
+        } catch (error) {
+          console.error("[CodeEditor] Error updating file content:", error)
+          updatingRef.current = false
+        }
       }
 
       // Always call the original onCodeChange prop if provided

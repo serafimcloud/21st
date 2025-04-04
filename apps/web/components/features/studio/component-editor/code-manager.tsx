@@ -96,6 +96,13 @@ export function CodeManagerProvider({
   const updateFileContent = (path: string, content: string) => {
     console.log("[CodeManager] Updating file content:", path)
 
+    // Check if the content is actually different
+    const currentContent = getFileContent(path)
+    if (currentContent === content) {
+      console.log("[CodeManager] Content unchanged, skipping update:", path)
+      return
+    }
+
     // Mark this file as user-modified
     setUserModifiedFiles((prev) => ({ ...prev, [path]: true }))
 

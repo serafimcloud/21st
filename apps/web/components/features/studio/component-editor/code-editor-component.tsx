@@ -18,6 +18,7 @@ interface CodeEditorComponentProps {
   activePath?: string
   sandpackTemplate?: "react" | "react-ts" | "vanilla" | "vanilla-ts"
   dependencies?: Record<string, string>
+  visiblePaths?: string[]
 }
 
 export function CodeEditorComponent({
@@ -29,6 +30,7 @@ export function CodeEditorComponent({
   activePath,
   sandpackTemplate = "react-ts",
   dependencies = {},
+  visiblePaths,
 }: CodeEditorComponentProps) {
   // Setup sandpack configuration
   const sandpackConfig = {
@@ -58,21 +60,45 @@ export function CodeEditorComponent({
         isUnknownComponentFn={isUnknownComponentFn}
       >
         <div className="flex flex-col h-full">
-          <EditorContent />
+          <EditorContent visiblePaths={visiblePaths} />
         </div>
       </CodeManagerProvider>
     </SandpackProvider>
   )
 }
 
-function EditorContent() {
+interface EditorContentProps {
+  visiblePaths?: string[]
+}
+
+function EditorContent({ visiblePaths }: EditorContentProps) {
   const {
     activeFile,
     selectFile,
     isUnknownComponent,
     getComponentName,
     nonShadcnComponents,
+    allFiles,
   } = useCodeManager()
+
+  // Filter files based on visiblePaths if provided
+  const filteredFiles = React.useMemo(() => {
+    if (!visiblePaths || visiblePaths.length === 0) {
+      return allFiles
+    }
+
+    return allFiles.filter((path) => {
+      // Check if path matches any of the visible paths patterns
+      return visiblePaths.some((visiblePath) => {
+        // Handle directory patterns like "/components/"
+        if (visiblePath.endsWith("/")) {
+          return path.startsWith(visiblePath)
+        }
+        // Handle exact file paths
+        return path === visiblePath
+      })
+    })
+  }, [allFiles, visiblePaths])
 
   // Handle file selection
   const handleFileSelect = (path: string) => {
@@ -87,6 +113,7 @@ function EditorContent() {
             nonShadcnComponents={nonShadcnComponents}
             onFileSelect={handleFileSelect}
             selectedFile={activeFile}
+            visibleFiles={visiblePaths}
           />
         </div>
         <div className="flex-1">

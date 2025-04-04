@@ -18,15 +18,17 @@ interface FileTreeItem {
   isUnknownComponent?: boolean
 }
 
-interface CustomFileExplorerProps {
+export interface CustomFileExplorerProps {
   nonShadcnComponents?: Array<{ name: string; path: string }>
   onFileSelect?: (path: string) => void
   selectedFile?: string | null
+  visibleFiles?: string[]
 }
 
 function buildFileTree(
   files: string[],
   unknownComponents: Array<{ name: string; path: string }> = [],
+  visibleFilesFilter?: string[],
 ): {
   tree: FileTreeItem[]
   directories: Set<string>
@@ -34,12 +36,32 @@ function buildFileTree(
   const root: FileTreeItem[] = []
   const directories = new Set<string>()
 
-  // Helper function to add item to tree
+  const isFileVisible = (path: string) => {
+    if (unknownComponents.some((comp) => comp.path === path)) {
+      return true
+    }
+
+    if (!visibleFilesFilter || visibleFilesFilter.length === 0) {
+      return true
+    }
+
+    return visibleFilesFilter.some((visiblePath) => {
+      if (visiblePath.endsWith("/")) {
+        return path.startsWith(visiblePath)
+      }
+      return path === visiblePath
+    })
+  }
+
   const addToTree = (
     path: string,
     isUnknownComponent = false,
     componentName?: string,
   ) => {
+    if (!isUnknownComponent && !isFileVisible(path)) {
+      return
+    }
+
     const parts = path.replace("@/", "").split("/").filter(Boolean)
     let current = root
     let currentPath = ""
@@ -75,7 +97,6 @@ function buildFileTree(
           isUnknownComponent: isLast ? isUnknownComponent : undefined,
         }
 
-        // Insert item in sorted position
         const insertIndex = current.findIndex((item) => {
           if (item.type === newItem.type) {
             return item.name.localeCompare(newItem.name) > 0
@@ -96,17 +117,14 @@ function buildFileTree(
     })
   }
 
-  // Add standard files
   files.forEach((path) => {
     addToTree(path)
   })
 
-  // Add unknown components to their respective directories
   unknownComponents.forEach((comp) => {
     addToTree(comp.path, true, comp.name)
   })
 
-  // Helper function to sort children recursively
   const sortTreeRecursively = (items: FileTreeItem[]) => {
     items.sort((a, b) => {
       if (a.type !== b.type) {
@@ -122,7 +140,6 @@ function buildFileTree(
     })
   }
 
-  // Sort the entire tree
   sortTreeRecursively(root)
 
   return { tree: root, directories }
@@ -159,7 +176,6 @@ function FileTreeNode({
           if (item.type === "directory") {
             onToggleDir(item.path)
           } else {
-            // Unified handling for all file types
             onFileClick(item.path)
           }
         }}
@@ -217,13 +233,15 @@ export function CustomFileExplorer({
   nonShadcnComponents = [],
   onFileSelect,
   selectedFile,
+  visibleFiles,
 }: CustomFileExplorerProps) {
   const { sandpack } = useSandpack()
-  const { visibleFiles } = sandpack
+  const { visibleFiles: sandpackVisibleFiles } = sandpack
 
   const { tree: fileTree, directories } = useMemo(
-    () => buildFileTree(visibleFiles, nonShadcnComponents),
-    [visibleFiles, nonShadcnComponents],
+    () =>
+      buildFileTree(sandpackVisibleFiles, nonShadcnComponents, visibleFiles),
+    [sandpackVisibleFiles, nonShadcnComponents, visibleFiles],
   )
 
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(directories)
@@ -243,9 +261,11 @@ export function CustomFileExplorer({
   const handleFileClick = useCallback(
     (path: string) => {
       console.log("[FileExplorer] handleFileClick called with path:", path)
-      
+
       if (onFileSelect) {
-        console.log("[FileExplorer] onFileSelect handler exists, calling with path")
+        console.log(
+          "[FileExplorer] onFileSelect handler exists, calling with path",
+        )
         onFileSelect(path)
       } else {
         console.log("[FileExplorer] onFileSelect handler not provided")
