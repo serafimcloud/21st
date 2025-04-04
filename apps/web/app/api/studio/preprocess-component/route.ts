@@ -12,8 +12,17 @@ const openai = new OpenAI({
 const MOCK_RESPONSE = {
   componentName: "ExampleComponent",
   registryType: "ui",
-  shadcnComponentsImports: ["Button", "Dialog", "Input"],
-  nonShadcnComponentsImports: ["SomeCustomComponent"],
+  shadcnComponentsImports: [
+    { name: "Button", path: "@/components/ui/button" },
+    { name: "Dialog", path: "@/components/ui/dialog" },
+    { name: "Input", path: "@/components/ui/input" },
+  ],
+  nonShadcnComponentsImports: [
+    {
+      name: "SomeCustomComponent",
+      path: "@/components/ui/some-custom-component",
+    },
+  ],
   npmDependencies: ["react", "next", "lucide-react"],
   environmentVariables: [],
   additionalStyles: {
@@ -54,6 +63,7 @@ export async function POST(request: Request) {
     let result
     try {
       result = await preprocessComponent(code)
+      console.log("OpenAI preprocessing result:", result)
     } catch (error) {
       console.error("OpenAI API error:", error)
       // If OpenAI fails, use mock response for testing
@@ -70,10 +80,14 @@ export async function POST(request: Request) {
     // If not unique, generate a unique slug
     const finalSlug = isUnique ? slug : await generateUniqueSlug(slug, userId)
 
-    return NextResponse.json({
+    const response = {
       ...result,
       slug: finalSlug,
-    })
+    }
+
+    console.log("Final preprocessed response:", response)
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error("Error preprocessing component:", error)
     return NextResponse.json(
@@ -86,7 +100,6 @@ export async function POST(request: Request) {
 async function preprocessComponent(code: string) {
   // Try to detect component name from code before using OpenAI
   // This is a basic regex approach to find component declarations
-  let componentName = extractComponentName(code) || "Component"
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -99,60 +112,65 @@ async function preprocessComponent(code: string) {
    - 'ui' (basic components like Button, Card, etc.)
    - 'hooks' (custom React hooks)
    - 'blocks' (larger components like hero sections, pricing sections, etc.)
-3. Identify any shadcn/ui imports from 'components/ui/' and list their names (one of the following): 
-	1.	Accordion
-	2.	Alert
-	3.	Alert Dialog
-	4.	Aspect Ratio
-	5.	Avatar
-	6.	Badge
-	7.	Breadcrumb
-	8.	Button
-	9.	Calendar
-	10.	Card
-	11.	Carousel
-	12.	Chart
-	13.	Checkbox
-	14.	Collapsible
-	15.	Combobox
-	16.	Command
-	17.	Context Menu
-	18.	Data Table
-	19.	Date Picker
-	20.	Dialog
-	21.	Drawer
-	22.	Dropdown Menu
-	23.	Form
-	24.	Hover Card
-	25.	Input
-	26.	Input OTP
-	27.	Label
-	28.	Menubar
-	29.	Navigation Menu
-	30.	Pagination
-	31.	Popover
-	32.	Progress
-	33.	Radio Group
-	34.	Resizable
-	35.	Scroll Area
-	36.	Select
-	37.	Separator
-	38.	Sheet
-	39.	Sidebar
-	40.	Skeleton
-	41.	Slider
-	42.	Sonner
-	43.	Switch
-	44.	Table
-	45.	Tabs
-	46.	Textarea
-	47.	Toast
-	48.	Toggle
-	49.	Toggle Group
-	50.	Tooltip
+3. Identify any shadcn/ui imports from 'components/ui/' and list their names and paths (one of the following): 
+	1.	Accordion (@/components/ui/accordion)
+	2.	Alert (@/components/ui/alert)
+	3.	Alert Dialog (@/components/ui/alert-dialog)
+	4.	Aspect Ratio (@/components/ui/aspect-ratio)
+	5.	Avatar (@/components/ui/avatar)
+	6.	Badge (@/components/ui/badge)
+	7.	Breadcrumb (@/components/ui/breadcrumb)
+	8.	Button (@/components/ui/button)
+	9.	Calendar (@/components/ui/calendar)
+	10.	Card (@/components/ui/card)
+	11.	Carousel (@/components/ui/carousel)
+	12.	Chart (@/components/ui/chart)
+	13.	Checkbox (@/components/ui/checkbox)
+	14.	Collapsible (@/components/ui/collapsible)
+	15.	Combobox (@/components/ui/combobox)
+	16.	Command (@/components/ui/command)
+	17.	Context Menu (@/components/ui/context-menu)
+	18.	Data Table (@/components/ui/data-table)
+	19.	Date Picker (@/components/ui/date-picker)
+	20.	Dialog (@/components/ui/dialog)
+	21.	Drawer (@/components/ui/drawer)
+	22.	Dropdown Menu (@/components/ui/dropdown-menu)
+	23.	Form (@/components/ui/form)
+	24.	Hover Card (@/components/ui/hover-card)
+	25.	Input (@/components/ui/input)
+	26.	Input OTP (@/components/ui/input-otp)
+	27.	Label (@/components/ui/label)
+	28.	Menubar (@/components/ui/menubar)
+	29.	Navigation Menu (@/components/ui/navigation-menu)
+	30.	Pagination (@/components/ui/pagination)
+	31.	Popover (@/components/ui/popover)
+	32.	Progress (@/components/ui/progress)
+	33.	Radio Group (@/components/ui/radio-group)
+	34.	Resizable (@/components/ui/resizable)
+	35.	Scroll Area (@/components/ui/scroll-area)
+	36.	Select (@/components/ui/select)
+	37.	Separator (@/components/ui/separator)
+	38.	Sheet (@/components/ui/sheet)
+	39.	Sidebar (@/components/ui/sidebar)
+	40.	Skeleton (@/components/ui/skeleton)
+	41.	Slider (@/components/ui/slider)
+	42.	Sonner (@/components/ui/sonner)
+	43.	Switch (@/components/ui/switch)
+	44.	Table (@/components/ui/table)
+	45.	Tabs (@/components/ui/tabs)
+	46.	Textarea (@/components/ui/textarea)
+	47.	Toast (@/components/ui/toast)
+	48.	Toggle (@/components/ui/toggle)
+	49.	Toggle Group (@/components/ui/toggle-group)
+	50.	Tooltip (@/components/ui/tooltip)
 )
 4. Identify any non-shadcn/ui component imports (including @/hooks and @/components/[registry]/ components, excluding npm packages and standard shadcn utilities). 
-   IMPORTANT: DO NOT include imports like { cn } from "@/lib/utils" or any other utility functions. Only include actual component imports.
+   IMPORTANT:
+   - DO NOT include imports like { cn } from "@/lib/utils" or any other utility functions. Only include actual component imports.
+   - If multiple components are exported from the same file, list only one of them.
+   - The path should be based on the file location, not the component name.
+   - For example, if file mockup.tsx exports both Mockup and MockupFrame components, list only Mockup from "@/components/ui/mockup".
+   For each component, provide both the name and its path.
 
 5. List all npm package dependencies used in the component (excluding react, react-dom, tailwindcss, and any packages starting with 'next' or '@/')
 6. Identify any environment variables (process.env.*) that the component requires to function correctly.
@@ -174,12 +192,37 @@ And here's the default globals CSS:
 ${defaultGlobalCss}
 \`\`\`
 
+IMPORTANT RULES FOR COMPONENT PATHS:
+1. Components exported from the same file MUST share the same path
+2. The path should be based on the actual file location, not the component name
+3. The filename in the path should match the actual file that contains the component
+4. Multiple components from the same file should be listed separately but with identical paths
+
+Example of correct path handling:
+If a file "@/components/ui/mockup.tsx" exports both Mockup and MockupFrame components:
+{
+  "nonShadcnComponentsImports": [
+    { "name": "Mockup", "path": "@/components/ui/mockup" },
+    { "name": "MockupFrame", "path": "@/components/ui/mockup" }
+  ]
+}
+
 Respond in JSON format only with the following structure:
 {
   "componentName": "string",
   "registryType": "ui|hooks|blocks",
-  "shadcnComponentsImports": ["string"],
-  "nonShadcnComponentsImports": ["string"],
+  "shadcnComponentsImports": [
+    {
+      "name": "string",
+      "path": "@/components/ui/component-name"
+    }
+  ],
+  "nonShadcnComponentsImports": [
+    {
+      "name": "string",
+      "path": "@/components/[registry]/component-name"
+    }
+  ],
   "npmDependencies": ["string"],
   "environmentVariables": [
     {

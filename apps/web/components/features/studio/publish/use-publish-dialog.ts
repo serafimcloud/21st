@@ -17,6 +17,10 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   const [processedData, setProcessedData] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [selectedCustomComponent, setSelectedCustomComponent] = useState<
+    string | null
+  >(null)
   const [registryDependencies, setRegistryDependencies] = useState<
     Record<string, { code: string; registry: string }>
   >({})
@@ -49,6 +53,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     setProcessedData(null)
     setIsProcessing(false)
     setIsPublishing(false)
+    setSelectedCustomComponent(null)
+    setSelectedFile(null)
     setRegistryDependencies({})
     setNpmDependenciesOfRegistryDependencies({})
     setMergedTailwindConfig(null)
@@ -62,6 +68,82 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       if (!isOpen) resetState()
     },
     [resetState],
+  )
+
+  // Handle custom component selection
+  const handleCustomComponentClick = useCallback((componentName: string) => {
+    setSelectedCustomComponent(componentName)
+  }, [])
+
+  // Generate files for Sandpack
+  const files = useMemo(() => {
+    const componentPath = getComponentFilePath()
+    const generatedFiles = generateSandpackFiles({
+      componentPath,
+      componentCode,
+      processedData,
+      dependencies: {
+        ...(processedData?.npmDependencies?.reduce(
+          (acc: Record<string, string>, dep: string) => ({
+            ...acc,
+            [dep]: "latest",
+          }),
+          {},
+        ) || {}),
+        ...npmDependenciesOfRegistryDependencies,
+      },
+      customTailwindConfig: mergedTailwindConfig,
+      customGlobalCss: mergedGlobalCss,
+    })
+
+    // Merge registry dependencies with generated files
+    return {
+      ...registryDependencies,
+      ...generatedFiles,
+    }
+  }, [
+    getComponentFilePath,
+    componentCode,
+    processedData,
+    npmDependenciesOfRegistryDependencies,
+    registryDependencies,
+    mergedTailwindConfig,
+    mergedGlobalCss,
+  ])
+
+  // Handle file selection
+  const handleFileClick = useCallback(
+    (path: string) => {
+      if (path === selectedFile) return // Prevent unnecessary updates if clicking the same file
+
+      setSelectedFile(path)
+
+      // Only reset custom component if we're not clicking a custom component file
+      const isCustomComponent = Object.values(registryDependencies).some(
+        (dep) => dep.registry && path === dep.registry,
+      )
+
+      if (!isCustomComponent) {
+        setSelectedCustomComponent(null)
+      }
+
+      // Only update component code if necessary
+      if (path === getComponentFilePath()) {
+        return // Don't update code when clicking main component file
+      }
+
+      // For other files, get the code from Sandpack files
+      const fileContent = files[path]
+      if (fileContent) {
+        const newCode =
+          typeof fileContent === "string" ? fileContent : fileContent.code
+
+        if (newCode) {
+          setComponentCode(newCode)
+        }
+      }
+    },
+    [selectedFile, registryDependencies, files, getComponentFilePath],
   )
 
   // Merge styles from dependencies
@@ -169,8 +251,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         console.log("Found shadcn components:", data.shadcnComponentsImports)
 
         const slugs = data.shadcnComponentsImports.map(
-          (componentName: string) =>
-            `shadcn/${componentName.toLowerCase().replace(/\s+/g, "-")}`,
+          (component: { name: string }) =>
+            `shadcn/${component.name.toLowerCase().replace(/\s+/g, "-")}`,
         )
         console.log("Generated slugs for resolution:", slugs)
 
@@ -218,56 +300,12 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     }
   }
 
-  // Generate files for Sandpack
-  const files = useMemo(() => {
-    const componentPath = getComponentFilePath()
-    const generatedFiles = generateSandpackFiles({
-      componentPath,
-      componentCode,
-      processedData,
-      dependencies: {
-        ...(processedData?.npmDependencies?.reduce(
-          (acc: Record<string, string>, dep: string) => ({
-            ...acc,
-            [dep]: "latest",
-          }),
-          {},
-        ) || {}),
-        ...npmDependenciesOfRegistryDependencies,
-      },
-      customTailwindConfig: mergedTailwindConfig,
-      customGlobalCss: mergedGlobalCss,
-    })
-
-    console.log("Sandpack Files Generation:", {
-      baseFiles: Object.keys(generatedFiles),
-      registryDependencies: Object.keys(registryDependencies),
-      finalFiles: Object.keys({
-        ...registryDependencies,
-        ...generatedFiles,
-      }),
-    })
-
-    return {
-      ...registryDependencies,
-      ...generatedFiles,
-    }
-  }, [
-    componentCode,
-    processedData,
-    getComponentFilePath,
-    registryDependencies,
-    npmDependenciesOfRegistryDependencies,
-    mergedTailwindConfig,
-    mergedGlobalCss,
-  ])
-
   // Sandpack configuration
-  const sandpackConfig = useMemo(() => {
-    const config = {
+  const sandpackConfig = useMemo(
+    () => ({
       files,
       options: {
-        activeFile: getComponentFilePath(),
+        activeFile: selectedFile || getComponentFilePath(),
         visibleFiles: [
           getComponentFilePath(),
           "/components",
@@ -293,23 +331,17 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
           ...npmDependenciesOfRegistryDependencies,
         },
       },
-    }
-
-    console.log("Final Sandpack Config:", {
-      visibleFiles: config.options.visibleFiles,
-      allFiles: Object.keys(config.files),
-      dependencies: config.customSetup.dependencies,
-    })
-
-    return config
-  }, [
-    files,
-    getComponentFilePath,
-    isDarkTheme,
-    processedData?.npmDependencies,
-    registryDependencies,
-    npmDependenciesOfRegistryDependencies,
-  ])
+    }),
+    [
+      files,
+      getComponentFilePath,
+      selectedFile,
+      registryDependencies,
+      processedData?.npmDependencies,
+      npmDependenciesOfRegistryDependencies,
+      isDarkTheme,
+    ],
+  )
 
   return {
     open,
@@ -317,8 +349,12 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     processedData,
     isProcessing,
     isPublishing,
+    selectedCustomComponent,
+    selectedFile,
     handleOpenChange,
     handleProcessComponent,
+    handleCustomComponentClick,
+    handleFileClick,
     setComponentCode,
     sandpackConfig,
     getComponentFilePath,

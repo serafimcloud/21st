@@ -6,32 +6,53 @@ import {
   Folder,
   FolderOpen,
   File,
+  FileWarning,
 } from "lucide-react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 
 interface FileTreeItem {
   name: string
   path: string
   type: "file" | "directory"
   children?: FileTreeItem[]
+  isUnknownComponent?: boolean
 }
 
-function buildFileTree(files: string[]): {
+interface CustomFileExplorerProps {
+  nonShadcnComponents?: Array<{ name: string; path: string }>
+  onCustomComponentClick?: (componentName: string) => void
+  onFileSelect?: (path: string) => void
+  selectedFile?: string | null
+}
+
+function buildFileTree(
+  files: string[],
+  unknownComponents: Array<{ name: string; path: string }> = [],
+): {
   tree: FileTreeItem[]
   directories: Set<string>
 } {
   const root: FileTreeItem[] = []
   const directories = new Set<string>()
 
-  files.forEach((path) => {
-    const parts = path.split("/").filter(Boolean)
+  // Helper function to add item to tree
+  const addToTree = (
+    path: string,
+    isUnknownComponent = false,
+    componentName?: string,
+  ) => {
+    const parts = path.replace("@/", "").split("/").filter(Boolean)
     let current = root
     let currentPath = ""
 
     parts.forEach((part, index) => {
       currentPath += `/${part}`
       const isLast = index === parts.length - 1
-      const existingItem = current.find((item) => item.name === part)
+      const displayName =
+        isLast && isUnknownComponent
+          ? `${componentName?.toLowerCase()}.tsx`
+          : part
+      const existingItem = current.find((item) => item.name === displayName)
 
       if (!isLast) {
         directories.add(currentPath)
@@ -41,22 +62,69 @@ function buildFileTree(files: string[]): {
         if (isLast) {
           existingItem.type = "file"
           existingItem.path = path
+          if (isUnknownComponent) {
+            existingItem.isUnknownComponent = true
+          }
         }
         current = existingItem.children || []
       } else {
         const newItem: FileTreeItem = {
-          name: part,
+          name: displayName,
           path: isLast ? path : currentPath,
           type: isLast ? "file" : "directory",
           children: isLast ? undefined : [],
+          isUnknownComponent: isLast ? isUnknownComponent : undefined,
         }
-        current.push(newItem)
+
+        // Insert item in sorted position
+        const insertIndex = current.findIndex((item) => {
+          if (item.type === newItem.type) {
+            return item.name.localeCompare(newItem.name) > 0
+          }
+          return item.type === "file"
+        })
+
+        if (insertIndex === -1) {
+          current.push(newItem)
+        } else {
+          current.splice(insertIndex, 0, newItem)
+        }
+
         if (!isLast) {
           current = newItem.children!
         }
       }
     })
+  }
+
+  // Add standard files
+  files.forEach((path) => {
+    addToTree(path)
   })
+
+  // Add unknown components to their respective directories
+  unknownComponents.forEach((comp) => {
+    addToTree(comp.path, true, comp.name)
+  })
+
+  // Helper function to sort children recursively
+  const sortTreeRecursively = (items: FileTreeItem[]) => {
+    items.sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === "directory" ? -1 : 1
+      }
+      return a.name.localeCompare(b.name)
+    })
+
+    items.forEach((item) => {
+      if (item.children) {
+        sortTreeRecursively(item.children)
+      }
+    })
+  }
+
+  // Sort the entire tree
+  sortTreeRecursively(root)
 
   return { tree: root, directories }
 }
@@ -68,6 +136,7 @@ function FileTreeNode({
   onFileClick,
   expandedDirs,
   onToggleDir,
+  onCustomComponentClick,
 }: {
   item: FileTreeItem
   level?: number
@@ -75,21 +144,25 @@ function FileTreeNode({
   onFileClick: (path: string) => void
   expandedDirs: Set<string>
   onToggleDir: (path: string) => void
+  onCustomComponentClick?: (componentName: string) => void
 }) {
   const isExpanded = expandedDirs.has(item.path)
-  const isActive = item.path === activeFile
+  const isActive = activeFile === item.path
 
   return (
     <div>
       <button
         className={cn(
           "w-full text-left py-1.5 text-sm flex items-center gap-2 hover:bg-muted/50 transition-colors",
-          isActive && "bg-muted text-primary",
+          isActive && "bg-muted text-primary font-medium",
+          item.isUnknownComponent && isActive && "bg-yellow-500/10",
         )}
         style={{ paddingLeft: `${level * 12 + 16}px` }}
         onClick={() => {
           if (item.type === "directory") {
             onToggleDir(item.path)
+          } else if (item.isUnknownComponent && onCustomComponentClick) {
+            onCustomComponentClick(item.name.replace(".tsx", ""))
           } else {
             onFileClick(item.path)
           }
@@ -110,10 +183,19 @@ function FileTreeNode({
           ) : (
             <Folder className="h-4 w-4 text-blue-500" />
           )
+        ) : item.isUnknownComponent ? (
+          <FileWarning className="h-4 w-4 text-yellow-500" />
         ) : (
           <File className="h-4 w-4 text-gray-500" />
         )}
-        <span className="truncate">{item.name}</span>
+        <span
+          className={cn(
+            "truncate",
+            item.isUnknownComponent && "text-yellow-600",
+          )}
+        >
+          {item.name}
+        </span>
       </button>
 
       {item.type === "directory" && isExpanded && item.children && (
@@ -127,6 +209,7 @@ function FileTreeNode({
               onFileClick={onFileClick}
               expandedDirs={expandedDirs}
               onToggleDir={onToggleDir}
+              onCustomComponentClick={onCustomComponentClick}
             />
           ))}
         </div>
@@ -135,13 +218,18 @@ function FileTreeNode({
   )
 }
 
-export function CustomFileExplorer() {
+export function CustomFileExplorer({
+  nonShadcnComponents = [],
+  onCustomComponentClick,
+  onFileSelect,
+  selectedFile,
+}: CustomFileExplorerProps) {
   const { sandpack } = useSandpack()
-  const { visibleFiles, activeFile, setActiveFile } = sandpack
+  const { visibleFiles } = sandpack
 
   const { tree: fileTree, directories } = useMemo(
-    () => buildFileTree(visibleFiles),
-    [visibleFiles],
+    () => buildFileTree(visibleFiles, nonShadcnComponents),
+    [visibleFiles, nonShadcnComponents],
   )
 
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(directories)
@@ -158,20 +246,28 @@ export function CustomFileExplorer() {
     })
   }
 
+  const handleFileClick = useCallback(
+    (path: string) => {
+      if (onFileSelect) {
+        onFileSelect(path)
+      }
+    },
+    [onFileSelect],
+  )
+
   return (
-    <div className="w-64 border-r overflow-auto">
-      <div className="mt-4 px-4 text-[13px] font-medium text-muted-foreground">
-        Project Files
-      </div>
-      <div className="mt-2">
+    <div className="w-[200px] overflow-auto border-r border-border">
+      <div className="p-2 text-sm font-medium text-muted-foreground">Files</div>
+      <div className="space-y-1">
         {fileTree.map((item, index) => (
           <FileTreeNode
             key={item.path + index}
             item={item}
-            activeFile={activeFile}
-            onFileClick={setActiveFile}
+            activeFile={selectedFile || ""}
+            onFileClick={handleFileClick}
             expandedDirs={expandedDirs}
             onToggleDir={handleToggleDir}
+            onCustomComponentClick={onCustomComponentClick}
           />
         ))}
       </div>
