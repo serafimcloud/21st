@@ -1,5 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext, useEffect } from "react"
+import { atom, useAtom } from "jotai"
 import { useSandpack } from "@codesandbox/sandpack-react"
+
+// Define atoms for state management (single source of truth)
+export const activeFileAtom = atom<string | null>(null)
+export const userModifiedFilesAtom = atom<Record<string, boolean>>({})
 
 // Define the types for our context
 interface CodeManagerContextType {
@@ -10,7 +15,7 @@ interface CodeManagerContextType {
   renameFile: (from: string, to: string) => void
   deleteFile: (path: string) => void
 
-  // File state
+  // File state (derived from atoms)
   activeFile: string | null
   selectFile: (path: string) => void
 
@@ -33,6 +38,18 @@ export function useCodeManager() {
   return context
 }
 
+// Simple hook to access atom state directly
+export function useEditorFile() {
+  const [activeFile, setActiveFile] = useAtom(activeFileAtom)
+  const [userModifiedFiles] = useAtom(userModifiedFilesAtom)
+
+  return {
+    activeFile,
+    setActiveFile,
+    isFileModified: (path: string) => userModifiedFiles[path] || false,
+  }
+}
+
 interface CodeManagerProviderProps {
   children: React.ReactNode
   initialComponentPath: string
@@ -48,13 +65,12 @@ export function CodeManagerProvider({
   onFileContentChange,
   isUnknownComponentFn = () => false,
 }: CodeManagerProviderProps) {
+  // Use atoms directly in the context
   const { sandpack } = useSandpack()
-  const [activeFile, setActiveFile] = useState<string | null>(
-    initialComponentPath,
+  const [activeFile, setActiveFile] = useAtom(activeFileAtom)
+  const [userModifiedFiles, setUserModifiedFiles] = useAtom(
+    userModifiedFilesAtom,
   )
-  const [userModifiedFiles, setUserModifiedFiles] = useState<
-    Record<string, boolean>
-  >({})
 
   // Initialize with the main component file
   useEffect(() => {
@@ -83,6 +99,7 @@ export function CodeManagerProvider({
       sandpack.setActiveFile(path)
     }
 
+    // Update atom state
     setActiveFile(path)
   }
 
@@ -101,7 +118,7 @@ export function CodeManagerProvider({
       return
     }
 
-    // Mark this file as user-modified
+    // Mark this file as user-modified in atom state
     setUserModifiedFiles((prev) => ({ ...prev, [path]: true }))
 
     sandpack.updateFile(path, content)
@@ -176,8 +193,8 @@ export function CodeManagerProvider({
     if (activeFile === path) {
       // Select another file
       const files = Object.keys(sandpack.files)
-      if (files.length > 0) {
-        selectFile(files[0] as string)
+      if (files.length > 0 && files[0]) {
+        selectFile(files[0])
       } else {
         setActiveFile(null)
       }
@@ -193,6 +210,7 @@ export function CodeManagerProvider({
     return nonShadcnComponents?.find((comp) => comp.path === path)?.name
   }
 
+  // The context now just passes through the atom state + operations
   const value: CodeManagerContextType = {
     // File operations
     getFileContent,
@@ -202,8 +220,8 @@ export function CodeManagerProvider({
     deleteFile,
 
     // File state
-    activeFile,
-    selectFile,
+    activeFile, // From atom
+    selectFile, // Updates atom
 
     // File types and management
     isUnknownComponent,
