@@ -5,6 +5,7 @@ import { generateSandpackFiles } from "../sandpack-files"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/sandpack"
+import type { SandpackFiles } from "@codesandbox/sandpack-react"
 
 // Define a type for the active preview
 type ActivePreview = {
@@ -16,6 +17,15 @@ type ActivePreview = {
 interface UsePublishDialogProps {
   userId: string
 }
+
+// Define a type for registry dependencies
+interface RegistryDependency {
+  code: string
+  registry: string
+}
+
+// Define a type for file content
+type FileContent = string | { code: string }
 
 export function usePublishDialog({ userId }: UsePublishDialogProps) {
   // Dialog state
@@ -76,33 +86,32 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     [resetState],
   )
 
-  // Unified handler for preview selection (both files and custom components)
-  const handlePreviewSelect = useCallback(
-    (newPreview: ActivePreview) => {
-      setActivePreview(newPreview)
-
-      // Update component code if needed
-      if (
-        newPreview.type === "regular" &&
-        newPreview.filePath !== getComponentFilePath()
-      ) {
-        const fileContent = files[newPreview.filePath]
-        if (fileContent) {
-          const newCode =
-            typeof fileContent === "string" ? fileContent : fileContent.code
-
-          if (newCode) {
-            setComponentCode(newCode)
-          }
-        }
-      }
-    },
-    [getComponentFilePath],
-  )
-
   // Generate files for Sandpack
   const files = useMemo(() => {
     const componentPath = getComponentFilePath()
+    console.log("[PublishDialog] Generating Sandpack files:", {
+      componentPath,
+      processedData: {
+        registryType: processedData?.registryType,
+        slug: processedData?.slug,
+        componentName: processedData?.componentName,
+      },
+      hasComponentCode: Boolean(componentCode),
+      registryDependenciesFiles: Object.keys(registryDependencies),
+      activePreviewPath: activePreview?.filePath,
+    })
+
+    // Start with a fresh copy of all files
+    const allFiles: SandpackFiles = {}
+
+    // Add registry dependencies first
+    Object.entries(registryDependencies).forEach(([path, content]) => {
+      allFiles[path] = {
+        code: typeof content === "string" ? content : content.code,
+      }
+    })
+
+    // Generate base files
     const generatedFiles = generateSandpackFiles({
       componentPath,
       componentCode,
@@ -121,11 +130,59 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       customGlobalCss: mergedGlobalCss,
     })
 
-    // Merge registry dependencies with generated files
-    return {
-      ...registryDependencies,
-      ...generatedFiles,
+    // Add all generated files
+    Object.entries(generatedFiles).forEach(([path, content]) => {
+      // Skip component.tsx if we have a processed slug
+      if (processedData?.slug && path === "/components/ui/component.tsx") {
+        return
+      }
+      allFiles[path] = content
+    })
+
+    // If we have a processed slug, ensure the component is at the correct path
+    if (processedData?.slug && generatedFiles["/components/ui/component.tsx"]) {
+      allFiles[componentPath] = generatedFiles["/components/ui/component.tsx"]
+      const content = allFiles[componentPath] as string | { code: string }
+      console.log("[PublishDialog] Component file placement:", {
+        path: componentPath,
+        content:
+          typeof content === "string"
+            ? content.slice(0, 100)
+            : content.code.slice(0, 100),
+      })
     }
+
+    // Log the content of key files for debugging
+    const debugPaths = [
+      "/components/blocks/hero-section.tsx",
+      "/components/ui/button.tsx",
+      "/components/ui/badge.tsx",
+      "/components/ui/component.tsx",
+    ]
+
+    console.log("[PublishDialog] File contents check:", {
+      activePreview: activePreview?.filePath,
+      componentPath,
+      fileContents: debugPaths.reduce(
+        (acc, path) => ({
+          ...acc,
+          [path]: (() => {
+            const content = allFiles[path]
+            if (!content) return "not found"
+            return (
+              (typeof content === "string" ? content : content.code).slice(
+                0,
+                50,
+              ) + "..."
+            )
+          })(),
+        }),
+        {},
+      ),
+      allFiles: Object.keys(allFiles),
+    })
+
+    return allFiles
   }, [
     getComponentFilePath,
     componentCode,
@@ -134,7 +191,58 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     registryDependencies,
     mergedTailwindConfig,
     mergedGlobalCss,
+    activePreview?.filePath,
   ])
+
+  // Unified handler for preview selection (both files and custom components)
+  const handlePreviewSelect = useCallback(
+    (newPreview: ActivePreview) => {
+      console.log("[PublishDialog] handlePreviewSelect called with:", {
+        newPreview,
+        currentFiles: Object.keys(files),
+      })
+
+      setActivePreview(newPreview)
+
+      // Always update component code for regular files
+      if (newPreview.type === "regular") {
+        const fileContent = files[newPreview.filePath]
+        console.log(
+          "[PublishDialog] Updating component code with file content:",
+          {
+            path: newPreview.filePath,
+            fileContent,
+            allFiles: Object.keys(files).map((path) => ({
+              path,
+              preview: (() => {
+                const content = files[path]
+                return (
+                  (typeof content === "string" ? content : content.code).slice(
+                    0,
+                    50,
+                  ) + "..."
+                )
+              })(),
+            })),
+          },
+        )
+
+        if (fileContent) {
+          const newCode =
+            typeof fileContent === "string" ? fileContent : fileContent.code
+
+          if (newCode) {
+            setComponentCode(newCode)
+            console.log("[PublishDialog] Updated component code:", {
+              path: newPreview.filePath,
+              codePreview: newCode.slice(0, 100),
+            })
+          }
+        }
+      }
+    },
+    [files],
+  )
 
   // Merge styles from dependencies
   const mergeStyles = useCallback(
@@ -285,8 +393,15 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   )
 
   // Sandpack configuration
-  const sandpackConfig = useMemo(
-    () => ({
+  const sandpackConfig = useMemo(() => {
+    console.log("[PublishDialog] Creating Sandpack config:", {
+      activePreview,
+      componentPath: getComponentFilePath(),
+      availableFiles: Object.keys(files),
+      registryDependencies: Object.keys(registryDependencies),
+    })
+
+    return {
       files,
       options: {
         activeFile:
@@ -318,17 +433,16 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
           ...npmDependenciesOfRegistryDependencies,
         },
       },
-    }),
-    [
-      files,
-      getComponentFilePath,
-      activePreview,
-      registryDependencies,
-      processedData?.npmDependencies,
-      npmDependenciesOfRegistryDependencies,
-      isDarkTheme,
-    ],
-  )
+    }
+  }, [
+    files,
+    getComponentFilePath,
+    activePreview,
+    registryDependencies,
+    processedData?.npmDependencies,
+    npmDependenciesOfRegistryDependencies,
+    isDarkTheme,
+  ])
 
   return {
     open,

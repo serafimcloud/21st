@@ -129,10 +129,27 @@ function SandpackContent({
 }: SandpackContentProps) {
   const { sandpack } = useSandpack()
   const componentPath = getComponentFilePath()
+
+  // Log Sandpack state changes
+  React.useEffect(() => {
+    console.log("[PublishDialog] Current Sandpack state:", {
+      activeFile: sandpack.activeFile,
+      files: Object.keys(sandpack.files),
+      visibleFiles: sandpack.visibleFiles,
+      currentFileContent:
+        sandpack.files[sandpack.activeFile]?.code?.slice(0, 50) + "...",
+      stackTrace: new Error().stack,
+    })
+  }, [sandpack.activeFile, sandpack.files, sandpack.visibleFiles])
+
   // Set initial file only once when component mounts
   React.useEffect(() => {
     if (!activePreview) {
-      console.log("[PublishDialog] Setting initial file:", componentPath)
+      console.log("[PublishDialog] Setting initial file:", {
+        componentPath,
+        currentSandpackFile: sandpack.activeFile,
+        stackTrace: new Error().stack,
+      })
       sandpack.setActiveFile(componentPath)
       onPreviewSelect({
         type: "regular",
@@ -143,23 +160,44 @@ function SandpackContent({
 
   const handleFileSelect = (path: string) => {
     console.log("[PublishDialog] File selected:", path)
-    
+    console.log("[PublishDialog] Current editor state:", {
+      activeFile: sandpack.activeFile,
+      selectedPath: path,
+      activePreview: activePreview,
+      fileContent: sandpack.files[path]?.code?.slice(0, 50) + "...",
+      currentFileContent:
+        sandpack.files[sandpack.activeFile]?.code?.slice(0, 50) + "...",
+      stackTrace: new Error().stack,
+    })
+
     // If the file is already selected, don't do anything
     if (activePreview?.filePath === path) {
-      console.log("[PublishDialog] File already selected, skipping")
+      console.log("[PublishDialog] File already selected, skipping", {
+        path,
+        activePreview,
+        sandpackFile: sandpack.activeFile,
+      })
       return
     }
 
     // Check if this is an unknown component
     if (isUnknownComponent(path)) {
-      console.log("[PublishDialog] Handling unknown component selection")
+      console.log("[PublishDialog] Handling unknown component selection:", {
+        path,
+        currentSandpackFile: sandpack.activeFile,
+        stackTrace: new Error().stack,
+      })
       // For unknown components, get the component name
       const componentName = nonShadcnComponents?.find(
         (comp) => comp.path === path,
       )?.name
 
       if (componentName) {
-        console.log("[PublishDialog] Setting unknown component preview:", componentName)
+        console.log("[PublishDialog] Setting unknown component preview:", {
+          componentName,
+          path,
+          currentSandpackFile: sandpack.activeFile,
+        })
         // Set as unknown component type preview
         onPreviewSelect({
           type: "unknown",
@@ -168,7 +206,11 @@ function SandpackContent({
         })
       }
     } else {
-      console.log("[PublishDialog] Setting regular file preview:", path)
+      console.log("[PublishDialog] Setting regular file preview:", {
+        path,
+        currentSandpackFile: sandpack.activeFile,
+        fileContent: sandpack.files[path]?.code?.slice(0, 50) + "...",
+      })
       // Set as regular file type preview
       onPreviewSelect({
         type: "regular",
@@ -176,6 +218,12 @@ function SandpackContent({
       })
 
       // Update the Sandpack editor file
+      console.log("[PublishDialog] Updating Sandpack editor file to:", {
+        from: sandpack.activeFile,
+        to: path,
+        hasFileContent: Boolean(sandpack.files[path]?.code),
+        stackTrace: new Error().stack,
+      })
       sandpack.setActiveFile(path)
     }
   }
@@ -187,10 +235,19 @@ function SandpackContent({
       activePreview.filePath &&
       sandpack.activeFile !== activePreview.filePath
     ) {
-      console.log("[PublishDialog] Syncing editor file:", activePreview.filePath)
+      console.log("[PublishDialog] Syncing editor file:", {
+        from: sandpack.activeFile,
+        to: activePreview.filePath,
+        activePreviewType: activePreview.type,
+        fileContent:
+          sandpack.files[activePreview.filePath]?.code?.slice(0, 50) + "...",
+        currentFileContent:
+          sandpack.files[sandpack.activeFile]?.code?.slice(0, 50) + "...",
+        stackTrace: new Error().stack,
+      })
       sandpack.setActiveFile(activePreview.filePath)
     }
-  }, [activePreview, sandpack.activeFile])
+  }, [activePreview, sandpack.activeFile, sandpack.files])
 
   return (
     <>
@@ -200,7 +257,7 @@ function SandpackContent({
       <SandpackLayout style={{ height: "100%" }}>
         <div className="flex w-full h-full">
           <div className="flex border-r border-border">
-            <FileExplorer />
+            {/* <FileExplorer /> */}
             <CustomFileExplorer
               nonShadcnComponents={nonShadcnComponents}
               onFileSelect={handleFileSelect}
