@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils"
 
-interface UnknownComponentViewProps {
+interface FallbackComponentViewProps {
   componentName: string
   className?: string
 }
 
-export function UnknownComponentView({
+export function FallbackComponentView({
   componentName,
   className,
-}: UnknownComponentViewProps) {
+}: FallbackComponentViewProps) {
   return (
     <div
       className={cn(

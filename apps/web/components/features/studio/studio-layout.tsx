@@ -1,7 +1,7 @@
 "use client"
 
 import { Header } from "@/components/ui/header.client"
-import { StudioSidebar } from "./studio-sidebar"
+import { StudioSidebar } from "./ui/studio-sidebar"
 import { User } from "@/types/global"
 import { ReactNode } from "react"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"

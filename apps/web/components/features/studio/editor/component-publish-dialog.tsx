@@ -16,18 +16,20 @@ import {
   useSandpack,
 } from "@codesandbox/sandpack-react"
 
-import { CodeEditor } from "./code-editor"
-import { CustomFileExplorer } from "./file-explorer"
-import { UnknownComponentView } from "./unknown-component-view"
+import { FileExplorer } from "./file-explorer"
+import { FallbackComponentView } from "./fallback-component-view"
+import { SimpleEditor } from "./editor-code-panel"
 import { usePublishDialog } from "./hooks/use-editor-dialog"
 import React from "react"
-import { CodeEditorComponent } from "./code-editor-component"
+import { Editor } from "./editor"
 
-interface EditorDialogProps {
+interface ComponentPublishDialogProps {
   userId: string
 }
 
-export function EditorDialog({ userId }: EditorDialogProps) {
+export function ComponentPublishDialog({
+  userId,
+}: ComponentPublishDialogProps) {
   const {
     open,
     componentCode,
@@ -87,7 +89,7 @@ export function EditorDialog({ userId }: EditorDialogProps) {
           <div className="h-full min-h-[400px] overflow-hidden flex-grow">
             {/* If we have active preview and processed data, use the new CodeEditorComponent */}
             {processedData ? (
-              <CodeEditorComponent
+              <Editor
                 initialFiles={sandpackConfig.files}
                 mainComponentPath={getComponentFilePath()}
                 nonShadcnComponents={processedData?.nonShadcnComponentsImports}
@@ -290,7 +292,7 @@ function SandpackContent({
         <div className="flex w-full h-full">
           <div className="flex border-r border-border">
             {/* <FileExplorer /> */}
-            <CustomFileExplorer
+            <FileExplorer
               nonShadcnComponents={nonShadcnComponents}
               onFileSelect={handleFileSelect}
               selectedFile={activePreview?.filePath || null}
@@ -298,14 +300,13 @@ function SandpackContent({
           </div>
           <div className="flex-1">
             {activePreview?.type === "unknown" ? (
-              <UnknownComponentView
+              <FallbackComponentView
                 componentName={activePreview.componentName || ""}
               />
             ) : (
-              <CodeEditor
-                componentPath={activePreview?.filePath || componentPath}
-                onCodeChange={setComponentCode}
-              />
+              <div className="h-full w-full">
+                <SimpleEditor onChange={setComponentCode} />
+              </div>
             )}
           </div>
         </div>

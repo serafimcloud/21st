@@ -18,7 +18,7 @@ interface FileTreeItem {
   isUnknownComponent?: boolean
 }
 
-export interface CustomFileExplorerProps {
+export interface FileExplorerProps {
   nonShadcnComponents?: Array<{ name: string; path: string }>
   onFileSelect?: (path: string) => void
   selectedFile?: string | null
@@ -229,12 +229,15 @@ function FileTreeNode({
   )
 }
 
-export function CustomFileExplorer({
+/**
+ * FileExplorer component that renders a tree view of files in the SandpackProvider context
+ */
+export function FileExplorer({
   nonShadcnComponents = [],
   onFileSelect,
   selectedFile,
   visibleFiles,
-}: CustomFileExplorerProps) {
+}: FileExplorerProps) {
   const { sandpack } = useSandpack()
   const { visibleFiles: sandpackVisibleFiles } = sandpack
 

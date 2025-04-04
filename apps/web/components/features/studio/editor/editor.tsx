@@ -4,12 +4,12 @@ import {
   SandpackLayout,
   SandpackFiles,
 } from "@codesandbox/sandpack-react"
-import { CodeManagerProvider, useCodeManager } from "./code-manager"
-import { CodeEditor } from "./code-editor"
-import { CustomFileExplorer } from "./file-explorer"
-import { UnknownComponentView } from "./unknown-component-view"
+import { CodeManagerProvider, useCodeManager } from "./context/editor-state"
+import { EditorCodePanel } from "./editor-code-panel"
+import { FileExplorer } from "./file-explorer"
+import { FallbackComponentView } from "./fallback-component-view"
 
-interface CodeEditorComponentProps {
+interface EditorProps {
   initialFiles: SandpackFiles
   mainComponentPath: string
   nonShadcnComponents?: Array<{ name: string; path: string }>
@@ -21,7 +21,7 @@ interface CodeEditorComponentProps {
   visiblePaths?: string[]
 }
 
-export function CodeEditorComponent({
+export function Editor({
   initialFiles,
   mainComponentPath,
   nonShadcnComponents = [],
@@ -31,7 +31,7 @@ export function CodeEditorComponent({
   sandpackTemplate = "react-ts",
   dependencies = {},
   visiblePaths,
-}: CodeEditorComponentProps) {
+}: EditorProps) {
   // Setup sandpack configuration
   const sandpackConfig = {
     files: initialFiles,
@@ -89,7 +89,7 @@ function EditorContent({ visiblePaths }: EditorContentProps) {
     <SandpackLayout style={{ height: "100%", border: "none" }}>
       <div className="flex w-full h-full">
         <div className="flex border-r border-border">
-          <CustomFileExplorer
+          <FileExplorer
             nonShadcnComponents={nonShadcnComponents}
             onFileSelect={handleFileSelect}
             selectedFile={activeFile}
@@ -98,11 +98,11 @@ function EditorContent({ visiblePaths }: EditorContentProps) {
         </div>
         <div className="flex-1">
           {activeFile && isUnknownComponent(activeFile) ? (
-            <UnknownComponentView
+            <FallbackComponentView
               componentName={getComponentName(activeFile) || "Component"}
             />
           ) : (
-            <CodeEditor
+            <EditorCodePanel
               componentPath={activeFile || ""}
               onCodeChange={() => {
                 // This will be handled by the CodeManager through the CodeEditor component

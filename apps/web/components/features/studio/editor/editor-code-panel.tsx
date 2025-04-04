@@ -4,14 +4,17 @@ import {
   useActiveCode,
   useSandpack,
 } from "@codesandbox/sandpack-react"
-import { useCodeManager } from "./code-manager"
+import { useCodeManager } from "./context/editor-state"
 
-interface CodeEditorProps {
+interface EditorCodePanelProps {
   onCodeChange?: (code: string) => void
   componentPath: string
 }
 
-export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
+export function EditorCodePanel({
+  onCodeChange,
+  componentPath,
+}: EditorCodePanelProps) {
   const { code } = useActiveCode()
   const { sandpack } = useSandpack()
   const prevCodeRef = useRef<string>(undefined)
@@ -62,6 +65,30 @@ export function CodeEditor({ onCodeChange, componentPath }: CodeEditorProps) {
       className="h-full"
       style={{ height: "100%" }}
       initMode="immediate"
+    />
+  )
+}
+
+interface SimpleEditorProps {
+  onChange?: (code: string) => void
+}
+
+export function SimpleEditor({ onChange }: SimpleEditorProps) {
+  const { code, updateCode } = useActiveCode()
+
+  useEffect(() => {
+    if (onChange && code) {
+      onChange(code)
+    }
+  }, [code, onChange])
+
+  return (
+    <SandpackCodeEditor
+      showTabs={false}
+      showLineNumbers={true}
+      showInlineErrors={true}
+      className="h-full"
+      style={{ height: "100%" }}
     />
   )
 }
