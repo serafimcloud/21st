@@ -38,6 +38,7 @@ export function ComponentPublishDialog({
     isProcessing,
     activePreview,
     loadingShadcnComponents,
+    loadingStyleFiles,
     handleOpenChange,
     handleProcessComponent,
     handlePreviewSelect,
@@ -77,7 +78,14 @@ export function ComponentPublishDialog({
         }
       }
     }
-  }, [loadingShadcnComponents, processedData])
+
+    if (loadingStyleFiles.length > 0) {
+      console.log(
+        "[ComponentPublishDialog] Style files in loading state:",
+        loadingStyleFiles,
+      )
+    }
+  }, [loadingShadcnComponents, loadingStyleFiles, processedData])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -151,6 +159,7 @@ export function ComponentPublishDialog({
                         ]
                   }
                   loadingFiles={loadingShadcnComponents}
+                  loadingStyleFiles={loadingStyleFiles}
                 />
               </SandpackProvider>
             ) : (
@@ -166,6 +175,7 @@ export function ComponentPublishDialog({
                   setComponentCode={setComponentCode}
                   isUnknownComponent={isUnknownComponent}
                   loadingFiles={loadingShadcnComponents}
+                  loadingStyleFiles={loadingStyleFiles}
                 />
               </SandpackProvider>
             )}
@@ -192,6 +202,7 @@ interface SandpackContentProps {
   setComponentCode: (code: string) => void
   isUnknownComponent: (path: string) => boolean
   loadingFiles?: string[]
+  loadingStyleFiles?: string[]
 }
 
 function SandpackContent({
@@ -202,6 +213,7 @@ function SandpackContent({
   setComponentCode,
   isUnknownComponent,
   loadingFiles = [],
+  loadingStyleFiles = [],
 }: SandpackContentProps) {
   const { sandpack } = useSandpack()
   const componentPath = getComponentFilePath()
@@ -217,6 +229,16 @@ function SandpackContent({
       stackTrace: new Error().stack,
     })
   }, [sandpack.activeFile, sandpack.files, sandpack.visibleFiles])
+
+  // Log loading file states
+  React.useEffect(() => {
+    if (loadingFiles.length > 0) {
+      console.log("[SandpackContent] Component loading files:", loadingFiles)
+    }
+    if (loadingStyleFiles.length > 0) {
+      console.log("[SandpackContent] Style loading files:", loadingStyleFiles)
+    }
+  }, [loadingFiles, loadingStyleFiles])
 
   // Set initial file only once when component mounts
   React.useEffect(() => {

@@ -22,6 +22,7 @@ interface FileTreeItem {
   children?: FileTreeItem[]
   isUnknownComponent?: boolean
   isLoading?: boolean
+  isStyleFile?: boolean
 }
 
 export interface FileExplorerProps {
@@ -30,22 +31,35 @@ export interface FileExplorerProps {
   selectedFile?: string | null
   visibleFiles?: string[]
   loadingFiles?: string[]
+  loadingStyleFiles?: string[]
 }
 
-function buildFileTree(
+export function buildFileTree(
   files: string[],
-  unknownComponents: Array<{ name: string; path: string }> = [],
-  visibleFilesFilter?: string[],
+  nonShadcnComponents: Array<{ name: string; path: string }> = [],
+  visibleFiles: string[] = [],
   loadingFiles: string[] = [],
-): {
-  tree: FileTreeItem[]
-  directories: Set<string>
-} {
+  loadingStyleFiles: string[] = [],
+) {
+  // Log loading states for debugging
+  if (loadingFiles.length > 0) {
+    console.log(
+      "[buildFileTree] Building tree with loading files:",
+      loadingFiles,
+    )
+  }
+  if (loadingStyleFiles.length > 0) {
+    console.log(
+      "[buildFileTree] Building tree with loading style files:",
+      loadingStyleFiles,
+    )
+  }
+
   const root: FileTreeItem[] = []
   const directories = new Set<string>()
 
   const isFileVisible = (path: string) => {
-    if (unknownComponents.some((comp) => comp.path === path)) {
+    if (nonShadcnComponents.some((comp) => comp.path === path)) {
       return true
     }
 
@@ -53,11 +67,15 @@ function buildFileTree(
       return true
     }
 
-    if (!visibleFilesFilter || visibleFilesFilter.length === 0) {
+    if (loadingStyleFiles.includes(path)) {
       return true
     }
 
-    return visibleFilesFilter.some((visiblePath) => {
+    if (!visibleFiles || visibleFiles.length === 0) {
+      return true
+    }
+
+    return visibleFiles.some((visiblePath) => {
       if (visiblePath.endsWith("/")) {
         return path.startsWith(visiblePath)
       }
@@ -69,8 +87,9 @@ function buildFileTree(
     path: string,
     isUnknownComponent = false,
     componentName?: string,
+    isStyleFile = false,
   ) => {
-    if (!isUnknownComponent && !isFileVisible(path)) {
+    if (!isUnknownComponent && !isStyleFile && !isFileVisible(path)) {
       return
     }
 
@@ -98,7 +117,11 @@ function buildFileTree(
           if (isUnknownComponent) {
             existingItem.isUnknownComponent = true
           }
-          existingItem.isLoading = loadingFiles.includes(path)
+          if (isStyleFile) {
+            existingItem.isStyleFile = true
+          }
+          existingItem.isLoading =
+            loadingFiles.includes(path) || loadingStyleFiles.includes(path)
         }
         current = existingItem.children || []
       } else {
@@ -108,7 +131,10 @@ function buildFileTree(
           type: isLast ? "file" : "directory",
           children: isLast ? undefined : [],
           isUnknownComponent: isLast ? isUnknownComponent : undefined,
-          isLoading: isLast ? loadingFiles.includes(path) : undefined,
+          isStyleFile: isLast ? isStyleFile : undefined,
+          isLoading: isLast
+            ? loadingFiles.includes(path) || loadingStyleFiles.includes(path)
+            : undefined,
         }
 
         const insertIndex = current.findIndex((item) => {
@@ -135,7 +161,7 @@ function buildFileTree(
     addToTree(path)
   })
 
-  unknownComponents.forEach((comp) => {
+  nonShadcnComponents.forEach((comp) => {
     addToTree(comp.path, true, comp.name)
   })
 
@@ -151,6 +177,17 @@ function buildFileTree(
 
     addToTree(path, false, componentName)
   })
+
+  if (loadingStyleFiles.length > 0) {
+    console.log(
+      "[buildFileTree] Processing loading style files:",
+      loadingStyleFiles,
+    )
+    loadingStyleFiles.forEach((path) => {
+      console.log(`[buildFileTree] Adding loading style file: ${path}`)
+      addToTree(path, false, undefined, true)
+    })
+  }
 
   const sortTreeRecursively = (items: FileTreeItem[]) => {
     items.sort((a, b) => {
@@ -174,24 +211,29 @@ function buildFileTree(
 
 function FileTreeNode({
   item,
-  level = 0,
-  activeFile,
   onFileClick,
   expandedDirs,
   onToggleDir,
+  isLoading,
+  isStyleLoading,
+  activeFile,
+  level = 0,
 }: {
   item: FileTreeItem
-  level?: number
-  activeFile: string
   onFileClick: (path: string) => void
   expandedDirs: Set<string>
   onToggleDir: (path: string) => void
+  isLoading: (path: string) => boolean
+  isStyleLoading: (path: string) => boolean
+  activeFile?: string
+  level?: number
 }) {
   const isExpanded = expandedDirs.has(item.path)
   const isActive = activeFile === item.path
   const isShadcnFile = item.type === "file" && isShadcnComponentPath(item.path)
+  const isTailwindConfig = item.path === "/tailwind.config.js"
+  const isGlobalsCss = item.path === "/globals.css"
 
-  // Log when we encounter loading items
   React.useEffect(() => {
     if (item.isLoading) {
       console.log(
@@ -232,21 +274,27 @@ function FileTreeNode({
           ) : (
             <Folder className="h-4 w-4 text-blue-500" />
           )
-        ) : item.isLoading ? (
+        ) : item.isLoading || isLoading(item.path) ? (
           <div className="h-4 w-4 flex items-center justify-center">
             <Spinner size={14} />
+          </div>
+        ) : isStyleLoading(item.path) ? (
+          <div className="h-4 w-4 flex items-center justify-center">
+            <Spinner size={14} color="#3b82f6" />
           </div>
         ) : item.isUnknownComponent ? (
           <FileWarning className="h-4 w-4 text-yellow-500" />
         ) : isShadcnFile ? (
           <ShadcnFile className="h-4 w-4 text-primary" />
+        ) : isTailwindConfig ? (
+          <File className="h-4 w-4 text-emerald-500" />
+        ) : isGlobalsCss ? (
+          <File className="h-4 w-4 text-blue-500" />
         ) : (
           <File className="h-4 w-4 text-gray-500" />
         )}
-        {item.isLoading ? (
-          <TextShimmer className="truncate text-sm">
-            {item.name}
-          </TextShimmer>
+        {item.isLoading || isLoading(item.path) || isStyleLoading(item.path) ? (
+          <TextShimmer className="truncate text-sm">{item.name}</TextShimmer>
         ) : (
           <span
             className={cn(
@@ -270,6 +318,8 @@ function FileTreeNode({
               onFileClick={onFileClick}
               expandedDirs={expandedDirs}
               onToggleDir={onToggleDir}
+              isLoading={isLoading}
+              isStyleLoading={isStyleLoading}
             />
           ))}
         </div>
@@ -287,6 +337,7 @@ export function FileExplorer({
   selectedFile,
   visibleFiles,
   loadingFiles = [],
+  loadingStyleFiles = [],
 }: FileExplorerProps) {
   const { sandpack } = useSandpack()
   const { visibleFiles: sandpackVisibleFiles } = sandpack
@@ -295,7 +346,13 @@ export function FileExplorer({
     if (loadingFiles && loadingFiles.length > 0) {
       console.log("[FileExplorer] Received loading files:", loadingFiles)
     }
-  }, [loadingFiles])
+    if (loadingStyleFiles && loadingStyleFiles.length > 0) {
+      console.log(
+        "[FileExplorer] Received loading style files:",
+        loadingStyleFiles,
+      )
+    }
+  }, [loadingFiles, loadingStyleFiles])
 
   const { tree: fileTree, directories } = useMemo(
     () =>
@@ -304,8 +361,15 @@ export function FileExplorer({
         nonShadcnComponents,
         visibleFiles,
         loadingFiles,
+        loadingStyleFiles,
       ),
-    [sandpackVisibleFiles, nonShadcnComponents, visibleFiles, loadingFiles],
+    [
+      sandpackVisibleFiles,
+      nonShadcnComponents,
+      visibleFiles,
+      loadingFiles,
+      loadingStyleFiles,
+    ],
   )
 
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(directories)
@@ -338,18 +402,38 @@ export function FileExplorer({
     [onFileSelect],
   )
 
+  // Check if a file is a loading file
+  const isFileLoading = useCallback(
+    (filePath: string) => {
+      return loadingFiles.includes(filePath)
+    },
+    [loadingFiles],
+  )
+
+  // Check if a file is a loading style file
+  const isStyleFileLoading = useCallback(
+    (filePath: string) => {
+      return loadingStyleFiles.includes(filePath)
+    },
+    [loadingStyleFiles],
+  )
+
   return (
-    <div className="w-[200px] overflow-auto border-r border-border">
-      <div className="p-2 text-sm font-medium text-muted-foreground">Files</div>
-      <div className="space-y-1">
-        {fileTree.map((item, index) => (
+    <div className="w-64 flex flex-col h-full overflow-auto border-border">
+      <div className="p-2 flex justify-between items-center border-b border-border">
+        <h3 className="text-sm font-medium">Files</h3>
+      </div>
+      <div className="flex-1 overflow-auto px-2 py-1">
+        {fileTree.map((item) => (
           <FileTreeNode
-            key={item.path + index}
+            key={item.name}
             item={item}
-            activeFile={selectedFile || ""}
             onFileClick={handleFileClick}
             expandedDirs={expandedDirs}
             onToggleDir={handleToggleDir}
+            isLoading={isFileLoading}
+            isStyleLoading={isStyleFileLoading}
+            activeFile={selectedFile || undefined}
           />
         ))}
       </div>

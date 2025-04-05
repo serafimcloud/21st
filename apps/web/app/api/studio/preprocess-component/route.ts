@@ -19,8 +19,8 @@ const MOCK_RESPONSE = {
   ],
   nonShadcnComponentsImports: [
     {
-      name: "SomeCustomComponent",
       path: "@/components/ui/some-custom-component",
+      names: ["SomeCustomComponent", "CustomComponentPart"],
     },
   ],
   npmDependencies: ["react", "next", "lucide-react"],
@@ -33,7 +33,6 @@ const MOCK_RESPONSE = {
       fontFamily: {},
       borderRadius: {},
       boxShadow: {},
-      spacing: {},
     },
     cssVariables: [],
     keyframes: [],
@@ -167,10 +166,10 @@ async function preprocessComponent(code: string) {
 4. Identify any non-shadcn/ui component imports (including @/hooks and @/components/[registry]/ components, excluding npm packages and standard shadcn utilities). 
    IMPORTANT:
    - DO NOT include imports like { cn } from "@/lib/utils" or any other utility functions. Only include actual component imports.
-   - If multiple components are exported from the same file, list only one of them.
+   - List all components exported from the same file together, grouped by file path.
    - The path should be based on the file location, not the component name.
-   - For example, if file mockup.tsx exports both Mockup and MockupFrame components, list only Mockup from "@/components/ui/mockup".
-   For each component, provide both the name and its path.
+   - For example, if file mockup.tsx exports both Mockup and MockupFrame components, list both with "@/components/ui/mockup".
+   For each file path, provide an array of all component names imported from that path.
 
 5. List all npm package dependencies used in the component (excluding react, react-dom, tailwindcss, and any packages starting with 'next' or '@/')
 6. Identify any environment variables (process.env.*) that the component requires to function correctly.
@@ -196,14 +195,16 @@ IMPORTANT RULES FOR COMPONENT PATHS:
 1. Components exported from the same file MUST share the same path
 2. The path should be based on the actual file location, not the component name
 3. The filename in the path should match the actual file that contains the component
-4. Multiple components from the same file should be listed separately but with identical paths
+4. Multiple components from the same file must be listed together in a single entry with an array of names
 
 Example of correct path handling:
 If a file "@/components/ui/mockup.tsx" exports both Mockup and MockupFrame components:
 {
   "nonShadcnComponentsImports": [
-    { "name": "Mockup", "path": "@/components/ui/mockup" },
-    { "name": "MockupFrame", "path": "@/components/ui/mockup" }
+    { 
+      "path": "@/components/ui/mockup",
+      "names": ["Mockup", "MockupFrame"]
+    }
   ]
 }
 
@@ -219,8 +220,8 @@ Respond in JSON format only with the following structure:
   ],
   "nonShadcnComponentsImports": [
     {
-      "name": "string",
-      "path": "@/components/[registry]/component-name"
+      "path": "@/components/[registry]/component-name",
+      "names": ["string", "string", ...]
     }
   ],
   "npmDependencies": ["string"],

@@ -46,8 +46,11 @@ Please provide a merged global.css that:
 4. Eliminates duplicates
 5. Preserves cascade and specificity appropriately
 6. Groups related styles together
+7. Never shortens, simplifies, or omits any keyframe animations or complex selectors
+8. Includes ALL original code without truncation or summarization
+9. Preserves all vendor prefixes and browser-specific styles
 
-Format the response as a JSON object with a 'globalCss' key containing the merged styles.`
+Format the response as a JSON object with a 'globalCss' key containing the complete merged styles.`
 
     console.log("📤 [Global CSS Merge] Sending request to OpenAI:", {
       promptLength: prompt.length,
@@ -59,14 +62,14 @@ Format the response as a JSON object with a 'globalCss' key containing the merge
         {
           role: "system",
           content:
-            "You are a CSS expert who helps merge and optimize stylesheets.",
+            "You are a CSS expert who helps merge and optimize stylesheets. Always include all content completely without summarizing or truncating. Preserve all keyframes, animations, and complex styles fully.",
         },
         {
           role: "user",
           content: prompt,
         },
       ],
-      model: "gpt-4-turbo-preview",
+      model: "gpt-4o-mini",
       response_format: { type: "json_object" },
     })
 
@@ -76,11 +79,35 @@ Format the response as a JSON object with a 'globalCss' key containing the merge
 
     const result = JSON.parse(completion.choices[0].message.content)
 
-    console.log("📥 [Global CSS Merge] Received response from OpenAI:", {
-      resultLength: result.globalCss?.length,
+    // Handle both string and object formats for globalCss
+    let logInfo = {
+      resultLength: result.globalCss
+        ? typeof result.globalCss === "string"
+          ? result.globalCss.length
+          : JSON.stringify(result.globalCss).length
+        : 0,
       hasCss: !!result.globalCss,
-      firstFewLines: result.globalCss?.split("\n").slice(0, 3).join("\n"),
-    })
+      firstFewLines: "",
+    }
+
+    // Add firstFewLines only if globalCss is a string
+    if (typeof result.globalCss === "string") {
+      logInfo.firstFewLines = result.globalCss
+        .split("\n")
+        .slice(0, 3)
+        .join("\n")
+    } else if (result.globalCss) {
+      // For object format, convert to string representation for logging
+      logInfo.firstFewLines =
+        JSON.stringify(result.globalCss).slice(0, 100) + "..."
+    }
+
+    console.log("📥 [Global CSS Merge] Received response from OpenAI:", logInfo)
+
+    // Ensure globalCss is always a string in the response
+    if (result.globalCss && typeof result.globalCss !== "string") {
+      result.globalCss = JSON.stringify(result.globalCss, null, 2)
+    }
 
     return NextResponse.json(result)
   } catch (error) {

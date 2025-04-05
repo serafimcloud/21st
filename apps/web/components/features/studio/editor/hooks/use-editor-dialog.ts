@@ -1,10 +1,14 @@
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useRef, useEffect } from "react"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
 import { generateSandpackFiles } from "../sandpack-files"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/sandpack"
+import {
+  lookupComponentsInDatabase,
+  convertComponentMatchesToDependencySlugs,
+} from "@/lib/component-lookup"
 import type { SandpackFiles } from "@codesandbox/sandpack-react"
 
 // Define a type for the active preview
@@ -44,10 +48,31 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   const isDarkTheme = resolvedTheme === "dark"
   const supabase = useClerkSupabaseClient()
 
-  // Add new state to track loading components
+  // Add new state to track loading components and config files
   const [loadingShadcnComponents, setLoadingShadcnComponents] = useState<
     string[]
   >([])
+  // Add new state for tracking style merging status
+  const [loadingStyleFiles, setLoadingStyleFiles] = useState<string[]>([])
+
+  // Add ref to track the timeout ID for loading state
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Add max timeout for safety
+  const maxLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Safety cleanup for loading state
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+      }
+      if (maxLoadingTimeoutRef.current) {
+        clearTimeout(maxLoadingTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Get component file path
   const getComponentFilePath = useCallback(() => {
@@ -252,59 +277,99 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         .map((s) => s.globalCss)
         .filter((css): css is string => !!css)
 
-      // Parallel requests for merging styles
-      const requests: Promise<any>[] = []
-
-      if (customTailwindConfigs.length > 0) {
-        requests.push(
-          fetch("/api/studio/merge-styles/tailwind", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              defaultConfig: defaultTailwindConfig,
-              dependencyConfigs: customTailwindConfigs,
-            }),
-          }).then((res) => res.json()),
-        )
+      // Prepare result object
+      const result: {
+        tailwindConfig: string
+        globalCss: string
+      } = {
+        tailwindConfig: defaultTailwindConfig,
+        globalCss: defaultGlobalCss,
       }
 
-      if (customGlobalCssStyles.length > 0) {
-        requests.push(
-          fetch("/api/studio/merge-styles/globals", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              defaultGlobalCss: defaultGlobalCss,
-              dependencyGlobalCss: customGlobalCssStyles,
-            }),
-          }).then((res) => res.json()),
-        )
-      }
+      // Track each file loading state individually
+      const tailwindConfigPromise =
+        customTailwindConfigs.length > 0
+          ? (async () => {
+              // Set loading state
+              setLoadingStyleFiles((prev) => [...prev, "/tailwind.config.js"])
+              console.log("[usePublishDialog] Started merging tailwind config")
 
-      if (requests.length === 0) {
-        return {
-          tailwindConfig: defaultTailwindConfig,
-          globalCss: defaultGlobalCss,
-        }
-      }
+              try {
+                const response = await fetch(
+                  "/api/studio/merge-styles/tailwind",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      defaultConfig: defaultTailwindConfig,
+                      dependencyConfigs: customTailwindConfigs,
+                    }),
+                  },
+                )
 
-      try {
-        const results = await Promise.all(requests)
-        return {
-          tailwindConfig:
-            results.find((r) => r.tailwindConfig)?.tailwindConfig ||
-            defaultTailwindConfig,
-          globalCss:
-            results.find((r) => r.globalCss)?.globalCss || defaultGlobalCss,
-        }
-      } catch (error) {
-        console.error("Error merging styles:", error)
-        toast.error("Failed to merge styles from dependencies")
-        return {
-          tailwindConfig: defaultTailwindConfig,
-          globalCss: defaultGlobalCss,
-        }
-      }
+                const data = await response.json()
+                result.tailwindConfig =
+                  data.tailwindConfig || defaultTailwindConfig
+
+                console.log(
+                  "[usePublishDialog] Completed merging tailwind config",
+                )
+                return data
+              } catch (error) {
+                console.error("Error merging tailwind config:", error)
+                toast.error("Failed to merge tailwind config")
+                return { tailwindConfig: defaultTailwindConfig }
+              } finally {
+                // Always clear loading state when done, whether successful or not
+                setLoadingStyleFiles((prev) =>
+                  prev.filter((filePath) => filePath !== "/tailwind.config.js"),
+                )
+              }
+            })()
+          : Promise.resolve({ tailwindConfig: defaultTailwindConfig })
+
+      const globalCssPromise =
+        customGlobalCssStyles.length > 0
+          ? (async () => {
+              // Set loading state
+              setLoadingStyleFiles((prev) => [...prev, "/globals.css"])
+              console.log("[usePublishDialog] Started merging global CSS")
+
+              try {
+                const response = await fetch(
+                  "/api/studio/merge-styles/globals",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      defaultGlobalCss: defaultGlobalCss,
+                      dependencyGlobalCss: customGlobalCssStyles,
+                    }),
+                  },
+                )
+
+                const data = await response.json()
+                result.globalCss = data.globalCss || defaultGlobalCss
+
+                console.log("[usePublishDialog] Completed merging global CSS")
+                return data
+              } catch (error) {
+                console.error("Error merging global CSS:", error)
+                toast.error("Failed to merge global CSS")
+                return { globalCss: defaultGlobalCss }
+              } finally {
+                // Always clear loading state when done, whether successful or not
+                setLoadingStyleFiles((prev) =>
+                  prev.filter((filePath) => filePath !== "/globals.css"),
+                )
+              }
+            })()
+          : Promise.resolve({ globalCss: defaultGlobalCss })
+
+      // Wait for both promises to complete
+      await Promise.all([tailwindConfigPromise, globalCssPromise])
+
+      return result
     },
     [],
   )
@@ -316,7 +381,24 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       return
     }
 
+    // Clear any existing timeouts
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current)
+      loadingTimeoutRef.current = null
+    }
+
+    if (maxLoadingTimeoutRef.current) {
+      clearTimeout(maxLoadingTimeoutRef.current)
+      maxLoadingTimeoutRef.current = null
+    }
+
     setIsProcessing(true)
+    setLoadingShadcnComponents([]) // Reset loading state at the start
+    setLoadingStyleFiles([]) // Reset style loading state too
+
+    console.log(
+      "[usePublishDialog] Starting component processing, cleared all loading states",
+    )
 
     try {
       const response = await fetch("/api/studio/preprocess-component", {
@@ -332,12 +414,18 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
 
       const data = await response.json()
 
-      // Immediately set loading state for shadcn components if any
+      // Set loading state for shadcn components
+      const shadcnSlugs: string[] = []
+
       if (data.shadcnComponentsImports?.length > 0) {
-        // Set the loading state for shadcn components
         const loadingPaths = data.shadcnComponentsImports.map(
-          (component: { name: string }) =>
-            `/components/ui/${component.name.toLowerCase()}.tsx`,
+          (component: { name: string }) => {
+            const path = `/components/ui/${component.name.toLowerCase()}.tsx`
+            shadcnSlugs.push(
+              `shadcn/${component.name.toLowerCase().replace(/\s+/g, "-")}`,
+            )
+            return path
+          },
         )
         console.log(
           "[usePublishDialog] Setting loading components:",
@@ -346,56 +434,169 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         setLoadingShadcnComponents(loadingPaths)
       }
 
-      // Set processed data after setting loading state
+      // Check for non-shadcn components in the database
+      const dbComponentSlugs: string[] = []
+
+      if (data.nonShadcnComponentsImports?.length > 0) {
+        // Look up components in the database
+        const { lookupResults, remainingComponents } =
+          await lookupComponentsInDatabase(
+            supabase,
+            data.nonShadcnComponentsImports,
+          )
+
+        // Update the processedData with found matches
+        if (lookupResults.length > 0) {
+          // Create loading paths for UI feedback
+          const dbLoadingPaths = lookupResults.map(
+            ({ match }) => `/components/${match.registry}/${match.slug}.tsx`,
+          )
+
+          console.log(
+            "[usePublishDialog] Found components in database:",
+            lookupResults.map((r) => r.match.slug),
+          )
+
+          // Add paths to loading state
+          setLoadingShadcnComponents((prev) => [...prev, ...dbLoadingPaths])
+
+          // Convert matches to dependency slugs for resolveRegistryDependencyTree
+          dbComponentSlugs.push(
+            ...convertComponentMatchesToDependencySlugs(lookupResults),
+          )
+        }
+
+        // Update processed data with the updated non-shadcn component imports
+        data.nonShadcnComponentsImports = remainingComponents
+      }
+
+      // Set processed data BEFORE setting active preview
       setProcessedData(data)
 
-      // Set the processed component as active file
+      // AFTER setting processed data, set the active preview
       const newComponentPath = `/components/${data.registryType || "ui"}/${data.slug ? `${data.slug}.tsx` : "component.tsx"}`
       handlePreviewSelect({
         type: "regular",
         filePath: newComponentPath,
       })
 
-      // If we have shadcn component dependencies, resolve them
-      if (data.shadcnComponentsImports?.length > 0) {
-        const slugs = data.shadcnComponentsImports.map(
-          (component: { name: string }) =>
-            `shadcn/${component.name.toLowerCase().replace(/\s+/g, "-")}`,
+      // Combine both shadcn and database components into a single array
+      const allDependencySlugs = [...shadcnSlugs, ...dbComponentSlugs]
+
+      if (allDependencySlugs.length > 0) {
+        console.log(
+          "[usePublishDialog] Resolving dependencies:",
+          allDependencySlugs,
         )
 
-        const result = await resolveRegistryDependencyTree({
-          supabase,
-          sourceDependencySlugs: slugs,
-          withDemoDependencies: false,
-          withStyles: true, // Enable styles fetching
-        })
+        try {
+          // Create a mapping of dependency slugs to their file paths for tracking loading state
+          const slugToFilePaths: Record<string, string> = {}
 
-        if (result.error) {
-          throw new Error(
-            `Failed to resolve dependencies: ${result.error.message}`,
+          // Map shadcn components
+          data.shadcnComponentsImports?.forEach(
+            (component: { name: string }) => {
+              const name = component.name.toLowerCase()
+              const slug = `shadcn/${name.replace(/\s+/g, "-")}`
+              const path = `/components/ui/${name}.tsx`
+              slugToFilePaths[slug] = path
+            },
           )
-        }
 
-        setRegistryDependencies(result.data.filesWithRegistry)
-        setNpmDependenciesOfRegistryDependencies(result.data.npmDependencies)
+          // Map database components from earlier lookupResults
+          if (data.nonShadcnComponentsImports?.length > 0) {
+            const { lookupResults: dbLookup } =
+              await lookupComponentsInDatabase(
+                supabase,
+                data.nonShadcnComponentsImports,
+              )
 
-        // Merge styles if we have any
-        if (result.data.styles) {
-          const { tailwindConfig, globalCss } = await mergeStyles([
-            result.data.styles,
-          ])
-          setMergedTailwindConfig(tailwindConfig)
-          setMergedGlobalCss(globalCss)
-        }
+            dbLookup.forEach((result: any) => {
+              const { match } = result
+              const slug = `${match.registry}/${match.slug}`
+              const path = `/components/${match.registry}/${match.slug}.tsx`
+              slugToFilePaths[slug] = path
+            })
+          }
 
-        // Delay clearing the loading state to give UI time to render spinners
-        // This ensures the spinners are visible for a reasonable amount of time
-        setTimeout(() => {
-          console.log(
-            "[usePublishDialog] Clearing loading components with delay",
+          // Track which dependencies are loaded
+          const loadedDependencies = new Set<string>()
+
+          // Function to call when a dependency is loaded
+          const handleDependencyLoaded = (slug: string) => {
+            // When a dependency is resolved, remove it from the loading state
+            const path = slugToFilePaths[slug]
+            if (path) {
+              console.log(
+                `[usePublishDialog] Dependency loaded: ${slug} (${path})`,
+              )
+              setLoadingShadcnComponents((prev) =>
+                prev.filter((filePath) => filePath !== path),
+              )
+              loadedDependencies.add(slug)
+            }
+          }
+
+          const result = await resolveRegistryDependencyTree({
+            supabase,
+            sourceDependencySlugs: allDependencySlugs,
+            withDemoDependencies: false,
+            withStyles: true, // Enable styles fetching
+          })
+
+          if (result.error) {
+            throw new Error(
+              `Failed to resolve dependencies: ${result.error.message}`,
+            )
+          }
+
+          if (!result.data) {
+            throw new Error("No data returned from dependency resolution")
+          }
+
+          // Process loaded dependencies directly since we've verified data exists
+          Object.keys(result.data.filesWithRegistry).forEach((path) => {
+            const slug = allDependencySlugs.find((s) => {
+              const basePath = path.split("/").pop()?.replace(".tsx", "") || ""
+              return s.includes(basePath)
+            })
+
+            if (slug && !loadedDependencies.has(slug)) {
+              handleDependencyLoaded(slug)
+            }
+
+            // Also check if this is a non-Shadcn component path that we need to remove from loading
+            const nonShadcnPath = path.startsWith("/components/") ? path : null
+            if (nonShadcnPath) {
+              setLoadingShadcnComponents((prev) =>
+                prev.filter((filePath) => filePath !== nonShadcnPath),
+              )
+              console.log(
+                `[usePublishDialog] Removed non-Shadcn component from loading: ${nonShadcnPath}`,
+              )
+            }
+          })
+
+          setRegistryDependencies(result.data.filesWithRegistry)
+          setNpmDependenciesOfRegistryDependencies(result.data.npmDependencies)
+
+          // Merge styles if we have any
+          if (result.data.styles) {
+            const { tailwindConfig, globalCss } = await mergeStyles([
+              result.data.styles,
+            ])
+            setMergedTailwindConfig(tailwindConfig)
+            setMergedGlobalCss(globalCss)
+          }
+        } catch (depError) {
+          console.error("Error resolving dependencies:", depError)
+          toast.error(
+            `Failed to resolve dependencies: ${depError instanceof Error ? depError.message : "Unknown error"}`,
           )
+
+          // Clear component loading state on error
           setLoadingShadcnComponents([])
-        }, 1000) // 1 second delay to ensure UX is smooth
+        }
       }
 
       toast.success("Component processed successfully")
@@ -404,15 +605,30 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         `Processing failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       )
       console.error("Error processing component:", error)
-      // Clear loading state in case of error with a small delay
-      setTimeout(() => {
-        console.log(
-          "[usePublishDialog] Clearing loading components after error",
-        )
-        setLoadingShadcnComponents([])
-      }, 500)
+      // Clear loading state immediately in case of main process error
+      setLoadingShadcnComponents([])
+      setLoadingStyleFiles([])
     } finally {
       setIsProcessing(false)
+
+      // Set a final cleanup timer just to be safe (with a shorter timeout)
+      loadingTimeoutRef.current = setTimeout(() => {
+        if (loadingShadcnComponents.length > 0) {
+          console.log(
+            "[usePublishDialog] Final safety cleanup for component loading:",
+            loadingShadcnComponents,
+          )
+          setLoadingShadcnComponents([])
+        }
+        if (loadingStyleFiles.length > 0) {
+          console.log(
+            "[usePublishDialog] Final safety cleanup for style loading:",
+            loadingStyleFiles,
+          )
+          setLoadingStyleFiles([])
+        }
+        loadingTimeoutRef.current = null
+      }, 5000) // 5 seconds should be enough for any remaining files
     }
   }
 
@@ -421,7 +637,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     (path: string) => {
       return (
         processedData?.nonShadcnComponentsImports?.some(
-          (comp: { path: string }) => comp.path === path,
+          (comp: any) => comp.path === path,
         ) ?? false
       )
     },
@@ -488,6 +704,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     isPublishing,
     activePreview,
     loadingShadcnComponents,
+    loadingStyleFiles,
     handleOpenChange,
     handleProcessComponent,
     handlePreviewSelect,

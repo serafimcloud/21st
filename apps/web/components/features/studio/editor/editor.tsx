@@ -20,6 +20,7 @@ interface EditorProps {
   dependencies?: Record<string, string>
   visiblePaths?: string[]
   loadingFiles?: string[]
+  loadingStyleFiles?: string[]
 }
 
 export function Editor({
@@ -33,6 +34,7 @@ export function Editor({
   dependencies = {},
   visiblePaths,
   loadingFiles = [],
+  loadingStyleFiles = [],
 }: EditorProps) {
   // Setup sandpack configuration
   const sandpackConfig = {
@@ -65,6 +67,7 @@ export function Editor({
           <EditorContent
             visiblePaths={visiblePaths}
             loadingFiles={loadingFiles}
+            loadingStyleFiles={loadingStyleFiles}
           />
         </div>
       </CodeManagerProvider>
@@ -75,11 +78,13 @@ export function Editor({
 interface EditorContentProps {
   visiblePaths?: string[]
   loadingFiles?: string[]
+  loadingStyleFiles?: string[]
 }
 
 function EditorContent({
   visiblePaths,
   loadingFiles = [],
+  loadingStyleFiles = [],
 }: EditorContentProps) {
   const {
     activeFile,
@@ -107,6 +112,16 @@ function EditorContent({
       }
     }
   }, [loadingFiles])
+
+  // Log loading style files
+  React.useEffect(() => {
+    if (loadingStyleFiles.length > 0) {
+      console.log(
+        "[EditorContent] Received loading style files:",
+        loadingStyleFiles,
+      )
+    }
+  }, [loadingStyleFiles])
 
   // Handle file selection
   const handleFileSelect = (path: string) => {
@@ -140,6 +155,7 @@ function EditorContent({
             selectedFile={activeFile}
             visibleFiles={visiblePaths}
             loadingFiles={allLoadingFiles}
+            loadingStyleFiles={loadingStyleFiles}
           />
         </div>
         <div className="flex-1">
