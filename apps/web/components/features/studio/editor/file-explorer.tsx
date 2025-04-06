@@ -212,21 +212,41 @@ function FileTreeNode({
   level?: number
 }) {
   const isExpanded = expandedDirs.has(item.path)
-  const isActive = activeFile === item.path
+  const { getActionDetails } = useActionRequired()
+
+  // Normalize both paths for comparison to ensure proper highlighting
+  const normalizedItemPath = item.path.replace(/^@\//, "/")
+  const normalizedActiveFile = activeFile?.replace(/^@\//, "/")
+  const isActive = normalizedActiveFile === normalizedItemPath
+
   const isShadcnFile = item.type === "file" && isShadcnComponentPath(item.path)
   const isTailwindConfig = item.path === "/tailwind.config.js"
   const isGlobalsCss = item.path === "/globals.css"
-  const needsAction =
-    item.actionRequired ||
-    item.isUnknownComponent ||
-    isActionRequired(item.path)
+
+  // Check if file truly needs action - only for styles or other issues, not for missing_import
+  const actionDetails = item.path && getActionDetails(item.path)
+
+  // Log action details for debugging
+  if (actionDetails) {
+    console.log(`[FileExplorer] File ${item.path} requires action:`, {
+      reason: actionDetails.reason,
+      message: actionDetails.message,
+      isUnknownComponent: item.isUnknownComponent,
+    })
+  }
+
+  const needsAction = actionDetails && actionDetails.reason !== "missing_import"
+
+  // Use same condition for both icon and text highlighting
+  const showWarning = needsAction || item.isUnknownComponent
 
   const handleClick = () => {
     console.log("[FileTreeNode] Item clicked", {
       path: item.path,
       type: item.type,
       isUnknownComponent: item.isUnknownComponent,
-      needsAction,
+      actionDetails: actionDetails,
+      showWarning,
     })
 
     if (item.type === "directory") {
@@ -242,7 +262,7 @@ function FileTreeNode({
         className={cn(
           "w-full text-left py-1.5 text-sm flex items-center gap-2 hover:bg-muted/50 transition-colors",
           isActive && "bg-muted text-primary font-medium",
-          needsAction && isActive && "bg-yellow-500/10",
+          showWarning && isActive && "bg-yellow-500/10",
         )}
         style={{ paddingLeft: `${level * 12 + 16}px` }}
         onClick={handleClick}
@@ -270,7 +290,7 @@ function FileTreeNode({
           <div className="h-4 w-4 flex items-center justify-center">
             <Spinner size={14} color="#3b82f6" />
           </div>
-        ) : needsAction ? (
+        ) : showWarning ? (
           <FileWarning className="h-4 w-4 text-yellow-500" />
         ) : isShadcnFile ? (
           <ShadcnFile className="h-4 w-4 text-primary" />
@@ -284,7 +304,7 @@ function FileTreeNode({
         {item.isLoading || isLoading(item.path) || isStyleLoading(item.path) ? (
           <TextShimmer className="truncate text-sm">{item.name}</TextShimmer>
         ) : (
-          <span className={cn("truncate", needsAction && "text-yellow-600")}>
+          <span className={cn("truncate", showWarning && "text-yellow-600")}>
             {item.name}
           </span>
         )}

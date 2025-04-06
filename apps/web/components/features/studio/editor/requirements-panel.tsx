@@ -1,18 +1,26 @@
 import { AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useActionRequired } from "./context/editor-state"
+import { useActionRequired, useCodeManager } from "./context/editor-state"
 
-interface StyleRequirementsPanelProps {
+interface RequirementsPanelProps {
   className?: string
   activeFile?: string
 }
 
-export function StyleRequirementsPanel({
+export function RequirementsPanel({
   className,
   activeFile,
-}: StyleRequirementsPanelProps) {
+}: RequirementsPanelProps) {
   const { getActionDetails, markFileAsResolved } = useActionRequired()
+
+  // Get code manager
+  let codeManager
+  try {
+    codeManager = useCodeManager()
+  } catch (error) {
+    codeManager = null
+  }
 
   // If no active file, don't show anything
   if (!activeFile) {

@@ -18,9 +18,9 @@ import {
 import { FileExplorer } from "./file-explorer"
 import { EditorCodePanel } from "./editor-code-panel"
 import { usePublishDialog } from "./hooks/use-editor-dialog"
-import React, { useEffect } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Editor } from "./editor"
-import { StyleRequirementsPanel } from "./requirements-panel"
+import { RequirementsPanel } from "./requirements-panel"
 import { cn } from "@/lib/utils"
 import {
   useActionRequired,
@@ -30,6 +30,31 @@ import {
 interface ComponentPublishDialogProps {
   userId: string
 }
+
+// Create a stable container for SandpackProvider to prevent re-rendering
+const StableSandpackContainer = React.memo(
+  ({ children, config }: { children: React.ReactNode; config: any }) => {
+    // Use a ref to maintain the same config object reference
+    const configRef = useRef(config)
+
+    // Only update the ref if critical values change
+    useEffect(() => {
+      if (config.files !== configRef.current.files) {
+        configRef.current = config
+      }
+    }, [config])
+
+    return (
+      <SandpackProvider {...configRef.current}>{children}</SandpackProvider>
+    )
+  },
+)
+
+// Memoize the Editor component to prevent unnecessary re-renders
+const MemoizedEditor = React.memo(Editor)
+
+// Memoize SandpackContent component
+const MemoizedSandpackContent = React.memo(SandpackContent)
 
 export function ComponentPublishDialog({
   userId,
@@ -51,6 +76,74 @@ export function ComponentPublishDialog({
     getComponentFilePath,
     isUnknownComponent,
   } = usePublishDialog({ userId })
+
+  // Create a stable reference to dialogContent
+  const [dialogContent, setDialogContent] = useState<React.ReactNode | null>(
+    null,
+  )
+
+  // Only update dialog content when necessary data changes
+  useEffect(() => {
+    if (!open) return
+
+    const content = processedData ? (
+      <StableSandpackContainer config={sandpackConfig}>
+        <MemoizedEditor
+          initialFiles={sandpackConfig.files}
+          mainComponentPath={getComponentFilePath()}
+          nonShadcnComponents={processedData?.nonShadcnComponentsImports}
+          onCodeChange={(path: string, content: string) => {
+            if (path === getComponentFilePath()) {
+              setComponentCode(content)
+            }
+          }}
+          isUnknownComponentFn={isUnknownComponent}
+          activePath={activePreview?.filePath}
+          sandpackTemplate={sandpackConfig.template}
+          dependencies={sandpackConfig.customSetup?.dependencies}
+          visiblePaths={
+            Array.isArray(sandpackConfig.options?.visibleFiles)
+              ? sandpackConfig.options.visibleFiles
+              : [
+                  getComponentFilePath(),
+                  "/components/",
+                  "/tailwind.config.js",
+                  "/globals.css",
+                  "/package.json",
+                ]
+          }
+          loadingFiles={loadingShadcnComponents}
+          loadingStyleFiles={loadingStyleFiles}
+          actionRequiredFiles={actionRequiredFiles}
+          processedData={processedData}
+        />
+      </StableSandpackContainer>
+    ) : (
+      <StableSandpackContainer config={sandpackConfig}>
+        <MemoizedSandpackContent
+          activePreview={activePreview}
+          onPreviewSelect={handlePreviewSelect}
+          nonShadcnComponents={processedData?.nonShadcnComponentsImports}
+          getComponentFilePath={getComponentFilePath}
+          setComponentCode={setComponentCode}
+          isUnknownComponent={isUnknownComponent}
+          loadingFiles={loadingShadcnComponents}
+          loadingStyleFiles={loadingStyleFiles}
+          actionRequiredFiles={actionRequiredFiles}
+          processedData={processedData}
+        />
+      </StableSandpackContainer>
+    )
+
+    setDialogContent(content)
+  }, [
+    open,
+    processedData,
+    sandpackConfig,
+    activePreview,
+    actionRequiredFiles,
+    // Do NOT include frequently changing props that don't affect structure
+  ])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -94,60 +187,8 @@ export function ComponentPublishDialog({
 
         <div className="flex-grow overflow-hidden flex flex-col h-full">
           <div className="h-full min-h-[400px] overflow-hidden flex-grow">
-            {/* If we have active preview and processed data, use the new CodeEditorComponent */}
-            {processedData ? (
-              <SandpackProvider {...sandpackConfig}>
-                <Editor
-                  initialFiles={sandpackConfig.files}
-                  mainComponentPath={getComponentFilePath()}
-                  nonShadcnComponents={
-                    processedData?.nonShadcnComponentsImports
-                  }
-                  onCodeChange={(path: string, content: string) => {
-                    if (path === getComponentFilePath()) {
-                      setComponentCode(content)
-                    }
-                  }}
-                  isUnknownComponentFn={isUnknownComponent}
-                  activePath={activePreview?.filePath}
-                  sandpackTemplate={sandpackConfig.template}
-                  dependencies={sandpackConfig.customSetup?.dependencies}
-                  visiblePaths={
-                    Array.isArray(sandpackConfig.options?.visibleFiles)
-                      ? sandpackConfig.options.visibleFiles
-                      : [
-                          getComponentFilePath(),
-                          "/components/",
-                          "/tailwind.config.js",
-                          "/globals.css",
-                          "/package.json",
-                        ]
-                  }
-                  loadingFiles={loadingShadcnComponents}
-                  loadingStyleFiles={loadingStyleFiles}
-                  actionRequiredFiles={actionRequiredFiles}
-                  processedData={processedData}
-                />
-              </SandpackProvider>
-            ) : (
-              /* Otherwise use the original SandpackContent */
-              <SandpackProvider {...sandpackConfig}>
-                <SandpackContent
-                  activePreview={activePreview}
-                  onPreviewSelect={handlePreviewSelect}
-                  nonShadcnComponents={
-                    processedData?.nonShadcnComponentsImports
-                  }
-                  getComponentFilePath={getComponentFilePath}
-                  setComponentCode={setComponentCode}
-                  isUnknownComponent={isUnknownComponent}
-                  loadingFiles={loadingShadcnComponents}
-                  loadingStyleFiles={loadingStyleFiles}
-                  actionRequiredFiles={actionRequiredFiles}
-                  processedData={processedData}
-                />
-              </SandpackProvider>
-            )}
+            {/* Render the stable dialog content */}
+            {dialogContent}
           </div>
         </div>
       </DialogContent>
@@ -157,10 +198,15 @@ export function ComponentPublishDialog({
 
 interface SandpackContentProps {
   activePreview: {
-    type: "regular"
+    type: "regular" | "unknown"
     filePath: string
+    componentName?: string
   } | null
-  onPreviewSelect: (preview: { type: "regular"; filePath: string }) => void
+  onPreviewSelect: (preview: {
+    type: "regular" | "unknown"
+    filePath: string
+    componentName?: string
+  }) => void
   nonShadcnComponents?: Array<{ name: string; path: string }>
   getComponentFilePath: () => string
   setComponentCode: (code: string) => void
@@ -186,6 +232,7 @@ function SandpackContent({
   const { sandpack } = useSandpack()
   const componentPath = getComponentFilePath()
   const { markFileAsRequiringAction, isActionRequired } = useActionRequired()
+  const fileContentRef = useRef<Record<string, string>>({})
 
   // Initialize action required files from props
   useEffect(() => {
@@ -220,6 +267,38 @@ function SandpackContent({
     })
   }, [actionRequiredFiles, processedData, markFileAsRequiringAction])
 
+  // Store file content when it changes to prevent losing edits
+  useEffect(() => {
+    const currentContent = sandpack.files[sandpack.activeFile]?.code
+
+    if (currentContent && sandpack.activeFile) {
+      const path = sandpack.activeFile
+
+      // Only update if content actually changed
+      if (fileContentRef.current[path] !== currentContent) {
+        fileContentRef.current[path] = currentContent
+        console.log("[SandpackContent] Stored file content:", {
+          path,
+          contentLength: currentContent.length,
+        })
+      }
+    }
+  }, [sandpack.files, sandpack.activeFile])
+
+  // When a file disappears from sandpack but we have its content, restore it
+  useEffect(() => {
+    Object.entries(fileContentRef.current).forEach(([path, content]) => {
+      if (path && content && !sandpack.files[path]) {
+        console.log("[SandpackContent] Restoring lost file:", path)
+        try {
+          sandpack.addFile(path, content)
+        } catch (error) {
+          console.error("[SandpackContent] Error restoring file:", error)
+        }
+      }
+    })
+  }, [sandpack.files, sandpack])
+
   // Set initial file only once when component mounts
   useEffect(() => {
     if (!activePreview) {
@@ -237,15 +316,6 @@ function SandpackContent({
       return
     }
 
-    console.log("[ComponentPublishDialog] File selected:", {
-      path,
-      isUnknown: isUnknownComponent(path),
-      existingFiles: Object.keys(sandpack.files),
-    })
-
-    // Normalize path - remove @/ prefix if present
-    const normalizedPath = path.replace(/^@\//, "/")
-
     // Check if this is an unknown component
     if (isUnknownComponent(path)) {
       // For unknown components, get the component name
@@ -254,58 +324,19 @@ function SandpackContent({
       )?.name
 
       if (componentName) {
-        // Create an empty file for the unknown component
-        try {
-          console.log(
-            "[ComponentPublishDialog] Creating file for unknown component:",
-            {
-              originalPath: path,
-              normalizedPath,
-              componentName,
-            },
-          )
-
-          // Create file with normalized path
-          sandpack.addFile(
-            normalizedPath,
-            `// TODO: Implement ${componentName} component`,
-          )
-
-          // Mark it as requiring action
-          markFileAsRequiringAction(normalizedPath, {
-            reason: "missing_import",
-            message: `The ${componentName} component needs to be implemented`,
-          })
-
-          // Set as regular file type preview
-          sandpack.setActiveFile(normalizedPath)
-          console.log(
-            "[ComponentPublishDialog] Set active file to:",
-            normalizedPath,
-          )
-
-          onPreviewSelect({
-            type: "regular",
-            filePath: normalizedPath,
-          })
-        } catch (error) {
-          console.error(
-            `[ComponentPublishDialog] Failed to create file for ${componentName}:`,
-            error,
-          )
-        }
+        // Set as unknown component type preview
+        onPreviewSelect({
+          type: "unknown",
+          filePath: path,
+          componentName,
+        })
       }
     } else {
       // Set as regular file type preview
-      sandpack.setActiveFile(normalizedPath)
-      console.log(
-        "[ComponentPublishDialog] Set active file to:",
-        normalizedPath,
-      )
-
+      sandpack.setActiveFile(path)
       onPreviewSelect({
         type: "regular",
-        filePath: normalizedPath,
+        filePath: path,
       })
     }
   }
@@ -323,7 +354,9 @@ function SandpackContent({
 
   // Check if the current file needs style updates
   const showStylePanel =
-    activePreview?.filePath && isActionRequired(activePreview.filePath)
+    activePreview?.filePath &&
+    isActionRequired(activePreview.filePath) &&
+    activePreview.type !== "unknown" // Don't show panel for unknown components
 
   return (
     <SandpackLayout style={{ height: "100%" }}>
@@ -339,21 +372,23 @@ function SandpackContent({
           />
         </div>
         <div className="flex-1 flex">
-          <div className={cn("flex-1", showStylePanel && "w-2/3")}>
-            <EditorCodePanel
-              componentPath={activePreview?.filePath || componentPath}
-              onCodeChange={(code: string) => {
-                setComponentCode(code)
-              }}
-            />
-          </div>
-
-          {/* Style requirements panel */}
-          {showStylePanel && (
-            <div className="w-1/3 p-2">
-              <StyleRequirementsPanel activeFile={activePreview.filePath} />
+          <>
+            <div className={cn("flex-1", showStylePanel && "w-2/3")}>
+              <EditorCodePanel
+                componentPath={activePreview?.filePath || componentPath}
+                onCodeChange={(code: string) => {
+                  setComponentCode(code)
+                }}
+              />
             </div>
-          )}
+
+            {/* Style requirements panel */}
+            {showStylePanel && (
+              <div className="w-1/3 p-2">
+                <RequirementsPanel activeFile={activePreview.filePath} />
+              </div>
+            )}
+          </>
         </div>
       </div>
     </SandpackLayout>

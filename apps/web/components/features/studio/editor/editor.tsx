@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useMemo } from "react"
 import {
   SandpackProvider,
   SandpackLayout,
@@ -12,7 +12,7 @@ import {
 } from "./context/editor-state"
 import { EditorCodePanel } from "./editor-code-panel"
 import { FileExplorer } from "./file-explorer"
-import { StyleRequirementsPanel } from "./requirements-panel"
+import { RequirementsPanel } from "./requirements-panel"
 import { cn } from "@/lib/utils"
 
 interface EditorProps {
@@ -31,6 +31,8 @@ interface EditorProps {
   processedData?: any
 }
 
+const MemoizedEditorContent = React.memo(EditorContent)
+
 export function Editor({
   initialFiles,
   mainComponentPath,
@@ -46,35 +48,44 @@ export function Editor({
   actionRequiredFiles = [],
   processedData,
 }: EditorProps) {
-  // Setup sandpack configuration
-  const sandpackConfig = {
-    files: initialFiles,
-    template: sandpackTemplate,
-    customSetup: {
-      dependencies: {
-        // Default dependencies
-        react: "^18.0.0",
-        "react-dom": "^18.0.0",
-        "@radix-ui/react-icons": "^1.3.0",
-        "class-variance-authority": "^0.7.0",
-        clsx: "^2.0.0",
-        "tailwind-merge": "^1.14.0",
-        "tailwindcss-animate": "^1.0.7",
-        ...dependencies,
+  // Cache sandpack configuration to prevent re-creation
+  const sandpackConfig = useMemo(() => {
+    return {
+      files: initialFiles,
+      template: sandpackTemplate,
+      customSetup: {
+        dependencies: {
+          // Default dependencies
+          react: "^18.0.0",
+          "react-dom": "^18.0.0",
+          "@radix-ui/react-icons": "^1.3.0",
+          "class-variance-authority": "^0.7.0",
+          clsx: "^2.0.0",
+          "tailwind-merge": "^1.14.0",
+          "tailwindcss-animate": "^1.0.7",
+          ...dependencies,
+        },
       },
-    },
-  }
+    }
+  }, [initialFiles, sandpackTemplate, dependencies])
+
+  // Создаем стабильный ключ для CodeManagerProvider, который не меняется при каждом рендере
+  const stableKey = useMemo(
+    () => `editor-${mainComponentPath}-${Object.keys(initialFiles).length}`,
+    [mainComponentPath, Object.keys(initialFiles).length],
+  )
 
   return (
     <SandpackProvider {...sandpackConfig}>
       <CodeManagerProvider
+        key={stableKey}
         initialComponentPath={activePath || mainComponentPath}
         nonShadcnComponents={nonShadcnComponents}
         onFileContentChange={onCodeChange}
         isUnknownComponentFn={isUnknownComponentFn}
       >
         <div className="flex flex-col h-full">
-          <EditorContent
+          <MemoizedEditorContent
             visiblePaths={visiblePaths}
             loadingFiles={loadingFiles}
             loadingStyleFiles={loadingStyleFiles}
@@ -111,9 +122,12 @@ function EditorContent({
     loadingComponents,
     addFile,
     allFiles,
+    getFileContent,
+    updateFileContent,
   } = useCodeManager()
 
-  const { markFileAsRequiringAction, isActionRequired } = useActionRequired()
+  const { markFileAsRequiringAction, markFileAsResolved, getActionDetails } =
+    useActionRequired()
 
   // Initialize action required files from props only when they change
   useEffect(() => {
@@ -149,6 +163,34 @@ function EditorContent({
     })
   }, [actionRequiredFiles, processedData, markFileAsRequiringAction])
 
+  // Auto-resolve action required for unknown components when edited
+  useEffect(() => {
+    if (!activeFile) return
+
+    // Check if this is an unknown component with required action
+    if (isUnknownComponent(activeFile)) {
+      const actionDetails = getActionDetails(activeFile)
+
+      if (actionDetails) {
+        const content = getFileContent(activeFile)
+        // If content has been changed from the default template
+        if (content && !content.includes("TODO: Implement")) {
+          console.log(
+            "[Editor] Auto-resolving action for edited unknown component:",
+            activeFile,
+          )
+          markFileAsResolved(activeFile)
+        }
+      }
+    }
+  }, [
+    activeFile,
+    isUnknownComponent,
+    getActionDetails,
+    getFileContent,
+    markFileAsResolved,
+  ])
+
   // Handle file selection
   const handleFileSelect = (path: string) => {
     console.log("[Editor] File selected:", {
@@ -165,23 +207,33 @@ function EditorContent({
       // Get component name
       const componentName = getComponentName(path)
 
-      console.log("[Editor] Creating file for unknown component:", {
-        originalPath: path,
-        normalizedPath,
-        componentName,
-      })
+      // Only create the file if it doesn't already exist in the codebase
+      const fileExists = allFiles.includes(normalizedPath)
 
-      // Create an empty file for the unknown component
-      addFile(
-        normalizedPath,
-        `// TODO: Implement ${componentName || "this"} component`,
-      )
+      if (!fileExists) {
+        console.log("[Editor] Creating file for unknown component:", {
+          originalPath: path,
+          normalizedPath,
+          componentName,
+        })
 
-      // Mark it as requiring action
-      markFileAsRequiringAction(normalizedPath, {
-        reason: "missing_import",
-        message: `This component needs to be implemented`,
-      })
+        // Create an empty file for the unknown component
+        addFile(
+          normalizedPath,
+          `// TODO: Implement ${componentName || "this"} component`,
+        )
+
+        // Mark it as requiring action
+        markFileAsRequiringAction(normalizedPath, {
+          reason: "missing_import",
+          message: `This component needs to be implemented`,
+        })
+      } else {
+        console.log(
+          "[Editor] Unknown component file already exists:",
+          normalizedPath,
+        )
+      }
     }
 
     // Always select the normalized path
@@ -202,7 +254,8 @@ function EditorContent({
   }, [loadingFiles, loadingComponents])
 
   // Check if the current file needs style updates
-  const showStylePanel = activeFile && isActionRequired(activeFile)
+  const actionDetails = activeFile && getActionDetails(activeFile)
+  const showStylePanel = !!actionDetails && actionDetails.reason === "styles"
 
   return (
     <SandpackLayout style={{ height: "100%", border: "none" }}>
@@ -230,7 +283,7 @@ function EditorContent({
           {/* Style requirements panel */}
           {showStylePanel && (
             <div className="w-1/3 p-2">
-              <StyleRequirementsPanel activeFile={activeFile} />
+              <RequirementsPanel activeFile={activeFile} />
             </div>
           )}
         </div>

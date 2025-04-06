@@ -11,10 +11,14 @@ import {
 } from "@/lib/component-lookup"
 import type { SandpackFiles } from "@codesandbox/sandpack-react"
 
+// Create a file content cache that persists across component remounts
+const fileContentCache = new Map<string, string>()
+
 // Define a type for the active preview
 type ActivePreview = {
-  type: "regular" // All files are now "regular" type
+  type: "regular" | "unknown"
   filePath: string // The file path (always set)
+  componentName?: string // Only used for unknown components
 }
 
 interface UsePublishDialogProps {
@@ -109,6 +113,29 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     [resetState],
   )
 
+  // Set the component code and also update cache
+  const setComponentCodeWithCache = useCallback(
+    (code: string, path?: string) => {
+      const filePath = path || activePreview?.filePath
+      setComponentCode(code)
+
+      // Store in cache if we have a valid path
+      if (filePath) {
+        console.log("[usePublishDialog] Caching file content:", {
+          path: filePath,
+          codeLength: code.length,
+        })
+        fileContentCache.set(filePath, code)
+      }
+    },
+    [activePreview?.filePath],
+  )
+
+  // Helper function to get cached content
+  const getCachedFileContent = useCallback((path: string) => {
+    return fileContentCache.get(path)
+  }, [])
+
   // Generate files for Sandpack
   const files = useMemo(() => {
     const componentPath = getComponentFilePath()
@@ -153,6 +180,22 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     if (processedData?.slug && generatedFiles["/components/ui/component.tsx"]) {
       allFiles[componentPath] = generatedFiles["/components/ui/component.tsx"]
     }
+
+    // Add any cached file content for unknown components
+    fileContentCache.forEach((cachedContent, cachedPath) => {
+      if (
+        processedData?.nonShadcnComponentsImports?.some((comp: any) => {
+          const normalizedPath = comp.path.replace(/^@\//, "/")
+          return normalizedPath === cachedPath
+        })
+      ) {
+        console.log(
+          "[usePublishDialog] Restoring cached content for:",
+          cachedPath,
+        )
+        allFiles[cachedPath] = { code: cachedContent }
+      }
+    })
 
     return allFiles
   }, [
@@ -587,7 +630,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     handleOpenChange,
     handleProcessComponent,
     handlePreviewSelect,
-    setComponentCode,
+    setComponentCode: setComponentCodeWithCache,
+    getCachedFileContent,
     sandpackConfig,
     getComponentFilePath,
     isUnknownComponent,
