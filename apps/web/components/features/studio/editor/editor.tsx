@@ -8,6 +8,8 @@ import { CodeManagerProvider, useCodeManager } from "./context/editor-state"
 import { EditorCodePanel } from "./editor-code-panel"
 import { FileExplorer } from "./file-explorer"
 import { FallbackComponentView } from "./fallback-component-view"
+import { StyleRequirementsPanel } from "./style-requirements-panel"
+import { cn } from "@/lib/utils"
 
 interface EditorProps {
   initialFiles: SandpackFiles
@@ -21,6 +23,8 @@ interface EditorProps {
   visiblePaths?: string[]
   loadingFiles?: string[]
   loadingStyleFiles?: string[]
+  actionRequiredFiles?: string[]
+  processedData?: any
 }
 
 export function Editor({
@@ -35,6 +39,8 @@ export function Editor({
   visiblePaths,
   loadingFiles = [],
   loadingStyleFiles = [],
+  actionRequiredFiles = [],
+  processedData,
 }: EditorProps) {
   // Setup sandpack configuration
   const sandpackConfig = {
@@ -68,6 +74,8 @@ export function Editor({
             visiblePaths={visiblePaths}
             loadingFiles={loadingFiles}
             loadingStyleFiles={loadingStyleFiles}
+            actionRequiredFiles={actionRequiredFiles}
+            processedData={processedData}
           />
         </div>
       </CodeManagerProvider>
@@ -79,12 +87,16 @@ interface EditorContentProps {
   visiblePaths?: string[]
   loadingFiles?: string[]
   loadingStyleFiles?: string[]
+  actionRequiredFiles?: string[]
+  processedData?: any // Add this to pass the processed data with styles information
 }
 
 function EditorContent({
   visiblePaths,
   loadingFiles = [],
   loadingStyleFiles = [],
+  actionRequiredFiles = [],
+  processedData,
 }: EditorContentProps) {
   const {
     activeFile,
@@ -123,6 +135,16 @@ function EditorContent({
     }
   }, [loadingStyleFiles])
 
+  // Also add a React.useEffect to log action required files
+  React.useEffect(() => {
+    if (actionRequiredFiles.length > 0) {
+      console.log(
+        "[EditorContent] Files requiring action:",
+        actionRequiredFiles,
+      )
+    }
+  }, [actionRequiredFiles])
+
   // Handle file selection
   const handleFileSelect = (path: string) => {
     selectFile(path)
@@ -145,6 +167,12 @@ function EditorContent({
     return combinedFiles
   }, [loadingFiles, loadingComponents])
 
+  // Check if the current file needs style updates
+  const showStylePanel =
+    activeFile &&
+    actionRequiredFiles.includes(activeFile) &&
+    processedData?.additionalStyles?.required
+
   return (
     <SandpackLayout style={{ height: "100%", border: "none" }}>
       <div className="flex w-full h-full">
@@ -156,20 +184,36 @@ function EditorContent({
             visibleFiles={visiblePaths}
             loadingFiles={allLoadingFiles}
             loadingStyleFiles={loadingStyleFiles}
+            actionRequiredFiles={actionRequiredFiles}
           />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 flex">
           {activeFile && isUnknownComponent(activeFile) ? (
             <FallbackComponentView
               componentName={getComponentName(activeFile) || "Component"}
             />
           ) : (
-            <EditorCodePanel
-              componentPath={activeFile || ""}
-              onCodeChange={() => {
-                // This will be handled by the CodeManager through the CodeEditor component
-              }}
-            />
+            <>
+              <div className={cn("flex-1", showStylePanel && "w-2/3")}>
+                <EditorCodePanel
+                  componentPath={activeFile || ""}
+                  onCodeChange={() => {
+                    // This will be handled by the CodeManager through the CodeEditor component
+                  }}
+                />
+              </div>
+
+              {/* Style requirements panel */}
+              {showStylePanel && (
+                <div className="w-1/3 p-2">
+                  <StyleRequirementsPanel
+                    actionRequiredFiles={actionRequiredFiles}
+                    additionalStyles={processedData?.additionalStyles}
+                    activeFile={activeFile}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

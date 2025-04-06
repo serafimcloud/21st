@@ -2,7 +2,7 @@ import OpenAI from "openai"
 import { NextResponse } from "next/server"
 import { makeSlugFromName } from "@/components/features/publish-old/hooks/use-is-check-slug-available"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { defaultTailwindConfig, defaultGlobalCss } from "@/lib/sandpack"
+import { defaultTailwindConfig, defaultGlobalCss } from "@/lib/defaults"
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -173,7 +173,7 @@ async function preprocessComponent(code: string) {
 
 5. List all npm package dependencies used in the component (excluding react, react-dom, tailwindcss, and any packages starting with 'next' or '@/')
 6. Identify any environment variables (process.env.*) that the component requires to function correctly.
-7. Analyze if the component requires additional CSS styles that are NOT already provided in the default shadcn/ui Tailwind configuration and globals CSS.
+7. Analyze if the component requires additional CSS styles that are NOT already provided in the default Tailwind configuration and globals CSS provided below.
 
 IMPORTANT: Only include styles that are NOT already covered by the default tailwind.config.js and globals.css files provided below. 
 - DO NOT include any standard Tailwind classes like 'flex', 'p-4', 'text-sm', etc.

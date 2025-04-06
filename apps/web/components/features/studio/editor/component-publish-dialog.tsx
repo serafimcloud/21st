@@ -12,17 +12,17 @@ import { Spinner } from "@/components/icons/spinner"
 import {
   SandpackProvider,
   SandpackLayout,
-  OpenInCodeSandboxButton,
   useSandpack,
 } from "@codesandbox/sandpack-react"
 
 import { FileExplorer } from "./file-explorer"
 import { FallbackComponentView } from "./fallback-component-view"
-import { SimpleEditor, EditorCodePanel } from "./editor-code-panel"
+import { EditorCodePanel } from "./editor-code-panel"
 import { usePublishDialog } from "./hooks/use-editor-dialog"
 import React from "react"
 import { Editor } from "./editor"
-import { CodeManagerProvider } from "./context/editor-state"
+import { StyleRequirementsPanel } from "./style-requirements-panel"
+import { cn } from "@/lib/utils"
 
 interface ComponentPublishDialogProps {
   userId: string
@@ -39,6 +39,7 @@ export function ComponentPublishDialog({
     activePreview,
     loadingShadcnComponents,
     loadingStyleFiles,
+    actionRequiredFiles,
     handleOpenChange,
     handleProcessComponent,
     handlePreviewSelect,
@@ -85,7 +86,19 @@ export function ComponentPublishDialog({
         loadingStyleFiles,
       )
     }
-  }, [loadingShadcnComponents, loadingStyleFiles, processedData])
+
+    if (actionRequiredFiles.length > 0) {
+      console.log(
+        "[ComponentPublishDialog] Files requiring action:",
+        actionRequiredFiles,
+      )
+    }
+  }, [
+    loadingShadcnComponents,
+    loadingStyleFiles,
+    actionRequiredFiles,
+    processedData,
+  ])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -97,7 +110,7 @@ export function ComponentPublishDialog({
       </DialogTrigger>
 
       <DialogContent
-        className="sm:max-w-[1200px] sm:w-[90vw] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden"
+        className="sm:max-w-[1600px] sm:w-[95vw] h-[90vh] flex flex-col p-0 gap-0 overflow-hidden"
         hideCloseButton
       >
         <DialogHeader className="flex flex-row p-4 gap-8 items-start justify-between border-b bg-muted">
@@ -160,6 +173,8 @@ export function ComponentPublishDialog({
                   }
                   loadingFiles={loadingShadcnComponents}
                   loadingStyleFiles={loadingStyleFiles}
+                  actionRequiredFiles={actionRequiredFiles}
+                  processedData={processedData}
                 />
               </SandpackProvider>
             ) : (
@@ -176,6 +191,8 @@ export function ComponentPublishDialog({
                   isUnknownComponent={isUnknownComponent}
                   loadingFiles={loadingShadcnComponents}
                   loadingStyleFiles={loadingStyleFiles}
+                  actionRequiredFiles={actionRequiredFiles}
+                  processedData={processedData}
                 />
               </SandpackProvider>
             )}
@@ -203,6 +220,8 @@ interface SandpackContentProps {
   isUnknownComponent: (path: string) => boolean
   loadingFiles?: string[]
   loadingStyleFiles?: string[]
+  actionRequiredFiles?: string[]
+  processedData?: any
 }
 
 function SandpackContent({
@@ -214,6 +233,8 @@ function SandpackContent({
   isUnknownComponent,
   loadingFiles = [],
   loadingStyleFiles = [],
+  actionRequiredFiles = [],
+  processedData,
 }: SandpackContentProps) {
   const { sandpack } = useSandpack()
   const componentPath = getComponentFilePath()
@@ -238,7 +259,13 @@ function SandpackContent({
     if (loadingStyleFiles.length > 0) {
       console.log("[SandpackContent] Style loading files:", loadingStyleFiles)
     }
-  }, [loadingFiles, loadingStyleFiles])
+    if (actionRequiredFiles.length > 0) {
+      console.log(
+        "[SandpackContent] Files requiring action:",
+        actionRequiredFiles,
+      )
+    }
+  }, [loadingFiles, loadingStyleFiles, actionRequiredFiles])
 
   // Set initial file only once when component mounts
   React.useEffect(() => {
@@ -339,24 +366,53 @@ function SandpackContent({
     }
   }, [activePreview, sandpack.activeFile, sandpack.files])
 
+  // Check if the current file needs style updates
+  const showStylePanel =
+    activePreview?.filePath &&
+    actionRequiredFiles.includes(activePreview.filePath) &&
+    processedData?.additionalStyles?.required
+
   return (
-    <SandpackLayout style={{ height: "100%", border: "none" }}>
+    <SandpackLayout style={{ height: "100%" }}>
       <div className="flex w-full h-full">
         <div className="flex border-r border-border">
           <FileExplorer
             nonShadcnComponents={nonShadcnComponents}
             onFileSelect={handleFileSelect}
-            selectedFile={activePreview?.filePath || componentPath}
+            selectedFile={activePreview?.filePath || ""}
+            visibleFiles={sandpack.visibleFiles || []}
             loadingFiles={loadingFiles}
+            loadingStyleFiles={loadingStyleFiles}
+            actionRequiredFiles={actionRequiredFiles}
           />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 flex">
           {activePreview && isUnknownComponent(activePreview.filePath) ? (
             <FallbackComponentView
-              componentName={activePreview.componentName || "Component"}
+              componentName={activePreview.componentName || "Unknown Component"}
             />
           ) : (
-            <SimpleEditor onChange={setComponentCode} />
+            <>
+              <div className={cn("flex-1", showStylePanel && "w-2/3")}>
+                <EditorCodePanel
+                  componentPath={activePreview?.filePath || componentPath}
+                  onCodeChange={(code: string) => {
+                    setComponentCode(code)
+                  }}
+                />
+              </div>
+
+              {/* Style requirements panel */}
+              {showStylePanel && (
+                <div className="w-1/3 p-2">
+                  <StyleRequirementsPanel
+                    actionRequiredFiles={actionRequiredFiles}
+                    additionalStyles={processedData?.additionalStyles}
+                    activeFile={activePreview.filePath}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

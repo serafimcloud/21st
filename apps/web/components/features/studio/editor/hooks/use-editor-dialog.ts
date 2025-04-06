@@ -54,6 +54,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   >([])
   // Add new state for tracking style merging status
   const [loadingStyleFiles, setLoadingStyleFiles] = useState<string[]>([])
+  // Add new state for tracking files that need action (style updates)
+  const [actionRequiredFiles, setActionRequiredFiles] = useState<string[]>([])
 
   // Add ref to track the timeout ID for loading state
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -96,6 +98,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     setNpmDependenciesOfRegistryDependencies({})
     setMergedTailwindConfig(null)
     setMergedGlobalCss(null)
+    setActionRequiredFiles([])
   }, [])
 
   // Handle dialog open/close
@@ -285,6 +288,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     setIsProcessing(true)
     setLoadingShadcnComponents([]) // Reset loading state at the start
     setLoadingStyleFiles([]) // Reset style loading state too
+    setActionRequiredFiles([]) // Reset action required files
 
     console.log(
       "[usePublishDialog] Starting component processing, cleared all loading states",
@@ -303,6 +307,116 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       }
 
       const data = await response.json()
+
+      // Check if the API indicates that style updates are needed
+      const styleUpdateFiles: string[] = []
+
+      // Check the additionalStyles property to determine if styles are needed
+      if (data.additionalStyles && data.additionalStyles.required) {
+        console.log(
+          "[usePublishDialog] Component requires style updates:",
+          data.additionalStyles,
+        )
+
+        // Ensure the additionalStyles structure is correctly initialized
+        if (!data.additionalStyles.tailwindExtensions) {
+          data.additionalStyles.tailwindExtensions = {}
+        }
+
+        if (!data.additionalStyles.cssVariables) {
+          data.additionalStyles.cssVariables = []
+        }
+
+        if (!data.additionalStyles.keyframes) {
+          data.additionalStyles.keyframes = []
+        }
+
+        if (!data.additionalStyles.utilities) {
+          data.additionalStyles.utilities = []
+        }
+
+        // Check for Tailwind extensions
+        if (
+          data.additionalStyles.tailwindExtensions &&
+          Object.keys(data.additionalStyles.tailwindExtensions).length > 0
+        ) {
+          styleUpdateFiles.push("/tailwind.config.js")
+          console.log(
+            "[usePublishDialog] Component requires tailwind config updates:",
+            Object.keys(data.additionalStyles.tailwindExtensions),
+          )
+        }
+
+        // Check for CSS variables, keyframes or utilities
+        const hasGlobalCssUpdates =
+          (data.additionalStyles.cssVariables &&
+            data.additionalStyles.cssVariables.length > 0) ||
+          (data.additionalStyles.keyframes &&
+            data.additionalStyles.keyframes.length > 0) ||
+          (data.additionalStyles.utilities &&
+            data.additionalStyles.utilities.length > 0)
+
+        if (hasGlobalCssUpdates) {
+          styleUpdateFiles.push("/globals.css")
+          console.log(
+            "[usePublishDialog] Component requires global CSS updates:",
+            {
+              keyframes: data.additionalStyles.keyframes?.length || 0,
+              cssVariables: data.additionalStyles.cssVariables?.length || 0,
+              utilities: data.additionalStyles.utilities?.length || 0,
+            },
+          )
+        }
+
+        // If additionalStyles is required but no specific files were marked,
+        // default to highlighting both files
+        if (styleUpdateFiles.length === 0) {
+          styleUpdateFiles.push("/tailwind.config.js", "/globals.css")
+          console.log(
+            "[usePublishDialog] Component requires general style updates (no specifics provided)",
+          )
+        }
+
+        // Fix any undefined values in keyframes or utilities
+        if (data.additionalStyles.keyframes) {
+          data.additionalStyles.keyframes = data.additionalStyles.keyframes.map(
+            (keyframe: any) => {
+              if (!keyframe.frames || keyframe.frames === "undefined") {
+                // Provide a default example keyframe definition
+                return {
+                  ...keyframe,
+                  frames:
+                    "0% { opacity: 0; transform: scale(0.95); }\n100% { opacity: 1; transform: scale(1); }",
+                }
+              }
+              return keyframe
+            },
+          )
+        }
+
+        if (data.additionalStyles.utilities) {
+          data.additionalStyles.utilities = data.additionalStyles.utilities.map(
+            (utility: any) => {
+              if (!utility.properties || utility.properties === "undefined") {
+                // Provide a default example utility definition
+                return {
+                  ...utility,
+                  properties: "/* Add your custom styles here */",
+                }
+              }
+              return utility
+            },
+          )
+        }
+      }
+
+      if (styleUpdateFiles.length > 0) {
+        setActionRequiredFiles(styleUpdateFiles)
+        console.log(
+          "[usePublishDialog] Setting action required files:",
+          styleUpdateFiles,
+        )
+      }
 
       // Set loading state for shadcn components
       const shadcnSlugs: string[] = []
@@ -496,6 +610,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       // Clear loading state immediately in case of main process error
       setLoadingShadcnComponents([])
       setLoadingStyleFiles([])
+      setActionRequiredFiles([])
     } finally {
       setIsProcessing(false)
 
@@ -593,6 +708,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     activePreview,
     loadingShadcnComponents,
     loadingStyleFiles,
+    actionRequiredFiles,
     handleOpenChange,
     handleProcessComponent,
     handlePreviewSelect,

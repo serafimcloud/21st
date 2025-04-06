@@ -23,6 +23,7 @@ interface FileTreeItem {
   isUnknownComponent?: boolean
   isLoading?: boolean
   isStyleFile?: boolean
+  actionRequired?: boolean
 }
 
 export interface FileExplorerProps {
@@ -40,6 +41,7 @@ export function buildFileTree(
   visibleFiles: string[] = [],
   loadingFiles: string[] = [],
   loadingStyleFiles: string[] = [],
+  actionRequiredFiles: string[] = [],
 ) {
   // Log loading states for debugging
   if (loadingFiles.length > 0) {
@@ -52,6 +54,12 @@ export function buildFileTree(
     console.log(
       "[buildFileTree] Building tree with loading style files:",
       loadingStyleFiles,
+    )
+  }
+  if (actionRequiredFiles.length > 0) {
+    console.log(
+      "[buildFileTree] Building tree with action required files:",
+      actionRequiredFiles,
     )
   }
 
@@ -122,6 +130,7 @@ export function buildFileTree(
           }
           existingItem.isLoading =
             loadingFiles.includes(path) || loadingStyleFiles.includes(path)
+          existingItem.actionRequired = actionRequiredFiles.includes(path)
         }
         current = existingItem.children || []
       } else {
@@ -134,6 +143,9 @@ export function buildFileTree(
           isStyleFile: isLast ? isStyleFile : undefined,
           isLoading: isLast
             ? loadingFiles.includes(path) || loadingStyleFiles.includes(path)
+            : undefined,
+          actionRequired: isLast
+            ? actionRequiredFiles.includes(path)
             : undefined,
         }
 
@@ -216,6 +228,7 @@ function FileTreeNode({
   onToggleDir,
   isLoading,
   isStyleLoading,
+  isActionRequired,
   activeFile,
   level = 0,
 }: {
@@ -225,6 +238,7 @@ function FileTreeNode({
   onToggleDir: (path: string) => void
   isLoading: (path: string) => boolean
   isStyleLoading: (path: string) => boolean
+  isActionRequired: (path: string) => boolean
   activeFile?: string
   level?: number
 }) {
@@ -233,6 +247,10 @@ function FileTreeNode({
   const isShadcnFile = item.type === "file" && isShadcnComponentPath(item.path)
   const isTailwindConfig = item.path === "/tailwind.config.js"
   const isGlobalsCss = item.path === "/globals.css"
+  const needsAction =
+    item.actionRequired ||
+    item.isUnknownComponent ||
+    isActionRequired(item.path)
 
   React.useEffect(() => {
     if (item.isLoading) {
@@ -240,7 +258,12 @@ function FileTreeNode({
         `[FileTreeNode] Loading item detected: ${item.name} (${item.path})`,
       )
     }
-  }, [item.isLoading, item.name, item.path])
+    if (needsAction) {
+      console.log(
+        `[FileTreeNode] Action required for: ${item.name} (${item.path})`,
+      )
+    }
+  }, [item.isLoading, item.name, item.path, needsAction])
 
   return (
     <div>
@@ -248,7 +271,7 @@ function FileTreeNode({
         className={cn(
           "w-full text-left py-1.5 text-sm flex items-center gap-2 hover:bg-muted/50 transition-colors",
           isActive && "bg-muted text-primary font-medium",
-          item.isUnknownComponent && isActive && "bg-yellow-500/10",
+          needsAction && isActive && "bg-yellow-500/10",
         )}
         style={{ paddingLeft: `${level * 12 + 16}px` }}
         onClick={() => {
@@ -282,7 +305,7 @@ function FileTreeNode({
           <div className="h-4 w-4 flex items-center justify-center">
             <Spinner size={14} color="#3b82f6" />
           </div>
-        ) : item.isUnknownComponent ? (
+        ) : needsAction ? (
           <FileWarning className="h-4 w-4 text-yellow-500" />
         ) : isShadcnFile ? (
           <ShadcnFile className="h-4 w-4 text-primary" />
@@ -296,12 +319,7 @@ function FileTreeNode({
         {item.isLoading || isLoading(item.path) || isStyleLoading(item.path) ? (
           <TextShimmer className="truncate text-sm">{item.name}</TextShimmer>
         ) : (
-          <span
-            className={cn(
-              "truncate",
-              item.isUnknownComponent && "text-yellow-600",
-            )}
-          >
+          <span className={cn("truncate", needsAction && "text-yellow-600")}>
             {item.name}
           </span>
         )}
@@ -320,6 +338,7 @@ function FileTreeNode({
               onToggleDir={onToggleDir}
               isLoading={isLoading}
               isStyleLoading={isStyleLoading}
+              isActionRequired={isActionRequired}
             />
           ))}
         </div>
@@ -338,7 +357,10 @@ export function FileExplorer({
   visibleFiles,
   loadingFiles = [],
   loadingStyleFiles = [],
-}: FileExplorerProps) {
+  actionRequiredFiles = [],
+}: FileExplorerProps & {
+  actionRequiredFiles?: string[]
+}) {
   const { sandpack } = useSandpack()
   const { visibleFiles: sandpackVisibleFiles } = sandpack
 
@@ -352,7 +374,13 @@ export function FileExplorer({
         loadingStyleFiles,
       )
     }
-  }, [loadingFiles, loadingStyleFiles])
+    if (actionRequiredFiles && actionRequiredFiles.length > 0) {
+      console.log(
+        "[FileExplorer] Received action required files:",
+        actionRequiredFiles,
+      )
+    }
+  }, [loadingFiles, loadingStyleFiles, actionRequiredFiles])
 
   const { tree: fileTree, directories } = useMemo(
     () =>
@@ -362,6 +390,7 @@ export function FileExplorer({
         visibleFiles,
         loadingFiles,
         loadingStyleFiles,
+        actionRequiredFiles,
       ),
     [
       sandpackVisibleFiles,
@@ -369,6 +398,7 @@ export function FileExplorer({
       visibleFiles,
       loadingFiles,
       loadingStyleFiles,
+      actionRequiredFiles,
     ],
   )
 
@@ -418,6 +448,14 @@ export function FileExplorer({
     [loadingStyleFiles],
   )
 
+  // Check if a file needs action
+  const isFileActionRequired = useCallback(
+    (filePath: string) => {
+      return actionRequiredFiles.includes(filePath)
+    },
+    [actionRequiredFiles],
+  )
+
   return (
     <div className="w-64 flex flex-col h-full overflow-auto border-border">
       <div className="p-2 flex justify-between items-center border-b border-border">
@@ -433,6 +471,7 @@ export function FileExplorer({
             onToggleDir={handleToggleDir}
             isLoading={isFileLoading}
             isStyleLoading={isStyleFileLoading}
+            isActionRequired={isFileActionRequired}
             activeFile={selectedFile || undefined}
           />
         ))}
