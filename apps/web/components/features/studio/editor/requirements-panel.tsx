@@ -1,38 +1,37 @@
-import { AlertCircle, XIcon } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useActionRequired } from "./context/editor-state"
 
 interface StyleRequirementsPanelProps {
-  actionRequiredFiles: string[]
-  additionalStyles?: {
-    required?: boolean
-    tailwindExtensions?: Record<string, any>
-    cssVariables?: Array<any>
-    keyframes?: Array<any>
-    utilities?: Array<any>
-  }
   className?: string
   activeFile?: string
 }
 
 export function StyleRequirementsPanel({
-  actionRequiredFiles,
-  additionalStyles,
   className,
   activeFile,
 }: StyleRequirementsPanelProps) {
-  // If no active file, no action required files, or no additional styles needed, don't show anything
-  if (
-    !activeFile ||
-    !actionRequiredFiles.length ||
-    !additionalStyles?.required
-  ) {
+  const { getActionDetails, markFileAsResolved } = useActionRequired()
+
+  // If no active file, don't show anything
+  if (!activeFile) {
     return null
   }
 
-  // Only show the panel if the active file is one that needs action
-  if (!actionRequiredFiles.includes(activeFile)) {
+  // Get the action details for the active file
+  const actionDetails = getActionDetails(activeFile)
+
+  // If no action required for this file, don't show anything
+  if (!actionDetails) {
     return null
+  }
+
+  // Handle resolving the file
+  const handleResolve = () => {
+    if (activeFile) {
+      markFileAsResolved(activeFile)
+    }
   }
 
   // Get file-specific content
@@ -104,11 +103,15 @@ ${keyframe.frames}
     ? "Tailwind Config Extension Required"
     : isGlobalCss
       ? "CSS Extension Required"
-      : "Required Updates"
+      : actionDetails.message ||
+        `${actionDetails.reason.replace("_", " ")} Required`
 
   return (
     <div
-      className={cn("flex flex-col border border-border h-full rounded-md", className)}
+      className={cn(
+        "flex flex-col border border-border h-full rounded-md",
+        className,
+      )}
     >
       {/* Panel Header */}
       <div className="flex flex-col sm:flex-row justify-between gap-2 border-b border-border p-3 bg-muted/40">
@@ -119,7 +122,12 @@ ${keyframe.frames}
             <h3 className="text-xs">AI Suggestion</h3>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="self-start sm:self-auto">
+        <Button
+          variant="outline"
+          size="sm"
+          className="self-start sm:self-auto"
+          onClick={handleResolve}
+        >
           Mark as resolved
         </Button>
       </div>
@@ -132,8 +140,8 @@ ${keyframe.frames}
               Add the following to your tailwind.config.js in the theme section:
             </p>
 
-            {additionalStyles?.tailwindExtensions &&
-            Object.keys(additionalStyles.tailwindExtensions).length > 0 ? (
+            {actionDetails?.tailwindExtensions &&
+            Object.keys(actionDetails.tailwindExtensions).length > 0 ? (
               <pre className="bg-muted p-3 rounded border border-border text-xs font-mono overflow-auto max-h-[calc(100vh-250px)]">
                 <code>
                   {`module.exports = {
@@ -141,7 +149,7 @@ ${keyframe.frames}
   theme: {
     extend: {
       // ... existing extensions
-      ${formatTailwindExtension(additionalStyles.tailwindExtensions).slice(1, -1)}
+      ${formatTailwindExtension(actionDetails.tailwindExtensions).slice(1, -1)}
     }
   }
 }`}
@@ -161,30 +169,27 @@ ${keyframe.frames}
               Add the following to your globals.css file:
             </p>
 
-            {additionalStyles?.keyframes &&
-              additionalStyles.keyframes.length > 0 && (
-                <div className="mt-3">
-                  <h4 className="font-medium text-xs mb-1">
-                    Keyframe animations:
-                  </h4>
-                  <pre className="bg-muted p-3 rounded border border-border text-xs font-mono overflow-auto max-h-[200px]">
-                    <code>
-                      {additionalStyles.keyframes
-                        .map(formatKeyframes)
-                        .join("\n\n")}
-                    </code>
-                  </pre>
-                </div>
-              )}
+            {actionDetails?.keyframes && actionDetails.keyframes.length > 0 && (
+              <div className="mt-3">
+                <h4 className="font-medium text-xs mb-1">
+                  Keyframe animations:
+                </h4>
+                <pre className="bg-muted p-3 rounded border border-border text-xs font-mono overflow-auto max-h-[200px]">
+                  <code>
+                    {actionDetails.keyframes.map(formatKeyframes).join("\n\n")}
+                  </code>
+                </pre>
+              </div>
+            )}
 
-            {additionalStyles?.cssVariables &&
-              additionalStyles.cssVariables.length > 0 && (
+            {actionDetails?.cssVariables &&
+              actionDetails.cssVariables.length > 0 && (
                 <div className="mt-3">
                   <h4 className="font-medium text-xs mb-1">CSS variables:</h4>
                   <pre className="bg-muted p-3 rounded border border-border text-xs font-mono overflow-auto max-h-[200px]">
                     <code>
                       {`:root {
-  ${additionalStyles.cssVariables
+  ${actionDetails.cssVariables
     .map((variable: any) => `${variable.name}: ${variable.value || "#000000"}`)
     .join(";\n  ")};
 }`}
@@ -193,33 +198,41 @@ ${keyframe.frames}
                 </div>
               )}
 
-            {additionalStyles?.utilities &&
-              additionalStyles.utilities.length > 0 && (
-                <div className="mt-3">
-                  <h4 className="font-medium text-xs mb-1">Utility classes:</h4>
-                  <pre className="bg-muted p-3 rounded border border-border text-xs font-mono overflow-auto max-h-[200px]">
-                    <code>
-                      {additionalStyles.utilities
-                        .map(
-                          (utility: any) =>
-                            `.${utility.name} {
+            {actionDetails?.utilities && actionDetails.utilities.length > 0 && (
+              <div className="mt-3">
+                <h4 className="font-medium text-xs mb-1">Utility classes:</h4>
+                <pre className="bg-muted p-3 rounded border border-border text-xs font-mono overflow-auto max-h-[200px]">
+                  <code>
+                    {actionDetails.utilities
+                      .map(
+                        (utility: any) =>
+                          `.${utility.name} {
   ${utility.properties || "/* Add properties here */"}
 }`,
-                        )
-                        .join("\n\n")}
-                    </code>
-                  </pre>
-                </div>
-              )}
+                      )
+                      .join("\n\n")}
+                  </code>
+                </pre>
+              </div>
+            )}
 
-            {!additionalStyles?.keyframes?.length &&
-              !additionalStyles?.cssVariables?.length &&
-              !additionalStyles?.utilities?.length && (
+            {!actionDetails?.keyframes?.length &&
+              !actionDetails?.cssVariables?.length &&
+              !actionDetails?.utilities?.length && (
                 <p className="text-muted-foreground text-xs">
                   Update your global CSS file with additional styles for this
                   component.
                 </p>
               )}
+          </div>
+        )}
+
+        {!isTailwindConfig && !isGlobalCss && (
+          <div className="space-y-3">
+            <p className="text-muted-foreground text-xs">
+              {actionDetails.message ||
+                "This file requires action to work properly."}
+            </p>
           </div>
         )}
 

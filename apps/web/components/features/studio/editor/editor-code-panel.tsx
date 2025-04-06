@@ -74,7 +74,7 @@ interface SimpleEditorProps {
 }
 
 export function SimpleEditor({ onChange }: SimpleEditorProps) {
-  const { code, updateCode } = useActiveCode()
+  const { code } = useActiveCode()
 
   useEffect(() => {
     if (onChange && code) {

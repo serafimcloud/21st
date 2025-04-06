@@ -113,17 +113,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   // Generate files for Sandpack
   const files = useMemo(() => {
     const componentPath = getComponentFilePath()
-    console.log("[PublishDialog] Generating Sandpack files:", {
-      componentPath,
-      processedData: {
-        registryType: processedData?.registryType,
-        slug: processedData?.slug,
-        componentName: processedData?.componentName,
-      },
-      hasComponentCode: Boolean(componentCode),
-      registryDependenciesFiles: Object.keys(registryDependencies),
-      activePreviewPath: activePreview?.filePath,
-    })
 
     // Start with a fresh copy of all files
     const allFiles: SandpackFiles = {}
@@ -164,45 +153,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     // If we have a processed slug, ensure the component is at the correct path
     if (processedData?.slug && generatedFiles["/components/ui/component.tsx"]) {
       allFiles[componentPath] = generatedFiles["/components/ui/component.tsx"]
-      const content = allFiles[componentPath] as string | { code: string }
-      console.log("[PublishDialog] Component file placement:", {
-        path: componentPath,
-        content:
-          typeof content === "string"
-            ? content.slice(0, 100)
-            : content.code.slice(0, 100),
-      })
     }
-
-    // Log the content of key files for debugging
-    const debugPaths = [
-      "/components/blocks/hero-section.tsx",
-      "/components/ui/button.tsx",
-      "/components/ui/badge.tsx",
-      "/components/ui/component.tsx",
-    ]
-
-    console.log("[PublishDialog] File contents check:", {
-      activePreview: activePreview?.filePath,
-      componentPath,
-      fileContents: debugPaths.reduce(
-        (acc, path) => ({
-          ...acc,
-          [path]: (() => {
-            const content = allFiles[path]
-            if (!content) return "not found"
-            return (
-              (typeof content === "string" ? content : content.code).slice(
-                0,
-                50,
-              ) + "..."
-            )
-          })(),
-        }),
-        {},
-      ),
-      allFiles: Object.keys(allFiles),
-    })
 
     return allFiles
   }, [
@@ -219,36 +170,11 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   // Unified handler for preview selection (both files and custom components)
   const handlePreviewSelect = useCallback(
     (newPreview: ActivePreview) => {
-      console.log("[PublishDialog] handlePreviewSelect called with:", {
-        newPreview,
-        currentFiles: Object.keys(files),
-      })
-
       setActivePreview(newPreview)
 
       // Always update component code for regular files
       if (newPreview.type === "regular") {
         const fileContent = files[newPreview.filePath]
-        console.log(
-          "[PublishDialog] Updating component code with file content:",
-          {
-            path: newPreview.filePath,
-            fileContent,
-            allFiles: Object.keys(files).map((path) => ({
-              path,
-              preview: (() => {
-                const content = files[path]
-                if (!content) return "not found"
-                return (
-                  (typeof content === "string" ? content : content.code).slice(
-                    0,
-                    50,
-                  ) + "..."
-                )
-              })(),
-            })),
-          },
-        )
 
         if (fileContent) {
           const newCode =
@@ -256,10 +182,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
 
           if (newCode) {
             setComponentCode(newCode)
-            console.log("[PublishDialog] Updated component code:", {
-              path: newPreview.filePath,
-              codePreview: newCode.slice(0, 100),
-            })
           }
         }
       }
@@ -290,10 +212,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     setLoadingStyleFiles([]) // Reset style loading state too
     setActionRequiredFiles([]) // Reset action required files
 
-    console.log(
-      "[usePublishDialog] Starting component processing, cleared all loading states",
-    )
-
     try {
       const response = await fetch("/api/studio/preprocess-component", {
         method: "POST",
@@ -313,11 +231,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
 
       // Check the additionalStyles property to determine if styles are needed
       if (data.additionalStyles && data.additionalStyles.required) {
-        console.log(
-          "[usePublishDialog] Component requires style updates:",
-          data.additionalStyles,
-        )
-
         // Ensure the additionalStyles structure is correctly initialized
         if (!data.additionalStyles.tailwindExtensions) {
           data.additionalStyles.tailwindExtensions = {}
@@ -338,13 +251,12 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         // Check for Tailwind extensions
         if (
           data.additionalStyles.tailwindExtensions &&
-          Object.keys(data.additionalStyles.tailwindExtensions).length > 0
+          Object.keys(data.additionalStyles.tailwindExtensions).length > 0 &&
+          Object.values(data.additionalStyles.tailwindExtensions).some(
+            (val: any) => Object.keys(val as object).length > 0,
+          )
         ) {
           styleUpdateFiles.push("/tailwind.config.js")
-          console.log(
-            "[usePublishDialog] Component requires tailwind config updates:",
-            Object.keys(data.additionalStyles.tailwindExtensions),
-          )
         }
 
         // Check for CSS variables, keyframes or utilities
@@ -358,23 +270,28 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
 
         if (hasGlobalCssUpdates) {
           styleUpdateFiles.push("/globals.css")
-          console.log(
-            "[usePublishDialog] Component requires global CSS updates:",
-            {
-              keyframes: data.additionalStyles.keyframes?.length || 0,
-              cssVariables: data.additionalStyles.cssVariables?.length || 0,
-              utilities: data.additionalStyles.utilities?.length || 0,
-            },
-          )
         }
 
         // If additionalStyles is required but no specific files were marked,
-        // default to highlighting both files
-        if (styleUpdateFiles.length === 0) {
+        // default to highlighting both files if there are any non-empty style requirements
+        const hasActualStyleChanges =
+          // Check if there are actual tailwind extensions needed
+          Object.values(data.additionalStyles.tailwindExtensions || {}).some(
+            (val: any) => Object.keys(val as object).length > 0,
+          ) ||
+          // Check if there are CSS variables
+          (data.additionalStyles.cssVariables || []).length > 0 ||
+          // Check if there are keyframes
+          (data.additionalStyles.keyframes || []).length > 0 ||
+          // Check if there are utilities
+          (data.additionalStyles.utilities || []).length > 0
+
+        if (styleUpdateFiles.length === 0 && hasActualStyleChanges) {
           styleUpdateFiles.push("/tailwind.config.js", "/globals.css")
-          console.log(
-            "[usePublishDialog] Component requires general style updates (no specifics provided)",
-          )
+        } else if (styleUpdateFiles.length === 0 && !hasActualStyleChanges) {
+          // If required is true but there's nothing actually to add, this is a false positive
+          // so we should set it to false
+          data.additionalStyles.required = false
         }
 
         // Fix any undefined values in keyframes or utilities
@@ -412,10 +329,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
 
       if (styleUpdateFiles.length > 0) {
         setActionRequiredFiles(styleUpdateFiles)
-        console.log(
-          "[usePublishDialog] Setting action required files:",
-          styleUpdateFiles,
-        )
       }
 
       // Set loading state for shadcn components
@@ -430,10 +343,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
             )
             return path
           },
-        )
-        console.log(
-          "[usePublishDialog] Setting loading components:",
-          loadingPaths,
         )
         setLoadingShadcnComponents(loadingPaths)
       }
@@ -454,11 +363,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
           // Create loading paths for UI feedback
           const dbLoadingPaths = lookupResults.map(
             ({ match }) => `/components/${match.registry}/${match.slug}.tsx`,
-          )
-
-          console.log(
-            "[usePublishDialog] Found components in database:",
-            lookupResults.map((r) => r.match.slug),
           )
 
           // Add paths to loading state
@@ -488,11 +392,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       const allDependencySlugs = [...shadcnSlugs, ...dbComponentSlugs]
 
       if (allDependencySlugs.length > 0) {
-        console.log(
-          "[usePublishDialog] Resolving dependencies:",
-          allDependencySlugs,
-        )
-
         try {
           // Create a mapping of dependency slugs to their file paths for tracking loading state
           const slugToFilePaths: Record<string, string> = {}
@@ -531,9 +430,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
             // When a dependency is resolved, remove it from the loading state
             const path = slugToFilePaths[slug]
             if (path) {
-              console.log(
-                `[usePublishDialog] Dependency loaded: ${slug} (${path})`,
-              )
               setLoadingShadcnComponents((prev) =>
                 prev.filter((filePath) => filePath !== path),
               )
@@ -575,9 +471,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
               setLoadingShadcnComponents((prev) =>
                 prev.filter((filePath) => filePath !== nonShadcnPath),
               )
-              console.log(
-                `[usePublishDialog] Removed non-Shadcn component from loading: ${nonShadcnPath}`,
-              )
             }
           })
 
@@ -617,17 +510,9 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       // Set a final cleanup timer just to be safe (with a shorter timeout)
       loadingTimeoutRef.current = setTimeout(() => {
         if (loadingShadcnComponents.length > 0) {
-          console.log(
-            "[usePublishDialog] Final safety cleanup for component loading:",
-            loadingShadcnComponents,
-          )
           setLoadingShadcnComponents([])
         }
         if (loadingStyleFiles.length > 0) {
-          console.log(
-            "[usePublishDialog] Final safety cleanup for style loading:",
-            loadingStyleFiles,
-          )
           setLoadingStyleFiles([])
         }
         loadingTimeoutRef.current = null
@@ -649,13 +534,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
 
   // Sandpack configuration
   const sandpackConfig = useMemo(() => {
-    console.log("[PublishDialog] Creating Sandpack config:", {
-      activePreview,
-      componentPath: getComponentFilePath(),
-      availableFiles: Object.keys(files),
-      registryDependencies: Object.keys(registryDependencies),
-    })
-
     return {
       files,
       options: {

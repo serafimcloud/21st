@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from "react"
+import React, { createContext, useContext, useEffect, useCallback } from "react"
 import { atom, useAtom } from "jotai"
 import { useSandpack } from "@codesandbox/sandpack-react"
 
@@ -6,6 +6,20 @@ import { useSandpack } from "@codesandbox/sandpack-react"
 export const activeFileAtom = atom<string | null>(null)
 export const userModifiedFilesAtom = atom<Record<string, boolean>>({})
 export const loadingComponentsAtom = atom<string[]>([])
+
+// New atom for files requiring action
+export interface ActionRequiredDetails {
+  reason: "styles" | "missing_import" | "other"
+  message?: string
+  tailwindExtensions?: Record<string, any>
+  cssVariables?: Array<any>
+  keyframes?: Array<any>
+  utilities?: Array<any>
+}
+
+export const actionRequiredFilesAtom = atom<
+  Record<string, ActionRequiredDetails>
+>({})
 
 // Define the types for our context
 interface CodeManagerContextType {
@@ -31,6 +45,16 @@ interface CodeManagerContextType {
   // Loading state
   loadingComponents: string[]
   setLoadingComponents: (paths: string[]) => void
+
+  // Action required state - use functions from useActionRequired
+  actionRequiredFiles: Record<string, ActionRequiredDetails>
+  markFileAsRequiringAction: (
+    path: string,
+    details: ActionRequiredDetails,
+  ) => void
+  markFileAsResolved: (path: string) => void
+  isActionRequired: (path: string) => boolean
+  getActionDetails: (path: string) => ActionRequiredDetails | undefined
 }
 
 const CodeManagerContext = createContext<CodeManagerContextType | null>(null)
@@ -52,6 +76,76 @@ export function useEditorFile() {
     activeFile,
     setActiveFile,
     isFileModified: (path: string) => userModifiedFiles[path] || false,
+  }
+}
+
+// New hook to access action required state directly
+export function useActionRequired() {
+  const [actionRequiredFiles, setActionRequiredFiles] = useAtom(
+    actionRequiredFilesAtom,
+  )
+
+  const markFileAsRequiringAction = useCallback(
+    (path: string, details: ActionRequiredDetails) => {
+      setActionRequiredFiles((prev) => {
+        // Skip update if nothing is changing to prevent loops
+        if (
+          prev[path] &&
+          JSON.stringify(prev[path]) === JSON.stringify(details)
+        ) {
+          return prev
+        }
+
+        console.log(
+          `[useActionRequired] Marking ${path} as requiring action:`,
+          details,
+        )
+        return {
+          ...prev,
+          [path]: details,
+        }
+      })
+    },
+    [setActionRequiredFiles],
+  )
+
+  const markFileAsResolved = useCallback(
+    (path: string) => {
+      setActionRequiredFiles((prev) => {
+        // Skip update if file isn't in the list to prevent unnecessary renders
+        if (!prev[path]) {
+          return prev
+        }
+
+        console.log(`[useActionRequired] Marking ${path} as resolved`)
+        const next = { ...prev }
+        delete next[path]
+        return next
+      })
+    },
+    [setActionRequiredFiles],
+  )
+
+  const isActionRequired = useCallback(
+    (path: string) => {
+      return !!actionRequiredFiles[path]
+    },
+    [actionRequiredFiles],
+  )
+
+  const getActionDetails = useCallback(
+    (path: string) => {
+      return actionRequiredFiles[path]
+    },
+    [actionRequiredFiles],
+  )
+
+  return {
+    actionRequiredFiles,
+    markFileAsRequiringAction,
+    markFileAsResolved,
+    isActionRequired,
+    getActionDetails,
   }
 }
 
@@ -80,6 +174,15 @@ export function CodeManagerProvider({
     loadingComponentsAtom,
   )
 
+  // Get action required functions from the hook instead of redefining them
+  const {
+    actionRequiredFiles,
+    markFileAsRequiringAction,
+    markFileAsResolved,
+    isActionRequired,
+    getActionDetails,
+  } = useActionRequired()
+
   // Initialize with the main component file
   useEffect(() => {
     if (initialComponentPath && !activeFile) {
@@ -87,27 +190,9 @@ export function CodeManagerProvider({
     }
   }, [initialComponentPath])
 
-  // Update the loading components from the CodeManager
-  useEffect(() => {
-    // This is where we would sync with external loading components, if needed
-    console.log("[CodeManager] Loading components:", loadingComponents)
-  }, [loadingComponents])
-
-  // Log state changes in development
-  useEffect(() => {
-    console.log("[CodeManager] Current state:", {
-      activeFile,
-      files: Object.keys(sandpack.files),
-      userModifiedFiles,
-      loadingComponents,
-    })
-  }, [sandpack.files, activeFile, userModifiedFiles, loadingComponents])
-
   // File selection
   const selectFile = (path: string) => {
     if (!path) return
-
-    console.log("[CodeManager] Selecting file:", path)
 
     // Only update Sandpack if it's not an unknown component
     if (!isUnknownComponentFn(path)) {
@@ -124,12 +209,9 @@ export function CodeManagerProvider({
   }
 
   const updateFileContent = (path: string, content: string) => {
-    console.log("[CodeManager] Updating file content:", path)
-
     // Check if the content is actually different
     const currentContent = getFileContent(path)
     if (currentContent === content) {
-      console.log("[CodeManager] Content unchanged, skipping update:", path)
       return
     }
 
@@ -145,8 +227,6 @@ export function CodeManagerProvider({
   }
 
   const addFile = (path: string, content: string = "") => {
-    console.log("[CodeManager] Adding new file:", path)
-
     sandpack.addFile(path, content)
 
     // Select the newly created file
@@ -154,8 +234,6 @@ export function CodeManagerProvider({
   }
 
   const renameFile = (from: string, to: string) => {
-    console.log("[CodeManager] Renaming file:", { from, to })
-
     // Get the file content
     const fileObj = sandpack.files[from]
 
@@ -184,14 +262,10 @@ export function CodeManagerProvider({
       if (activeFile === from) {
         selectFile(to)
       }
-    } else {
-      console.warn(`[CodeManager] Cannot rename file: File not found ${from}`)
     }
   }
 
   const deleteFile = (path: string) => {
-    console.log("[CodeManager] Deleting file:", path)
-
     // Remove from Sandpack
     sandpack.deleteFile(path)
 
@@ -249,6 +323,13 @@ export function CodeManagerProvider({
     // Loading state
     loadingComponents,
     setLoadingComponents,
+
+    // Action required state - using functions from the hook
+    actionRequiredFiles,
+    markFileAsRequiringAction,
+    markFileAsResolved,
+    isActionRequired,
+    getActionDetails,
   }
 
   return (

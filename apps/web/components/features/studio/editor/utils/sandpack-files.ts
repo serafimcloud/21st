@@ -228,12 +228,8 @@ export const usePathname = () => {
 export const RouterProvider = ({ children }) => {
   const router = {
     pathname: '/',
-    push: (url) => {
-      console.log(\`Navigating to \${url}\`);
-    },
-    replace: (url) => {
-      console.log(\`Replacing with \${url}\`);
-    },
+    push: (url) => {},
+    replace: (url) => {},
   };
   
   return (

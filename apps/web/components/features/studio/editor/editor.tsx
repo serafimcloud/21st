@@ -1,14 +1,19 @@
-import React from "react"
+import React, { useEffect } from "react"
 import {
   SandpackProvider,
   SandpackLayout,
   SandpackFiles,
 } from "@codesandbox/sandpack-react"
-import { CodeManagerProvider, useCodeManager } from "./context/editor-state"
+import {
+  CodeManagerProvider,
+  useCodeManager,
+  useActionRequired,
+  ActionRequiredDetails,
+} from "./context/editor-state"
 import { EditorCodePanel } from "./editor-code-panel"
 import { FileExplorer } from "./file-explorer"
 import { FallbackComponentView } from "./fallback-component-view"
-import { StyleRequirementsPanel } from "./style-requirements-panel"
+import { StyleRequirementsPanel } from "./requirements-panel"
 import { cn } from "@/lib/utils"
 
 interface EditorProps {
@@ -88,7 +93,7 @@ interface EditorContentProps {
   loadingFiles?: string[]
   loadingStyleFiles?: string[]
   actionRequiredFiles?: string[]
-  processedData?: any // Add this to pass the processed data with styles information
+  processedData?: any
 }
 
 function EditorContent({
@@ -107,43 +112,41 @@ function EditorContent({
     loadingComponents,
   } = useCodeManager()
 
-  // Log loading files for debugging with React.useEffect instead of just useEffect
-  React.useEffect(() => {
-    if (loadingFiles.length > 0) {
-      console.log("[EditorContent] Received loading files:", loadingFiles)
+  const { markFileAsRequiringAction, isActionRequired } = useActionRequired()
 
-      // Force a re-render to ensure loading files are displayed immediately
-      const filesExplorerElement = document.querySelector(
-        "[data-file-explorer]",
-      )
-      if (filesExplorerElement) {
-        filesExplorerElement.classList.add("loading-files-active")
-        setTimeout(() => {
-          filesExplorerElement.classList.remove("loading-files-active")
-        }, 100)
+  // Initialize action required files from props only when they change
+  useEffect(() => {
+    // We need to prevent infinite loops by tracking processed files
+    const processedFileTracker = new Set<string>()
+
+    // Clear existing action required files
+    actionRequiredFiles.forEach((file) => {
+      // Skip if we've already processed this file in this effect run
+      if (processedFileTracker.has(file)) return
+      processedFileTracker.add(file)
+
+      // For each file marked as requiring action in props
+      if (file === "/tailwind.config.js" || file === "/globals.css") {
+        if (processedData?.additionalStyles?.required) {
+          const details: ActionRequiredDetails = {
+            reason: "styles",
+            tailwindExtensions:
+              processedData.additionalStyles.tailwindExtensions,
+            cssVariables: processedData.additionalStyles.cssVariables,
+            keyframes: processedData.additionalStyles.keyframes,
+            utilities: processedData.additionalStyles.utilities,
+          }
+          markFileAsRequiringAction(file, details)
+        }
+      } else {
+        // For other files (likely missing imports)
+        markFileAsRequiringAction(file, {
+          reason: "missing_import",
+          message: "This component requires additional imports",
+        })
       }
-    }
-  }, [loadingFiles])
-
-  // Log loading style files
-  React.useEffect(() => {
-    if (loadingStyleFiles.length > 0) {
-      console.log(
-        "[EditorContent] Received loading style files:",
-        loadingStyleFiles,
-      )
-    }
-  }, [loadingStyleFiles])
-
-  // Also add a React.useEffect to log action required files
-  React.useEffect(() => {
-    if (actionRequiredFiles.length > 0) {
-      console.log(
-        "[EditorContent] Files requiring action:",
-        actionRequiredFiles,
-      )
-    }
-  }, [actionRequiredFiles])
+    })
+  }, [actionRequiredFiles, processedData, markFileAsRequiringAction])
 
   // Handle file selection
   const handleFileSelect = (path: string) => {
@@ -154,10 +157,6 @@ function EditorContent({
   const allLoadingFiles = React.useMemo(() => {
     const combinedFiles = [...loadingFiles]
     if (loadingComponents && loadingComponents.length > 0) {
-      console.log(
-        "[EditorContent] Combined with context loading files:",
-        loadingComponents,
-      )
       loadingComponents.forEach((file) => {
         if (!combinedFiles.includes(file)) {
           combinedFiles.push(file)
@@ -168,10 +167,7 @@ function EditorContent({
   }, [loadingFiles, loadingComponents])
 
   // Check if the current file needs style updates
-  const showStylePanel =
-    activeFile &&
-    actionRequiredFiles.includes(activeFile) &&
-    processedData?.additionalStyles?.required
+  const showStylePanel = activeFile && isActionRequired(activeFile)
 
   return (
     <SandpackLayout style={{ height: "100%", border: "none" }}>
@@ -184,7 +180,6 @@ function EditorContent({
             visibleFiles={visiblePaths}
             loadingFiles={allLoadingFiles}
             loadingStyleFiles={loadingStyleFiles}
-            actionRequiredFiles={actionRequiredFiles}
           />
         </div>
         <div className="flex-1 flex">
@@ -206,11 +201,7 @@ function EditorContent({
               {/* Style requirements panel */}
               {showStylePanel && (
                 <div className="w-1/3 p-2">
-                  <StyleRequirementsPanel
-                    actionRequiredFiles={actionRequiredFiles}
-                    additionalStyles={processedData?.additionalStyles}
-                    activeFile={activeFile}
-                  />
+                  <StyleRequirementsPanel activeFile={activeFile} />
                 </div>
               )}
             </>

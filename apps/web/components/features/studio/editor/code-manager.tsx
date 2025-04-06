@@ -79,20 +79,9 @@ export function CodeManagerProvider({
     }
   }, [initialComponentPath])
 
-  // Log state changes in development
-  useEffect(() => {
-    console.log("[CodeManager] Current state:", {
-      activeFile,
-      files: Object.keys(sandpack.files),
-      userModifiedFiles,
-    })
-  }, [sandpack.files, activeFile, userModifiedFiles])
-
   // File selection
   const selectFile = (path: string) => {
     if (!path) return
-
-    console.log("[CodeManager] Selecting file:", path)
 
     // Only update Sandpack if it's not an unknown component
     if (!isUnknownComponentFn(path)) {
@@ -109,12 +98,9 @@ export function CodeManagerProvider({
   }
 
   const updateFileContent = (path: string, content: string) => {
-    console.log("[CodeManager] Updating file content:", path)
-
     // Check if the content is actually different
     const currentContent = getFileContent(path)
     if (currentContent === content) {
-      console.log("[CodeManager] Content unchanged, skipping update:", path)
       return
     }
 
@@ -130,8 +116,6 @@ export function CodeManagerProvider({
   }
 
   const addFile = (path: string, content: string = "") => {
-    console.log("[CodeManager] Adding new file:", path)
-
     sandpack.addFile(path, content)
 
     // Select the newly created file
@@ -139,8 +123,6 @@ export function CodeManagerProvider({
   }
 
   const renameFile = (from: string, to: string) => {
-    console.log("[CodeManager] Renaming file:", { from, to })
-
     // Get the file content
     const fileObj = sandpack.files[from]
 
@@ -169,14 +151,10 @@ export function CodeManagerProvider({
       if (activeFile === from) {
         selectFile(to)
       }
-    } else {
-      console.warn(`[CodeManager] Cannot rename file: File not found ${from}`)
     }
   }
 
   const deleteFile = (path: string) => {
-    console.log("[CodeManager] Deleting file:", path)
-
     // Remove from Sandpack
     sandpack.deleteFile(path)
 

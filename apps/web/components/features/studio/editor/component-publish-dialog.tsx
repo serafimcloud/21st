@@ -19,10 +19,14 @@ import { FileExplorer } from "./file-explorer"
 import { FallbackComponentView } from "./fallback-component-view"
 import { EditorCodePanel } from "./editor-code-panel"
 import { usePublishDialog } from "./hooks/use-editor-dialog"
-import React from "react"
+import React, { useEffect } from "react"
 import { Editor } from "./editor"
-import { StyleRequirementsPanel } from "./style-requirements-panel"
+import { StyleRequirementsPanel } from "./requirements-panel"
 import { cn } from "@/lib/utils"
+import {
+  useActionRequired,
+  ActionRequiredDetails,
+} from "./context/editor-state"
 
 interface ComponentPublishDialogProps {
   userId: string
@@ -48,57 +52,6 @@ export function ComponentPublishDialog({
     getComponentFilePath,
     isUnknownComponent,
   } = usePublishDialog({ userId })
-
-  // Simplified useEffect just for logging
-  React.useEffect(() => {
-    if (loadingShadcnComponents.length > 0) {
-      console.log(
-        "[ComponentPublishDialog] Active loading components detected:",
-        loadingShadcnComponents,
-      )
-
-      // Check if our loadingShadcnComponents has paths that match any existing files
-      if (processedData?.shadcnComponentsImports) {
-        const matchingFiles = processedData.shadcnComponentsImports
-          .filter((comp: any) => {
-            const path = `/components/ui/${comp.name.toLowerCase()}.tsx`
-            const isLoading = loadingShadcnComponents.includes(path)
-            console.log(
-              `[ComponentPublishDialog] Component ${comp.name} loading status:`,
-              isLoading,
-            )
-            return isLoading
-          })
-          .map((comp: any) => comp.name)
-
-        if (matchingFiles.length > 0) {
-          console.log(
-            "[ComponentPublishDialog] Currently loading components:",
-            matchingFiles,
-          )
-        }
-      }
-    }
-
-    if (loadingStyleFiles.length > 0) {
-      console.log(
-        "[ComponentPublishDialog] Style files in loading state:",
-        loadingStyleFiles,
-      )
-    }
-
-    if (actionRequiredFiles.length > 0) {
-      console.log(
-        "[ComponentPublishDialog] Files requiring action:",
-        actionRequiredFiles,
-      )
-    }
-  }, [
-    loadingShadcnComponents,
-    loadingStyleFiles,
-    actionRequiredFiles,
-    processedData,
-  ])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -238,43 +191,44 @@ function SandpackContent({
 }: SandpackContentProps) {
   const { sandpack } = useSandpack()
   const componentPath = getComponentFilePath()
+  const { markFileAsRequiringAction, isActionRequired } = useActionRequired()
 
-  // Log Sandpack state changes
-  React.useEffect(() => {
-    console.log("[EditorDialog] Current Sandpack state:", {
-      activeFile: sandpack.activeFile,
-      files: Object.keys(sandpack.files),
-      visibleFiles: sandpack.visibleFiles,
-      currentFileContent:
-        sandpack.files[sandpack.activeFile]?.code?.slice(0, 50) + "...",
-      stackTrace: new Error().stack,
+  // Initialize action required files from props
+  useEffect(() => {
+    // Add a tracker to prevent infinite loops
+    const processedFileTracker = new Set<string>()
+
+    // Add each file that requires action to our atom state
+    actionRequiredFiles.forEach((file) => {
+      // Skip if we've already processed this file
+      if (processedFileTracker.has(file)) return
+      processedFileTracker.add(file)
+
+      if (file === "/tailwind.config.js" || file === "/globals.css") {
+        if (processedData?.additionalStyles?.required) {
+          const details: ActionRequiredDetails = {
+            reason: "styles",
+            tailwindExtensions:
+              processedData.additionalStyles.tailwindExtensions,
+            cssVariables: processedData.additionalStyles.cssVariables,
+            keyframes: processedData.additionalStyles.keyframes,
+            utilities: processedData.additionalStyles.utilities,
+          }
+          markFileAsRequiringAction(file, details)
+        }
+      } else {
+        // For other files (likely missing imports)
+        markFileAsRequiringAction(file, {
+          reason: "missing_import",
+          message: "This component requires additional imports",
+        })
+      }
     })
-  }, [sandpack.activeFile, sandpack.files, sandpack.visibleFiles])
-
-  // Log loading file states
-  React.useEffect(() => {
-    if (loadingFiles.length > 0) {
-      console.log("[SandpackContent] Component loading files:", loadingFiles)
-    }
-    if (loadingStyleFiles.length > 0) {
-      console.log("[SandpackContent] Style loading files:", loadingStyleFiles)
-    }
-    if (actionRequiredFiles.length > 0) {
-      console.log(
-        "[SandpackContent] Files requiring action:",
-        actionRequiredFiles,
-      )
-    }
-  }, [loadingFiles, loadingStyleFiles, actionRequiredFiles])
+  }, [actionRequiredFiles, processedData, markFileAsRequiringAction])
 
   // Set initial file only once when component mounts
-  React.useEffect(() => {
+  useEffect(() => {
     if (!activePreview) {
-      console.log("[EditorDialog] Setting initial file:", {
-        componentPath,
-        currentSandpackFile: sandpack.activeFile,
-        stackTrace: new Error().stack,
-      })
       sandpack.setActiveFile(componentPath)
       onPreviewSelect({
         type: "regular",
@@ -284,45 +238,19 @@ function SandpackContent({
   }, [componentPath, onPreviewSelect, sandpack, activePreview])
 
   const handleFileSelect = (path: string) => {
-    console.log("[EditorDialog] File selected:", path)
-    console.log("[EditorDialog] Current editor state:", {
-      activeFile: sandpack.activeFile,
-      selectedPath: path,
-      activePreview: activePreview,
-      fileContent: sandpack.files[path]?.code?.slice(0, 50) + "...",
-      currentFileContent:
-        sandpack.files[sandpack.activeFile]?.code?.slice(0, 50) + "...",
-      stackTrace: new Error().stack,
-    })
-
     // If the file is already selected, don't do anything
     if (activePreview?.filePath === path) {
-      console.log("[EditorDialog] File already selected, skipping", {
-        path,
-        activePreview,
-        sandpackFile: sandpack.activeFile,
-      })
       return
     }
 
     // Check if this is an unknown component
     if (isUnknownComponent(path)) {
-      console.log("[EditorDialog] Handling unknown component selection:", {
-        path,
-        currentSandpackFile: sandpack.activeFile,
-        stackTrace: new Error().stack,
-      })
       // For unknown components, get the component name
       const componentName = nonShadcnComponents?.find(
         (comp) => comp.path === path,
       )?.name
 
       if (componentName) {
-        console.log("[EditorDialog] Setting unknown component preview:", {
-          componentName,
-          path,
-          currentSandpackFile: sandpack.activeFile,
-        })
         // Set as unknown component type preview
         onPreviewSelect({
           type: "unknown",
@@ -331,11 +259,6 @@ function SandpackContent({
         })
       }
     } else {
-      console.log("[EditorDialog] Setting regular file preview:", {
-        path,
-        currentSandpackFile: sandpack.activeFile,
-        fileContent: sandpack.files[path]?.code?.slice(0, 50) + "...",
-      })
       // Set as regular file type preview
       sandpack.setActiveFile(path)
       onPreviewSelect({
@@ -346,31 +269,19 @@ function SandpackContent({
   }
 
   // Keep editor file in sync with selection for regular files
-  React.useEffect(() => {
+  useEffect(() => {
     if (
       activePreview?.type === "regular" &&
       activePreview.filePath &&
       sandpack.activeFile !== activePreview.filePath
     ) {
-      console.log("[EditorDialog] Syncing editor file:", {
-        from: sandpack.activeFile,
-        to: activePreview.filePath,
-        activePreviewType: activePreview.type,
-        fileContent:
-          sandpack.files[activePreview.filePath]?.code?.slice(0, 50) + "...",
-        currentFileContent:
-          sandpack.files[sandpack.activeFile]?.code?.slice(0, 50) + "...",
-        stackTrace: new Error().stack,
-      })
       sandpack.setActiveFile(activePreview.filePath)
     }
-  }, [activePreview, sandpack.activeFile, sandpack.files])
+  }, [activePreview, sandpack])
 
   // Check if the current file needs style updates
   const showStylePanel =
-    activePreview?.filePath &&
-    actionRequiredFiles.includes(activePreview.filePath) &&
-    processedData?.additionalStyles?.required
+    activePreview?.filePath && isActionRequired(activePreview.filePath)
 
   return (
     <SandpackLayout style={{ height: "100%" }}>
@@ -383,7 +294,6 @@ function SandpackContent({
             visibleFiles={sandpack.visibleFiles || []}
             loadingFiles={loadingFiles}
             loadingStyleFiles={loadingStyleFiles}
-            actionRequiredFiles={actionRequiredFiles}
           />
         </div>
         <div className="flex-1 flex">
@@ -405,11 +315,7 @@ function SandpackContent({
               {/* Style requirements panel */}
               {showStylePanel && (
                 <div className="w-1/3 p-2">
-                  <StyleRequirementsPanel
-                    actionRequiredFiles={actionRequiredFiles}
-                    additionalStyles={processedData?.additionalStyles}
-                    activeFile={activePreview.filePath}
-                  />
+                  <StyleRequirementsPanel activeFile={activePreview.filePath} />
                 </div>
               )}
             </>

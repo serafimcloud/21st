@@ -14,6 +14,7 @@ import ShadcnFile from "@/components/icons/shadcn-file"
 import { isShadcnComponentPath } from "@/lib/shadcn-components"
 import { TextShimmer } from "@/components/ui/text-shimmer"
 import React from "react"
+import { useActionRequired } from "./context/editor-state"
 
 interface FileTreeItem {
   name: string
@@ -43,26 +44,6 @@ export function buildFileTree(
   loadingStyleFiles: string[] = [],
   actionRequiredFiles: string[] = [],
 ) {
-  // Log loading states for debugging
-  if (loadingFiles.length > 0) {
-    console.log(
-      "[buildFileTree] Building tree with loading files:",
-      loadingFiles,
-    )
-  }
-  if (loadingStyleFiles.length > 0) {
-    console.log(
-      "[buildFileTree] Building tree with loading style files:",
-      loadingStyleFiles,
-    )
-  }
-  if (actionRequiredFiles.length > 0) {
-    console.log(
-      "[buildFileTree] Building tree with action required files:",
-      actionRequiredFiles,
-    )
-  }
-
   const root: FileTreeItem[] = []
   const directories = new Set<string>()
 
@@ -109,9 +90,7 @@ export function buildFileTree(
       currentPath += `/${part}`
       const isLast = index === parts.length - 1
       const displayName =
-        isLast && isUnknownComponent
-          ? `${componentName?.toLowerCase()}.tsx`
-          : part
+        isLast && isUnknownComponent ? `${componentName || part}.tsx` : part
       const existingItem = current.find((item) => item.name === displayName)
 
       if (!isLast) {
@@ -174,32 +153,22 @@ export function buildFileTree(
   })
 
   nonShadcnComponents.forEach((comp) => {
-    addToTree(comp.path, true, comp.name)
+    // Extract component name from path if not provided
+    const pathParts = comp.path.split("/")
+    const fileName = pathParts[pathParts.length - 1]
+    addToTree(comp.path, true, comp.name || fileName)
   })
 
-  console.log("[buildFileTree] Processing loading files:", loadingFiles)
   loadingFiles.forEach((path) => {
     const pathParts = path.split("/")
     const fileName = pathParts[pathParts.length - 1] || ""
     const componentName = fileName.replace(".tsx", "")
-
-    console.log(
-      `[buildFileTree] Adding loading file: ${path} (${componentName})`,
-    )
-
     addToTree(path, false, componentName)
   })
 
-  if (loadingStyleFiles.length > 0) {
-    console.log(
-      "[buildFileTree] Processing loading style files:",
-      loadingStyleFiles,
-    )
-    loadingStyleFiles.forEach((path) => {
-      console.log(`[buildFileTree] Adding loading style file: ${path}`)
-      addToTree(path, false, undefined, true)
-    })
-  }
+  loadingStyleFiles.forEach((path) => {
+    addToTree(path, false, "", true)
+  })
 
   const sortTreeRecursively = (items: FileTreeItem[]) => {
     items.sort((a, b) => {
@@ -251,19 +220,6 @@ function FileTreeNode({
     item.actionRequired ||
     item.isUnknownComponent ||
     isActionRequired(item.path)
-
-  React.useEffect(() => {
-    if (item.isLoading) {
-      console.log(
-        `[FileTreeNode] Loading item detected: ${item.name} (${item.path})`,
-      )
-    }
-    if (needsAction) {
-      console.log(
-        `[FileTreeNode] Action required for: ${item.name} (${item.path})`,
-      )
-    }
-  }, [item.isLoading, item.name, item.path, needsAction])
 
   return (
     <div>
@@ -357,30 +313,16 @@ export function FileExplorer({
   visibleFiles,
   loadingFiles = [],
   loadingStyleFiles = [],
-  actionRequiredFiles = [],
-}: FileExplorerProps & {
-  actionRequiredFiles?: string[]
-}) {
+}: FileExplorerProps) {
   const { sandpack } = useSandpack()
   const { visibleFiles: sandpackVisibleFiles } = sandpack
+  const { actionRequiredFiles, isActionRequired } = useActionRequired()
 
-  React.useEffect(() => {
-    if (loadingFiles && loadingFiles.length > 0) {
-      console.log("[FileExplorer] Received loading files:", loadingFiles)
-    }
-    if (loadingStyleFiles && loadingStyleFiles.length > 0) {
-      console.log(
-        "[FileExplorer] Received loading style files:",
-        loadingStyleFiles,
-      )
-    }
-    if (actionRequiredFiles && actionRequiredFiles.length > 0) {
-      console.log(
-        "[FileExplorer] Received action required files:",
-        actionRequiredFiles,
-      )
-    }
-  }, [loadingFiles, loadingStyleFiles, actionRequiredFiles])
+  // Convert the actionRequiredFiles record to an array of paths for the file tree
+  const actionRequiredFilesList = useMemo(
+    () => Object.keys(actionRequiredFiles),
+    [actionRequiredFiles],
+  )
 
   const { tree: fileTree, directories } = useMemo(
     () =>
@@ -390,7 +332,7 @@ export function FileExplorer({
         visibleFiles,
         loadingFiles,
         loadingStyleFiles,
-        actionRequiredFiles,
+        actionRequiredFilesList,
       ),
     [
       sandpackVisibleFiles,
@@ -398,7 +340,7 @@ export function FileExplorer({
       visibleFiles,
       loadingFiles,
       loadingStyleFiles,
-      actionRequiredFiles,
+      actionRequiredFilesList,
     ],
   )
 
@@ -418,15 +360,8 @@ export function FileExplorer({
 
   const handleFileClick = useCallback(
     (path: string) => {
-      console.log("[FileExplorer] handleFileClick called with path:", path)
-
       if (onFileSelect) {
-        console.log(
-          "[FileExplorer] onFileSelect handler exists, calling with path",
-        )
         onFileSelect(path)
-      } else {
-        console.log("[FileExplorer] onFileSelect handler not provided")
       }
     },
     [onFileSelect],
@@ -451,9 +386,9 @@ export function FileExplorer({
   // Check if a file needs action
   const isFileActionRequired = useCallback(
     (filePath: string) => {
-      return actionRequiredFiles.includes(filePath)
+      return isActionRequired(filePath)
     },
-    [actionRequiredFiles],
+    [isActionRequired],
   )
 
   return (
