@@ -1,5 +1,5 @@
 import type { SandpackFiles } from "@codesandbox/sandpack-react"
-import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/sandpack"
+import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/defaults"
 
 interface GenerateFilesOptions {
   componentPath: string

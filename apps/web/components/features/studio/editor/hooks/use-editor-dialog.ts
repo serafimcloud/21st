@@ -1,10 +1,10 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
-import { generateSandpackFiles } from "../sandpack-files"
+import { generateSandpackFiles } from "../utils/sandpack-files"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/sandpack"
+import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/defaults"
 import {
   lookupComponentsInDatabase,
   convertComponentMatchesToDependencySlugs,
@@ -147,8 +147,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         ) || {}),
         ...npmDependenciesOfRegistryDependencies,
       },
-      customTailwindConfig: mergedTailwindConfig,
-      customGlobalCss: mergedGlobalCss,
     })
 
     // Add all generated files
@@ -264,114 +262,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       }
     },
     [files],
-  )
-
-  // Merge styles from dependencies
-  const mergeStyles = useCallback(
-    async (styles: { tailwindConfig?: string; globalCss?: string }[]) => {
-      const customTailwindConfigs = styles
-        .map((s) => s.tailwindConfig)
-        .filter((config): config is string => !!config)
-
-      const customGlobalCssStyles = styles
-        .map((s) => s.globalCss)
-        .filter((css): css is string => !!css)
-
-      // Prepare result object
-      const result: {
-        tailwindConfig: string
-        globalCss: string
-      } = {
-        tailwindConfig: defaultTailwindConfig,
-        globalCss: defaultGlobalCss,
-      }
-
-      // Track each file loading state individually
-      const tailwindConfigPromise =
-        customTailwindConfigs.length > 0
-          ? (async () => {
-              // Set loading state
-              setLoadingStyleFiles((prev) => [...prev, "/tailwind.config.js"])
-              console.log("[usePublishDialog] Started merging tailwind config")
-
-              try {
-                const response = await fetch(
-                  "/api/studio/merge-styles/tailwind",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      defaultConfig: defaultTailwindConfig,
-                      dependencyConfigs: customTailwindConfigs,
-                    }),
-                  },
-                )
-
-                const data = await response.json()
-                result.tailwindConfig =
-                  data.tailwindConfig || defaultTailwindConfig
-
-                console.log(
-                  "[usePublishDialog] Completed merging tailwind config",
-                )
-                return data
-              } catch (error) {
-                console.error("Error merging tailwind config:", error)
-                toast.error("Failed to merge tailwind config")
-                return { tailwindConfig: defaultTailwindConfig }
-              } finally {
-                // Always clear loading state when done, whether successful or not
-                setLoadingStyleFiles((prev) =>
-                  prev.filter((filePath) => filePath !== "/tailwind.config.js"),
-                )
-              }
-            })()
-          : Promise.resolve({ tailwindConfig: defaultTailwindConfig })
-
-      const globalCssPromise =
-        customGlobalCssStyles.length > 0
-          ? (async () => {
-              // Set loading state
-              setLoadingStyleFiles((prev) => [...prev, "/globals.css"])
-              console.log("[usePublishDialog] Started merging global CSS")
-
-              try {
-                const response = await fetch(
-                  "/api/studio/merge-styles/globals",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      defaultGlobalCss: defaultGlobalCss,
-                      dependencyGlobalCss: customGlobalCssStyles,
-                    }),
-                  },
-                )
-
-                const data = await response.json()
-                result.globalCss = data.globalCss || defaultGlobalCss
-
-                console.log("[usePublishDialog] Completed merging global CSS")
-                return data
-              } catch (error) {
-                console.error("Error merging global CSS:", error)
-                toast.error("Failed to merge global CSS")
-                return { globalCss: defaultGlobalCss }
-              } finally {
-                // Always clear loading state when done, whether successful or not
-                setLoadingStyleFiles((prev) =>
-                  prev.filter((filePath) => filePath !== "/globals.css"),
-                )
-              }
-            })()
-          : Promise.resolve({ globalCss: defaultGlobalCss })
-
-      // Wait for both promises to complete
-      await Promise.all([tailwindConfigPromise, globalCssPromise])
-
-      return result
-    },
-    [],
   )
 
   // Process component
@@ -582,11 +472,9 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
 
           // Merge styles if we have any
           if (result.data.styles) {
-            const { tailwindConfig, globalCss } = await mergeStyles([
-              result.data.styles,
-            ])
-            setMergedTailwindConfig(tailwindConfig)
-            setMergedGlobalCss(globalCss)
+            // Use defaults for now
+            setMergedTailwindConfig(defaultTailwindConfig)
+            setMergedGlobalCss(defaultGlobalCss)
           }
         } catch (depError) {
           console.error("Error resolving dependencies:", depError)
