@@ -25,7 +25,7 @@ const tabLabels = {
   templates: "Templates",
   categories: "Categories",
   authors: "Design Engineers",
-  pro: "Pro",
+  pro: "Premium Stores",
   collections: "Collections",
 } as const
 
@@ -136,7 +136,7 @@ export function ComponentsHeader({
                   value="pro"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-foreground data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
-                  Pro
+                  Premium Stores
                 </TabsTrigger>
                 <TabsTrigger
                   value="collections"
@@ -196,7 +196,7 @@ export function ComponentsHeader({
                   value="pro"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-foreground data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
                 >
-                  Pro
+                  Premium Stores
                 </TabsTrigger>
                 <TabsTrigger
                   value="collections"
