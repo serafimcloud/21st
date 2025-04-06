@@ -256,7 +256,7 @@ export function ComponentPreviewDialog({
   }
 
   const handleOpenComponentPage = () => {
-    const componentUrl = `/${demo.user.display_username || demo.user.username}/${demo.component.component_slug}/${demo.demo_slug || "default"}`
+    const componentUrl = `/${demo.component.user.display_username || demo.component.user.username}/${demo.component.component_slug}/${demo.demo_slug || "default"}`
     window.location.href = componentUrl
   }
 
@@ -272,7 +272,7 @@ export function ComponentPreviewDialog({
 
   const renderDesktopActions = () => (
     <>
-      <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm">
+      <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg">
         <Button
           onClick={handlePromptAction}
           variant="ghost"
