@@ -277,10 +277,6 @@ function SandpackContent({
       // Only update if content actually changed
       if (fileContentRef.current[path] !== currentContent) {
         fileContentRef.current[path] = currentContent
-        console.log("[SandpackContent] Stored file content:", {
-          path,
-          contentLength: currentContent.length,
-        })
       }
     }
   }, [sandpack.files, sandpack.activeFile])
@@ -289,11 +285,10 @@ function SandpackContent({
   useEffect(() => {
     Object.entries(fileContentRef.current).forEach(([path, content]) => {
       if (path && content && !sandpack.files[path]) {
-        console.log("[SandpackContent] Restoring lost file:", path)
         try {
           sandpack.addFile(path, content)
         } catch (error) {
-          console.error("[SandpackContent] Error restoring file:", error)
+          // Error handling without logging
         }
       }
     })

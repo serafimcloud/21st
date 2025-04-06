@@ -226,29 +226,10 @@ function FileTreeNode({
   // Check if file truly needs action - only for styles or other issues, not for missing_import
   const actionDetails = item.path && getActionDetails(item.path)
 
-  // Log action details for debugging
-  if (actionDetails) {
-    console.log(`[FileExplorer] File ${item.path} requires action:`, {
-      reason: actionDetails.reason,
-      message: actionDetails.message,
-      isUnknownComponent: item.isUnknownComponent,
-    })
-  }
-
-  const needsAction = actionDetails && actionDetails.reason !== "missing_import"
-
-  // Use same condition for both icon and text highlighting
-  const showWarning = needsAction || item.isUnknownComponent
+  // Show warning for all files that need action, regardless of reason
+  const showWarning = !!actionDetails
 
   const handleClick = () => {
-    console.log("[FileTreeNode] Item clicked", {
-      path: item.path,
-      type: item.type,
-      isUnknownComponent: item.isUnknownComponent,
-      actionDetails: actionDetails,
-      showWarning,
-    })
-
     if (item.type === "directory") {
       onToggleDir(item.path)
     } else {

@@ -27,7 +27,8 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
   const prevCodeRef = useRef<string>(undefined)
   const updatingRef = useRef(false)
   const initialCodeRef = useRef<string | null>(null)
-  const { markFileAsResolved, isActionRequired } = useActionRequired()
+  const { markFileAsResolved, isActionRequired, getActionDetails } =
+    useActionRequired()
 
   let codeManager
   try {
@@ -132,18 +133,23 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
       // Cache the file content to prevent loss on remounts
       globalFileContentCache.set(normalizedPath, code)
 
-      // If this is an unknown component and the code has been modified from the initial todo placeholder
-      // automatically mark it as resolved
-      if (
-        isUnknownComponent &&
-        initialCodeRef.current &&
-        code !== initialCodeRef.current &&
-        code !== "// TODO: Implement this component" &&
-        code.trim() !== "" &&
-        isActionRequired(normalizedPath)
-      ) {
-        markFileAsResolved(normalizedPath)
+      // Check both path formats (with and without @/ prefix)
+      const pathWithPrefix = `@${normalizedPath}`
+
+      // Automatically resolve any "missing_import" action required status
+      // when file content changes, regardless of content - check both path formats
+      const checkAndResolveActionRequired = (path: string) => {
+        if (isActionRequired(path)) {
+          const actionDetails = getActionDetails(path)
+          if (actionDetails && actionDetails.reason === "missing_import") {
+            markFileAsResolved(path)
+          }
+        }
       }
+
+      // Check both path formats
+      checkAndResolveActionRequired(normalizedPath)
+      checkAndResolveActionRequired(pathWithPrefix)
 
       if (codeManager && normalizedPath) {
         try {
@@ -172,6 +178,7 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
     markFileAsResolved,
     isUnknownComponent,
     isActionRequired,
+    getActionDetails,
   ])
 
   // Call the update handler when code changes

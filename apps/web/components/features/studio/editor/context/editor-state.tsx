@@ -15,6 +15,7 @@ export interface ActionRequiredDetails {
   cssVariables?: Array<any>
   keyframes?: Array<any>
   utilities?: Array<any>
+  componentName?: string
 }
 
 export const actionRequiredFilesAtom = atom<
@@ -96,10 +97,6 @@ export function useActionRequired() {
           return prev
         }
 
-        console.log(
-          `[useActionRequired] Marking ${path} as requiring action:`,
-          details,
-        )
         return {
           ...prev,
           [path]: details,
@@ -117,7 +114,6 @@ export function useActionRequired() {
           return prev
         }
 
-        console.log(`[useActionRequired] Marking ${path} as resolved`)
         const next = { ...prev }
         delete next[path]
         return next
@@ -292,11 +288,38 @@ export function CodeManagerProvider({
 
   // Component utilities
   const isUnknownComponent = (path: string) => {
-    // We still identify unknown components but they are now handled as regular files
-    return isUnknownComponentFn(path)
+    // Check if it's marked as a file with missing_import
+    const details = getActionDetails(path)
+    return (
+      details?.reason === "missing_import" &&
+      details.componentName !== undefined
+    )
   }
 
+  // Update nonShadcnComponents to use the action system
+  useEffect(() => {
+    if (nonShadcnComponents && nonShadcnComponents.length > 0) {
+      // Register unknown components as files requiring action with missing_import reason
+      nonShadcnComponents.forEach((comp) => {
+        markFileAsRequiringAction(comp.path, {
+          reason: "missing_import",
+          message: `Missing import for component: ${comp.name || "Unnamed"}`,
+          componentName: comp.name,
+        })
+      })
+    }
+  }, [nonShadcnComponents, markFileAsRequiringAction])
+
   const getComponentName = (path: string) => {
+    // First check in action required files for missing_import reason with componentName
+    const actionDetails = getActionDetails(path)
+    if (
+      actionDetails?.reason === "missing_import" &&
+      actionDetails.componentName
+    ) {
+      return actionDetails.componentName
+    }
+    // Fallback to old method
     return nonShadcnComponents?.find((comp) => comp.path === path)?.name
   }
 
