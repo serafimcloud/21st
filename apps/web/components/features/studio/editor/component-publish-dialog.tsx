@@ -16,7 +16,6 @@ import {
 } from "@codesandbox/sandpack-react"
 
 import { FileExplorer } from "./file-explorer"
-import { FallbackComponentView } from "./fallback-component-view"
 import { EditorCodePanel } from "./editor-code-panel"
 import { usePublishDialog } from "./hooks/use-editor-dialog"
 import React, { useEffect } from "react"
@@ -158,15 +157,10 @@ export function ComponentPublishDialog({
 
 interface SandpackContentProps {
   activePreview: {
-    type: "regular" | "unknown"
+    type: "regular"
     filePath: string
-    componentName?: string
   } | null
-  onPreviewSelect: (preview: {
-    type: "regular" | "unknown"
-    filePath: string
-    componentName?: string
-  }) => void
+  onPreviewSelect: (preview: { type: "regular"; filePath: string }) => void
   nonShadcnComponents?: Array<{ name: string; path: string }>
   getComponentFilePath: () => string
   setComponentCode: (code: string) => void
@@ -243,6 +237,15 @@ function SandpackContent({
       return
     }
 
+    console.log("[ComponentPublishDialog] File selected:", {
+      path,
+      isUnknown: isUnknownComponent(path),
+      existingFiles: Object.keys(sandpack.files),
+    })
+
+    // Normalize path - remove @/ prefix if present
+    const normalizedPath = path.replace(/^@\//, "/")
+
     // Check if this is an unknown component
     if (isUnknownComponent(path)) {
       // For unknown components, get the component name
@@ -251,19 +254,58 @@ function SandpackContent({
       )?.name
 
       if (componentName) {
-        // Set as unknown component type preview
-        onPreviewSelect({
-          type: "unknown",
-          filePath: path,
-          componentName,
-        })
+        // Create an empty file for the unknown component
+        try {
+          console.log(
+            "[ComponentPublishDialog] Creating file for unknown component:",
+            {
+              originalPath: path,
+              normalizedPath,
+              componentName,
+            },
+          )
+
+          // Create file with normalized path
+          sandpack.addFile(
+            normalizedPath,
+            `// TODO: Implement ${componentName} component`,
+          )
+
+          // Mark it as requiring action
+          markFileAsRequiringAction(normalizedPath, {
+            reason: "missing_import",
+            message: `The ${componentName} component needs to be implemented`,
+          })
+
+          // Set as regular file type preview
+          sandpack.setActiveFile(normalizedPath)
+          console.log(
+            "[ComponentPublishDialog] Set active file to:",
+            normalizedPath,
+          )
+
+          onPreviewSelect({
+            type: "regular",
+            filePath: normalizedPath,
+          })
+        } catch (error) {
+          console.error(
+            `[ComponentPublishDialog] Failed to create file for ${componentName}:`,
+            error,
+          )
+        }
       }
     } else {
       // Set as regular file type preview
-      sandpack.setActiveFile(path)
+      sandpack.setActiveFile(normalizedPath)
+      console.log(
+        "[ComponentPublishDialog] Set active file to:",
+        normalizedPath,
+      )
+
       onPreviewSelect({
         type: "regular",
-        filePath: path,
+        filePath: normalizedPath,
       })
     }
   }
@@ -297,28 +339,20 @@ function SandpackContent({
           />
         </div>
         <div className="flex-1 flex">
-          {activePreview && isUnknownComponent(activePreview.filePath) ? (
-            <FallbackComponentView
-              componentName={activePreview.componentName || "Unknown Component"}
+          <div className={cn("flex-1", showStylePanel && "w-2/3")}>
+            <EditorCodePanel
+              componentPath={activePreview?.filePath || componentPath}
+              onCodeChange={(code: string) => {
+                setComponentCode(code)
+              }}
             />
-          ) : (
-            <>
-              <div className={cn("flex-1", showStylePanel && "w-2/3")}>
-                <EditorCodePanel
-                  componentPath={activePreview?.filePath || componentPath}
-                  onCodeChange={(code: string) => {
-                    setComponentCode(code)
-                  }}
-                />
-              </div>
+          </div>
 
-              {/* Style requirements panel */}
-              {showStylePanel && (
-                <div className="w-1/3 p-2">
-                  <StyleRequirementsPanel activeFile={activePreview.filePath} />
-                </div>
-              )}
-            </>
+          {/* Style requirements panel */}
+          {showStylePanel && (
+            <div className="w-1/3 p-2">
+              <StyleRequirementsPanel activeFile={activePreview.filePath} />
+            </div>
           )}
         </div>
       </div>

@@ -221,6 +221,21 @@ function FileTreeNode({
     item.isUnknownComponent ||
     isActionRequired(item.path)
 
+  const handleClick = () => {
+    console.log("[FileTreeNode] Item clicked", {
+      path: item.path,
+      type: item.type,
+      isUnknownComponent: item.isUnknownComponent,
+      needsAction,
+    })
+
+    if (item.type === "directory") {
+      onToggleDir(item.path)
+    } else {
+      onFileClick(item.path)
+    }
+  }
+
   return (
     <div>
       <button
@@ -230,13 +245,7 @@ function FileTreeNode({
           needsAction && isActive && "bg-yellow-500/10",
         )}
         style={{ paddingLeft: `${level * 12 + 16}px` }}
-        onClick={() => {
-          if (item.type === "directory") {
-            onToggleDir(item.path)
-          } else {
-            onFileClick(item.path)
-          }
-        }}
+        onClick={handleClick}
       >
         {item.type === "directory" && (
           <div className="w-4 h-4 flex items-center justify-center">

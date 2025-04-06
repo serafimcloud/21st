@@ -12,7 +12,6 @@ import {
 } from "./context/editor-state"
 import { EditorCodePanel } from "./editor-code-panel"
 import { FileExplorer } from "./file-explorer"
-import { FallbackComponentView } from "./fallback-component-view"
 import { StyleRequirementsPanel } from "./requirements-panel"
 import { cn } from "@/lib/utils"
 
@@ -110,6 +109,8 @@ function EditorContent({
     getComponentName,
     nonShadcnComponents,
     loadingComponents,
+    addFile,
+    allFiles,
   } = useCodeManager()
 
   const { markFileAsRequiringAction, isActionRequired } = useActionRequired()
@@ -150,7 +151,41 @@ function EditorContent({
 
   // Handle file selection
   const handleFileSelect = (path: string) => {
-    selectFile(path)
+    console.log("[Editor] File selected:", {
+      path,
+      isUnknown: isUnknownComponent(path),
+      existingFiles: allFiles,
+    })
+
+    // Normalize path - remove @/ prefix if present
+    const normalizedPath = path.replace(/^@\//, "/")
+
+    // Check if this is an unknown component and create an empty file if needed
+    if (isUnknownComponent(path)) {
+      // Get component name
+      const componentName = getComponentName(path)
+
+      console.log("[Editor] Creating file for unknown component:", {
+        originalPath: path,
+        normalizedPath,
+        componentName,
+      })
+
+      // Create an empty file for the unknown component
+      addFile(
+        normalizedPath,
+        `// TODO: Implement ${componentName || "this"} component`,
+      )
+
+      // Mark it as requiring action
+      markFileAsRequiringAction(normalizedPath, {
+        reason: "missing_import",
+        message: `This component needs to be implemented`,
+      })
+    }
+
+    // Always select the normalized path
+    selectFile(normalizedPath)
   }
 
   // Combine loading files from props and from context
@@ -183,28 +218,20 @@ function EditorContent({
           />
         </div>
         <div className="flex-1 flex">
-          {activeFile && isUnknownComponent(activeFile) ? (
-            <FallbackComponentView
-              componentName={getComponentName(activeFile) || "Component"}
+          <div className={cn("flex-1", showStylePanel && "w-2/3")}>
+            <EditorCodePanel
+              componentPath={activeFile || ""}
+              onCodeChange={() => {
+                // This will be handled by the CodeManager through the CodeEditor component
+              }}
             />
-          ) : (
-            <>
-              <div className={cn("flex-1", showStylePanel && "w-2/3")}>
-                <EditorCodePanel
-                  componentPath={activeFile || ""}
-                  onCodeChange={() => {
-                    // This will be handled by the CodeManager through the CodeEditor component
-                  }}
-                />
-              </div>
+          </div>
 
-              {/* Style requirements panel */}
-              {showStylePanel && (
-                <div className="w-1/3 p-2">
-                  <StyleRequirementsPanel activeFile={activeFile} />
-                </div>
-              )}
-            </>
+          {/* Style requirements panel */}
+          {showStylePanel && (
+            <div className="w-1/3 p-2">
+              <StyleRequirementsPanel activeFile={activeFile} />
+            </div>
           )}
         </div>
       </div>

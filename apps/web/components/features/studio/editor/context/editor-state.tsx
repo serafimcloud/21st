@@ -292,6 +292,7 @@ export function CodeManagerProvider({
 
   // Component utilities
   const isUnknownComponent = (path: string) => {
+    // We still identify unknown components but they are now handled as regular files
     return isUnknownComponentFn(path)
   }
 

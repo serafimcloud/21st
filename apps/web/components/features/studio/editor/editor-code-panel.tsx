@@ -27,6 +27,51 @@ export function EditorCodePanel({
     codeManager = null
   }
 
+  // Normalize the path
+  const normalizedPath = componentPath.replace(/^@\//, "/")
+
+  // Add logging for debugging
+  useEffect(() => {
+    console.log("[EditorCodePanel] Component mounted/updated", {
+      componentPath,
+      normalizedPath,
+      activeFile: sandpack.activeFile,
+      filesInSandpack: Object.keys(sandpack.files),
+      isActiveFileExist: normalizedPath
+        ? !!sandpack.files[normalizedPath]
+        : false,
+    })
+
+    // If the file doesn't exist and we have a valid path, create it
+    if (normalizedPath && !sandpack.files[normalizedPath] && codeManager) {
+      console.log("[EditorCodePanel] Creating missing file:", normalizedPath)
+      try {
+        // Create the file with placeholder content
+        sandpack.addFile(normalizedPath, "// TODO: Implement this component")
+
+        // Set as active file
+        sandpack.setActiveFile(normalizedPath)
+
+        // Update the code manager if available
+        if (codeManager.addFile) {
+          codeManager.addFile(
+            normalizedPath,
+            "// TODO: Implement this component",
+          )
+        }
+      } catch (error) {
+        console.error("[EditorCodePanel] Failed to create file:", error)
+      }
+    }
+  }, [
+    componentPath,
+    normalizedPath,
+    sandpack.activeFile,
+    sandpack.files,
+    sandpack,
+    codeManager,
+  ])
+
   useEffect(() => {
     if (updatingRef.current) {
       return
@@ -38,15 +83,23 @@ export function EditorCodePanel({
 
     prevCodeRef.current = code
 
-    if (code && sandpack.activeFile === componentPath) {
-      if (codeManager && componentPath) {
+    if (code && sandpack.activeFile === normalizedPath) {
+      console.log("[EditorCodePanel] Code updated", {
+        componentPath,
+        normalizedPath,
+        codeLength: code.length,
+        activeFile: sandpack.activeFile,
+      })
+
+      if (codeManager && normalizedPath) {
         try {
           updatingRef.current = true
-          codeManager.updateFileContent(componentPath, code)
+          codeManager.updateFileContent(normalizedPath, code)
           setTimeout(() => {
             updatingRef.current = false
           }, 50)
         } catch (error) {
+          console.error("[EditorCodePanel] Error updating file content", error)
           updatingRef.current = false
         }
       }
@@ -55,7 +108,14 @@ export function EditorCodePanel({
         onCodeChange(code)
       }
     }
-  }, [code, onCodeChange, sandpack.activeFile, componentPath, codeManager])
+  }, [
+    code,
+    onCodeChange,
+    sandpack.activeFile,
+    componentPath,
+    normalizedPath,
+    codeManager,
+  ])
 
   return (
     <SandpackCodeEditor

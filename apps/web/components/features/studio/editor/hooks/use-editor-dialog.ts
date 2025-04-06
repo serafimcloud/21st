@@ -13,9 +13,8 @@ import type { SandpackFiles } from "@codesandbox/sandpack-react"
 
 // Define a type for the active preview
 type ActivePreview = {
-  type: "regular" | "unknown" // "regular" for normal files, "unknown" for custom components
+  type: "regular" // All files are now "regular" type
   filePath: string // The file path (always set)
-  componentName?: string // Only set for unknown components
 }
 
 interface UsePublishDialogProps {
@@ -167,22 +166,20 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     activePreview?.filePath,
   ])
 
-  // Unified handler for preview selection (both files and custom components)
+  // Unified handler for preview selection
   const handlePreviewSelect = useCallback(
     (newPreview: ActivePreview) => {
       setActivePreview(newPreview)
 
-      // Always update component code for regular files
-      if (newPreview.type === "regular") {
-        const fileContent = files[newPreview.filePath]
+      // Always update component code for files
+      const fileContent = files[newPreview.filePath]
 
-        if (fileContent) {
-          const newCode =
-            typeof fileContent === "string" ? fileContent : fileContent.code
+      if (fileContent) {
+        const newCode =
+          typeof fileContent === "string" ? fileContent : fileContent.code
 
-          if (newCode) {
-            setComponentCode(newCode)
-          }
+        if (newCode) {
+          setComponentCode(newCode)
         }
       }
     },
