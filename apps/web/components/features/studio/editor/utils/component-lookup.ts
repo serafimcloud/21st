@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js"
 import { Database } from "@/types/supabase"
 
-export type NonShadcnComponent = {
+export type UnresolvedDependency = {
   path: string
   names: string[]
 }
@@ -14,35 +14,35 @@ export type ComponentMatch = {
 }
 
 /**
- * Looks up non-shadcn components in the database
+ * Looks up unresolved dependencies in the database
  * @param supabase Supabase client instance
- * @param components Array of non-shadcn components to look up
- * @returns Object with lookupResults (matches found) and remainingComponents (no matches found)
+ * @param unresolvedDependencies Array of unresolved dependencies to look up
+ * @returns Object with lookupResults (matches found) and remainingDependencies (no matches found)
  */
 export async function lookupComponentsInDatabase(
   supabase: SupabaseClient<Database>,
-  components: NonShadcnComponent[],
+  unresolvedDependencies: UnresolvedDependency[],
 ): Promise<{
-  lookupResults: { component: NonShadcnComponent; match: ComponentMatch }[]
-  remainingComponents: NonShadcnComponent[]
+  lookupResults: { component: UnresolvedDependency; match: ComponentMatch }[]
+  remainingDependencies: UnresolvedDependency[]
 }> {
-  if (!components || components.length === 0) {
-    return { lookupResults: [], remainingComponents: [] }
+  if (!unresolvedDependencies || unresolvedDependencies.length === 0) {
+    return { lookupResults: [], remainingDependencies: [] }
   }
 
   const lookupResults: {
-    component: NonShadcnComponent
+    component: UnresolvedDependency
     match: ComponentMatch
   }[] = []
-  const remainingComponents: NonShadcnComponent[] = []
+  const remainingDependencies: UnresolvedDependency[] = []
 
-  for (const component of components) {
+  for (const component of unresolvedDependencies) {
     const path = component.path
     const pathParts = path.split("/")
     const fileSlug = pathParts[pathParts.length - 1]
 
     if (!fileSlug) {
-      remainingComponents.push(component)
+      remainingDependencies.push(component)
       continue
     }
 
@@ -56,7 +56,7 @@ export async function lookupComponentsInDatabase(
 
     if (error || !matchingComponents || matchingComponents.length === 0) {
       // No matches found, keep as remaining component
-      remainingComponents.push(component)
+      remainingDependencies.push(component)
       continue
     }
 
@@ -86,7 +86,8 @@ export async function lookupComponentsInDatabase(
             registry: matchingComponent.registry,
             username:
               matchingComponent.user?.[0]?.display_username ||
-              matchingComponent.user?.[0]?.username || undefined,
+              matchingComponent.user?.[0]?.username ||
+              undefined,
           },
         })
         foundMatch = true
@@ -96,11 +97,11 @@ export async function lookupComponentsInDatabase(
 
     if (!foundMatch) {
       // No exact match found, add to remaining components
-      remainingComponents.push(component)
+      remainingDependencies.push(component)
     }
   }
 
-  return { lookupResults, remainingComponents }
+  return { lookupResults, remainingDependencies }
 }
 
 /**
@@ -109,7 +110,7 @@ export async function lookupComponentsInDatabase(
  * @returns Array of dependency slugs in the format "username/slug"
  */
 export function convertComponentMatchesToDependencySlugs(
-  matches: { component: NonShadcnComponent; match: ComponentMatch }[],
+  matches: { component: UnresolvedDependency; match: ComponentMatch }[],
 ): string[] {
   return matches.map(({ match }) => {
     // For UI components, use 'shadcn' as the registry name to match shadcn convention

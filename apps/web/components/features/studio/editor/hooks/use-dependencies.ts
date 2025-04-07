@@ -61,7 +61,7 @@ export function useDependencies() {
       if (processedData?.unresolvedDependencyImports?.length > 0) {
         try {
           // Look up components in the database
-          const { lookupResults, remainingComponents } =
+          const { lookupResults, remainingDependencies } =
             await lookupComponentsInDatabase(
               supabase,
               processedData.unresolvedDependencyImports,
@@ -88,7 +88,7 @@ export function useDependencies() {
 
           // Return the updated unresolved dependencies
           return {
-            remainingComponents,
+            remainingComponents: remainingDependencies,
             updatedLoadingPaths: [
               ...shadcnLoadingPaths,
               ...resolvedDependencyPaths,

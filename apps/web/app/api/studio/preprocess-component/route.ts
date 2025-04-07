@@ -200,7 +200,7 @@ IMPORTANT RULES FOR COMPONENT PATHS:
 Example of correct path handling:
 If a file "@/components/ui/mockup.tsx" exports both Mockup and MockupFrame components:
 {
-  "nonShadcnComponentsImports": [
+  "unresolvedDependencyImports": [
     { 
       "path": "@/components/ui/mockup",
       "names": ["Mockup", "MockupFrame"]
@@ -218,7 +218,7 @@ Respond in JSON format only with the following structure:
       "path": "@/components/ui/component-name"
     }
   ],
-  "nonShadcnComponentsImports": [
+  "unresolvedDependencyImports": [
     {
       "path": "@/components/[registry]/component-name",
       "names": ["string", "string", ...]
@@ -351,20 +351,6 @@ Respond in JSON format only with the following structure:
   }
 
   return data
-}
-
-// Helper function to extract component name from code using regex
-function extractComponentName(code: string): string | null {
-  // Look for function/const component declarations
-  const functionMatch = code.match(/function\s+([A-Z][a-zA-Z0-9_]*)/)
-  const constMatch = code.match(
-    /const\s+([A-Z][a-zA-Z0-9_]*)\s*=\s*(\(|\{|React\.forwardRef)/,
-  )
-  const exportMatch = code.match(
-    /export\s+(?:default\s+)?(?:function|const)\s+([A-Z][a-zA-Z0-9_]*)/,
-  )
-
-  return exportMatch?.[1] || functionMatch?.[1] || constMatch?.[1] || null
 }
 
 async function checkSlugUnique(slug: string, userId: string): Promise<boolean> {
