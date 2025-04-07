@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth, currentUser } from "@clerk/nextjs/server"
-import stripe from "@/lib/stripe"
+import { stripeV1, stripeV2 } from "@/lib/stripe"
 import type Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
@@ -26,6 +26,10 @@ export async function GET() {
       // Error handled silently
     }
 
+    // Determine which Stripe instance to use based on plan version
+    const planVersion = userPlanData?.plans?.version || 1
+    const stripeInstance = planVersion === 1 ? stripeV1 : stripeV2
+
     let customerId = null
 
     if (
@@ -46,7 +50,7 @@ export async function GET() {
       let stripeCustomers: Stripe.ApiList<Stripe.Customer> | null = null
 
       if (email) {
-        stripeCustomers = await stripe.customers.list({
+        stripeCustomers = await stripeInstance.customers.list({
           email,
           limit: 1,
         })
@@ -54,7 +58,7 @@ export async function GET() {
 
       // Approach 2: If no customers found by email, try to find by userId in metadata
       if (!stripeCustomers?.data.length) {
-        stripeCustomers = await stripe.customers.list({
+        stripeCustomers = await stripeInstance.customers.list({
           limit: 100, // Get more customers to search through
         })
 
@@ -102,7 +106,7 @@ export async function GET() {
       }
     }
 
-    const invoices = await stripe.invoices.list({
+    const invoices = await stripeInstance.invoices.list({
       customer: customerId,
       limit: 10, // Limit to 10 most recent invoices
     })

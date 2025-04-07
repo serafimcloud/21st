@@ -1,23 +1,49 @@
 "use client"
 
+import { CreditCard } from "lucide-react"
+import { Banner } from "@/components/ui/banner"
 import { AllPlansTrigger } from "@/app/settings/billing/page.client"
 
 export function BillingHeader() {
   return (
-    <div className="flex justify-between items-center mb-4">
-      <div>
-        <h2 className="text-sm font-medium">Billing</h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          For questions about billing,{" "}
-          <a
-            href="mailto:support@21st.dev"
-            className="underline hover:text-primary"
-          >
-            contact us
-          </a>
-        </p>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-sm font-medium">Billing</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            For questions about billing,{" "}
+            <a
+              href="mailto:support@21st.dev"
+              className="underline hover:text-primary"
+            >
+              contact us
+            </a>
+          </p>
+        </div>
+        <AllPlansTrigger />
       </div>
-      <AllPlansTrigger />
+      <Banner
+        variant="default"
+        rounded="default"
+        className="items-start"
+        icon={<CreditCard size={18} strokeWidth={2} />}
+        layout="complex"
+      >
+        <div className="flex flex-col ">
+          <p className="text-sm font-medium">
+            We're migrating to a new Stripe account.
+          </p>
+          <div className="flex items-center text-xs text-muted-foreground mt-1">
+            <span className="mr-1">Need help?</span>
+            <a
+              href="mailto:support@21st.dev"
+              className="flex items-center underline hover:text-primary"
+            >
+              support@21st.dev
+            </a>
+          </div>
+        </div>
+      </Banner>
     </div>
   )
 }

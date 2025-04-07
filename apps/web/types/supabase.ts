@@ -1078,6 +1078,7 @@ export type Database = {
           price: number | null
           stripe_plan_id: string | null
           type: string | null
+          version: 1 | 2
         }
         Insert: {
           add_usage?: number | null
@@ -1088,6 +1089,7 @@ export type Database = {
           price?: number | null
           stripe_plan_id?: string | null
           type?: string | null
+          version: 1 | 2
         }
         Update: {
           add_usage?: number | null
@@ -1098,6 +1100,7 @@ export type Database = {
           price?: number | null
           stripe_plan_id?: string | null
           type?: string | null
+          version: 1 | 2
         }
         Relationships: []
       }
