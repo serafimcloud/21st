@@ -29,12 +29,12 @@ interface CodeManagerContextType {
   getFileContent: (path: string) => string | undefined
   updateFileContent: (path: string, content: string) => void
   addFile: (path: string, content: string) => void
-  renameFile: (from: string, to: string) => void
+  renameFile: (oldPath: string, newPath: string) => void
   deleteFile: (path: string) => void
 
-  // File state (derived from atoms)
+  // File state
   activeFile: string | null
-  selectFile: (path: string) => void
+  selectFile: (path: string | null) => void
 
   // File types and management
   isUnknownComponent: (path: string) => boolean
@@ -42,13 +42,13 @@ interface CodeManagerContextType {
 
   // File metadata
   allFiles: string[]
-  nonShadcnComponents: Array<{ name: string; path: string }> | undefined
+  unresolvedDependencies: Array<{ name: string; path: string }> | undefined
 
   // Loading state
   loadingComponents: string[]
   setLoadingComponents: (paths: string[]) => void
 
-  // Action required state - use functions from useActionRequired
+  // Action required state
   actionRequiredFiles: Record<string, ActionRequiredDetails>
   markFileAsRequiringAction: (
     path: string,
@@ -173,7 +173,7 @@ export function usePreviewReady() {
 interface CodeManagerProviderProps {
   children: React.ReactNode
   initialComponentPath: string
-  nonShadcnComponents?: Array<{ name: string; path: string }>
+  unresolvedDependencies?: Array<{ name: string; path: string }>
   onFileContentChange?: (path: string, content: string) => void
   isUnknownComponentFn?: (path: string) => boolean
 }
@@ -181,7 +181,7 @@ interface CodeManagerProviderProps {
 export function CodeManagerProvider({
   children,
   initialComponentPath,
-  nonShadcnComponents = [],
+  unresolvedDependencies = [],
   onFileContentChange,
   isUnknownComponentFn = () => false,
 }: CodeManagerProviderProps) {
@@ -236,8 +236,11 @@ export function CodeManagerProvider({
   }, [initialComponentPath, sandpack])
 
   // File selection
-  const selectFile = (path: string) => {
-    if (!path) return
+  const selectFile = (path: string | null) => {
+    if (!path) {
+      setActiveFile(null)
+      return
+    }
 
     console.log("[CodeManager] Selecting file:", {
       path,
@@ -377,11 +380,11 @@ export function CodeManagerProvider({
     )
   }
 
-  // Update nonShadcnComponents to use the action system
+  // Update unresolvedDependencies to use the action system
   useEffect(() => {
-    if (nonShadcnComponents && nonShadcnComponents.length > 0) {
+    if (unresolvedDependencies && unresolvedDependencies.length > 0) {
       // Register unknown components as files requiring action with missing_import reason
-      nonShadcnComponents.forEach((comp) => {
+      unresolvedDependencies.forEach((comp) => {
         markFileAsRequiringAction(comp.path, {
           reason: "missing_import",
           message: `Missing import for component: ${comp.name || "Unnamed"}`,
@@ -389,7 +392,7 @@ export function CodeManagerProvider({
         })
       })
     }
-  }, [nonShadcnComponents, markFileAsRequiringAction])
+  }, [unresolvedDependencies, markFileAsRequiringAction])
 
   const getComponentName = (path: string) => {
     // First check in action required files for missing_import reason with componentName
@@ -401,7 +404,7 @@ export function CodeManagerProvider({
       return actionDetails.componentName
     }
     // Fallback to old method
-    return nonShadcnComponents?.find((comp) => comp.path === path)?.name
+    return unresolvedDependencies?.find((comp) => comp.path === path)?.name
   }
 
   // The context now just passes through the atom state + operations
@@ -423,7 +426,7 @@ export function CodeManagerProvider({
 
     // File metadata
     allFiles: sandpack ? Object.keys(sandpack.files) : [],
-    nonShadcnComponents,
+    unresolvedDependencies,
 
     // Loading state
     loadingComponents,

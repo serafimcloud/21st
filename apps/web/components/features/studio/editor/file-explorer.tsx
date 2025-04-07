@@ -28,7 +28,7 @@ interface FileTreeItem {
 }
 
 export interface FileExplorerProps {
-  nonShadcnComponents?: Array<{ name: string; path: string }> // TODO: rename to missedComponents
+  unresolvedDependencies?: Array<{ name: string; path: string }>
   onFileSelect?: (path: string) => void
   selectedFile?: string | null
   visibleFiles?: string[]
@@ -37,7 +37,7 @@ export interface FileExplorerProps {
 
 export function buildFileTree(
   files: string[],
-  nonShadcnComponents: Array<{ name: string; path: string }> = [],
+  unresolvedDependencies: Array<{ name: string; path: string }> = [],
   visibleFiles: string[] = [],
   loadingFiles: string[] = [],
   actionRequiredFiles: string[] = [],
@@ -46,7 +46,7 @@ export function buildFileTree(
   const directories = new Set<string>()
 
   const isFileVisible = (path: string) => {
-    if (nonShadcnComponents.some((comp) => comp.path === path)) {
+    if (unresolvedDependencies.some((comp) => comp.path === path)) {
       return true
     }
 
@@ -143,7 +143,7 @@ export function buildFileTree(
     addToTree(path)
   })
 
-  nonShadcnComponents.forEach((comp) => {
+  unresolvedDependencies.forEach((comp) => {
     // Extract component name from path if not provided
     const pathParts = comp.path.split("/")
     const fileName = pathParts[pathParts.length - 1]
@@ -297,7 +297,7 @@ function FileTreeNode({
  * FileExplorer component that renders a tree view of files in the SandpackProvider context
  */
 export function FileExplorer({
-  nonShadcnComponents = [],
+  unresolvedDependencies = [],
   onFileSelect,
   selectedFile,
   visibleFiles,
@@ -317,14 +317,14 @@ export function FileExplorer({
     () =>
       buildFileTree(
         sandpackVisibleFiles,
-        nonShadcnComponents,
+        unresolvedDependencies,
         visibleFiles,
         loadingFiles,
         actionRequiredFilesList,
       ),
     [
       sandpackVisibleFiles,
-      nonShadcnComponents,
+      unresolvedDependencies,
       visibleFiles,
       loadingFiles,
       actionRequiredFilesList,

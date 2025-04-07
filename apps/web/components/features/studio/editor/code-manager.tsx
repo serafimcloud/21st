@@ -17,7 +17,7 @@ interface CodeManagerContextType {
 
   // File state (derived from atoms)
   activeFile: string | null
-  selectFile: (path: string) => void
+  selectFile: (path: string | null) => void
 
   // File types and management
   isUnknownComponent: (path: string) => boolean
@@ -25,7 +25,7 @@ interface CodeManagerContextType {
 
   // File metadata
   allFiles: string[]
-  nonShadcnComponents: Array<{ name: string; path: string }> | undefined
+  unresolvedDependencies: Array<{ name: string; path: string }> | undefined
 }
 
 const CodeManagerContext = createContext<CodeManagerContextType | null>(null)
@@ -53,7 +53,7 @@ export function useEditorFile() {
 interface CodeManagerProviderProps {
   children: React.ReactNode
   initialComponentPath: string
-  nonShadcnComponents?: Array<{ name: string; path: string }>
+  unresolvedDependencies?: Array<{ name: string; path: string }>
   onFileContentChange?: (path: string, content: string) => void
   isUnknownComponentFn?: (path: string) => boolean
 }
@@ -61,7 +61,7 @@ interface CodeManagerProviderProps {
 export function CodeManagerProvider({
   children,
   initialComponentPath,
-  nonShadcnComponents = [],
+  unresolvedDependencies = [],
   onFileContentChange,
   isUnknownComponentFn = () => false,
 }: CodeManagerProviderProps) {
@@ -80,8 +80,11 @@ export function CodeManagerProvider({
   }, [initialComponentPath])
 
   // File selection
-  const selectFile = (path: string) => {
-    if (!path) return
+  const selectFile = (path: string | null) => {
+    if (!path) {
+      setActiveFile(null)
+      return
+    }
 
     // Only update Sandpack if it's not an unknown component
     if (!isUnknownComponentFn(path)) {
@@ -185,7 +188,9 @@ export function CodeManagerProvider({
   }
 
   const getComponentName = (path: string) => {
-    return nonShadcnComponents?.find((comp) => comp.path === path)?.name
+    return unresolvedDependencies?.find(
+      (comp: { name: string; path: string }) => comp.path === path,
+    )?.name
   }
 
   // The context now just passes through the atom state + operations
@@ -207,7 +212,7 @@ export function CodeManagerProvider({
 
     // File metadata
     allFiles: Object.keys(sandpack.files),
-    nonShadcnComponents,
+    unresolvedDependencies,
   }
 
   return (

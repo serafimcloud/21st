@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 interface EditorProps {
   initialFiles: SandpackFiles
   mainComponentPath: string
-  nonShadcnComponents?: Array<{ name: string; path: string }>
+  unresolvedDependencies?: Array<{ name: string; path: string }>
   onCodeChange?: (path: string, content: string) => void
   isUnknownComponentFn?: (path: string) => boolean
   activePath?: string
@@ -38,9 +38,9 @@ const MemoizedEditorContent = React.memo(EditorContent)
 export function Editor({
   initialFiles,
   mainComponentPath,
-  nonShadcnComponents = [],
+  unresolvedDependencies = [],
   onCodeChange,
-  isUnknownComponentFn = () => false,
+  isUnknownComponentFn,
   activePath,
   sandpackTemplate = "react-ts",
   dependencies = {},
@@ -81,7 +81,7 @@ export function Editor({
       <CodeManagerProvider
         key={stableKey}
         initialComponentPath={activePath || mainComponentPath}
-        nonShadcnComponents={nonShadcnComponents}
+        unresolvedDependencies={unresolvedDependencies}
         onFileContentChange={onCodeChange}
         isUnknownComponentFn={isUnknownComponentFn}
       >
@@ -116,7 +116,7 @@ function EditorContent({
     selectFile,
     isUnknownComponent,
     getComponentName,
-    nonShadcnComponents,
+    unresolvedDependencies,
     loadingComponents,
     addFile,
     allFiles,
@@ -272,7 +272,7 @@ function EditorContent({
       <div className="flex w-full h-full">
         <div className="flex border-r border-border" data-file-explorer>
           <FileExplorer
-            nonShadcnComponents={nonShadcnComponents}
+            unresolvedDependencies={unresolvedDependencies}
             onFileSelect={handleFileSelect}
             selectedFile={activeFile}
             visibleFiles={visiblePaths}

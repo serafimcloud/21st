@@ -90,7 +90,7 @@ export function ComponentPublishDialog({
         <MemoizedEditor
           initialFiles={sandpackConfig.files}
           mainComponentPath={getComponentFilePath()}
-          nonShadcnComponents={processedData?.nonShadcnComponentsImports}
+          unresolvedDependencies={processedData?.unresolvedDependencyImports}
           onCodeChange={(path: string, content: string) => {
             if (path === getComponentFilePath()) {
               setComponentCode(content)
@@ -121,7 +121,7 @@ export function ComponentPublishDialog({
         <MemoizedSandpackContent
           activePreview={activePreview}
           onPreviewSelect={handlePreviewSelect}
-          nonShadcnComponents={processedData?.nonShadcnComponentsImports}
+          unresolvedDependencies={processedData?.unresolvedDependencyImports}
           getComponentFilePath={getComponentFilePath}
           setComponentCode={setComponentCode}
           isUnknownComponent={isUnknownComponent}
@@ -204,7 +204,7 @@ interface SandpackContentProps {
     filePath: string
     componentName?: string
   }) => void
-  nonShadcnComponents?: Array<{ name: string; path: string }>
+  unresolvedDependencies?: Array<{ name: string; path: string }>
   getComponentFilePath: () => string
   setComponentCode: (code: string) => void
   isUnknownComponent: (path: string) => boolean
@@ -216,7 +216,7 @@ interface SandpackContentProps {
 function SandpackContent({
   activePreview,
   onPreviewSelect,
-  nonShadcnComponents,
+  unresolvedDependencies,
   getComponentFilePath,
   setComponentCode,
   isUnknownComponent,
@@ -309,7 +309,7 @@ function SandpackContent({
     // Check if this is an unknown component
     if (isUnknownComponent(path)) {
       // For unknown components, get the component name
-      const componentName = nonShadcnComponents?.find(
+      const componentName = unresolvedDependencies?.find(
         (comp) => comp.path === path,
       )?.name
 
@@ -353,7 +353,7 @@ function SandpackContent({
       <div className="flex w-full h-full">
         <div className="flex border-r border-border">
           <FileExplorer
-            nonShadcnComponents={nonShadcnComponents}
+            unresolvedDependencies={unresolvedDependencies}
             onFileSelect={handleFileSelect}
             selectedFile={activePreview?.filePath || ""}
             visibleFiles={sandpack.visibleFiles || []}

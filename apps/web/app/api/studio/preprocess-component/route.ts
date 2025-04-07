@@ -17,7 +17,7 @@ const MOCK_RESPONSE = {
     { name: "Dialog", path: "@/components/ui/dialog" },
     { name: "Input", path: "@/components/ui/input" },
   ],
-  nonShadcnComponentsImports: [
+  unresolvedDependencyImports: [
     {
       path: "@/components/ui/some-custom-component",
       names: ["SomeCustomComponent", "CustomComponentPart"],

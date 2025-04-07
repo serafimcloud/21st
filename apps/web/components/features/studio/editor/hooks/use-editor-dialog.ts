@@ -277,7 +277,7 @@ export function SecondDemo() {
     // Add any cached file content for unknown components
     fileContentCache.forEach((cachedContent, cachedPath) => {
       if (
-        processedData?.nonShadcnComponentsImports?.some((comp: any) => {
+        processedData?.unresolvedDependencyImports?.some((comp: any) => {
           const normalizedPath = comp.path.replace(/^@\//, "/")
           return normalizedPath === cachedPath
         })
@@ -575,12 +575,12 @@ export function SecondDemo() {
       // Check for non-shadcn components in the database
       const dbComponentSlugs: string[] = []
 
-      if (data.nonShadcnComponentsImports?.length > 0) {
+      if (data.unresolvedDependencyImports?.length > 0) {
         // Look up components in the database
         const { lookupResults, remainingComponents } =
           await lookupComponentsInDatabase(
             supabase,
-            data.nonShadcnComponentsImports,
+            data.unresolvedDependencyImports,
           )
 
         // Update the processedData with found matches
@@ -599,8 +599,8 @@ export function SecondDemo() {
           )
         }
 
-        // Update processed data with the updated non-shadcn component imports
-        data.nonShadcnComponentsImports = remainingComponents
+        // Update processed data with the updated unresolved dependencies
+        data.unresolvedDependencyImports = remainingComponents
       }
 
       // Set processed data BEFORE setting active preview
@@ -632,11 +632,11 @@ export function SecondDemo() {
           )
 
           // Map database components from earlier lookupResults
-          if (data.nonShadcnComponentsImports?.length > 0) {
+          if (data.unresolvedDependencyImports?.length > 0) {
             const { lookupResults: dbLookup } =
               await lookupComponentsInDatabase(
                 supabase,
-                data.nonShadcnComponentsImports,
+                data.unresolvedDependencyImports,
               )
 
             dbLookup.forEach((result: any) => {
@@ -738,7 +738,7 @@ export function SecondDemo() {
   const isUnknownComponent = useCallback(
     (path: string) => {
       return (
-        processedData?.nonShadcnComponentsImports?.some(
+        processedData?.unresolvedDependencyImports?.some(
           (comp: any) => comp.path === path,
         ) ?? false
       )
