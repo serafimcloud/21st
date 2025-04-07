@@ -1,11 +1,20 @@
 import { AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useActionRequired, useCodeManager } from "./context/editor-state"
+import {
+  useActionRequired,
+  useCodeManager,
+  StylesActionDetails,
+} from "./context/editor-state"
 
 interface RequirementsPanelProps {
   className?: string
   activeFile?: string
+}
+
+// Type guard to check if action details are style-related
+function isStylesAction(details: any): details is StylesActionDetails {
+  return details?.reason === "styles"
 }
 
 export function RequirementsPanel({
@@ -48,11 +57,12 @@ export function RequirementsPanel({
 
   // Prepare message content based on additionalStyles
   const getMessageContent = () => {
-    if (isTailwindConfig) {
-      const extensionDetails: string[] = []
-      const tailwindExtensions = actionDetails?.tailwindExtensions
+    // Only process style-related details for Tailwind and CSS files
+    if ((isTailwindConfig || isGlobalCss) && isStylesAction(actionDetails)) {
+      if (isTailwindConfig) {
+        const extensionDetails: string[] = []
+        const tailwindExtensions = actionDetails.tailwindExtensions || {}
 
-      if (tailwindExtensions) {
         const extensionTypes = [
           "boxShadow",
           "colors",
@@ -69,53 +79,49 @@ export function RequirementsPanel({
             extensionDetails.push(`${extType}: ${values}`)
           }
         })
+
+        if (extensionDetails.length > 0) {
+          return `Add Tailwind extensions: ${extensionDetails.join("; ")}`
+        }
+
+        return "Tailwind configuration updates required"
       }
 
-      if (extensionDetails.length > 0) {
-        return `Add Tailwind extensions: ${extensionDetails.join("; ")}`
+      if (isGlobalCss) {
+        const parts = []
+
+        // Show specific CSS variable names
+        const cssVariables = actionDetails.cssVariables || []
+        if (cssVariables.length > 0) {
+          const varNames = cssVariables.map((v) => v.name).join(", ")
+          parts.push(`CSS variables: ${varNames}`)
+        }
+
+        // Show specific keyframe names
+        const keyframes = actionDetails.keyframes || []
+        if (keyframes.length > 0) {
+          const keyframeNames = keyframes.map((k) => k.name).join(", ")
+          parts.push(`keyframes: ${keyframeNames}`)
+        }
+
+        // Show specific utility class names
+        const utilities = actionDetails.utilities || []
+        if (utilities.length > 0) {
+          const classNames = utilities
+            .map((u) => {
+              const className = u.className || u.name
+              return className?.startsWith(".") ? className : `.${className}`
+            })
+            .join(", ")
+          parts.push(`utilities: ${classNames}`)
+        }
+
+        if (parts.length > 0) {
+          return `Add ${parts.join(", ")}`
+        }
+
+        return "CSS updates required"
       }
-
-      return "Tailwind configuration updates required"
-    }
-
-    if (isGlobalCss) {
-      const parts = []
-
-      // Show specific CSS variable names
-      if (
-        actionDetails?.cssVariables &&
-        actionDetails.cssVariables.length > 0
-      ) {
-        const varNames = actionDetails.cssVariables
-          .map((v: any) => v.name)
-          .join(", ")
-        parts.push(`CSS variables: ${varNames}`)
-      }
-
-      // Show specific keyframe names
-      if (actionDetails?.keyframes && actionDetails.keyframes.length > 0) {
-        const keyframeNames = actionDetails.keyframes
-          .map((k: any) => k.name)
-          .join(", ")
-        parts.push(`keyframes: ${keyframeNames}`)
-      }
-
-      // Show specific utility class names
-      if (actionDetails?.utilities && actionDetails.utilities.length > 0) {
-        const classNames = actionDetails.utilities
-          .map((u: any) => {
-            const className = u.className || u.name
-            return className?.startsWith(".") ? className : `.${className}`
-          })
-          .join(", ")
-        parts.push(`utilities: ${classNames}`)
-      }
-
-      if (parts.length > 0) {
-        return `Add ${parts.join(", ")}`
-      }
-
-      return "CSS updates required"
     }
 
     return actionDetails.message || "This file requires updates"

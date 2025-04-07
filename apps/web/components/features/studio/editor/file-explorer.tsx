@@ -1,5 +1,6 @@
 import { useSandpack } from "@codesandbox/sandpack-react"
 import { cn } from "@/lib/utils"
+import { arePathsEqual, normalizePath } from "@/lib/utils"
 import {
   ChevronRight,
   ChevronDown,
@@ -224,20 +225,53 @@ function FileTreeNode({
   const isExpanded = expandedDirs.has(item.path)
   const { getActionDetails } = useActionRequired()
 
-  // Normalize both paths for comparison to ensure proper highlighting
-  const normalizedItemPath = item.path.replace(/^@\//, "/")
-  const normalizedActiveFile = activeFile?.replace(/^@\//, "/")
-  const isActive = normalizedActiveFile === normalizedItemPath
+  // Use utility functions for path comparison
+  const isActive = activeFile && arePathsEqual(item.path, activeFile)
 
   const isShadcnFile = item.type === "file" && isShadcnComponentPath(item.path)
   const isTailwindConfig = item.path === "/tailwind.config.js"
   const isGlobalsCss = item.path === "/globals.css"
 
-  // Check if file truly needs action - only for styles or other issues, not for missing_import
+  // Get action details and determine warning state
   const actionDetails = item.path && getActionDetails(item.path)
-
-  // Show warning for all files that need action, regardless of reason
   const showWarning = !!actionDetails
+
+  // Determine file icon and state
+  const getFileIcon = () => {
+    if (item.type === "directory") {
+      return isExpanded ? (
+        <FolderOpen className="h-4 w-4 text-blue-500" />
+      ) : (
+        <Folder className="h-4 w-4 text-blue-500" />
+      )
+    }
+
+    if (isFileItem(item) && (item.isLoading || isLoading(item.path))) {
+      return (
+        <div className="h-4 w-4 flex items-center justify-center">
+          <Spinner size={14} />
+        </div>
+      )
+    }
+
+    if (showWarning) {
+      return <FileWarning className="h-4 w-4 text-yellow-500" />
+    }
+
+    if (isShadcnFile) {
+      return <ShadcnFile className="h-4 w-4 text-primary" />
+    }
+
+    if (isTailwindConfig) {
+      return <File className="h-4 w-4 text-emerald-500" />
+    }
+
+    if (isGlobalsCss) {
+      return <File className="h-4 w-4 text-blue-500" />
+    }
+
+    return <File className="h-4 w-4 text-gray-500" />
+  }
 
   const handleClick = () => {
     if (item.type === "directory") {
@@ -267,27 +301,7 @@ function FileTreeNode({
             )}
           </div>
         )}
-        {item.type === "directory" ? (
-          isExpanded ? (
-            <FolderOpen className="h-4 w-4 text-blue-500" />
-          ) : (
-            <Folder className="h-4 w-4 text-blue-500" />
-          )
-        ) : isFileItem(item) && (item.isLoading || isLoading(item.path)) ? (
-          <div className="h-4 w-4 flex items-center justify-center">
-            <Spinner size={14} />
-          </div>
-        ) : showWarning ? (
-          <FileWarning className="h-4 w-4 text-yellow-500" />
-        ) : isShadcnFile ? (
-          <ShadcnFile className="h-4 w-4 text-primary" />
-        ) : isTailwindConfig ? (
-          <File className="h-4 w-4 text-emerald-500" />
-        ) : isGlobalsCss ? (
-          <File className="h-4 w-4 text-blue-500" />
-        ) : (
-          <File className="h-4 w-4 text-gray-500" />
-        )}
+        {getFileIcon()}
         {isFileItem(item) && (item.isLoading || isLoading(item.path)) ? (
           <TextShimmer className="truncate text-sm">{item.name}</TextShimmer>
         ) : (

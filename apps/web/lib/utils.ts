@@ -61,3 +61,17 @@ export function formatPrice(price: number) {
     maximumFractionDigits: 2,
   }).format(price)
 }
+
+/**
+ * Normalize file path by removing @/ prefix and ensuring consistent format
+ */
+export function normalizePath(path: string): string {
+  return path.replace(/^@\//, "/")
+}
+
+/**
+ * Compare two paths after normalization
+ */
+export function arePathsEqual(path1: string, path2: string): boolean {
+  return normalizePath(path1) === normalizePath(path2)
+}

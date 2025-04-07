@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useCallback } from "react"
 import { atom, useAtom } from "jotai"
 import { useSandpack } from "@codesandbox/sandpack-react"
+import { normalizePath } from "@/lib/utils"
 
 // Define atoms for state management (single source of truth)
 export const activeFileAtom = atom<string | null>(null)
@@ -8,20 +9,43 @@ export const userModifiedFilesAtom = atom<Record<string, boolean>>({})
 export const loadingComponentsAtom = atom<string[]>([])
 export const previewReadyAtom = atom<boolean>(false)
 
-// New atom for files requiring action
-export interface ActionRequiredDetails {
-  reason: "styles" | "missing_import" | "other"
+// Improved typing for action required system
+export type ActionRequiredReason = "styles" | "missing_import" | "other"
+
+export interface BaseActionRequiredDetails {
+  reason: ActionRequiredReason
   message?: string
+}
+
+export interface StylesActionDetails extends BaseActionRequiredDetails {
+  reason: "styles"
   tailwindExtensions?: Record<string, any>
   cssVariables?: Array<any>
   keyframes?: Array<any>
   utilities?: Array<any>
+}
+
+export interface MissingImportActionDetails extends BaseActionRequiredDetails {
+  reason: "missing_import"
   componentName?: string
 }
 
+export interface OtherActionDetails extends BaseActionRequiredDetails {
+  reason: "other"
+}
+
+export type ActionRequiredDetails =
+  | StylesActionDetails
+  | MissingImportActionDetails
+  | OtherActionDetails
+
+// State atom with path normalization
 export const actionRequiredFilesAtom = atom<
   Record<string, ActionRequiredDetails>
 >({})
+
+// New atom to track paths that need action (for better performance)
+export const actionRequiredPathsAtom = atom<string[]>([])
 
 // Define the types for our context
 interface CodeManagerContextType {
@@ -50,6 +74,7 @@ interface CodeManagerContextType {
 
   // Action required state
   actionRequiredFiles: Record<string, ActionRequiredDetails>
+  actionRequiredPaths: string[]
   markFileAsRequiringAction: (
     path: string,
     details: ActionRequiredDetails,
@@ -86,64 +111,80 @@ export function useEditorFile() {
   }
 }
 
-// New hook to access action required state directly
+// Hook with improved logic
 export function useActionRequired() {
   const [actionRequiredFiles, setActionRequiredFiles] = useAtom(
     actionRequiredFilesAtom,
   )
+  const [actionRequiredPaths, setActionRequiredPaths] = useAtom(
+    actionRequiredPathsAtom,
+  )
 
   const markFileAsRequiringAction = useCallback(
     (path: string, details: ActionRequiredDetails) => {
+      const normalizedPath = normalizePath(path)
+
       setActionRequiredFiles((prev) => {
-        // Skip update if nothing is changing to prevent loops
+        // Skip update if nothing is changing
         if (
-          prev[path] &&
-          JSON.stringify(prev[path]) === JSON.stringify(details)
+          prev[normalizedPath] &&
+          JSON.stringify(prev[normalizedPath]) === JSON.stringify(details)
         ) {
           return prev
         }
 
-        return {
-          ...prev,
-          [path]: details,
+        const next = { ...prev, [normalizedPath]: details }
+        return next
+      })
+
+      setActionRequiredPaths((prev) => {
+        if (!prev.includes(normalizedPath)) {
+          return [...prev, normalizedPath]
         }
+        return prev
       })
     },
-    [setActionRequiredFiles],
+    [setActionRequiredFiles, setActionRequiredPaths],
   )
 
   const markFileAsResolved = useCallback(
     (path: string) => {
+      const normalizedPath = normalizePath(path)
+
       setActionRequiredFiles((prev) => {
-        // Skip update if file isn't in the list to prevent unnecessary renders
-        if (!prev[path]) {
+        if (!prev[normalizedPath]) {
           return prev
         }
 
         const next = { ...prev }
-        delete next[path]
+        delete next[normalizedPath]
         return next
       })
+
+      setActionRequiredPaths((prev) => prev.filter((p) => p !== normalizedPath))
     },
-    [setActionRequiredFiles],
+    [setActionRequiredFiles, setActionRequiredPaths],
   )
 
   const isActionRequired = useCallback(
     (path: string) => {
-      return !!actionRequiredFiles[path]
+      const normalizedPath = normalizePath(path)
+      return actionRequiredPaths.includes(normalizedPath)
     },
-    [actionRequiredFiles],
+    [actionRequiredPaths],
   )
 
   const getActionDetails = useCallback(
     (path: string) => {
-      return actionRequiredFiles[path]
+      const normalizedPath = normalizePath(path)
+      return actionRequiredFiles[normalizedPath]
     },
     [actionRequiredFiles],
   )
 
   return {
     actionRequiredFiles,
+    actionRequiredPaths,
     markFileAsRequiringAction,
     markFileAsResolved,
     isActionRequired,
@@ -204,6 +245,7 @@ export function CodeManagerProvider({
   // Get action required functions from the hook instead of redefining them
   const {
     actionRequiredFiles,
+    actionRequiredPaths,
     markFileAsRequiringAction,
     markFileAsResolved,
     isActionRequired,
@@ -434,6 +476,7 @@ export function CodeManagerProvider({
 
     // Action required state - using functions from the hook
     actionRequiredFiles,
+    actionRequiredPaths,
     markFileAsRequiringAction,
     markFileAsResolved,
     isActionRequired,
