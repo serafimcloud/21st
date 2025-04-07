@@ -181,6 +181,9 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       allFiles[componentPath] = generatedFiles["/components/ui/component.tsx"]
     }
 
+    // Add empty demo.tsx file
+    allFiles["/demo.tsx"] = { code: "// Add your demo code here" }
+
     // Add any cached file content for unknown components
     fileContentCache.forEach((cachedContent, cachedPath) => {
       if (
@@ -610,6 +613,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
           "/globals.css",
           "/package.json",
           ...Object.keys(registryDependencies),
+          // Add demo.tsx to visible files after processing is complete
+          ...(processedData && !isProcessing ? ["/demo.tsx"] : []),
         ],
         recompileMode: "delayed" as const,
         recompileDelay: 300,
@@ -637,6 +642,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     processedData?.npmDependencies,
     npmDependenciesOfRegistryDependencies,
     isDarkTheme,
+    processedData,
+    isProcessing,
   ])
 
   return {
