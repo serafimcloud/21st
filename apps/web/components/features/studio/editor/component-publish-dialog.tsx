@@ -66,7 +66,6 @@ export function ComponentPublishDialog({
     isProcessing,
     activePreview,
     loadingShadcnComponents,
-    loadingStyleFiles,
     actionRequiredFiles,
     handleOpenChange,
     handleProcessComponent,
@@ -113,7 +112,6 @@ export function ComponentPublishDialog({
                 ]
           }
           loadingFiles={loadingShadcnComponents}
-          loadingStyleFiles={loadingStyleFiles}
           actionRequiredFiles={actionRequiredFiles}
           processedData={processedData}
         />
@@ -128,7 +126,6 @@ export function ComponentPublishDialog({
           setComponentCode={setComponentCode}
           isUnknownComponent={isUnknownComponent}
           loadingFiles={loadingShadcnComponents}
-          loadingStyleFiles={loadingStyleFiles}
           actionRequiredFiles={actionRequiredFiles}
           processedData={processedData}
         />
@@ -212,7 +209,6 @@ interface SandpackContentProps {
   setComponentCode: (code: string) => void
   isUnknownComponent: (path: string) => boolean
   loadingFiles?: string[]
-  loadingStyleFiles?: string[]
   actionRequiredFiles?: string[]
   processedData?: any
 }
@@ -225,7 +221,6 @@ function SandpackContent({
   setComponentCode,
   isUnknownComponent,
   loadingFiles = [],
-  loadingStyleFiles = [],
   actionRequiredFiles = [],
   processedData,
 }: SandpackContentProps) {
@@ -363,7 +358,6 @@ function SandpackContent({
             selectedFile={activePreview?.filePath || ""}
             visibleFiles={sandpack.visibleFiles || []}
             loadingFiles={loadingFiles}
-            loadingStyleFiles={loadingStyleFiles}
           />
         </div>
         <div className="flex-1 flex">

@@ -4,7 +4,10 @@ import { useTheme } from "next-themes"
 import { generateSandpackFiles } from "../utils/sandpack-files"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/defaults"
+import {
+  defaultGlobalCss as globalCss,
+  defaultTailwindConfig as tailwindConfig,
+} from "@/lib/defaults"
 import {
   lookupComponentsInDatabase,
   convertComponentMatchesToDependencySlugs,
@@ -28,7 +31,7 @@ interface UsePublishDialogProps {
 
 // Define the generateStylesCss function up front so it can be used in the files useMemo
 const generateStylesCss = () => {
-  return defaultGlobalCss
+  return globalCss
 }
 
 export function usePublishDialog({ userId }: UsePublishDialogProps) {
@@ -49,10 +52,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     npmDependenciesOfRegistryDependencies,
     setNpmDependenciesOfRegistryDependencies,
   ] = useState<Record<string, string>>({})
-  const [mergedTailwindConfig, setMergedTailwindConfig] = useState<
-    string | null
-  >(null)
-  const [mergedGlobalCss, setMergedGlobalCss] = useState<string | null>(null)
   const { resolvedTheme } = useTheme()
   const isDarkTheme = resolvedTheme === "dark"
   const supabase = useClerkSupabaseClient()
@@ -61,8 +60,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   const [loadingShadcnComponents, setLoadingShadcnComponents] = useState<
     string[]
   >([])
-  // Add new state for tracking style merging status
-  const [loadingStyleFiles, setLoadingStyleFiles] = useState<string[]>([])
   // Add new state for tracking files that need action (style updates)
   const [actionRequiredFiles, setActionRequiredFiles] = useState<string[]>([])
 
@@ -308,8 +305,6 @@ export function SecondDemo() {
     processedData,
     npmDependenciesOfRegistryDependencies,
     registryDependencies,
-    mergedTailwindConfig,
-    mergedGlobalCss,
     activePreview?.filePath,
     initialCompiledCss,
     generateStylesCss,
@@ -322,8 +317,8 @@ export function SecondDemo() {
     isProcessing,
     registryDependencies,
     files,
-    mergedTailwindConfig,
-    mergedGlobalCss,
+    globalCss,
+    tailwindConfig,
     getComponentFilePath,
   })
 
@@ -343,8 +338,6 @@ export function SecondDemo() {
     setActivePreview(null)
     setRegistryDependencies({})
     setNpmDependenciesOfRegistryDependencies({})
-    setMergedTailwindConfig(null)
-    setMergedGlobalCss(null)
     setActionRequiredFiles([])
   }, [])
 
@@ -420,7 +413,6 @@ export function SecondDemo() {
 
     setIsProcessing(true)
     setLoadingShadcnComponents([]) // Reset loading state at the start
-    setLoadingStyleFiles([]) // Reset style loading state too
     setActionRequiredFiles([]) // Reset action required files
 
     try {
@@ -709,13 +701,6 @@ export function SecondDemo() {
 
           setRegistryDependencies(result.data.filesWithRegistry)
           setNpmDependenciesOfRegistryDependencies(result.data.npmDependencies)
-
-          // Merge styles if we have any
-          if (result.data.styles) {
-            // Use defaults for now
-            setMergedTailwindConfig(defaultTailwindConfig)
-            setMergedGlobalCss(defaultGlobalCss)
-          }
         } catch (depError) {
           console.error("Error resolving dependencies:", depError)
           toast.error(
@@ -735,7 +720,6 @@ export function SecondDemo() {
       console.error("Error processing component:", error)
       // Clear loading state immediately in case of main process error
       setLoadingShadcnComponents([])
-      setLoadingStyleFiles([])
       setActionRequiredFiles([])
     } finally {
       setIsProcessing(false)
@@ -744,9 +728,6 @@ export function SecondDemo() {
       loadingTimeoutRef.current = setTimeout(() => {
         if (loadingShadcnComponents.length > 0) {
           setLoadingShadcnComponents([])
-        }
-        if (loadingStyleFiles.length > 0) {
-          setLoadingStyleFiles([])
         }
         loadingTimeoutRef.current = null
       }, 5000) // 5 seconds should be enough for any remaining files
@@ -849,7 +830,6 @@ export function SecondDemo() {
     isPublishing,
     activePreview,
     loadingShadcnComponents,
-    loadingStyleFiles,
     actionRequiredFiles,
     handleOpenChange,
     handleProcessComponent,

@@ -29,7 +29,6 @@ interface EditorProps {
   dependencies?: Record<string, string>
   visiblePaths?: string[]
   loadingFiles?: string[]
-  loadingStyleFiles?: string[]
   actionRequiredFiles?: string[]
   processedData?: any
 }
@@ -47,7 +46,6 @@ export function Editor({
   dependencies = {},
   visiblePaths,
   loadingFiles = [],
-  loadingStyleFiles = [],
   actionRequiredFiles = [],
   processedData,
 }: EditorProps) {
@@ -91,7 +89,6 @@ export function Editor({
           <MemoizedEditorContent
             visiblePaths={visiblePaths}
             loadingFiles={loadingFiles}
-            loadingStyleFiles={loadingStyleFiles}
             actionRequiredFiles={actionRequiredFiles}
             processedData={processedData}
           />
@@ -104,7 +101,6 @@ export function Editor({
 interface EditorContentProps {
   visiblePaths?: string[]
   loadingFiles?: string[]
-  loadingStyleFiles?: string[]
   actionRequiredFiles?: string[]
   processedData?: any
 }
@@ -112,7 +108,6 @@ interface EditorContentProps {
 function EditorContent({
   visiblePaths,
   loadingFiles = [],
-  loadingStyleFiles = [],
   actionRequiredFiles = [],
   processedData,
 }: EditorContentProps) {
@@ -282,7 +277,6 @@ function EditorContent({
             selectedFile={activeFile}
             visibleFiles={visiblePaths}
             loadingFiles={allLoadingFiles}
-            loadingStyleFiles={loadingStyleFiles}
           />
         </div>
 

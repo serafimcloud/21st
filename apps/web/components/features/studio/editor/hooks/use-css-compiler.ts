@@ -9,8 +9,8 @@ interface UseCssCompilerProps {
   isProcessing: boolean
   registryDependencies: Record<string, { code: string; registry: string }>
   files: SandpackFiles
-  mergedTailwindConfig: string | null
-  mergedGlobalCss: string | null
+  globalCss: string
+  tailwindConfig: string
   getComponentFilePath: () => string
 }
 
@@ -24,8 +24,8 @@ export function useCssCompiler({
   isProcessing,
   registryDependencies,
   files,
-  mergedTailwindConfig,
-  mergedGlobalCss,
+  globalCss,
+  tailwindConfig,
   getComponentFilePath,
 }: UseCssCompilerProps) {
   // State for tracking compilation
@@ -191,8 +191,8 @@ export function useCssCompiler({
         demoCode: demoCode, // Ensure demo code is explicitly included
         baseTailwindConfig: defaultTailwindConfig,
         baseGlobalCss: defaultGlobalCss,
-        customTailwindConfig: mergedTailwindConfig || null,
-        customGlobalCss: mergedGlobalCss || null,
+        customTailwindConfig: tailwindConfig,
+        customGlobalCss: globalCss,
         dependencies: allDependencies,
       }
 
@@ -273,8 +273,8 @@ export function useCssCompiler({
     processedData,
     registryDependencies,
     files,
-    mergedTailwindConfig,
-    mergedGlobalCss,
+    tailwindConfig,
+    globalCss,
     getComponentFilePath,
     isCssCompiling,
     generateStylesCss,

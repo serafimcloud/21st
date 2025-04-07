@@ -28,12 +28,11 @@ interface FileTreeItem {
 }
 
 export interface FileExplorerProps {
-  nonShadcnComponents?: Array<{ name: string; path: string }>
+  nonShadcnComponents?: Array<{ name: string; path: string }> // TODO: rename to missedComponents
   onFileSelect?: (path: string) => void
   selectedFile?: string | null
   visibleFiles?: string[]
   loadingFiles?: string[]
-  loadingStyleFiles?: string[]
 }
 
 export function buildFileTree(
@@ -41,7 +40,6 @@ export function buildFileTree(
   nonShadcnComponents: Array<{ name: string; path: string }> = [],
   visibleFiles: string[] = [],
   loadingFiles: string[] = [],
-  loadingStyleFiles: string[] = [],
   actionRequiredFiles: string[] = [],
 ) {
   const root: FileTreeItem[] = []
@@ -53,10 +51,6 @@ export function buildFileTree(
     }
 
     if (loadingFiles.includes(path)) {
-      return true
-    }
-
-    if (loadingStyleFiles.includes(path)) {
       return true
     }
 
@@ -107,8 +101,7 @@ export function buildFileTree(
           if (isStyleFile) {
             existingItem.isStyleFile = true
           }
-          existingItem.isLoading =
-            loadingFiles.includes(path) || loadingStyleFiles.includes(path)
+          existingItem.isLoading = loadingFiles.includes(path)
           existingItem.actionRequired = actionRequiredFiles.includes(path)
         }
         current = existingItem.children || []
@@ -120,9 +113,7 @@ export function buildFileTree(
           children: isLast ? undefined : [],
           isUnknownComponent: isLast ? isUnknownComponent : undefined,
           isStyleFile: isLast ? isStyleFile : undefined,
-          isLoading: isLast
-            ? loadingFiles.includes(path) || loadingStyleFiles.includes(path)
-            : undefined,
+          isLoading: isLast ? loadingFiles.includes(path) : undefined,
           actionRequired: isLast
             ? actionRequiredFiles.includes(path)
             : undefined,
@@ -166,10 +157,6 @@ export function buildFileTree(
     addToTree(path, false, componentName)
   })
 
-  loadingStyleFiles.forEach((path) => {
-    addToTree(path, false, "", true)
-  })
-
   const sortTreeRecursively = (items: FileTreeItem[]) => {
     items.sort((a, b) => {
       if (a.type !== b.type) {
@@ -196,7 +183,6 @@ function FileTreeNode({
   expandedDirs,
   onToggleDir,
   isLoading,
-  isStyleLoading,
   isActionRequired,
   activeFile,
   level = 0,
@@ -206,7 +192,6 @@ function FileTreeNode({
   expandedDirs: Set<string>
   onToggleDir: (path: string) => void
   isLoading: (path: string) => boolean
-  isStyleLoading: (path: string) => boolean
   isActionRequired: (path: string) => boolean
   activeFile?: string
   level?: number
@@ -267,10 +252,6 @@ function FileTreeNode({
           <div className="h-4 w-4 flex items-center justify-center">
             <Spinner size={14} />
           </div>
-        ) : isStyleLoading(item.path) ? (
-          <div className="h-4 w-4 flex items-center justify-center">
-            <Spinner size={14} color="#3b82f6" />
-          </div>
         ) : showWarning ? (
           <FileWarning className="h-4 w-4 text-yellow-500" />
         ) : isShadcnFile ? (
@@ -282,7 +263,7 @@ function FileTreeNode({
         ) : (
           <File className="h-4 w-4 text-gray-500" />
         )}
-        {item.isLoading || isLoading(item.path) || isStyleLoading(item.path) ? (
+        {item.isLoading || isLoading(item.path) ? (
           <TextShimmer className="truncate text-sm">{item.name}</TextShimmer>
         ) : (
           <span className={cn("truncate", showWarning && "text-yellow-600")}>
@@ -303,7 +284,6 @@ function FileTreeNode({
               expandedDirs={expandedDirs}
               onToggleDir={onToggleDir}
               isLoading={isLoading}
-              isStyleLoading={isStyleLoading}
               isActionRequired={isActionRequired}
             />
           ))}
@@ -322,7 +302,6 @@ export function FileExplorer({
   selectedFile,
   visibleFiles,
   loadingFiles = [],
-  loadingStyleFiles = [],
 }: FileExplorerProps) {
   const { sandpack } = useSandpack()
   const { visibleFiles: sandpackVisibleFiles } = sandpack
@@ -341,7 +320,6 @@ export function FileExplorer({
         nonShadcnComponents,
         visibleFiles,
         loadingFiles,
-        loadingStyleFiles,
         actionRequiredFilesList,
       ),
     [
@@ -349,7 +327,6 @@ export function FileExplorer({
       nonShadcnComponents,
       visibleFiles,
       loadingFiles,
-      loadingStyleFiles,
       actionRequiredFilesList,
     ],
   )
@@ -389,14 +366,6 @@ export function FileExplorer({
     [loadingFiles],
   )
 
-  // Check if a file is a loading style file
-  const isStyleFileLoading = useCallback(
-    (filePath: string) => {
-      return loadingStyleFiles.includes(filePath)
-    },
-    [loadingStyleFiles],
-  )
-
   // Check if a file needs action
   const isFileActionRequired = useCallback(
     (filePath: string) => {
@@ -419,7 +388,6 @@ export function FileExplorer({
             expandedDirs={expandedDirs}
             onToggleDir={handleToggleDir}
             isLoading={isFileLoading}
-            isStyleLoading={isStyleFileLoading}
             isActionRequired={isFileActionRequired}
             activeFile={selectedFile || undefined}
           />
