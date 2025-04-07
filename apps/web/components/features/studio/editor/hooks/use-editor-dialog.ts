@@ -83,8 +83,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     isProcessing,
   })
 
-  // CSS compiler
-  const { compiledCss, forceRecompile } = useCssCompiler({
+  // CSS compiler - will automatically update styles.css in files object
+  const { compiledCss, isCssCompiling, forceRecompile } = useCssCompiler({
     componentCode,
     processedData,
     isProcessing,
@@ -95,7 +95,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     getComponentFilePath,
   })
 
-  // Update the initial compiled CSS when the compiled CSS changes
+  // Update the initial compiled CSS when a new CSS is compiled
   useEffect(() => {
     if (compiledCss) {
       setInitialCompiledCss(compiledCss)
@@ -149,6 +149,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     activePreview,
     loadingShadcnComponents,
     actionRequiredFiles,
+    compiledCss,
+    isCssCompiling,
     handleOpenChange,
     handleProcessComponent,
     handlePreviewSelect,
