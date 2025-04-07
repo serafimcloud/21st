@@ -10,6 +10,7 @@ import {
   convertComponentMatchesToDependencySlugs,
 } from "@/components/features/studio/editor/utils/component-lookup"
 import type { SandpackFiles } from "@codesandbox/sandpack-react"
+import { useCssCompiler } from "./use-css-compiler"
 
 // Create a file content cache that persists across component remounts
 const fileContentCache = new Map<string, string>()
@@ -23,6 +24,11 @@ type ActivePreview = {
 
 interface UsePublishDialogProps {
   userId: string
+}
+
+// Define the generateStylesCss function up front so it can be used in the files useMemo
+const generateStylesCss = () => {
+  return defaultGlobalCss
 }
 
 export function usePublishDialog({ userId }: UsePublishDialogProps) {
@@ -66,20 +72,21 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   // Add max timeout for safety
   const maxLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Add state for compiled CSS
-  const [compiledCss, setCompiledCss] = useState<string | null>(null)
+  // We'll track our own initial compiledCss state directly in the files useMemo
+  const [initialCompiledCss, setInitialCompiledCss] = useState<string | null>(
+    null,
+  )
 
-  // Add state to track in-progress compilation
-  const [isCssCompiling, setIsCssCompiling] = useState(false)
-  // Add ref for debouncing
-  const cssCompileTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  // Add ref for previous component code
-  const prevComponentCodeRef = useRef<string>("")
-  // Add ref to track last compilation time
-  const lastCompilationTimeRef = useRef<number>(0)
+  // Get component file path
+  const getComponentFilePath = useCallback(() => {
+    if (!processedData) return "/components/ui/component.tsx"
 
-  // Add ref for tracking the content hash of all files
-  const prevFilesHashRef = useRef<string>("")
+    const registryType = processedData.registryType || "ui"
+    const fileName = processedData.slug
+      ? `${processedData.slug}.tsx`
+      : "component.tsx"
+    return `/components/${registryType}/${fileName}`
+  }, [processedData])
 
   // Safety cleanup for loading state
   useEffect(() => {
@@ -94,206 +101,103 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     }
   }, [])
 
-  // Get component file path
-  const getComponentFilePath = useCallback(() => {
-    if (!processedData) return "/components/ui/component.tsx"
-
-    const registryType = processedData.registryType || "ui"
-    const fileName = processedData.slug
-      ? `${processedData.slug}.tsx`
-      : "component.tsx"
-    return `/components/${registryType}/${fileName}`
-  }, [processedData])
-
-  // Reset dialog state
-  const resetState = useCallback(() => {
-    setComponentCode("")
-    setProcessedData(null)
-    setIsProcessing(false)
-    setIsPublishing(false)
-    setActivePreview(null)
-    setRegistryDependencies({})
-    setNpmDependenciesOfRegistryDependencies({})
-    setMergedTailwindConfig(null)
-    setMergedGlobalCss(null)
-    setActionRequiredFiles([])
-  }, [])
-
-  // Handle dialog open/close
-  const handleOpenChange = useCallback(
-    (isOpen: boolean) => {
-      setOpen(isOpen)
-      if (!isOpen) resetState()
-    },
-    [resetState],
-  )
-
-  // Set the component code and also update cache
-  const setComponentCodeWithCache = useCallback(
-    (code: string, path?: string) => {
-      const filePath = path || activePreview?.filePath
-      setComponentCode(code)
-
-      // Store in cache if we have a valid path
-      if (filePath) {
-        console.log("[usePublishDialog] Caching file content:", {
-          path: filePath,
-          codeLength: code.length,
-        })
-        fileContentCache.set(filePath, code)
-      }
-    },
-    [activePreview?.filePath],
-  )
-
-  // Helper function to get cached content
-  const getCachedFileContent = useCallback((path: string) => {
-    return fileContentCache.get(path)
-  }, [])
-
   // Helper function to generate a simple App.tsx that can handle demo files with both named and default exports
   const generateAppTsx = () => {
+    console.log("[generateAppTsx] Generating App.tsx with demo import")
     return `import React, { useState, useEffect } from 'react';
-    import { ThemeProvider } from 'next-themes';
-    import { RouterProvider } from 'next/router';
-    import './styles.css';
-    import DefaultExport, * as NamedExports from './demo';
+import { ThemeProvider } from 'next-themes';
+import { RouterProvider } from 'next/router';
+import './styles.css';
+import DefaultExport, * as NamedExports from './demo';
 
-    // Combine named exports and default export components
-    const demoComponentNames = [
-      ...Object.keys(DefaultExport || {}),
-      ...Object.keys(NamedExports).filter(key => 
-        typeof NamedExports[key] === 'function' && key !== 'default'
-      )
-    ];
+// Log what's available in the demo file for debugging
+console.log('Demo components loaded:', {
+  defaultExport: DefaultExport,
+  namedExports: Object.keys(NamedExports).filter(k => k !== 'default')
+});
 
-    const DemoComponents = {
-      ...(DefaultExport || {}),
-      ...Object.fromEntries(
-        Object.entries(NamedExports).filter(([key, value]) => 
-          typeof value === 'function' && key !== 'default'
-        )
-      )
+// Combine named exports and default export components
+const demoComponentNames = [
+  ...(DefaultExport && typeof DefaultExport === 'object' ? Object.keys(DefaultExport) : []),
+  ...Object.keys(NamedExports).filter(key => 
+    typeof NamedExports[key] === 'function' && key !== 'default'
+  )
+];
+
+console.log('Available demo component names:', demoComponentNames);
+
+const DemoComponents = {
+  ...(DefaultExport && typeof DefaultExport === 'object' ? DefaultExport : {}),
+  ...(typeof DefaultExport === 'function' ? { Demo: DefaultExport } : {}),
+  ...Object.fromEntries(
+    Object.entries(NamedExports).filter(([key, value]) => 
+      typeof value === 'function' && key !== 'default'
+    )
+  )
+};
+
+export default function App() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Handle both object of components and direct function component export
+  const getComponent = () => {
+    if (demoComponentNames.length > 0) {
+      return DemoComponents[demoComponentNames[currentIndex]];
+    } else if (typeof DefaultExport === 'function') {
+      return DefaultExport;
+    } else {
+      return () => <div className="p-6 text-center">Add components to demo.tsx</div>;
+    }
+  };
+  
+  const CurrentComponent = getComponent();
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && demoComponentNames.length > 1) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setCurrentIndex(prev => (prev + 1) % demoComponentNames.length);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setCurrentIndex(prev => (prev - 1 + demoComponentNames.length) % demoComponentNames.length);
+        }
+      }
     };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
-    export default function App() {
-      const [currentIndex, setCurrentIndex] = useState(0);
-      const CurrentComponent = demoComponentNames.length > 0 
-        ? DemoComponents[demoComponentNames[currentIndex]]
-        : () => <div className="p-6 text-center">Add components to demo.tsx</div>;
-
-      useEffect(() => {
-        const handleKeyDown = (e) => {
-          if ((e.metaKey || e.ctrlKey) && demoComponentNames.length > 1) {
-            if (e.key === 'ArrowDown') {
-              e.preventDefault();
-              setCurrentIndex(prev => (prev + 1) % demoComponentNames.length);
-            } else if (e.key === 'ArrowUp') {
-              e.preventDefault();
-              setCurrentIndex(prev => (prev - 1 + demoComponentNames.length) % demoComponentNames.length);
-            }
-          }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-      }, []);
-
-      return (
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          <RouterProvider>
-            <div className="flex flex-col items-center min-h-screen p-4 bg-background text-foreground">
-              {demoComponentNames.length > 1 && (
-                <div className="self-end mb-4">
-                  <select 
-                    value={demoComponentNames[currentIndex]} 
-                    onChange={(e) => {
-                      const idx = demoComponentNames.indexOf(e.target.value);
-                      if (idx !== -1) setCurrentIndex(idx);
-                    }}
-                    className="p-2 border rounded bg-background text-foreground"
-                  >
-                    {demoComponentNames.map(name => (
-                      <option key={name} value={name}>
-                        {name.replace(/([A-Z])/g, ' $1').trim()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              
-              <div className="flex items-center justify-center w-full">
-                <CurrentComponent />
-              </div>
+  return (
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <RouterProvider>
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
+          {demoComponentNames.length > 1 && (
+            <div className="self-end mb-4">
+              <select 
+                value={demoComponentNames[currentIndex]} 
+                onChange={(e) => {
+                  const idx = demoComponentNames.indexOf(e.target.value);
+                  if (idx !== -1) setCurrentIndex(idx);
+                }}
+                className="p-2 border rounded bg-background text-foreground"
+              >
+                {demoComponentNames.map(name => (
+                  <option key={name} value={name}>
+                    {name.replace(/([A-Z])/g, ' $1').trim()}
+                  </option>
+                ))}
+              </select>
             </div>
-          </RouterProvider>
-        </ThemeProvider>
-      );
-    }`
-  }
-
-  // Helper function to generate basic styles.css
-  const generateStylesCss = () => {
-    return `
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
-  --radius: 0.5rem;
-}
-
-.dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  line-height: 1.5;
+          )}
+          
+          <div className="flex items-center justify-center w-full">
+            <CurrentComponent />
+          </div>
+        </div>
+      </RouterProvider>
+    </ThemeProvider>
+  );
 }`
   }
 
@@ -345,7 +249,32 @@ body {
 
     // Add empty demo.tsx file
     allFiles["/demo.tsx"] = {
-      code: '// Add your demo code here\nexport default function Demo() {\n  return (\n    <div className="p-4">\n      {/* Add your component demo here */}\n      <div className="border-2 border-dashed border-gray-200 p-6 rounded-lg text-center">\n        Edit this file to create your component demo\n      </div>\n    </div>\n  );\n}',
+      code: `// Add your demo code here
+import React from 'react';
+
+// This component will be recognized by the CSS compiler and styles will be generated
+export default function Demo() {
+  return (
+    <div className="p-4">
+      {/* Add your component demo here */}
+      <div className="border-2 border-dashed border-gray-200 p-6 rounded-lg text-center">
+        Edit this file to create your component demo
+      </div>
+    </div>
+  );
+}
+
+// You can also add named exports for multiple demos
+/*
+export function SecondDemo() {
+  return (
+    <div className="p-4 bg-muted rounded-lg">
+      Another demo component
+    </div>
+  );
+}
+*/
+`,
     }
 
     // Add any cached file content for unknown components
@@ -367,8 +296,10 @@ body {
     // Add a simple App.tsx that imports and renders demo.tsx
     allFiles["/App.tsx"] = { code: generateAppTsx() }
 
-    // Add styles.css file
-    allFiles["/styles.css"] = { code: compiledCss || generateStylesCss() }
+    // Add styles.css file with the compiled CSS from our hook
+    allFiles["/styles.css"] = {
+      code: initialCompiledCss || generateStylesCss(),
+    }
 
     return allFiles
   }, [
@@ -380,8 +311,74 @@ body {
     mergedTailwindConfig,
     mergedGlobalCss,
     activePreview?.filePath,
-    compiledCss,
+    initialCompiledCss,
+    generateStylesCss,
   ])
+
+  // Use our CSS compiler hook
+  const { compiledCss, forceRecompile } = useCssCompiler({
+    componentCode,
+    processedData,
+    isProcessing,
+    registryDependencies,
+    files,
+    mergedTailwindConfig,
+    mergedGlobalCss,
+    getComponentFilePath,
+  })
+
+  // Update the initial compiled CSS when the compiled CSS changes
+  useEffect(() => {
+    if (compiledCss) {
+      setInitialCompiledCss(compiledCss)
+    }
+  }, [compiledCss])
+
+  // Reset dialog state
+  const resetState = useCallback(() => {
+    setComponentCode("")
+    setProcessedData(null)
+    setIsProcessing(false)
+    setIsPublishing(false)
+    setActivePreview(null)
+    setRegistryDependencies({})
+    setNpmDependenciesOfRegistryDependencies({})
+    setMergedTailwindConfig(null)
+    setMergedGlobalCss(null)
+    setActionRequiredFiles([])
+  }, [])
+
+  // Handle dialog open/close
+  const handleOpenChange = useCallback(
+    (isOpen: boolean) => {
+      setOpen(isOpen)
+      if (!isOpen) resetState()
+    },
+    [resetState],
+  )
+
+  // Set the component code and also update cache
+  const setComponentCodeWithCache = useCallback(
+    (code: string, path?: string) => {
+      const filePath = path || activePreview?.filePath
+      setComponentCode(code)
+
+      // Store in cache if we have a valid path
+      if (filePath) {
+        console.log("[usePublishDialog] Caching file content:", {
+          path: filePath,
+          codeLength: code.length,
+        })
+        fileContentCache.set(filePath, code)
+      }
+    },
+    [activePreview?.filePath],
+  )
+
+  // Helper function to get cached content
+  const getCachedFileContent = useCallback((path: string) => {
+    return fileContentCache.get(path)
+  }, [])
 
   // Unified handler for preview selection
   const handlePreviewSelect = useCallback(
@@ -817,226 +814,32 @@ body {
     isProcessing,
   ])
 
-  // Helper function to generate a hash of all key file contents
-  // This helps us detect when any important file has changed
-  const generateFilesHash = useCallback(() => {
-    const keyFiles = [
-      "/demo.tsx",
-      getComponentFilePath(),
-      "/styles.css",
-      "/tailwind.config.js",
-    ]
-
-    // Collect content of key files
-    const contents = keyFiles
-      .map((path) => {
-        const file = files[path]
-        return path + ":" + (typeof file === "string" ? file : file?.code || "")
-      })
-      .join("|")
-
-    return contents
-  }, [files, getComponentFilePath])
-
-  // Update the compileCSS function to track compilation state
-  const compileCSS = useCallback(async () => {
-    if (!componentCode || !processedData) {
-      console.log("[compileCSS] Skipping - no component code or processed data")
-      return
-    }
-
-    if (isCssCompiling) {
-      console.log("[compileCSS] Skipping - compilation already in progress")
-      return
-    }
-
-    setIsCssCompiling(true)
-    console.log("[compileCSS] Starting CSS compilation")
-
-    // Always initialize with the default CSS
-    const defaultCss = generateStylesCss()
-    setCompiledCss(defaultCss)
-    console.log("[compileCSS] Set default CSS fallback")
-
-    // Check if backend URL is available
-    const backendUrl = process.env.NEXT_PUBLIC_COMPILE_CSS_URL
-    if (!backendUrl) {
-      console.log("[compileCSS] Backend URL not available, using default CSS")
-      setIsCssCompiling(false)
-      return
-    }
-
-    console.log("[compileCSS] Backend URL:", backendUrl)
-
-    try {
-      // Get the component path based on processed data
-      const componentPath = getComponentFilePath()
-      console.log("[compileCSS] Component path:", componentPath)
-
-      // Extract all registry dependencies correctly (matching preview.tsx format)
-      const registryDependenciesArray = Object.entries(
-        registryDependencies || {},
-      ).map(([_, item]) => (typeof item === "string" ? item : item.code))
+  // Handle file changes from Sandpack editor
+  const handleFileChange = useCallback(
+    (path: string, fileContent: string) => {
       console.log(
-        "[compileCSS] Registry dependencies count:",
-        registryDependenciesArray.length,
+        `[handleFileChange] File ${path} changed, updating files state`,
       )
 
-      // Generate shell code exactly like preview.tsx does
-      const shellCode = Object.entries(files)
-        .filter(([key]) => /\.(tsx|jsx|ts|js)$/.test(key))
-        .map(([key, value]) => {
-          console.log("[compileCSS] Including file:", key)
-          return typeof value === "string" ? value : value.code
-        })
-      console.log("[compileCSS] Shell code count:", shellCode.length)
-
-      // Combine all dependencies (exactly matching preview.tsx)
-      const allDependencies = [...registryDependenciesArray, ...shellCode]
-      console.log(
-        "[compileCSS] Total dependencies count:",
-        allDependencies.length,
-      )
-
-      // Safely get demo code
-      const demoFile = files["/demo.tsx"]
-      const demoCode =
-        typeof demoFile === "string" ? demoFile : demoFile?.code || ""
-      console.log("[compileCSS] Demo code length:", demoCode.length)
-
-      console.log(
-        "[compileCSS] Attempting to compile CSS with backend:",
-        backendUrl,
-      )
-
-      // Prepare request payload - exactly match format from preview.tsx
-      const payload = {
-        code: componentCode,
-        demoCode,
-        baseTailwindConfig: defaultTailwindConfig,
-        baseGlobalCss: defaultGlobalCss,
-        customTailwindConfig: mergedTailwindConfig || null,
-        customGlobalCss: mergedGlobalCss || null,
-        dependencies: allDependencies,
-      }
-
-      console.log("[compileCSS] Request payload keys:", Object.keys(payload))
-
-      // Full URL for debugging
-      const fullUrl = `${backendUrl}/compile-css`
-      console.log("[compileCSS] Full URL:", fullUrl)
-
-      // Make the request with detailed error handling
-      console.log("[compileCSS] Sending request now...")
-
-      const response = await fetch(fullUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-
-      console.log("[compileCSS] Response status:", response.status)
-
-      if (!response.ok) {
-        console.error(
-          `[compileCSS] Server error: ${response.status} ${response.statusText}`,
-        )
-        throw new Error(
-          `Server responded with ${response.status}: ${response.statusText}`,
-        )
-      }
-
-      const data = await response.json()
-      if (data.error) {
-        console.error("[compileCSS] CSS compilation failed:", {
-          error: data.error,
-          details: data.details,
-        })
-        toast.error(`CSS compilation failed: ${data.details || data.error}`)
-        // Default CSS is already set above
-      } else {
+      // If this is the demo file, make sure we update our files state
+      if (path === "/demo.tsx") {
         console.log(
-          "[compileCSS] CSS compiled successfully, length:",
-          data.css.length,
+          "[handleFileChange] Demo file changed, length:",
+          fileContent.length,
         )
-        setCompiledCss(data.css)
+
+        // Cache the changes
+        fileContentCache.set(path, fileContent)
+
+        // Update the files object directly
+        files[path] = { code: fileContent }
+
+        // Force CSS recompilation to pick up the changes
+        forceRecompile()
       }
-      setIsCssCompiling(false)
-    } catch (error) {
-      console.error("[compileCSS] Failed to compile CSS:", error)
-      console.log("[compileCSS] Using default CSS instead")
-      // Default CSS is already set above
-      setIsCssCompiling(false)
-    }
-  }, [
-    componentCode,
-    processedData,
-    registryDependencies,
-    files,
-    mergedTailwindConfig,
-    mergedGlobalCss,
-    getComponentFilePath,
-    isCssCompiling,
-  ])
-
-  // Call the compile function when relevant files change, with debouncing
-  useEffect(() => {
-    // Don't compile if we're still processing the component
-    if (isProcessing || !processedData) return
-
-    // Generate a hash of all key files to detect changes
-    const currentFilesHash = generateFilesHash()
-
-    // Don't recompile if no files have changed and it was recently compiled
-    if (
-      currentFilesHash === prevFilesHashRef.current &&
-      Date.now() - lastCompilationTimeRef.current < 5000
-    ) {
-      console.log(
-        "[compileCSS] Skipping - no files have changed since last compilation",
-      )
-      return
-    }
-
-    // Don't compile if a compilation is already in progress
-    if (isCssCompiling) {
-      console.log("[compileCSS] Skipping - compilation already in progress")
-      return
-    }
-
-    // Clear any existing timeout
-    if (cssCompileTimeoutRef.current) {
-      clearTimeout(cssCompileTimeoutRef.current)
-    }
-
-    console.log("[compileCSS] Files have changed, scheduling compilation")
-
-    // Set a new timeout to debounce the compilation
-    cssCompileTimeoutRef.current = setTimeout(() => {
-      // Update the hash reference before compilation
-      prevFilesHashRef.current = currentFilesHash
-      lastCompilationTimeRef.current = Date.now()
-      compileCSS()
-      cssCompileTimeoutRef.current = null
-    }, 1000) // Debounce for 1 second
-
-    // Cleanup timeout on unmount
-    return () => {
-      if (cssCompileTimeoutRef.current) {
-        clearTimeout(cssCompileTimeoutRef.current)
-      }
-    }
-  }, [
-    files, // Track all files - this will catch changes to demo.tsx and other files
-    processedData,
-    isProcessing,
-    registryDependencies,
-    compileCSS,
-    isCssCompiling,
-    generateFilesHash,
-  ])
+    },
+    [files, forceRecompile],
+  )
 
   return {
     open,
@@ -1056,5 +859,6 @@ body {
     sandpackConfig,
     getComponentFilePath,
     isUnknownComponent,
+    handleFileChange, // Export the handler for Sandpack component
   }
 }
