@@ -54,8 +54,8 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
   )
 
   // Check if this is an unknown component that needs action - memoize this value
-  const isUnknownComponent = useMemo(
-    () => codeManager?.isUnknownComponent?.(componentPath) || false,
+  const isUnresolvedDependency = useMemo(
+    () => codeManager?.isUnresolvedDependency?.(componentPath) || false,
     [codeManager, componentPath],
   )
 
@@ -74,7 +74,7 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
       normalizedPath,
       fileExists: !!sandpack.files[normalizedPath],
       hasCachedContent: globalFileContentCache.has(normalizedPath),
-      isUnknownComponent,
+      isUnresolvedDependency,
       activeFile: sandpack.activeFile,
     })
 
@@ -125,7 +125,7 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
         console.error("[EditorCodePanel] Failed to create file:", error)
       }
     }
-  }, [normalizedPath, sandpack, codeManager, isUnknownComponent])
+  }, [normalizedPath, sandpack, codeManager, isUnresolvedDependency])
 
   useEffect(() => {
     // If the file doesn't exist and we have a valid path, create it or restore it
@@ -144,7 +144,7 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
     normalizedPath,
     sandpack.activeFile,
     sandpack.files,
-    isUnknownComponent,
+    isUnresolvedDependency,
     handleFileMissing,
   ])
 
@@ -206,7 +206,7 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
     normalizedPath,
     codeManager,
     markFileAsResolved,
-    isUnknownComponent,
+    isUnresolvedDependency,
     isActionRequired,
     getActionDetails,
   ])

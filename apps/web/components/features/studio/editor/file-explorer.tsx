@@ -37,7 +37,7 @@ interface DirectoryTreeItem extends BaseFileTreeItem {
 
 interface UnknownComponentFileTreeItem extends BaseFileTreeItem {
   type: "file"
-  isUnknownComponent: true
+  isUnresolvedDependency: true
   isLoading?: boolean
   actionRequired?: boolean
 }
@@ -92,7 +92,7 @@ export function buildFileTree(
 
   const addToTree = (
     path: string,
-    isUnknownComponent = false,
+    isUnresolvedDependency = false,
     componentName?: string,
   ) => {
     if (!isFileVisible(path)) {
@@ -107,7 +107,7 @@ export function buildFileTree(
       currentPath += `/${part}`
       const isLast = index === parts.length - 1
       const displayName =
-        isLast && isUnknownComponent ? `${componentName || part}.tsx` : part
+        isLast && isUnresolvedDependency ? `${componentName || part}.tsx` : part
 
       if (!isLast) {
         directories.add(currentPath)
@@ -130,12 +130,12 @@ export function buildFileTree(
         }
       } else {
         // Создаем файл
-        const fileItem = isUnknownComponent
+        const fileItem = isUnresolvedDependency
           ? {
               name: displayName,
               path,
               type: "file" as const,
-              isUnknownComponent: true,
+              isUnresolvedDependency: true,
               isLoading: loadingFiles.includes(path),
               actionRequired: actionRequiredFiles.includes(path),
             }

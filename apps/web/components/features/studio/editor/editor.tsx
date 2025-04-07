@@ -23,7 +23,7 @@ interface EditorProps {
   mainComponentPath: string
   unresolvedDependencies?: Array<{ name: string; path: string }>
   onCodeChange?: (path: string, content: string) => void
-  isUnknownComponentFn?: (path: string) => boolean
+  isUnresolvedDependencyFn?: (path: string) => boolean
   activePath?: string
   sandpackTemplate?: "react" | "react-ts" | "vanilla" | "vanilla-ts"
   dependencies?: Record<string, string>
@@ -40,7 +40,7 @@ export function Editor({
   mainComponentPath,
   unresolvedDependencies = [],
   onCodeChange,
-  isUnknownComponentFn,
+  isUnresolvedDependencyFn,
   activePath,
   sandpackTemplate = "react-ts",
   dependencies = {},
@@ -83,7 +83,7 @@ export function Editor({
         initialComponentPath={activePath || mainComponentPath}
         unresolvedDependencies={unresolvedDependencies}
         onFileContentChange={onCodeChange}
-        isUnknownComponentFn={isUnknownComponentFn}
+        isUnknownComponentFn={isUnresolvedDependencyFn}
       >
         <div className="flex flex-col h-full">
           <MemoizedEditorContent
@@ -114,7 +114,7 @@ function EditorContent({
   const {
     activeFile,
     selectFile,
-    isUnknownComponent,
+    isUnresolvedDependency,
     getComponentName,
     unresolvedDependencies,
     loadingComponents,
@@ -169,7 +169,7 @@ function EditorContent({
     if (!activeFile) return
 
     // Check if this is an unknown component with required action
-    if (isUnknownComponent(activeFile)) {
+    if (isUnresolvedDependency(activeFile)) {
       const actionDetails = getActionDetails(activeFile)
 
       if (actionDetails) {
@@ -186,7 +186,7 @@ function EditorContent({
     }
   }, [
     activeFile,
-    isUnknownComponent,
+    isUnresolvedDependency,
     getActionDetails,
     getFileContent,
     markFileAsResolved,
@@ -196,7 +196,7 @@ function EditorContent({
   const handleFileSelect = (path: string) => {
     console.log("[Editor] File selected:", {
       path,
-      isUnknown: isUnknownComponent(path),
+      isUnknown: isUnresolvedDependency(path),
       existingFiles: allFiles,
     })
 
@@ -204,7 +204,7 @@ function EditorContent({
     const normalizedPath = path.replace(/^@\//, "/")
 
     // Check if this is an unknown component and create an empty file if needed
-    if (isUnknownComponent(path)) {
+    if (isUnresolvedDependency(path)) {
       // Get component name
       const componentName = getComponentName(path)
 

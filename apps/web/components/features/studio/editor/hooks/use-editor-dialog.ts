@@ -734,8 +734,8 @@ export function SecondDemo() {
     }
   }
 
-  // Helper to check if a file is an unknown component
-  const isUnknownComponent = useCallback(
+  // Helper to check if a file is an unresolved dependency
+  const isUnresolvedDependency = useCallback(
     (path: string) => {
       return (
         processedData?.unresolvedDependencyImports?.some(
@@ -838,7 +838,7 @@ export function SecondDemo() {
     getCachedFileContent,
     sandpackConfig,
     getComponentFilePath,
-    isUnknownComponent,
+    isUnresolvedDependency,
     handleFileChange, // Export the handler for Sandpack component
   }
 }

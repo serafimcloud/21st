@@ -65,7 +65,7 @@ interface CodeManagerContextType {
   selectFile: (path: string | null) => void
 
   // File types and management
-  isUnknownComponent: (path: string) => boolean
+  isUnresolvedDependency: (path: string) => boolean
   getComponentName: (path: string) => string | undefined
 
   // File metadata
@@ -417,7 +417,7 @@ export function CodeManagerProvider({
   }
 
   // Component utilities
-  const isUnknownComponent = (path: string) => {
+  const isUnresolvedDependency = (path: string) => {
     // Check if it's marked as a file with unresolved_dependencies
     const details = getActionDetails(path)
     return (
@@ -467,7 +467,7 @@ export function CodeManagerProvider({
     selectFile, // Updates atom
 
     // File types and management
-    isUnknownComponent,
+    isUnresolvedDependency,
     getComponentName,
 
     // File metadata

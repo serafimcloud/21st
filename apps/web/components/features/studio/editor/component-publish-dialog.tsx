@@ -73,7 +73,7 @@ export function ComponentPublishDialog({
     setComponentCode,
     sandpackConfig,
     getComponentFilePath,
-    isUnknownComponent,
+    isUnresolvedDependency,
   } = usePublishDialog({ userId })
 
   // Create a stable reference to dialogContent
@@ -96,7 +96,7 @@ export function ComponentPublishDialog({
               setComponentCode(content)
             }
           }}
-          isUnknownComponentFn={isUnknownComponent}
+          isUnresolvedDependencyFn={isUnresolvedDependency}
           activePath={activePreview?.filePath}
           sandpackTemplate={sandpackConfig.template}
           dependencies={sandpackConfig.customSetup?.dependencies}
@@ -124,7 +124,7 @@ export function ComponentPublishDialog({
           unresolvedDependencies={processedData?.unresolvedDependencyImports}
           getComponentFilePath={getComponentFilePath}
           setComponentCode={setComponentCode}
-          isUnknownComponent={isUnknownComponent}
+          isUnresolvedDependency={isUnresolvedDependency}
           loadingFiles={loadingShadcnComponents}
           actionRequiredFiles={actionRequiredFiles}
           processedData={processedData}
@@ -207,7 +207,7 @@ interface SandpackContentProps {
   unresolvedDependencies?: Array<{ name: string; path: string }>
   getComponentFilePath: () => string
   setComponentCode: (code: string) => void
-  isUnknownComponent: (path: string) => boolean
+  isUnresolvedDependency: (path: string) => boolean
   loadingFiles?: string[]
   actionRequiredFiles?: string[]
   processedData?: any
@@ -219,7 +219,7 @@ function SandpackContent({
   unresolvedDependencies,
   getComponentFilePath,
   setComponentCode,
-  isUnknownComponent,
+  isUnresolvedDependency,
   loadingFiles = [],
   actionRequiredFiles = [],
   processedData,
@@ -307,7 +307,7 @@ function SandpackContent({
     }
 
     // Check if this is an unknown component
-    if (isUnknownComponent(path)) {
+    if (isUnresolvedDependency(path)) {
       // For unknown components, get the component name
       const componentName = unresolvedDependencies?.find(
         (comp) => comp.path === path,

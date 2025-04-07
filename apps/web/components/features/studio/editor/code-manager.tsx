@@ -15,12 +15,12 @@ interface CodeManagerContextType {
   renameFile: (from: string, to: string) => void
   deleteFile: (path: string) => void
 
-  // File state (derived from atoms)
+  // File state
   activeFile: string | null
   selectFile: (path: string | null) => void
 
   // File types and management
-  isUnknownComponent: (path: string) => boolean
+  isUnresolvedDependency: (path: string) => boolean
   getComponentName: (path: string) => string | undefined
 
   // File metadata
@@ -55,7 +55,7 @@ interface CodeManagerProviderProps {
   initialComponentPath: string
   unresolvedDependencies?: Array<{ name: string; path: string }>
   onFileContentChange?: (path: string, content: string) => void
-  isUnknownComponentFn?: (path: string) => boolean
+  isUnresolvedDependencyFn?: (path: string) => boolean
 }
 
 export function CodeManagerProvider({
@@ -63,7 +63,7 @@ export function CodeManagerProvider({
   initialComponentPath,
   unresolvedDependencies = [],
   onFileContentChange,
-  isUnknownComponentFn = () => false,
+  isUnresolvedDependencyFn = () => false,
 }: CodeManagerProviderProps) {
   // Use atoms directly in the context
   const { sandpack } = useSandpack()
@@ -87,7 +87,7 @@ export function CodeManagerProvider({
     }
 
     // Only update Sandpack if it's not an unknown component
-    if (!isUnknownComponentFn(path)) {
+    if (!isUnresolvedDependencyFn(path)) {
       sandpack.setActiveFile(path)
     }
 
@@ -183,8 +183,8 @@ export function CodeManagerProvider({
   }
 
   // Component utilities
-  const isUnknownComponent = (path: string) => {
-    return isUnknownComponentFn(path)
+  const isUnresolvedDependency = (path: string) => {
+    return isUnresolvedDependencyFn(path)
   }
 
   const getComponentName = (path: string) => {
@@ -207,7 +207,7 @@ export function CodeManagerProvider({
     selectFile, // Updates atom
 
     // File types and management
-    isUnknownComponent,
+    isUnresolvedDependency,
     getComponentName,
 
     // File metadata
