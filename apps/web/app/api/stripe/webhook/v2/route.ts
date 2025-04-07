@@ -3,7 +3,7 @@ import Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import stripe, { getPlanByStripeId } from "@/lib/stripe"
 
-const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET_v2
 
 async function getSubscriptionPlanDetailsById(planId: string) {
   const plan = await getPlanByStripeId(planId)

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import Stripe from "stripe"
+import { stripeV1, stripeV2 } from "@/lib/stripe"
 import { auth } from "@clerk/nextjs/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
@@ -12,8 +12,6 @@ interface SubscriptionMeta {
   portal_url?: string
   period_end?: string
 }
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function GET() {
   try {
@@ -51,7 +49,8 @@ export async function GET() {
           env,
           period,
           type,
-          add_usage
+          add_usage,
+          version
         )
       `,
       )
@@ -83,6 +82,9 @@ export async function GET() {
 
     const plansData = userPlan.plans as any
     const planType = (plansData?.type || "free") as PlanType
+    const planVersion = plansData?.version || 2
+    // Select the appropriate Stripe instance based on plan version
+    const stripeInstance = planVersion === 1 ? stripeV1 : stripeV2
 
     const meta = (userPlan.meta as SubscriptionMeta) || {}
 
@@ -96,7 +98,7 @@ export async function GET() {
 
     if (meta?.stripe_subscription_id) {
       try {
-        stripeSubscription = await stripe.subscriptions.retrieve(
+        stripeSubscription = await stripeInstance.subscriptions.retrieve(
           meta.stripe_subscription_id,
         )
       } catch (error) {
@@ -106,7 +108,7 @@ export async function GET() {
 
     if (meta?.stripe_customer_id && !portal_url) {
       try {
-        const { url } = await stripe.billingPortal.sessions.create({
+        const { url } = await stripeInstance.billingPortal.sessions.create({
           customer: meta.stripe_customer_id,
           return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`,
         })
@@ -145,6 +147,7 @@ export async function GET() {
             period: plansData.period,
             type: plansData.type,
             add_usage: plansData.add_usage,
+            version: plansData.version,
           }
         : undefined,
     }
