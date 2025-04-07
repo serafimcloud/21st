@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import stripe, { getPlanByStripeId } from "@/lib/stripe"
+import { stripeV2, getPlanByStripeId } from "@/lib/stripe"
 
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET_V2
 
@@ -212,17 +212,17 @@ async function handleFraudWarning(event: Stripe.Event) {
     throw new Error("No payment intent found in the event")
   }
 
-  const refund = await stripe.refunds.create({
+  const refund = await stripeV2.refunds.create({
     payment_intent: paymentIntentId as string,
   })
   console.log(`Refund created: ${refund.id}`)
 
-  const paymentIntent = await stripe.paymentIntents.retrieve(
+  const paymentIntent = await stripeV2.paymentIntents.retrieve(
     paymentIntentId as string,
   )
 
   if (paymentIntent.customer) {
-    const deletedCustomer = await stripe.customers.del(
+    const deletedCustomer = await stripeV2.customers.del(
       paymentIntent.customer as string,
     )
     console.log(
@@ -235,6 +235,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const body = await req.text()
   const sig = req.headers.get("stripe-signature")
 
+  console.log("sig", sig)
+  console.log("body", body)
+  console.log("stripeWebhookSecret", stripeWebhookSecret)
+  console.log("STRIPE_SECRET_KEY_V2", process.env.STRIPE_SECRET_KEY_V2)
+
   if (!sig) {
     return NextResponse.json(
       { error: "No Stripe signature found" },
@@ -245,13 +250,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(body, sig, stripeWebhookSecret!)
+    event = stripeV2.webhooks.constructEvent(body, sig, stripeWebhookSecret!)
   } catch (err: any) {
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },
       { status: 400 },
     )
   }
+
+  console.log("body", body)
+  console.log("-----")
+  console.log("event", event)
 
   const eventObject = event.data.object
   let userId
