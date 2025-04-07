@@ -235,11 +235,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const body = await req.text()
   const sig = req.headers.get("stripe-signature")
 
-  console.log("sig", sig)
-  console.log("body", body)
-  console.log("stripeWebhookSecret", stripeWebhookSecret)
-  console.log("STRIPE_SECRET_KEY_V2", process.env.STRIPE_SECRET_KEY_V2)
-
   if (!sig) {
     return NextResponse.json(
       { error: "No Stripe signature found" },
