@@ -16,22 +16,46 @@ import { TextShimmer } from "@/components/ui/text-shimmer"
 import React from "react"
 import { useActionRequired } from "./context/editor-state"
 
-interface FileTreeItem {
+interface BaseFileTreeItem {
   name: string
   path: string
   type: "file" | "directory"
   children?: FileTreeItem[]
-  isUnknownComponent?: boolean
+}
+
+interface RegularFileTreeItem extends BaseFileTreeItem {
+  type: "file"
   isLoading?: boolean
-  isStyleFile?: boolean
   actionRequired?: boolean
 }
 
-export interface FileExplorerProps {
+interface DirectoryTreeItem extends BaseFileTreeItem {
+  type: "directory"
+  children: FileTreeItem[]
+}
+
+interface UnknownComponentFileTreeItem extends BaseFileTreeItem {
+  type: "file"
+  isUnknownComponent: true
+  isLoading?: boolean
+  actionRequired?: boolean
+}
+
+type FileTreeItem =
+  | RegularFileTreeItem
+  | DirectoryTreeItem
+  | UnknownComponentFileTreeItem
+
+interface FileExplorerProps {
+  /** List of components that need to be imported or created */
   unresolvedDependencies?: Array<{ name: string; path: string }>
+  /** Callback when a file is selected */
   onFileSelect?: (path: string) => void
+  /** Currently selected file path */
   selectedFile?: string | null
+  /** List of files that should be visible in the explorer */
   visibleFiles?: string[]
+  /** List of files that are currently loading */
   loadingFiles?: string[]
 }
 
@@ -46,18 +70,17 @@ export function buildFileTree(
   const directories = new Set<string>()
 
   const isFileVisible = (path: string) => {
+    // Всегда показываем нерешенные зависимости
     if (unresolvedDependencies.some((comp) => comp.path === path)) {
       return true
     }
 
+    // Всегда показываем загружающиеся файлы
     if (loadingFiles.includes(path)) {
       return true
     }
 
-    if (!visibleFiles || visibleFiles.length === 0) {
-      return true
-    }
-
+    // Показываем только файлы, которые явно указаны в visibleFiles
     return visibleFiles.some((visiblePath) => {
       if (visiblePath.endsWith("/")) {
         return path.startsWith(visiblePath)
@@ -70,9 +93,8 @@ export function buildFileTree(
     path: string,
     isUnknownComponent = false,
     componentName?: string,
-    isStyleFile = false,
   ) => {
-    if (!isUnknownComponent && !isStyleFile && !isFileVisible(path)) {
+    if (!isFileVisible(path)) {
       return
     }
 
@@ -85,78 +107,75 @@ export function buildFileTree(
       const isLast = index === parts.length - 1
       const displayName =
         isLast && isUnknownComponent ? `${componentName || part}.tsx` : part
-      const existingItem = current.find((item) => item.name === displayName)
 
       if (!isLast) {
         directories.add(currentPath)
-      }
-
-      if (existingItem) {
-        if (isLast) {
-          existingItem.type = "file"
-          existingItem.path = path
-          if (isUnknownComponent) {
-            existingItem.isUnknownComponent = true
-          }
-          if (isStyleFile) {
-            existingItem.isStyleFile = true
-          }
-          existingItem.isLoading = loadingFiles.includes(path)
-          existingItem.actionRequired = actionRequiredFiles.includes(path)
-        }
-        current = existingItem.children || []
-      } else {
-        const newItem: FileTreeItem = {
-          name: displayName,
-          path: isLast ? path : currentPath,
-          type: isLast ? "file" : "directory",
-          children: isLast ? undefined : [],
-          isUnknownComponent: isLast ? isUnknownComponent : undefined,
-          isStyleFile: isLast ? isStyleFile : undefined,
-          isLoading: isLast ? loadingFiles.includes(path) : undefined,
-          actionRequired: isLast
-            ? actionRequiredFiles.includes(path)
-            : undefined,
-        }
-
-        const insertIndex = current.findIndex((item) => {
-          if (item.type === newItem.type) {
-            return item.name.localeCompare(newItem.name) > 0
-          }
-          return item.type === "file"
-        })
-
-        if (insertIndex === -1) {
-          current.push(newItem)
+        // Создаем директорию если её нет
+        const existingDir = current.find(
+          (item): item is DirectoryTreeItem =>
+            item.type === "directory" && item.name === displayName,
+        )
+        if (existingDir) {
+          current = existingDir.children
         } else {
-          current.splice(insertIndex, 0, newItem)
+          const newDir: DirectoryTreeItem = {
+            name: displayName,
+            path: currentPath,
+            type: "directory",
+            children: [],
+          }
+          current.push(newDir)
+          current = newDir.children
         }
-
-        if (!isLast) {
-          current = newItem.children!
-        }
+      } else {
+        // Создаем файл
+        const fileItem = isUnknownComponent
+          ? {
+              name: displayName,
+              path,
+              type: "file" as const,
+              isUnknownComponent: true,
+              isLoading: loadingFiles.includes(path),
+              actionRequired: actionRequiredFiles.includes(path),
+            }
+          : {
+              name: displayName,
+              path,
+              type: "file" as const,
+              isLoading: loadingFiles.includes(path),
+              actionRequired: actionRequiredFiles.includes(path),
+            }
+        current.push(fileItem)
       }
     })
   }
 
+  // Добавляем все файлы в дерево
   files.forEach((path) => {
     addToTree(path)
   })
 
+  // Добавляем неразрешенные зависимости
   unresolvedDependencies.forEach((comp) => {
-    // Extract component name from path if not provided
     const pathParts = comp.path.split("/")
     const fileName = pathParts[pathParts.length - 1]
     addToTree(comp.path, true, comp.name || fileName)
   })
 
+  // Добавляем загружающиеся файлы
   loadingFiles.forEach((path) => {
-    const pathParts = path.split("/")
-    const fileName = pathParts[pathParts.length - 1] || ""
-    const componentName = fileName.replace(".tsx", "")
-    addToTree(path, false, componentName)
+    if (
+      !files.includes(path) &&
+      !unresolvedDependencies.some((d) => d.path === path)
+    ) {
+      const pathParts = path.split("/")
+      const fileName = pathParts[pathParts.length - 1] || ""
+      const componentName = fileName.replace(".tsx", "")
+      addToTree(path, false, componentName)
+    }
   })
 
+  // Сортируем дерево рекурсивно
   const sortTreeRecursively = (items: FileTreeItem[]) => {
     items.sort((a, b) => {
       if (a.type !== b.type) {
@@ -166,7 +185,7 @@ export function buildFileTree(
     })
 
     items.forEach((item) => {
-      if (item.children) {
+      if (item.type === "directory") {
         sortTreeRecursively(item.children)
       }
     })
@@ -175,6 +194,12 @@ export function buildFileTree(
   sortTreeRecursively(root)
 
   return { tree: root, directories }
+}
+
+function isFileItem(
+  item: FileTreeItem,
+): item is RegularFileTreeItem | UnknownComponentFileTreeItem {
+  return item.type === "file"
 }
 
 function FileTreeNode({
@@ -248,7 +273,7 @@ function FileTreeNode({
           ) : (
             <Folder className="h-4 w-4 text-blue-500" />
           )
-        ) : item.isLoading || isLoading(item.path) ? (
+        ) : isFileItem(item) && (item.isLoading || isLoading(item.path)) ? (
           <div className="h-4 w-4 flex items-center justify-center">
             <Spinner size={14} />
           </div>
@@ -263,7 +288,7 @@ function FileTreeNode({
         ) : (
           <File className="h-4 w-4 text-gray-500" />
         )}
-        {item.isLoading || isLoading(item.path) ? (
+        {isFileItem(item) && (item.isLoading || isLoading(item.path)) ? (
           <TextShimmer className="truncate text-sm">{item.name}</TextShimmer>
         ) : (
           <span className={cn("truncate", showWarning && "text-yellow-600")}>
@@ -272,7 +297,7 @@ function FileTreeNode({
         )}
       </button>
 
-      {item.type === "directory" && isExpanded && item.children && (
+      {item.type === "directory" && isExpanded && (
         <div>
           {item.children.map((child, index) => (
             <FileTreeNode
