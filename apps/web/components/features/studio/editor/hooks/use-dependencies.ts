@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback } from "react"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { toast } from "sonner"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
@@ -23,31 +23,14 @@ export function useDependencies() {
     string[]
   >([])
 
-  // Add ref to track the timeout ID for loading state
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  // Add max timeout for safety
-  const maxLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const supabase = useClerkSupabaseClient()
-
-  // Cleanup function for timeouts
-  const cleanupTimeouts = useCallback(() => {
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current)
-      loadingTimeoutRef.current = null
-    }
-    if (maxLoadingTimeoutRef.current) {
-      clearTimeout(maxLoadingTimeoutRef.current)
-      maxLoadingTimeoutRef.current = null
-    }
-  }, [])
 
   // Reset dependencies state
   const resetDependencies = useCallback(() => {
     setRegistryDependencies({})
     setNpmDependenciesOfRegistryDependencies({})
     setLoadingShadcnComponents([])
-    cleanupTimeouts()
-  }, [cleanupTimeouts])
+  }, [])
 
   // Load dependencies for a component
   const loadDependencies = useCallback(
@@ -72,8 +55,8 @@ export function useDependencies() {
       }
 
       // Check for non-shadcn components in the database
-      const dbComponentSlugs: string[] = []
-      let dbLoadingPaths: string[] = []
+      const unresolvedComponentSlugs: string[] = []
+      let unresolvedLoadingPaths: string[] = []
 
       if (processedData?.unresolvedDependencyImports?.length > 0) {
         try {
@@ -87,15 +70,18 @@ export function useDependencies() {
           // Update the processedData with found matches
           if (lookupResults.length > 0) {
             // Create loading paths for UI feedback
-            dbLoadingPaths = lookupResults.map(
+            unresolvedLoadingPaths = lookupResults.map(
               ({ match }) => `/components/${match.registry}/${match.slug}.tsx`,
             )
 
             // Add paths to loading state
-            setLoadingShadcnComponents((prev) => [...prev, ...dbLoadingPaths])
+            setLoadingShadcnComponents((prev) => [
+              ...prev,
+              ...unresolvedLoadingPaths,
+            ])
 
             // Convert matches to dependency slugs for resolveRegistryDependencyTree
-            dbComponentSlugs.push(
+            unresolvedComponentSlugs.push(
               ...convertComponentMatchesToDependencySlugs(lookupResults),
             )
           }
@@ -103,8 +89,11 @@ export function useDependencies() {
           // Return the updated unresolved dependencies
           return {
             remainingComponents,
-            updatedLoadingPaths: [...shadcnLoadingPaths, ...dbLoadingPaths],
-            allDependencySlugs: [...shadcnSlugs, ...dbComponentSlugs],
+            updatedLoadingPaths: [
+              ...shadcnLoadingPaths,
+              ...unresolvedLoadingPaths,
+            ],
+            allDependencySlugs: [...shadcnSlugs, ...unresolvedComponentSlugs],
           }
         } catch (error) {
           console.error("Error looking up components:", error)
@@ -121,8 +110,8 @@ export function useDependencies() {
 
       return {
         remainingComponents: processedData.unresolvedDependencyImports,
-        updatedLoadingPaths: [...shadcnLoadingPaths, ...dbLoadingPaths],
-        allDependencySlugs: [...shadcnSlugs, ...dbComponentSlugs],
+        updatedLoadingPaths: [...shadcnLoadingPaths, ...unresolvedLoadingPaths],
+        allDependencySlugs: [...shadcnSlugs, ...unresolvedComponentSlugs],
       }
     },
     [supabase],
@@ -217,26 +206,13 @@ export function useDependencies() {
     [supabase],
   )
 
-  // Safety cleanup for loading state
-  const setupSafetyTimeout = useCallback(() => {
-    // Set a final cleanup timer just to be safe (with a shorter timeout)
-    loadingTimeoutRef.current = setTimeout(() => {
-      if (loadingShadcnComponents.length > 0) {
-        setLoadingShadcnComponents([])
-      }
-      loadingTimeoutRef.current = null
-    }, 5000) // 5 seconds should be enough for any remaining files
-  }, [loadingShadcnComponents])
-
   return {
     registryDependencies,
     npmDependenciesOfRegistryDependencies,
     loadingShadcnComponents,
     loadDependencies,
     resolveDependencies,
-    cleanupTimeouts,
     resetDependencies,
-    setupSafetyTimeout,
     setLoadingShadcnComponents,
   }
 }

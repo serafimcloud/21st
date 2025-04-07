@@ -4,7 +4,6 @@ import { ActivePreview } from "./use-file-management"
 
 interface UseComponentProcessingProps {
   userId: string
-  cleanupTimeouts: () => void
   setIsProcessing: (isProcessing: boolean) => void
   setLoadingShadcnComponents: (components: string[]) => void
   setActionRequiredFiles: (files: string[]) => void
@@ -21,7 +20,6 @@ interface UseComponentProcessingProps {
     dependencySlugs: string[],
     loadingPaths: string[],
   ) => Promise<boolean | undefined>
-  setupSafetyTimeout: () => void
 }
 
 /**
@@ -29,14 +27,12 @@ interface UseComponentProcessingProps {
  */
 export function useComponentProcessing({
   userId,
-  cleanupTimeouts,
   setIsProcessing,
   setLoadingShadcnComponents,
   setActionRequiredFiles,
   handlePreviewSelect,
   loadDependencies,
   resolveDependencies,
-  setupSafetyTimeout,
 }: UseComponentProcessingProps) {
   const [processedData, setProcessedData] = useState<any>(null)
 
@@ -59,8 +55,8 @@ export function useComponentProcessing({
         return
       }
 
-      // Clear any existing timeouts
-      cleanupTimeouts()
+      // Clear any existing timeouts is no longer needed
+      // cleanupTimeouts()
 
       setIsProcessing(true)
       setLoadingShadcnComponents([]) // Reset loading state at the start
@@ -249,23 +245,19 @@ export function useComponentProcessing({
         console.error("Error processing component:", error)
         // Clear loading state immediately in case of main process error
         setLoadingShadcnComponents([])
-        setActionRequiredFiles([])
       } finally {
         setIsProcessing(false)
-        // Set a safety timeout for clearing loading state
-        setupSafetyTimeout()
+        // Safety timeout for clearing loading state is no longer needed
       }
     },
     [
       userId,
-      cleanupTimeouts,
       setIsProcessing,
       setLoadingShadcnComponents,
       setActionRequiredFiles,
       handlePreviewSelect,
       loadDependencies,
       resolveDependencies,
-      setupSafetyTimeout,
     ],
   )
 

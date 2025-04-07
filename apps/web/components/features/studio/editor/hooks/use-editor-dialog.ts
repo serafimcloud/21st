@@ -22,7 +22,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     isPublishing,
     setIsProcessing,
     handleOpenChange,
-    resetState: resetDialogState,
   } = useDialogState()
 
   // File management
@@ -39,7 +38,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     handleFileChange: handleFileChangeBase,
     setInitialCompiledCss,
     setActionRequiredFiles,
-    setActivePreview,
     fileContentCache,
   } = useFileManagement()
 
@@ -50,9 +48,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     loadingShadcnComponents,
     loadDependencies,
     resolveDependencies,
-    cleanupTimeouts,
     resetDependencies,
-    setupSafetyTimeout,
     setLoadingShadcnComponents,
   } = useDependencies()
 
@@ -64,7 +60,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     setProcessedData,
   } = useComponentProcessing({
     userId,
-    cleanupTimeouts,
     setIsProcessing,
     setLoadingShadcnComponents,
     setActionRequiredFiles,
@@ -72,7 +67,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       handlePreviewSelectBase(preview, files),
     loadDependencies,
     resolveDependencies,
-    setupSafetyTimeout,
   })
 
   // Sandpack configuration

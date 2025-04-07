@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback } from "react"
 
 // Create a file content cache that persists across component remounts
 const fileContentCache = new Map<string, string>()
@@ -241,7 +241,6 @@ export default function App() {
     handleFileChange,
     setInitialCompiledCss,
     setActionRequiredFiles,
-    setActivePreview,
     fileContentCache,
   }
 }
