@@ -89,35 +89,6 @@ root.render(
         2,
       ),
     },
-    "/App.tsx": {
-      code: processedData
-        ? `import { ThemeProvider } from "./next-themes";
-import ${processedData.componentName || "Component"} from "./components/${
-            processedData.registryType || "ui"
-          }/${processedData.slug?.replace(".tsx", "") || "component"}";
-
-export default function App() {
-  return (
-    <ThemeProvider attribute="class" defaultTheme="${theme}" enableSystem={false}>
-      <div className="container">
-        <${processedData.componentName || "Component"} />
-      </div>
-    </ThemeProvider>
-  );
-}`
-        : `import { ThemeProvider } from "./next-themes";
-import Component from "${componentPath.replace(".tsx", "")}";
-
-export default function App() {
-  return (
-    <ThemeProvider defaultTheme="light" storageKey="sandpack-theme">
-      <div className="container">
-        <Component />
-      </div>
-    </ThemeProvider>
-  );
-}`,
-    },
     "/next-themes.tsx": {
       code: `import React, { createContext, useContext, useState, useEffect } from 'react';
 
