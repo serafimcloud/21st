@@ -213,6 +213,8 @@ interface SandpackContentProps {
   processedData?: any
 }
 
+// ЭТО ГОВНО ДОЛЖНО БУДЕТ ПЕРЕЕХТЬ НА EDITOR
+
 function SandpackContent({
   activePreview,
   onPreviewSelect,
