@@ -10,7 +10,10 @@ export const loadingComponentsAtom = atom<string[]>([])
 export const previewReadyAtom = atom<boolean>(false)
 
 // Improved typing for action required system
-export type ActionRequiredReason = "styles" | "missing_import" | "other"
+export type ActionRequiredReason =
+  | "styles"
+  | "unresolved_dependencies"
+  | "other"
 
 export interface BaseActionRequiredDetails {
   reason: ActionRequiredReason
@@ -25,8 +28,9 @@ export interface StylesActionDetails extends BaseActionRequiredDetails {
   utilities?: Array<any>
 }
 
-export interface MissingImportActionDetails extends BaseActionRequiredDetails {
-  reason: "missing_import"
+export interface UnresolvedDependenciesActionDetails
+  extends BaseActionRequiredDetails {
+  reason: "unresolved_dependencies"
   componentName?: string
 }
 
@@ -36,7 +40,7 @@ export interface OtherActionDetails extends BaseActionRequiredDetails {
 
 export type ActionRequiredDetails =
   | StylesActionDetails
-  | MissingImportActionDetails
+  | UnresolvedDependenciesActionDetails
   | OtherActionDetails
 
 // State atom with path normalization
@@ -414,10 +418,10 @@ export function CodeManagerProvider({
 
   // Component utilities
   const isUnknownComponent = (path: string) => {
-    // Check if it's marked as a file with missing_import
+    // Check if it's marked as a file with unresolved_dependencies
     const details = getActionDetails(path)
     return (
-      details?.reason === "missing_import" &&
+      details?.reason === "unresolved_dependencies" &&
       details.componentName !== undefined
     )
   }
@@ -425,10 +429,10 @@ export function CodeManagerProvider({
   // Update unresolvedDependencies to use the action system
   useEffect(() => {
     if (unresolvedDependencies && unresolvedDependencies.length > 0) {
-      // Register unknown components as files requiring action with missing_import reason
+      // Register unknown components as files requiring action with unresolved_dependencies reason
       unresolvedDependencies.forEach((comp) => {
         markFileAsRequiringAction(comp.path, {
-          reason: "missing_import",
+          reason: "unresolved_dependencies",
           message: `Missing import for component: ${comp.name || "Unnamed"}`,
           componentName: comp.name,
         })
@@ -437,10 +441,10 @@ export function CodeManagerProvider({
   }, [unresolvedDependencies, markFileAsRequiringAction])
 
   const getComponentName = (path: string) => {
-    // First check in action required files for missing_import reason with componentName
+    // First check in action required files for unresolved_dependencies reason with componentName
     const actionDetails = getActionDetails(path)
     if (
-      actionDetails?.reason === "missing_import" &&
+      actionDetails?.reason === "unresolved_dependencies" &&
       actionDetails.componentName
     ) {
       return actionDetails.componentName

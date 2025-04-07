@@ -157,7 +157,7 @@ function EditorContent({
       } else {
         // For other files (likely missing imports)
         markFileAsRequiringAction(file, {
-          reason: "missing_import",
+          reason: "unresolved_dependencies",
           message: "This component requires additional imports",
         })
       }
@@ -234,7 +234,7 @@ function EditorContent({
 
         // Mark it as requiring action
         markFileAsRequiringAction(normalizedPath, {
-          reason: "missing_import",
+          reason: "unresolved_dependencies",
           message: `This component needs to be implemented`,
         })
       } else {

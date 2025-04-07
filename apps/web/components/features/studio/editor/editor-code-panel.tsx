@@ -163,12 +163,15 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
       // Check both path formats (with and without @/ prefix)
       const pathWithPrefix = `@${normalizedPath}`
 
-      // Automatically resolve any "missing_import" action required status
+      // Automatically resolve any "unresolved_dependencies" action required status
       // when file content changes, regardless of content - check both path formats
       const checkAndResolveActionRequired = (path: string) => {
         if (isActionRequired(path)) {
           const actionDetails = getActionDetails(path)
-          if (actionDetails && actionDetails.reason === "missing_import") {
+          if (
+            actionDetails &&
+            actionDetails.reason === "unresolved_dependencies"
+          ) {
             markFileAsResolved(path)
           }
         }

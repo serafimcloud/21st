@@ -255,7 +255,7 @@ function SandpackContent({
       } else {
         // For other files (likely missing imports)
         markFileAsRequiringAction(file, {
-          reason: "missing_import",
+          reason: "unresolved_dependencies",
           message: "This component requires additional imports",
         })
       }
