@@ -4,21 +4,17 @@ import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/defaults"
 interface GenerateFilesOptions {
   componentPath: string
   componentCode: string
-  processedData: any | null
   dependencies?: Record<string, string>
   customTailwindConfig?: string | null
   customGlobalCss?: string | null
-  theme: "light" | "dark"
 }
 
 export function generateSandpackFiles({
   componentPath,
   componentCode,
-  processedData,
   dependencies = {},
   customTailwindConfig = null,
   customGlobalCss = null,
-  theme,
 }: GenerateFilesOptions): SandpackFiles {
   const files: SandpackFiles = {
     [componentPath]: {

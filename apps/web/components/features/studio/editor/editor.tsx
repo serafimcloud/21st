@@ -10,9 +10,9 @@ import {
   CodeManagerProvider,
   useCodeManager,
   useActionRequired,
-  ActionRequiredDetails,
   usePreviewReady,
 } from "./context/editor-state"
+import { ActionRequiredDetails } from "./context/editor-types"
 import { EditorCodePanel } from "./editor-code-panel"
 import { FileExplorer } from "./file-explorer"
 import { RequirementsPanel } from "./requirements-panel"
@@ -121,7 +121,6 @@ function EditorContent({
     addFile,
     allFiles,
     getFileContent,
-    updateFileContent,
   } = useCodeManager()
 
   const { markFileAsRequiringAction, markFileAsResolved, getActionDetails } =

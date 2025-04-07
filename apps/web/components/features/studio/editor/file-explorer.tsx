@@ -1,6 +1,6 @@
 import { useSandpack } from "@codesandbox/sandpack-react"
 import { cn } from "@/lib/utils"
-import { arePathsEqual, normalizePath } from "@/lib/utils"
+import { arePathsEqual } from "@/lib/utils"
 import {
   ChevronRight,
   ChevronDown,

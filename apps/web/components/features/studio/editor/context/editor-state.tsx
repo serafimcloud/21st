@@ -1,100 +1,30 @@
-import React, { createContext, useContext, useEffect, useCallback } from "react"
-import { atom, useAtom } from "jotai"
+import React, { createContext, useContext, useEffect } from "react"
+import { useAtom } from "jotai"
 import { useSandpack } from "@codesandbox/sandpack-react"
-import { normalizePath } from "@/lib/utils"
 
-// Define atoms for state management (single source of truth)
-export const activeFileAtom = atom<string | null>(null)
-export const userModifiedFilesAtom = atom<Record<string, boolean>>({})
-export const loadingComponentsAtom = atom<string[]>([])
-export const previewReadyAtom = atom<boolean>(false)
+// Import types
+import {
+  CodeManagerContextType,
+  CodeManagerProviderProps,
+} from "./editor-types"
 
-// Improved typing for action required system
-export type ActionRequiredReason =
-  | "styles"
-  | "unresolved_dependencies"
-  | "other"
+// Import atoms
+import {
+  activeFileAtom,
+  userModifiedFilesAtom,
+  loadingComponentsAtom,
+} from "./editor-atoms"
 
-export interface BaseActionRequiredDetails {
-  reason: ActionRequiredReason
-  message?: string
-}
+// Import hooks
+import { useActionRequired } from "../hooks/use-action-required"
+import { usePreviewReady } from "../hooks/use-preview-ready"
 
-export interface StylesActionDetails extends BaseActionRequiredDetails {
-  reason: "styles"
-  tailwindExtensions?: Record<string, any>
-  cssVariables?: Array<any>
-  keyframes?: Array<any>
-  utilities?: Array<any>
-}
-
-export interface UnresolvedDependenciesActionDetails
-  extends BaseActionRequiredDetails {
-  reason: "unresolved_dependencies"
-  componentName?: string
-}
-
-export interface OtherActionDetails extends BaseActionRequiredDetails {
-  reason: "other"
-}
-
-export type ActionRequiredDetails =
-  | StylesActionDetails
-  | UnresolvedDependenciesActionDetails
-  | OtherActionDetails
-
-// State atom with path normalization
-export const actionRequiredFilesAtom = atom<
-  Record<string, ActionRequiredDetails>
->({})
-
-// New atom to track paths that need action (for better performance)
-export const actionRequiredPathsAtom = atom<string[]>([])
-
-// Define the types for our context
-export interface CodeManagerContextType {
-  // File operations
-  getFileContent: (path: string) => string | undefined
-  updateFileContent: (path: string, content: string) => void
-  addFile: (path: string, content: string) => void
-  renameFile: (oldPath: string, newPath: string) => void
-  deleteFile: (path: string) => void
-
-  // File state
-  activeFile: string | null
-  selectFile: (path: string | null) => void
-
-  // File types and management
-  isUnresolvedDependency: (path: string) => boolean
-  getComponentName: (path: string) => string | undefined
-
-  // File metadata
-  allFiles: string[]
-  unresolvedDependencies: Array<{ name: string; path: string }> | undefined
-
-  // Loading state
-  loadingComponents: string[]
-  setLoadingComponents: (paths: string[]) => void
-
-  // Action required state
-  actionRequiredFiles: Record<string, ActionRequiredDetails>
-  actionRequiredPaths: string[]
-  markFileAsRequiringAction: (
-    path: string,
-    details: ActionRequiredDetails,
-  ) => void
-  markFileAsResolved: (path: string) => void
-  isActionRequired: (path: string) => boolean
-  getActionDetails: (path: string) => ActionRequiredDetails | undefined
-
-  // Preview ready state
-  previewReady: boolean
-  markPreviewReady: () => void
-  markPreviewNotReady: () => void
-}
-
+// Create the context
 const CodeManagerContext = createContext<CodeManagerContextType | null>(null)
 
+/**
+ * Hook to access the CodeManager context
+ */
 export function useCodeManager() {
   const context = useContext(CodeManagerContext)
   if (!context) {
@@ -103,126 +33,21 @@ export function useCodeManager() {
   return context
 }
 
-// Simple hook to access atom state directly
-export function useEditorFile() {
-  const [activeFile, setActiveFile] = useAtom(activeFileAtom)
-  const [userModifiedFiles] = useAtom(userModifiedFilesAtom)
+// Re-export hooks and types
+export { useEditorFile } from "../hooks/use-editor-file"
+export { useActionRequired } from "../hooks/use-action-required"
+export { usePreviewReady } from "../hooks/use-preview-ready"
+export type {
+  ActionRequiredDetails,
+  ActionRequiredReason,
+  StylesActionDetails,
+  UnresolvedDependenciesActionDetails,
+  OtherActionDetails,
+} from "./editor-types"
 
-  return {
-    activeFile,
-    setActiveFile,
-    isFileModified: (path: string) => userModifiedFiles[path] || false,
-  }
-}
-
-// Hook with improved logic
-export function useActionRequired() {
-  const [actionRequiredFiles, setActionRequiredFiles] = useAtom(
-    actionRequiredFilesAtom,
-  )
-  const [actionRequiredPaths, setActionRequiredPaths] = useAtom(
-    actionRequiredPathsAtom,
-  )
-
-  const markFileAsRequiringAction = useCallback(
-    (path: string, details: ActionRequiredDetails) => {
-      const normalizedPath = normalizePath(path)
-
-      setActionRequiredFiles((prev) => {
-        // Skip update if nothing is changing
-        if (
-          prev[normalizedPath] &&
-          JSON.stringify(prev[normalizedPath]) === JSON.stringify(details)
-        ) {
-          return prev
-        }
-
-        const next = { ...prev, [normalizedPath]: details }
-        return next
-      })
-
-      setActionRequiredPaths((prev) => {
-        if (!prev.includes(normalizedPath)) {
-          return [...prev, normalizedPath]
-        }
-        return prev
-      })
-    },
-    [setActionRequiredFiles, setActionRequiredPaths],
-  )
-
-  const markFileAsResolved = useCallback(
-    (path: string) => {
-      const normalizedPath = normalizePath(path)
-
-      setActionRequiredFiles((prev) => {
-        if (!prev[normalizedPath]) {
-          return prev
-        }
-
-        const next = { ...prev }
-        delete next[normalizedPath]
-        return next
-      })
-
-      setActionRequiredPaths((prev) => prev.filter((p) => p !== normalizedPath))
-    },
-    [setActionRequiredFiles, setActionRequiredPaths],
-  )
-
-  const isActionRequired = useCallback(
-    (path: string) => {
-      const normalizedPath = normalizePath(path)
-      return actionRequiredPaths.includes(normalizedPath)
-    },
-    [actionRequiredPaths],
-  )
-
-  const getActionDetails = useCallback(
-    (path: string) => {
-      const normalizedPath = normalizePath(path)
-      return actionRequiredFiles[normalizedPath]
-    },
-    [actionRequiredFiles],
-  )
-
-  return {
-    actionRequiredFiles,
-    actionRequiredPaths,
-    markFileAsRequiringAction,
-    markFileAsResolved,
-    isActionRequired,
-    getActionDetails,
-  }
-}
-
-// New hook to manage preview readiness that doesn't depend on Sandpack
-export function usePreviewReady() {
-  const [previewReady, setPreviewReady] = useAtom(previewReadyAtom)
-
-  const markPreviewReady = useCallback(() => {
-    setPreviewReady(true)
-  }, [setPreviewReady])
-
-  const markPreviewNotReady = useCallback(() => {
-    setPreviewReady(false)
-  }, [setPreviewReady])
-
-  return {
-    previewReady,
-    markPreviewReady,
-    markPreviewNotReady,
-  }
-}
-
-interface CodeManagerProviderProps {
-  children: React.ReactNode
-  initialComponentPath: string
-  unresolvedDependencies?: Array<{ name: string; path: string }>
-  onFileContentChange?: (path: string, content: string) => void
-  isUnknownComponentFn?: (path: string) => boolean
-}
-
+/**
+ * CodeManager Provider Component
+ */
 export function CodeManagerProvider({
   children,
   initialComponentPath,
@@ -279,7 +104,7 @@ export function CodeManagerProvider({
     if (initialComponentPath && !activeFile && sandpack) {
       selectFile(initialComponentPath)
     }
-  }, [initialComponentPath, sandpack])
+  }, [initialComponentPath, sandpack, activeFile])
 
   // File selection
   const selectFile = (path: string | null) => {

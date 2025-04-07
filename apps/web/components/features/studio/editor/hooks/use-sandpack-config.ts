@@ -52,8 +52,6 @@ export function useSandpackConfig({
     const generatedFiles = generateSandpackFiles({
       componentPath,
       componentCode,
-      processedData,
-      theme: isDarkTheme ? "dark" : "light",
       dependencies: {
         ...(processedData?.npmDependencies?.reduce(
           (acc: Record<string, string>, dep: string) => ({

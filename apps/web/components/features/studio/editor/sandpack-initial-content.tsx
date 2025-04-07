@@ -4,10 +4,8 @@ import { cn } from "@/lib/utils"
 import { FileExplorer } from "./file-explorer"
 import { EditorCodePanel } from "./editor-code-panel"
 import { RequirementsPanel } from "./requirements-panel"
-import {
-  useActionRequired,
-  ActionRequiredDetails,
-} from "./context/editor-state"
+import { useActionRequired } from "./context/editor-state"
+import { ActionRequiredDetails } from "./context/editor-types"
 
 interface SandpackInitialContentProps {
   activePreview: {

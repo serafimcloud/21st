@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   useActionRequired,
-  useCodeManager,
   StylesActionDetails,
 } from "./context/editor-state"
 
@@ -22,14 +21,6 @@ export function RequirementsPanel({
   activeFile,
 }: RequirementsPanelProps) {
   const { getActionDetails, markFileAsResolved } = useActionRequired()
-
-  // Get code manager
-  let codeManager
-  try {
-    codeManager = useCodeManager()
-  } catch (error) {
-    codeManager = null
-  }
 
   // If no active file, don't show anything
   if (!activeFile) {
