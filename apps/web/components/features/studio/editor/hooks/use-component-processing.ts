@@ -55,9 +55,6 @@ export function useComponentProcessing({
         return
       }
 
-      // Clear any existing timeouts is no longer needed
-      // cleanupTimeouts()
-
       setIsProcessing(true)
       setLoadingShadcnComponents([]) // Reset loading state at the start
       setActionRequiredFiles([]) // Reset action required files
@@ -243,11 +240,9 @@ export function useComponentProcessing({
           `Processing failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         )
         console.error("Error processing component:", error)
-        // Clear loading state immediately in case of main process error
         setLoadingShadcnComponents([])
       } finally {
         setIsProcessing(false)
-        // Safety timeout for clearing loading state is no longer needed
       }
     },
     [
