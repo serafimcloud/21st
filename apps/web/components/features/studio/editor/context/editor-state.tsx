@@ -52,7 +52,7 @@ export const actionRequiredFilesAtom = atom<
 export const actionRequiredPathsAtom = atom<string[]>([])
 
 // Define the types for our context
-interface CodeManagerContextType {
+export interface CodeManagerContextType {
   // File operations
   getFileContent: (path: string) => string | undefined
   updateFileContent: (path: string, content: string) => void
