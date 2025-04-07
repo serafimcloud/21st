@@ -74,7 +74,6 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
 }`
 
 // Default global CSS for shadcn UI components

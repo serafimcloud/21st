@@ -66,6 +66,21 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
   // Add max timeout for safety
   const maxLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Add state for compiled CSS
+  const [compiledCss, setCompiledCss] = useState<string | null>(null)
+
+  // Add state to track in-progress compilation
+  const [isCssCompiling, setIsCssCompiling] = useState(false)
+  // Add ref for debouncing
+  const cssCompileTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // Add ref for previous component code
+  const prevComponentCodeRef = useRef<string>("")
+  // Add ref to track last compilation time
+  const lastCompilationTimeRef = useRef<number>(0)
+
+  // Add ref for tracking the content hash of all files
+  const prevFilesHashRef = useRef<string>("")
+
   // Safety cleanup for loading state
   useEffect(() => {
     // Cleanup on unmount
@@ -353,7 +368,7 @@ body {
     allFiles["/App.tsx"] = { code: generateAppTsx() }
 
     // Add styles.css file
-    allFiles["/styles.css"] = { code: generateStylesCss() }
+    allFiles["/styles.css"] = { code: compiledCss || generateStylesCss() }
 
     return allFiles
   }, [
@@ -365,6 +380,7 @@ body {
     mergedTailwindConfig,
     mergedGlobalCss,
     activePreview?.filePath,
+    compiledCss,
   ])
 
   // Unified handler for preview selection
@@ -799,6 +815,227 @@ body {
     isDarkTheme,
     processedData,
     isProcessing,
+  ])
+
+  // Helper function to generate a hash of all key file contents
+  // This helps us detect when any important file has changed
+  const generateFilesHash = useCallback(() => {
+    const keyFiles = [
+      "/demo.tsx",
+      getComponentFilePath(),
+      "/styles.css",
+      "/tailwind.config.js",
+    ]
+
+    // Collect content of key files
+    const contents = keyFiles
+      .map((path) => {
+        const file = files[path]
+        return path + ":" + (typeof file === "string" ? file : file?.code || "")
+      })
+      .join("|")
+
+    return contents
+  }, [files, getComponentFilePath])
+
+  // Update the compileCSS function to track compilation state
+  const compileCSS = useCallback(async () => {
+    if (!componentCode || !processedData) {
+      console.log("[compileCSS] Skipping - no component code or processed data")
+      return
+    }
+
+    if (isCssCompiling) {
+      console.log("[compileCSS] Skipping - compilation already in progress")
+      return
+    }
+
+    setIsCssCompiling(true)
+    console.log("[compileCSS] Starting CSS compilation")
+
+    // Always initialize with the default CSS
+    const defaultCss = generateStylesCss()
+    setCompiledCss(defaultCss)
+    console.log("[compileCSS] Set default CSS fallback")
+
+    // Check if backend URL is available
+    const backendUrl = process.env.NEXT_PUBLIC_COMPILE_CSS_URL
+    if (!backendUrl) {
+      console.log("[compileCSS] Backend URL not available, using default CSS")
+      setIsCssCompiling(false)
+      return
+    }
+
+    console.log("[compileCSS] Backend URL:", backendUrl)
+
+    try {
+      // Get the component path based on processed data
+      const componentPath = getComponentFilePath()
+      console.log("[compileCSS] Component path:", componentPath)
+
+      // Extract all registry dependencies correctly (matching preview.tsx format)
+      const registryDependenciesArray = Object.entries(
+        registryDependencies || {},
+      ).map(([_, item]) => (typeof item === "string" ? item : item.code))
+      console.log(
+        "[compileCSS] Registry dependencies count:",
+        registryDependenciesArray.length,
+      )
+
+      // Generate shell code exactly like preview.tsx does
+      const shellCode = Object.entries(files)
+        .filter(([key]) => /\.(tsx|jsx|ts|js)$/.test(key))
+        .map(([key, value]) => {
+          console.log("[compileCSS] Including file:", key)
+          return typeof value === "string" ? value : value.code
+        })
+      console.log("[compileCSS] Shell code count:", shellCode.length)
+
+      // Combine all dependencies (exactly matching preview.tsx)
+      const allDependencies = [...registryDependenciesArray, ...shellCode]
+      console.log(
+        "[compileCSS] Total dependencies count:",
+        allDependencies.length,
+      )
+
+      // Safely get demo code
+      const demoFile = files["/demo.tsx"]
+      const demoCode =
+        typeof demoFile === "string" ? demoFile : demoFile?.code || ""
+      console.log("[compileCSS] Demo code length:", demoCode.length)
+
+      console.log(
+        "[compileCSS] Attempting to compile CSS with backend:",
+        backendUrl,
+      )
+
+      // Prepare request payload - exactly match format from preview.tsx
+      const payload = {
+        code: componentCode,
+        demoCode,
+        baseTailwindConfig: defaultTailwindConfig,
+        baseGlobalCss: defaultGlobalCss,
+        customTailwindConfig: mergedTailwindConfig || null,
+        customGlobalCss: mergedGlobalCss || null,
+        dependencies: allDependencies,
+      }
+
+      console.log("[compileCSS] Request payload keys:", Object.keys(payload))
+
+      // Full URL for debugging
+      const fullUrl = `${backendUrl}/compile-css`
+      console.log("[compileCSS] Full URL:", fullUrl)
+
+      // Make the request with detailed error handling
+      console.log("[compileCSS] Sending request now...")
+
+      const response = await fetch(fullUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+
+      console.log("[compileCSS] Response status:", response.status)
+
+      if (!response.ok) {
+        console.error(
+          `[compileCSS] Server error: ${response.status} ${response.statusText}`,
+        )
+        throw new Error(
+          `Server responded with ${response.status}: ${response.statusText}`,
+        )
+      }
+
+      const data = await response.json()
+      if (data.error) {
+        console.error("[compileCSS] CSS compilation failed:", {
+          error: data.error,
+          details: data.details,
+        })
+        toast.error(`CSS compilation failed: ${data.details || data.error}`)
+        // Default CSS is already set above
+      } else {
+        console.log(
+          "[compileCSS] CSS compiled successfully, length:",
+          data.css.length,
+        )
+        setCompiledCss(data.css)
+      }
+      setIsCssCompiling(false)
+    } catch (error) {
+      console.error("[compileCSS] Failed to compile CSS:", error)
+      console.log("[compileCSS] Using default CSS instead")
+      // Default CSS is already set above
+      setIsCssCompiling(false)
+    }
+  }, [
+    componentCode,
+    processedData,
+    registryDependencies,
+    files,
+    mergedTailwindConfig,
+    mergedGlobalCss,
+    getComponentFilePath,
+    isCssCompiling,
+  ])
+
+  // Call the compile function when relevant files change, with debouncing
+  useEffect(() => {
+    // Don't compile if we're still processing the component
+    if (isProcessing || !processedData) return
+
+    // Generate a hash of all key files to detect changes
+    const currentFilesHash = generateFilesHash()
+
+    // Don't recompile if no files have changed and it was recently compiled
+    if (
+      currentFilesHash === prevFilesHashRef.current &&
+      Date.now() - lastCompilationTimeRef.current < 5000
+    ) {
+      console.log(
+        "[compileCSS] Skipping - no files have changed since last compilation",
+      )
+      return
+    }
+
+    // Don't compile if a compilation is already in progress
+    if (isCssCompiling) {
+      console.log("[compileCSS] Skipping - compilation already in progress")
+      return
+    }
+
+    // Clear any existing timeout
+    if (cssCompileTimeoutRef.current) {
+      clearTimeout(cssCompileTimeoutRef.current)
+    }
+
+    console.log("[compileCSS] Files have changed, scheduling compilation")
+
+    // Set a new timeout to debounce the compilation
+    cssCompileTimeoutRef.current = setTimeout(() => {
+      // Update the hash reference before compilation
+      prevFilesHashRef.current = currentFilesHash
+      lastCompilationTimeRef.current = Date.now()
+      compileCSS()
+      cssCompileTimeoutRef.current = null
+    }, 1000) // Debounce for 1 second
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (cssCompileTimeoutRef.current) {
+        clearTimeout(cssCompileTimeoutRef.current)
+      }
+    }
+  }, [
+    files, // Track all files - this will catch changes to demo.tsx and other files
+    processedData,
+    isProcessing,
+    registryDependencies,
+    compileCSS,
+    isCssCompiling,
+    generateFilesHash,
   ])
 
   return {
