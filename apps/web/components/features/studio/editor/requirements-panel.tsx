@@ -49,60 +49,23 @@ export function RequirementsPanel({
   // Prepare message content based on additionalStyles
   const getMessageContent = () => {
     if (isTailwindConfig) {
-      // Find specific extensions with values
       const extensionDetails: string[] = []
+      const tailwindExtensions = actionDetails?.tailwindExtensions
 
-      if (actionDetails?.tailwindExtensions) {
-        // Check for boxShadow extensions
-        if (
-          actionDetails.tailwindExtensions.boxShadow &&
-          Object.keys(actionDetails.tailwindExtensions.boxShadow).length > 0
-        ) {
-          const shadows = Object.keys(
-            actionDetails.tailwindExtensions.boxShadow,
-          ).join(", ")
-          extensionDetails.push(`shadows: ${shadows}`)
-        }
+      if (tailwindExtensions) {
+        const extensionTypes = [
+          "boxShadow",
+          "colors",
+          "animations",
+          "borderRadius",
+          "fontFamily",
+          "spacing",
+        ] as const
 
-        // Check for color extensions
-        if (
-          actionDetails.tailwindExtensions.colors &&
-          Object.keys(actionDetails.tailwindExtensions.colors).length > 0
-        ) {
-          const colors = Object.keys(
-            actionDetails.tailwindExtensions.colors,
-          ).join(", ")
-          extensionDetails.push(`colors: ${colors}`)
-        }
-
-        // Check for animation extensions
-        if (
-          actionDetails.tailwindExtensions.animations &&
-          Object.keys(actionDetails.tailwindExtensions.animations).length > 0
-        ) {
-          const animations = Object.keys(
-            actionDetails.tailwindExtensions.animations,
-          ).join(", ")
-          extensionDetails.push(`animations: ${animations}`)
-        }
-
-        // Check for other extensions
-        ;["borderRadius", "fontFamily", "spacing"].forEach((extType) => {
-          if (
-            actionDetails?.tailwindExtensions?.[
-              extType as keyof typeof actionDetails.tailwindExtensions
-            ] &&
-            Object.keys(
-              actionDetails.tailwindExtensions[
-                extType as keyof typeof actionDetails.tailwindExtensions
-              ] || {},
-            ).length > 0
-          ) {
-            const values = Object.keys(
-              actionDetails.tailwindExtensions[
-                extType as keyof typeof actionDetails.tailwindExtensions
-              ] || {},
-            ).join(", ")
+        extensionTypes.forEach((extType) => {
+          const extensions = tailwindExtensions[extType]
+          if (extensions && Object.keys(extensions).length > 0) {
+            const values = Object.keys(extensions).join(", ")
             extensionDetails.push(`${extType}: ${values}`)
           }
         })
