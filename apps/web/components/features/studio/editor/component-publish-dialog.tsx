@@ -9,9 +9,7 @@ import {
 } from "@/components/ui/dialog"
 import { PlusCircle } from "lucide-react"
 import { Spinner } from "@/components/icons/spinner"
-import {
-  SandpackProvider,
-} from "@codesandbox/sandpack-react"
+import { SandpackProvider } from "@codesandbox/sandpack-react"
 
 import { usePublishDialog } from "./hooks/use-editor-dialog"
 import React, { useEffect, useRef, useState } from "react"
@@ -45,9 +43,7 @@ const StableSandpackContainer = React.memo(
 const MemoizedEditor = React.memo(Editor)
 
 // Memoize SandpackContent component
-const MemoizedSandpackInitialContent = React.memo(
-  SandpackInitialContent,
-)
+const MemoizedSandpackInitialContent = React.memo(SandpackInitialContent)
 
 export function ComponentPublishDialog({
   userId,
@@ -129,9 +125,12 @@ export function ComponentPublishDialog({
   }, [
     open,
     processedData,
-    sandpackConfig,
-    activePreview,
+    getComponentFilePath,
+    activePreview?.filePath,
+    loadingShadcnComponents,
     actionRequiredFiles,
+    // Include only the stable, primitive values from sandpackConfig that should trigger re-renders
+    sandpackConfig.template,
     // Do NOT include frequently changing props that don't affect structure
   ])
 
@@ -184,24 +183,4 @@ export function ComponentPublishDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-interface SandpackContentProps {
-  activePreview: {
-    type: "regular" | "unknown"
-    filePath: string
-    componentName?: string
-  } | null
-  onPreviewSelect: (preview: {
-    type: "regular" | "unknown"
-    filePath: string
-    componentName?: string
-  }) => void
-  unresolvedDependencies?: Array<{ name: string; path: string }>
-  getComponentFilePath: () => string
-  setComponentCode: (code: string) => void
-  isUnresolvedDependency: (path: string) => boolean
-  loadingFiles?: string[]
-  actionRequiredFiles?: string[]
-  processedData?: any
 }
