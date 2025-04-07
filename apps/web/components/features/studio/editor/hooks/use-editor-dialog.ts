@@ -48,7 +48,6 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     loadingShadcnComponents,
     loadDependencies,
     resolveDependencies,
-    resetDependencies,
     setLoadingShadcnComponents,
   } = useDependencies()
 

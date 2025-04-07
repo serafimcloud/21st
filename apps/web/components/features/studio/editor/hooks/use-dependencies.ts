@@ -56,7 +56,7 @@ export function useDependencies() {
 
       // Check for non-shadcn components in the database
       const unresolvedComponentSlugs: string[] = []
-      let unresolvedLoadingPaths: string[] = []
+      let resolvedDependencyPaths: string[] = []
 
       if (processedData?.unresolvedDependencyImports?.length > 0) {
         try {
@@ -70,14 +70,14 @@ export function useDependencies() {
           // Update the processedData with found matches
           if (lookupResults.length > 0) {
             // Create loading paths for UI feedback
-            unresolvedLoadingPaths = lookupResults.map(
+            resolvedDependencyPaths = lookupResults.map(
               ({ match }) => `/components/${match.registry}/${match.slug}.tsx`,
             )
 
             // Add paths to loading state
             setLoadingShadcnComponents((prev) => [
               ...prev,
-              ...unresolvedLoadingPaths,
+              ...resolvedDependencyPaths,
             ])
 
             // Convert matches to dependency slugs for resolveRegistryDependencyTree
@@ -91,7 +91,7 @@ export function useDependencies() {
             remainingComponents,
             updatedLoadingPaths: [
               ...shadcnLoadingPaths,
-              ...unresolvedLoadingPaths,
+              ...resolvedDependencyPaths,
             ],
             allDependencySlugs: [...shadcnSlugs, ...unresolvedComponentSlugs],
           }
@@ -110,7 +110,10 @@ export function useDependencies() {
 
       return {
         remainingComponents: processedData.unresolvedDependencyImports,
-        updatedLoadingPaths: [...shadcnLoadingPaths, ...unresolvedLoadingPaths],
+        updatedLoadingPaths: [
+          ...shadcnLoadingPaths,
+          ...resolvedDependencyPaths,
+        ],
         allDependencySlugs: [...shadcnSlugs, ...unresolvedComponentSlugs],
       }
     },
