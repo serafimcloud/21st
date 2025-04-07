@@ -6,6 +6,7 @@ import { useSandpack } from "@codesandbox/sandpack-react"
 export const activeFileAtom = atom<string | null>(null)
 export const userModifiedFilesAtom = atom<Record<string, boolean>>({})
 export const loadingComponentsAtom = atom<string[]>([])
+export const previewReadyAtom = atom<boolean>(false)
 
 // New atom for files requiring action
 export interface ActionRequiredDetails {
@@ -56,6 +57,11 @@ interface CodeManagerContextType {
   markFileAsResolved: (path: string) => void
   isActionRequired: (path: string) => boolean
   getActionDetails: (path: string) => ActionRequiredDetails | undefined
+
+  // Preview ready state
+  previewReady: boolean
+  markPreviewReady: () => void
+  markPreviewNotReady: () => void
 }
 
 const CodeManagerContext = createContext<CodeManagerContextType | null>(null)
@@ -145,6 +151,25 @@ export function useActionRequired() {
   }
 }
 
+// New hook to manage preview readiness that doesn't depend on Sandpack
+export function usePreviewReady() {
+  const [previewReady, setPreviewReady] = useAtom(previewReadyAtom)
+
+  const markPreviewReady = useCallback(() => {
+    setPreviewReady(true)
+  }, [setPreviewReady])
+
+  const markPreviewNotReady = useCallback(() => {
+    setPreviewReady(false)
+  }, [setPreviewReady])
+
+  return {
+    previewReady,
+    markPreviewReady,
+    markPreviewNotReady,
+  }
+}
+
 interface CodeManagerProviderProps {
   children: React.ReactNode
   initialComponentPath: string
@@ -160,8 +185,14 @@ export function CodeManagerProvider({
   onFileContentChange,
   isUnknownComponentFn = () => false,
 }: CodeManagerProviderProps) {
-  // Use atoms directly in the context
-  const { sandpack } = useSandpack()
+  // Safely try to access Sandpack - will fail gracefully outside of SandpackProvider
+  let sandpack = null
+  try {
+    sandpack = useSandpack().sandpack
+  } catch (error) {
+    // Outside of SandpackProvider context, continue without Sandpack features
+  }
+
   const [activeFile, setActiveFile] = useAtom(activeFileAtom)
   const [userModifiedFiles, setUserModifiedFiles] = useAtom(
     userModifiedFilesAtom,
@@ -179,12 +210,30 @@ export function CodeManagerProvider({
     getActionDetails,
   } = useActionRequired()
 
+  // Get preview ready functions from the hook
+  const { previewReady, markPreviewReady, markPreviewNotReady } =
+    usePreviewReady()
+
+  // Watch for demo.tsx file changes to automatically set preview ready state
+  useEffect(() => {
+    if (!sandpack) return // Skip if outside of SandpackProvider
+
+    const demoFile = sandpack.files["/demo.tsx"]
+    if (
+      demoFile &&
+      demoFile.code &&
+      demoFile.code !== "// Add your demo code here"
+    ) {
+      markPreviewReady()
+    }
+  }, [sandpack?.files, markPreviewReady, sandpack])
+
   // Initialize with the main component file
   useEffect(() => {
-    if (initialComponentPath && !activeFile) {
+    if (initialComponentPath && !activeFile && sandpack) {
       selectFile(initialComponentPath)
     }
-  }, [initialComponentPath])
+  }, [initialComponentPath, sandpack])
 
   // File selection
   const selectFile = (path: string) => {
@@ -193,15 +242,15 @@ export function CodeManagerProvider({
     console.log("[CodeManager] Selecting file:", {
       path,
       isUnknown: isUnknownComponentFn(path),
-      activeFiles: Object.keys(sandpack.files),
-      currentActiveFile: sandpack.activeFile,
+      activeFiles: sandpack ? Object.keys(sandpack.files) : [],
+      currentActiveFile: sandpack?.activeFile,
     })
 
-    // Only update Sandpack if it's not an unknown component
-    if (!isUnknownComponentFn(path)) {
+    // Only update Sandpack if it's not an unknown component and sandpack is available
+    if (!isUnknownComponentFn(path) && sandpack) {
       console.log("[CodeManager] Setting Sandpack active file:", path)
       sandpack.setActiveFile(path)
-    } else {
+    } else if (isUnknownComponentFn(path)) {
       console.log(
         "[CodeManager] Unknown component - not setting in Sandpack:",
         path,
@@ -215,7 +264,7 @@ export function CodeManagerProvider({
 
   // File content operations
   const getFileContent = (path: string) => {
-    return sandpack.files[path]?.code
+    return sandpack ? sandpack.files[path]?.code : undefined
   }
 
   const updateFileContent = (path: string, content: string) => {
@@ -228,7 +277,15 @@ export function CodeManagerProvider({
     // Mark this file as user-modified in atom state
     setUserModifiedFiles((prev) => ({ ...prev, [path]: true }))
 
-    sandpack.updateFile(path, content)
+    // Update sandpack if available
+    if (sandpack) {
+      sandpack.updateFile(path, content)
+    }
+
+    // Mark preview ready if demo.tsx is edited
+    if (path === "/demo.tsx" && content !== "// Add your demo code here") {
+      markPreviewReady()
+    }
 
     // Notify parent if needed
     if (onFileContentChange) {
@@ -237,14 +294,18 @@ export function CodeManagerProvider({
   }
 
   const addFile = (path: string, content: string = "") => {
-    sandpack.addFile(path, content)
+    if (sandpack) {
+      sandpack.addFile(path, content)
+    }
 
     // Select the newly created file
     selectFile(path)
   }
 
   const renameFile = (from: string, to: string) => {
-    // Get the file content
+    // Get the file content if sandpack is available
+    if (!sandpack) return
+
     const fileObj = sandpack.files[from]
 
     // Proceed only if we have a file to rename
@@ -276,8 +337,10 @@ export function CodeManagerProvider({
   }
 
   const deleteFile = (path: string) => {
-    // Remove from Sandpack
-    sandpack.deleteFile(path)
+    // Remove from Sandpack if available
+    if (sandpack) {
+      sandpack.deleteFile(path)
+    }
 
     // Remove from user modified tracking
     if (userModifiedFiles[path]) {
@@ -291,9 +354,13 @@ export function CodeManagerProvider({
     // Update active file if needed
     if (activeFile === path) {
       // Select another file
-      const files = Object.keys(sandpack.files)
-      if (files.length > 0 && files[0]) {
-        selectFile(files[0])
+      if (sandpack) {
+        const files = Object.keys(sandpack.files)
+        if (files.length > 0 && files[0]) {
+          selectFile(files[0])
+        } else {
+          setActiveFile(null)
+        }
       } else {
         setActiveFile(null)
       }
@@ -355,7 +422,7 @@ export function CodeManagerProvider({
     getComponentName,
 
     // File metadata
-    allFiles: Object.keys(sandpack.files),
+    allFiles: sandpack ? Object.keys(sandpack.files) : [],
     nonShadcnComponents,
 
     // Loading state
@@ -368,6 +435,11 @@ export function CodeManagerProvider({
     markFileAsResolved,
     isActionRequired,
     getActionDetails,
+
+    // Preview ready state
+    previewReady,
+    markPreviewReady,
+    markPreviewNotReady,
   }
 
   return (

@@ -3,12 +3,15 @@ import {
   SandpackProvider,
   SandpackLayout,
   SandpackFiles,
+  SandpackPreview,
+  OpenInCodeSandboxButton,
 } from "@codesandbox/sandpack-react"
 import {
   CodeManagerProvider,
   useCodeManager,
   useActionRequired,
   ActionRequiredDetails,
+  usePreviewReady,
 } from "./context/editor-state"
 import { EditorCodePanel } from "./editor-code-panel"
 import { FileExplorer } from "./file-explorer"
@@ -128,6 +131,9 @@ function EditorContent({
 
   const { markFileAsRequiringAction, markFileAsResolved, getActionDetails } =
     useActionRequired()
+
+  // Get preview ready state
+  const { previewReady } = usePreviewReady()
 
   // Initialize action required files from props only when they change
   useEffect(() => {
@@ -279,7 +285,14 @@ function EditorContent({
             loadingStyleFiles={loadingStyleFiles}
           />
         </div>
-        <div className="flex-1">
+
+        {/* Code editor */}
+        <div
+          className={cn(
+            "flex-1",
+            previewReady && "max-w-[50%] border-r border-border",
+          )}
+        >
           <EditorCodePanel
             componentPath={activeFile || ""}
             onCodeChange={() => {
@@ -287,6 +300,23 @@ function EditorContent({
             }}
           />
         </div>
+
+        {/* Show preview when ready */}
+        {previewReady && (
+          <div className="flex-1 flex flex-col">
+            <div className="p-2 border-b border-border bg-muted/30 flex justify-between items-center">
+              <h3 className="text-sm font-medium">Preview</h3>
+              <OpenInCodeSandboxButton />
+            </div>
+            <div className="flex-1">
+              <SandpackPreview
+                showNavigator={true}
+                showRefreshButton={true}
+                showOpenInCodeSandbox={false}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Style requirements panel - rendered absolutely */}

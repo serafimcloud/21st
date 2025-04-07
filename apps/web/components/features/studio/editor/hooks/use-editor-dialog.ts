@@ -136,6 +136,152 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     return fileContentCache.get(path)
   }, [])
 
+  // Helper function to generate a simple App.tsx that can handle demo files with both named and default exports
+  const generateAppTsx = () => {
+    return `import React, { useState, useEffect } from 'react';
+    import { ThemeProvider } from 'next-themes';
+    import { RouterProvider } from 'next/router';
+    import './styles.css';
+    import DefaultExport, * as NamedExports from './demo';
+
+    // Combine named exports and default export components
+    const demoComponentNames = [
+      ...Object.keys(DefaultExport || {}),
+      ...Object.keys(NamedExports).filter(key => 
+        typeof NamedExports[key] === 'function' && key !== 'default'
+      )
+    ];
+
+    const DemoComponents = {
+      ...(DefaultExport || {}),
+      ...Object.fromEntries(
+        Object.entries(NamedExports).filter(([key, value]) => 
+          typeof value === 'function' && key !== 'default'
+        )
+      )
+    };
+
+    export default function App() {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const CurrentComponent = demoComponentNames.length > 0 
+        ? DemoComponents[demoComponentNames[currentIndex]]
+        : () => <div className="p-6 text-center">Add components to demo.tsx</div>;
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if ((e.metaKey || e.ctrlKey) && demoComponentNames.length > 1) {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setCurrentIndex(prev => (prev + 1) % demoComponentNames.length);
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setCurrentIndex(prev => (prev - 1 + demoComponentNames.length) % demoComponentNames.length);
+            }
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, []);
+
+      return (
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <RouterProvider>
+            <div className="flex flex-col items-center min-h-screen p-4 bg-background text-foreground">
+              {demoComponentNames.length > 1 && (
+                <div className="self-end mb-4">
+                  <select 
+                    value={demoComponentNames[currentIndex]} 
+                    onChange={(e) => {
+                      const idx = demoComponentNames.indexOf(e.target.value);
+                      if (idx !== -1) setCurrentIndex(idx);
+                    }}
+                    className="p-2 border rounded bg-background text-foreground"
+                  >
+                    {demoComponentNames.map(name => (
+                      <option key={name} value={name}>
+                        {name.replace(/([A-Z])/g, ' $1').trim()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              <div className="flex items-center justify-center w-full">
+                <CurrentComponent />
+              </div>
+            </div>
+          </RouterProvider>
+        </ThemeProvider>
+      );
+    }`
+  }
+
+  // Helper function to generate basic styles.css
+  const generateStylesCss = () => {
+    return `
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 5.9% 10%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 5.9% 10%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 4.9% 83.9%;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  line-height: 1.5;
+}`
+  }
+
   // Generate files for Sandpack
   const files = useMemo(() => {
     const componentPath = getComponentFilePath()
@@ -155,6 +301,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       componentPath,
       componentCode,
       processedData,
+      theme: isDarkTheme ? "dark" : "light",
       dependencies: {
         ...(processedData?.npmDependencies?.reduce(
           (acc: Record<string, string>, dep: string) => ({
@@ -182,7 +329,9 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
     }
 
     // Add empty demo.tsx file
-    allFiles["/demo.tsx"] = { code: "// Add your demo code here" }
+    allFiles["/demo.tsx"] = {
+      code: '// Add your demo code here\nexport default function Demo() {\n  return (\n    <div className="p-4">\n      {/* Add your component demo here */}\n      <div className="border-2 border-dashed border-gray-200 p-6 rounded-lg text-center">\n        Edit this file to create your component demo\n      </div>\n    </div>\n  );\n}',
+    }
 
     // Add any cached file content for unknown components
     fileContentCache.forEach((cachedContent, cachedPath) => {
@@ -199,6 +348,12 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         allFiles[cachedPath] = { code: cachedContent }
       }
     })
+
+    // Add a simple App.tsx that imports and renders demo.tsx
+    allFiles["/App.tsx"] = { code: generateAppTsx() }
+
+    // Add styles.css file
+    allFiles["/styles.css"] = { code: generateStylesCss() }
 
     return allFiles
   }, [

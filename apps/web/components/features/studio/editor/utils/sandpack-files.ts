@@ -8,6 +8,7 @@ interface GenerateFilesOptions {
   dependencies?: Record<string, string>
   customTailwindConfig?: string | null
   customGlobalCss?: string | null
+  theme: "light" | "dark"
 }
 
 export function generateSandpackFiles({
@@ -17,6 +18,7 @@ export function generateSandpackFiles({
   dependencies = {},
   customTailwindConfig = null,
   customGlobalCss = null,
+  theme,
 }: GenerateFilesOptions): SandpackFiles {
   const files: SandpackFiles = {
     [componentPath]: {
@@ -89,21 +91,21 @@ root.render(
     },
     "/App.tsx": {
       code: processedData
-        ? `import { ThemeProvider } from "./theme-provider";
+        ? `import { ThemeProvider } from "./next-themes";
 import ${processedData.componentName || "Component"} from "./components/${
             processedData.registryType || "ui"
           }/${processedData.slug?.replace(".tsx", "") || "component"}";
 
 export default function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="sandpack-theme">
+    <ThemeProvider attribute="class" defaultTheme="${theme}" enableSystem={false}>
       <div className="container">
         <${processedData.componentName || "Component"} />
       </div>
     </ThemeProvider>
   );
 }`
-        : `import { ThemeProvider } from "./theme-provider";
+        : `import { ThemeProvider } from "./next-themes";
 import Component from "${componentPath.replace(".tsx", "")}";
 
 export default function App() {
@@ -116,25 +118,34 @@ export default function App() {
   );
 }`,
     },
-    "/theme-provider.tsx": {
-      code: `import * as React from "react"
+    "/next-themes.tsx": {
+      code: `import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const ThemeContext = React.createContext({
-  theme: "light",
+const ThemeContext = createContext({
+  theme: 'light',
   setTheme: (theme: string) => {},
-  resolvedTheme: "light",
+  resolvedTheme: 'light',
 });
 
-export const useTheme = () => React.useContext(ThemeContext);
+export const useTheme = () => useContext(ThemeContext);
 
-export const ThemeProvider = ({ children, defaultTheme = 'light', enableSystem = false }) => {
-  const [theme, setTheme] = React.useState(defaultTheme);
+export const ThemeProvider = ({ children, defaultTheme = 'light', enableSystem = false, attribute = 'data-theme' }) => {
+  const [theme, setTheme] = useState(defaultTheme);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const root = window.document.documentElement;
+    
+    // Remove existing theme classes
     root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-  }, [theme]);
+    
+    if (attribute === 'class') {
+      // If attribute is class, add theme as a class
+      root.classList.add(theme);
+    } else {
+      // Otherwise set it as a data attribute
+      root.setAttribute(attribute, theme);
+    }
+  }, [theme, attribute]);
 
   const resolvedTheme = theme === 'system' ? 'light' : theme;
 
