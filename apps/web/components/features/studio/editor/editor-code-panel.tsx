@@ -30,6 +30,16 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
   const { markFileAsResolved, isActionRequired, getActionDetails } =
     useActionRequired()
 
+  // Add logging to track component rendering with active path
+  console.log("[EditorCodePanel] Rendering with:", {
+    componentPath,
+    sandpackActiveFile: sandpack.activeFile,
+    fileExistsInSandpack: componentPath
+      ? !!sandpack.files[componentPath]
+      : false,
+    hasCode: !!code,
+  })
+
   let codeManager
   try {
     codeManager = useCodeManager()
@@ -60,11 +70,23 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
   const handleFileMissing = useCallback(() => {
     if (!normalizedPath || sandpack.files[normalizedPath]) return
 
+    console.log("[EditorCodePanel] File missing check:", {
+      normalizedPath,
+      fileExists: !!sandpack.files[normalizedPath],
+      hasCachedContent: globalFileContentCache.has(normalizedPath),
+      isUnknownComponent,
+      activeFile: sandpack.activeFile,
+    })
+
     // Check if we have cached content for this file
     const cachedContent = globalFileContentCache.get(normalizedPath)
 
     if (cachedContent) {
       try {
+        console.log(
+          "[EditorCodePanel] Restoring file from cache:",
+          normalizedPath,
+        )
         // Restore the file with cached content
         sandpack.addFile(normalizedPath, cachedContent)
 
@@ -80,6 +102,7 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
       }
     } else if (codeManager) {
       try {
+        console.log("[EditorCodePanel] Creating new file:", normalizedPath)
         // Create the file with placeholder content
         const defaultContent = "// TODO: Implement this component"
         sandpack.addFile(normalizedPath, defaultContent)
@@ -94,11 +117,15 @@ export const EditorCodePanel = React.memo(function EditorCodePanel({
 
         // Add to cache
         globalFileContentCache.set(normalizedPath, defaultContent)
+        console.log(
+          "[EditorCodePanel] File created and cached:",
+          normalizedPath,
+        )
       } catch (error) {
         console.error("[EditorCodePanel] Failed to create file:", error)
       }
     }
-  }, [normalizedPath, sandpack, codeManager])
+  }, [normalizedPath, sandpack, codeManager, isUnknownComponent])
 
   useEffect(() => {
     // If the file doesn't exist and we have a valid path, create it or restore it

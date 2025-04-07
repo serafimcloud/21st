@@ -264,13 +264,13 @@ Respond in JSON format only with the following structure:
     "keyframes": [
       {
         "name": "keyframe-name", // ONLY keyframes not already defined in globals.css
-        "definition": "@keyframes keyframe-name { 0% { ... } 100% { ... } }"
+        "frames": "0% { opacity: 0 } 100% { opacity: 1 }" // The keyframe content without @keyframes wrapper
       }
     ],
     "utilities": [
       {
         "className": ".class-name", // ONLY utility classes not covered by Tailwind or globals.css
-        "definition": "{ property: value; property2: value2; }"
+        "definition": "{ property: value; property2: value2; }" // CSS properties as text
       }
     ]
   }
@@ -291,7 +291,66 @@ Respond in JSON format only with the following structure:
     throw new Error("No content returned from OpenAI")
   }
 
-  return JSON.parse(content)
+  const data = JSON.parse(content)
+
+  // Fix any undefined values in keyframes or utilities
+  if (data.additionalStyles.keyframes) {
+    data.additionalStyles.keyframes = data.additionalStyles.keyframes.map(
+      (keyframe: any) => {
+        // Standardize keyframe structure - ensure we always use 'name' and 'frames'
+        const name = keyframe.name || keyframe.keyframeName || ""
+        const frames = keyframe.frames || keyframe.definition || ""
+
+        if (!frames || frames === "undefined") {
+          // Provide a default example keyframe definition
+          return {
+            name,
+            frames:
+              "0% { opacity: 0; transform: scale(0.95); }\n100% { opacity: 1; transform: scale(1); }",
+          }
+        }
+        return { name, frames }
+      },
+    )
+  }
+
+  if (data.additionalStyles.utilities) {
+    data.additionalStyles.utilities = data.additionalStyles.utilities.map(
+      (utility: any) => {
+        // Standardize utility structure - ensure we always use 'className' and 'definition'
+        const className = utility.className || utility.name || ""
+        const definition = utility.definition || utility.properties || ""
+
+        if (!definition || definition === "undefined") {
+          // Provide a default example utility definition
+          return {
+            className,
+            definition: "/* Add your custom styles here */",
+          }
+        }
+        return { className, definition }
+      },
+    )
+  }
+
+  // Standardize empty objects in tailwindExtensions to prevent inconsistencies
+  if (data.additionalStyles.tailwindExtensions) {
+    const extensions = [
+      "colors",
+      "animations",
+      "fontFamily",
+      "borderRadius",
+      "boxShadow",
+      "spacing",
+    ]
+    extensions.forEach((ext) => {
+      if (!data.additionalStyles.tailwindExtensions[ext]) {
+        data.additionalStyles.tailwindExtensions[ext] = {}
+      }
+    })
+  }
+
+  return data
 }
 
 // Helper function to extract component name from code using regex

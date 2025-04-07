@@ -85,8 +85,8 @@ export async function lookupComponentsInDatabase(
             slug: matchingComponent.component_slug,
             registry: matchingComponent.registry,
             username:
-              matchingComponent.user?.display_username ||
-              matchingComponent.user?.username,
+              matchingComponent.user?.[0]?.display_username ||
+              matchingComponent.user?.[0]?.username || undefined,
           },
         })
         foundMatch = true

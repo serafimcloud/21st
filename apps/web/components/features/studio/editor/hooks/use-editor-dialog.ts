@@ -8,7 +8,7 @@ import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/defaults"
 import {
   lookupComponentsInDatabase,
   convertComponentMatchesToDependencySlugs,
-} from "@/lib/component-lookup"
+} from "@/components/features/studio/editor/utils/component-lookup"
 import type { SandpackFiles } from "@codesandbox/sandpack-react"
 
 // Create a file content cache that persists across component remounts
@@ -265,7 +265,7 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
       }
 
       const data = await response.json()
-
+      console.log("Preprocess component response:", data)
       // Check if the API indicates that style updates are needed
       const styleUpdateFiles: string[] = []
 
@@ -275,6 +275,21 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         if (!data.additionalStyles.tailwindExtensions) {
           data.additionalStyles.tailwindExtensions = {}
         }
+
+        // Initialize all tailwind extension categories
+        const extensions = [
+          "colors",
+          "animations",
+          "fontFamily",
+          "borderRadius",
+          "boxShadow",
+          "spacing",
+        ]
+        extensions.forEach((ext) => {
+          if (!data.additionalStyles.tailwindExtensions[ext]) {
+            data.additionalStyles.tailwindExtensions[ext] = {}
+          }
+        })
 
         if (!data.additionalStyles.cssVariables) {
           data.additionalStyles.cssVariables = []
@@ -291,9 +306,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         // Check for Tailwind extensions
         if (
           data.additionalStyles.tailwindExtensions &&
-          Object.keys(data.additionalStyles.tailwindExtensions).length > 0 &&
-          Object.values(data.additionalStyles.tailwindExtensions).some(
-            (val: any) => Object.keys(val as object).length > 0,
+          Object.entries(data.additionalStyles.tailwindExtensions).some(
+            ([_, val]: [string, any]) => Object.keys(val || {}).length > 0,
           )
         ) {
           styleUpdateFiles.push("/tailwind.config.js")
@@ -316,8 +330,8 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         // default to highlighting both files if there are any non-empty style requirements
         const hasActualStyleChanges =
           // Check if there are actual tailwind extensions needed
-          Object.values(data.additionalStyles.tailwindExtensions || {}).some(
-            (val: any) => Object.keys(val as object).length > 0,
+          Object.entries(data.additionalStyles.tailwindExtensions || {}).some(
+            ([_, val]: [string, any]) => Object.keys(val || {}).length > 0,
           ) ||
           // Check if there are CSS variables
           (data.additionalStyles.cssVariables || []).length > 0 ||
@@ -338,15 +352,19 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         if (data.additionalStyles.keyframes) {
           data.additionalStyles.keyframes = data.additionalStyles.keyframes.map(
             (keyframe: any) => {
-              if (!keyframe.frames || keyframe.frames === "undefined") {
+              // Standardize keyframe structure - ensure we always use 'name' and 'frames'
+              const name = keyframe.name || keyframe.keyframeName || ""
+              const frames = keyframe.frames || keyframe.definition || ""
+
+              if (!frames || frames === "undefined") {
                 // Provide a default example keyframe definition
                 return {
-                  ...keyframe,
+                  name,
                   frames:
                     "0% { opacity: 0; transform: scale(0.95); }\n100% { opacity: 1; transform: scale(1); }",
                 }
               }
-              return keyframe
+              return { name, frames }
             },
           )
         }
@@ -354,14 +372,18 @@ export function usePublishDialog({ userId }: UsePublishDialogProps) {
         if (data.additionalStyles.utilities) {
           data.additionalStyles.utilities = data.additionalStyles.utilities.map(
             (utility: any) => {
-              if (!utility.properties || utility.properties === "undefined") {
+              // Standardize utility structure - ensure we always use 'className' and 'definition'
+              const className = utility.className || utility.name || ""
+              const definition = utility.definition || utility.properties || ""
+
+              if (!definition || definition === "undefined") {
                 // Provide a default example utility definition
                 return {
-                  ...utility,
-                  properties: "/* Add your custom styles here */",
+                  className,
+                  definition: "/* Add your custom styles here */",
                 }
               }
-              return utility
+              return { className, definition }
             },
           )
         }

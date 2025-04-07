@@ -242,7 +242,7 @@ function FileTreeNode({
       <button
         className={cn(
           "w-full text-left py-1.5 text-sm flex items-center gap-2 hover:bg-muted/50 transition-colors",
-          isActive && "bg-muted text-primary font-medium",
+          isActive && "bg-muted",
           showWarning && isActive && "bg-yellow-500/10",
         )}
         style={{ paddingLeft: `${level * 12 + 16}px` }}
@@ -371,10 +371,14 @@ export function FileExplorer({
   const handleFileClick = useCallback(
     (path: string) => {
       if (onFileSelect) {
+        console.log("[FileExplorer] File clicked:", {
+          path,
+          isActionRequired: isActionRequired(path),
+        })
         onFileSelect(path)
       }
     },
-    [onFileSelect],
+    [onFileSelect, isActionRequired],
   )
 
   // Check if a file is a loading file

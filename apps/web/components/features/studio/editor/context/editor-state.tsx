@@ -190,13 +190,27 @@ export function CodeManagerProvider({
   const selectFile = (path: string) => {
     if (!path) return
 
+    console.log("[CodeManager] Selecting file:", {
+      path,
+      isUnknown: isUnknownComponentFn(path),
+      activeFiles: Object.keys(sandpack.files),
+      currentActiveFile: sandpack.activeFile,
+    })
+
     // Only update Sandpack if it's not an unknown component
     if (!isUnknownComponentFn(path)) {
+      console.log("[CodeManager] Setting Sandpack active file:", path)
       sandpack.setActiveFile(path)
+    } else {
+      console.log(
+        "[CodeManager] Unknown component - not setting in Sandpack:",
+        path,
+      )
     }
 
     // Update atom state
     setActiveFile(path)
+    console.log("[CodeManager] Updated active file in atom state:", path)
   }
 
   // File content operations

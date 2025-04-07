@@ -210,6 +210,14 @@ function EditorContent({
       // Only create the file if it doesn't already exist in the codebase
       const fileExists = allFiles.includes(normalizedPath)
 
+      console.log("[Editor] Unknown component selected:", {
+        path,
+        normalizedPath,
+        componentName,
+        fileExists,
+        isInSandpack: allFiles.includes(normalizedPath),
+      })
+
       if (!fileExists) {
         console.log("[Editor] Creating file for unknown component:", {
           originalPath: path,
@@ -237,6 +245,7 @@ function EditorContent({
     }
 
     // Always select the normalized path
+    console.log("[Editor] Selecting file:", normalizedPath)
     selectFile(normalizedPath)
   }
 
@@ -270,24 +279,18 @@ function EditorContent({
             loadingStyleFiles={loadingStyleFiles}
           />
         </div>
-        <div className="flex-1 flex">
-          <div className={cn("flex-1", showStylePanel && "w-2/3")}>
-            <EditorCodePanel
-              componentPath={activeFile || ""}
-              onCodeChange={() => {
-                // This will be handled by the CodeManager through the CodeEditor component
-              }}
-            />
-          </div>
-
-          {/* Style requirements panel */}
-          {showStylePanel && (
-            <div className="w-1/3 p-2">
-              <RequirementsPanel activeFile={activeFile} />
-            </div>
-          )}
+        <div className="flex-1">
+          <EditorCodePanel
+            componentPath={activeFile || ""}
+            onCodeChange={() => {
+              // This will be handled by the CodeManager through the CodeEditor component
+            }}
+          />
         </div>
       </div>
+
+      {/* Style requirements panel - rendered absolutely */}
+      {showStylePanel && <RequirementsPanel activeFile={activeFile} />}
     </SandpackLayout>
   )
 }
