@@ -15,7 +15,7 @@ export const setupRoutes = (req: Request) => {
   const staticAllowedOrigins = [
     "http://localhost:3000",
     "https://21st.dev",
-    "https://mcp-logs-123.up.railway.app/", // Temporary
+    "https://mcp-logs-123.up.railway.app", // Temporary
   ]
 
   const isAllowedOrigin =
