@@ -134,6 +134,9 @@ export async function POST(request: NextRequest) {
         },
         ...(user?.email && { customer_email: user.email }),
         allow_promotion_codes: true,
+        tax_id_collection: {
+          enabled: true,
+        },
         success_url: successUrl,
         cancel_url: cancelUrl,
         subscription_data: {
