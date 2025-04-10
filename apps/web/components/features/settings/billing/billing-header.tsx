@@ -22,28 +22,6 @@ export function BillingHeader() {
         </div>
         <AllPlansTrigger />
       </div>
-      <Banner
-        variant="default"
-        rounded="default"
-        className="items-start"
-        icon={<CreditCard size={18} strokeWidth={2} />}
-        layout="complex"
-      >
-        <div className="flex flex-col ">
-          <p className="text-sm font-medium">
-            We're migrating to a new Stripe account.
-          </p>
-          <div className="flex items-center text-xs text-muted-foreground mt-1">
-            <span className="mr-1">Need help?</span>
-            <a
-              href="mailto:support@21st.dev"
-              className="flex items-center underline hover:text-primary"
-            >
-              support@21st.dev
-            </a>
-          </div>
-        </div>
-      </Banner>
     </div>
   )
 }
