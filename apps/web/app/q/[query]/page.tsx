@@ -19,7 +19,7 @@ type Props = {
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const params = await props.params;
+  const params = await props.params
   const decodedQuery = decodeURIComponent(params.query)
 
   return {
@@ -33,7 +33,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 }
 
 export default async function SearchPage(props: Props) {
-  const params = await props.params;
+  const params = await props.params
   try {
     const cookieStore = await cookies()
     const savedSortBy = cookieStore.get("saved_sort_by")?.value as
@@ -45,7 +45,7 @@ export default async function SearchPage(props: Props) {
 
     return (
       <div className="min-h-screen flex flex-col">
-        <Logo />
+        <Logo className="z-50" />
         <Header variant="default" />
         <div className="flex-1">
           <SearchPageClient

@@ -88,7 +88,7 @@ export default async function CollectionPage(props: CollectionPageProps) {
 
     return (
       <div className="min-h-screen flex flex-col">
-        <Logo />
+        <Logo className="z-50" />
         <Header />
         <div className="flex-1">
           <CollectionPageContent

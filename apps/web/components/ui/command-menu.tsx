@@ -36,6 +36,7 @@ import {
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { useSidebarVisibility } from "@/hooks/use-sidebar-visibility"
+import { Logo } from "@/components/ui/logo"
 
 import { categories } from "@/lib/navigation"
 import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
@@ -867,9 +868,11 @@ export function CommandMenu() {
             <div className="flex items-center gap-2 group hover:cursor-pointer">
               <div className="relative w-3 h-3">
                 <div
-                  className="absolute inset-0 rounded-full bg-foreground/80 transition-all duration-500 
+                  className="absolute inset-0 transition-all duration-500 
                   group-hover:opacity-0 group-hover:scale-90"
-                />
+                >
+                  <Logo position="flex" className="w-3 h-3 !left-0 !top-0" />
+                </div>
                 <div
                   className="absolute inset-0 opacity-0 transition-all duration-500 transform
                   group-hover:opacity-100 group-hover:scale-100 origin-center"

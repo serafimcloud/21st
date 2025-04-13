@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { GitHubStarsBasic } from "@/components/ui/github-stars-number"
 import Link from "next/link"
 import { Icons } from "@/components/icons"
+import { Logo } from "@/components/ui/logo"
 
 export const metadata: Metadata = {
   title:
@@ -60,7 +61,7 @@ export default function MagicPage() {
     <div className="absolute inset-0 min-h-screen w-full overflow-auto bg-black">
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <Link href="/" className="h-7 w-7 bg-white rounded-full" />
+          <Logo fill="white" position="flex" />
           <span className="text-white font-medium">
             Magic <span className="font-light text-gray-400">by 21st.dev</span>
           </span>

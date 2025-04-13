@@ -43,7 +43,7 @@ async function getTagInfo(tagSlug: string) {
 }
 
 export default async function TagPage(props: TagPageProps) {
-  const params = await props.params;
+  const params = await props.params
   if (!validateRouteParams(params)) {
     redirect("/")
   }
@@ -68,7 +68,7 @@ export default async function TagPage(props: TagPageProps) {
 
     return (
       <div className="min-h-screen flex flex-col">
-        <Logo />
+        <Logo className="z-50" />
         <Header />
         <div className="flex-1">
           <TagPageContent
@@ -87,7 +87,7 @@ export default async function TagPage(props: TagPageProps) {
 }
 
 export async function generateMetadata(props: TagPageProps): Promise<Metadata> {
-  const params = await props.params;
+  const params = await props.params
   try {
     const tagInfo = await getTagInfo(params.tag_slug)
     if (!tagInfo) {
