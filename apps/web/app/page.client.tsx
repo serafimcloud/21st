@@ -10,6 +10,12 @@ import { cn } from "@/lib/utils"
 import { SortOption, SORT_OPTIONS } from "@/types/global"
 import { sortByAtom } from "@/components/features/main-page/main-page-header"
 import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
+import {
+  tabChangeHandlerAtom,
+  currentSectionAtom,
+  selectedMainTabAtom,
+  AppSection,
+} from "@/lib/atoms"
 import { ComponentsList } from "@/components/ui/items-list"
 import { CategoriesList } from "@/components/features/categories/category-list"
 import { ComponentsHeader } from "@/components/features/main-page/main-page-header"
@@ -70,31 +76,6 @@ const MainContent = React.memo(function MainContent({
       case "components":
         return (
           <>
-            <AnimatePresence mode="popLayout">
-              {!sidebarOpen && (
-                <motion.div
-                  initial={
-                    prevSidebarState !== sidebarOpen
-                      ? { opacity: 0, height: 0, marginBottom: 0 }
-                      : false
-                  }
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{
-                    duration: 0.2,
-                    height: {
-                      duration: 0.2,
-                    },
-                  }}
-                >
-                  <FilterChips
-                    activeTab={activeTab}
-                    selectedFilter={selectedFilter}
-                    onFilterChange={setSelectedFilter}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
             <motion.div
               layout={prevSidebarState !== sidebarOpen}
               initial={
@@ -140,7 +121,7 @@ const MainContent = React.memo(function MainContent({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pb-10">
       <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
       {renderContent()}
     </div>
@@ -151,28 +132,30 @@ export function HomePageClient() {
   const [sortBy, setSortBy] = useAtom(sortByAtom)
   const [sidebarOpen] = useAtom(sidebarOpenAtom)
   const [isBannerVisible] = useAtom(magicBannerVisibleAtom)
+  const [, setTabChangeHandler] = useAtom(tabChangeHandlerAtom)
+  const [, setCurrentSection] = useAtom(currentSectionAtom)
+  const [selectedTab, setSelectedTab] = useAtom(selectedMainTabAtom)
   const [shouldShowBanner, setShouldShowBanner] = useState(false)
   const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
   const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<
-    | "categories"
-    | "components"
-    | "authors"
-    | "pro"
-    | "templates"
-    | "collections"
-  >(
-    (searchParams.get("tab") as
-      | "categories"
-      | "components"
-      | "authors"
-      | "pro"
-      | "templates"
-      | "collections") || "components",
+  const [activeTab, setActiveTab] = useState<Exclude<AppSection, "magic">>(
+    (searchParams.get("tab") as Exclude<AppSection, "magic">) || "components",
   )
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
+
+  useEffect(() => {
+    setCurrentSection("components")
+  }, [setCurrentSection])
+
+  useEffect(() => {
+    const tab = searchParams.get("tab") as Exclude<AppSection, "magic"> | null
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab)
+      setSelectedTab(tab)
+    }
+  }, [searchParams, setSelectedTab, activeTab])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -211,18 +194,16 @@ export function HomePageClient() {
     setPrevSidebarState(sidebarOpen)
   }, [sidebarOpen])
 
-  const handleTabChange = (
-    newTab:
-      | "categories"
-      | "components"
-      | "authors"
-      | "pro"
-      | "templates"
-      | "collections",
-  ) => {
+  const handleTabChange = (newTab: Exclude<AppSection, "magic">) => {
     setActiveTab(newTab)
+    setSelectedTab(newTab)
     setSelectedFilter("all")
   }
+
+  useEffect(() => {
+    setTabChangeHandler(() => handleTabChange)
+    return () => setTabChangeHandler(null)
+  }, [setTabChangeHandler])
 
   return (
     <>
@@ -253,7 +234,7 @@ export function HomePageClient() {
         <div
           className={cn(
             "container mx-auto px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px] transition-[margin] duration-200 ease-in-out",
-            "mt-20",
+            "mt-16",
             shouldShowBanner && isBannerVisible ? "md:mt-[144px]" : "",
           )}
         >

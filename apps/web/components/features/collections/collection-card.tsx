@@ -43,7 +43,7 @@ export const CollectionCard = React.memo(function CollectionCard({
               <img
                 src={collection.cover_url || "/placeholder.svg"}
                 alt={collection.name}
-                className="object-cover rounded-lg"
+                className="w-full h-full object-cover rounded-lg"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.src = "/placeholder.svg"

@@ -1,4 +1,77 @@
-import { Dock, Box, Wand2 } from "lucide-react"
+import {
+  Dock,
+  Wand2,
+  Layers,
+  Users,
+  Crown,
+  FolderKanban,
+  Component,
+  Bookmark,
+  Group,
+} from "lucide-react"
+
+export type MainNavigationItem = {
+  title: string
+  value: string
+  icon: any
+  isNew?: boolean
+  subitems?: {
+    title: string
+    href: string
+    externalLink?: boolean
+  }[]
+}
+
+export const mainNavigationItems: MainNavigationItem[] = [
+  {
+    title: "Components",
+    value: "components",
+    icon: Component,
+  },
+  {
+    title: "Templates",
+    value: "templates",
+    icon: Layers,
+  },
+  {
+    title: "Creators",
+    value: "authors",
+    icon: Users,
+  },
+  {
+    title: "Premium Stores",
+    value: "pro",
+    icon: Crown,
+  },
+  {
+    title: "Collections",
+    value: "collections",
+    icon: Bookmark,
+  },
+]
+
+// This is a separate navigation item for Magic MCP that will only be used for the sidebar
+// and won't be part of the tab navigation
+export const magicNavItem = {
+  title: "Magic MCP",
+  icon: Wand2,
+  isNew: true,
+  subitems: [
+    {
+      title: "About",
+      href: "/magic",
+      externalLink: true,
+    },
+    {
+      title: "Onboarding",
+      href: "/magic/onboarding",
+    },
+    {
+      title: "Console",
+      href: "/magic/console",
+    },
+  ],
+}
 
 type NavigationItem = {
   title: string
@@ -173,33 +246,13 @@ const ui: NavigationItem[] = [
 
 export const categories: NavigationCategory[] = [
   {
-    title: "Magic AI Agent",
-    icon: Wand2,
-    isNew: true,
-    items: [
-      {
-        title: "About",
-        href: "/magic",
-        externalLink: true,
-      },
-      {
-        title: "Onboarding",
-        href: "/magic/onboarding",
-      },
-      {
-        title: "Console",
-        href: "/magic/console",
-      },
-    ],
-  },
-  {
     title: "Marketing Blocks",
     icon: Dock,
     items: marketing,
   },
   {
     title: "UI Components",
-    icon: Box,
+    icon: Group,
     items: ui,
   },
 ]
