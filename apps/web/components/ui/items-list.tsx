@@ -340,7 +340,7 @@ function useSearchDemos(
     queryFn: async ({ pageParam = 0 }) => {
       try {
         const { data: searchResults, error } = await supabase.functions.invoke(
-          "ai-search-oai",
+          "search_demos_ai_oai_extended",
           {
             body: {
               search: query,
