@@ -5,7 +5,7 @@ import { ComponentCard } from "../features/list-card/card"
 import { DemoWithComponent, User, Component, SortOption } from "@/types/global"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { transformDemoResult } from "@/lib/utils/transformData"
-import { Database, Json } from "@/types/supabase"
+import { Database } from "@/types/supabase"
 import { Loader2, Search } from "lucide-react"
 import { useAtom } from "jotai"
 import { tagPageSearchAtom } from "../features/tag-page/tag-page-header"
@@ -16,6 +16,7 @@ import { isMac } from "@/lib/utils"
 import { Icons } from "@/components/icons"
 import { ComponentCardSkeleton } from "./skeletons"
 import { ComponentPreviewDialog } from "../features/component-page/preview-dialog"
+import { toast } from "sonner"
 
 type ComponentOrDemo =
   | DemoWithComponent
@@ -687,6 +688,12 @@ export function ComponentsList({
                       `/${component.user.username}/${component.component.component_slug}/${component.demo_slug}`,
                     )
                   }
+                }}
+                onCtrlClick={(url) => {
+                  window.open(url, "_blank")
+                  toast.success(
+                    `${component.component?.name || component.name} was opened in a new tab`,
+                  )
                 }}
               />
             ))}
