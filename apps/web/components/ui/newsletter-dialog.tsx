@@ -88,7 +88,7 @@ export function NewsletterDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={`sm:max-w-[425px] ${isMobile ? "mx-4" : ""}`}>
+      <DialogContent className="sm:max-w-[425px]">
         <div className="mb-2 flex flex-col items-center gap-2">
           <div
             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-foreground"
