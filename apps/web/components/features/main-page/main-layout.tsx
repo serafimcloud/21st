@@ -7,7 +7,7 @@ import { useAtom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 import { useSidebarHotkey } from "@/hooks/use-sidebar-hotkey"
 
-export const sidebarOpenAtom = atomWithStorage<boolean>("sidebar:state", false)
+export const sidebarOpenAtom = atomWithStorage<boolean>("sidebar:state", true)
 export const sidebarHintDismissedAtom = atomWithStorage<boolean>(
   "sidebar:hint-dismissed",
   false,

@@ -182,7 +182,7 @@ export function FilterChips({
                     }}
                   >
                     <p className="flex items-center gap-1.5">
-                      Prefer sidebar? Press
+                      Reopen sidebar? Press
                       <kbd className="pointer-events-none h-5 text-foreground/80 select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
                         S
                       </kbd>
