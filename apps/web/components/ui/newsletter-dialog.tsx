@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Logo } from "@/components/ui/logo"
 
 import { useIsMobile } from "@/hooks/use-media-query"
 
@@ -90,10 +91,7 @@ export function NewsletterDialog() {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <div className="mb-2 flex flex-col items-center gap-2">
-          <div
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-foreground"
-            aria-hidden="true"
-          />
+          <Logo position="flex" className="h-6 w-6" hasLink={false} />
           <DialogHeader>
             <DialogTitle className="sm:text-center">
               Stay Updated with Latest UI Components
