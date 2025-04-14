@@ -44,6 +44,7 @@ import type { SortOption } from "@/types/global"
 import { useUser } from "@clerk/nextjs"
 import { userStateAtom } from "@/lib/store/user-store"
 import { Help } from "./help"
+import { motion, AnimatePresence } from "motion/react"
 
 import {
   Sidebar,
@@ -76,7 +77,7 @@ export function MainSidebar() {
   const [expandedCategories, setExpandedCategories] = React.useState<string[]>(
     [],
   )
-  const [expandedItems, setExpandedItems] = React.useState<string[]>(["magic"]) // Default expanded Magic menu
+  const [expandedItems, setExpandedItems] = React.useState<string[]>([]) // Start with Magic menu closed
 
   const [currentSection, setCurrentSection] = useAtom(currentSectionAtom)
   const [selectedMainTab, setSelectedMainTab] = useAtom(selectedMainTabAtom)
@@ -186,6 +187,17 @@ export function MainSidebar() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [])
 
+  // Add a useEffect to automatically open Magic menu after 1 second
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setExpandedItems((prev) =>
+        prev.includes("magic") ? prev : [...prev, "magic"],
+      )
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, []) // Empty dependency array ensures this only runs once on mount
+
   return (
     <Sidebar className="hidden md:block">
       <div className="h-14 flex items-center justify-end pr-4">
@@ -277,44 +289,89 @@ export function MainSidebar() {
                   </div>
                 </SidebarMenuButton>
 
-                {expandedItems.includes("magic") && (
-                  <SidebarMenu className="ml-6 w-auto mt-1 gap-0.5">
-                    {magicNavItem.subitems.map((subitem) => {
-                      const isActive =
-                        pathname === subitem.href ||
-                        (currentSection === "magic" &&
-                          pathname === subitem.href)
-                      return (
-                        <SidebarMenuItem key={subitem.title}>
-                          <SidebarMenuButton asChild isActive={isActive}>
-                            <Link
-                              href={subitem.href}
-                              className={cn(
-                                "flex items-center justify-between w-full",
-                                isActive
-                                  ? "bg-accent text-accent-foreground font-medium"
-                                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                              )}
-                              target={
-                                subitem.externalLink ? "_blank" : undefined
-                              }
-                              rel={
-                                subitem.externalLink
-                                  ? "noopener noreferrer"
-                                  : undefined
-                              }
+                <AnimatePresence mode="wait">
+                  {expandedItems.includes("magic") && (
+                    <motion.div
+                      key="magic-menu"
+                      initial={{
+                        height: 0,
+                        opacity: 0,
+                        marginTop: 0,
+                        marginBottom: 0,
+                      }}
+                      animate={{
+                        height: "auto",
+                        opacity: 1,
+                        marginTop: 4,
+                        marginBottom: 4,
+                      }}
+                      exit={{
+                        height: 0,
+                        opacity: 0,
+                        marginTop: 0,
+                        marginBottom: 0,
+                      }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                      className="overflow-hidden ml-6 w-auto"
+                      style={{ paddingBottom: 0 }}
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        {magicNavItem.subitems.map((subitem, itemIndex) => {
+                          const isActive =
+                            pathname === subitem.href ||
+                            (currentSection === "magic" &&
+                              pathname === subitem.href)
+
+                          // Calculate staggered delay
+                          const staggerDelay = Math.min(itemIndex * 0.02, 0.15)
+
+                          return (
+                            <motion.div
+                              key={subitem.title}
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              transition={{
+                                duration: 0.15,
+                                delay: staggerDelay,
+                                ease: "easeOut",
+                              }}
                             >
-                              <span>{subitem.title}</span>
-                              {subitem.externalLink && (
-                                <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                              )}
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      )
-                    })}
-                  </SidebarMenu>
-                )}
+                              <SidebarMenuItem className="mb-0">
+                                <SidebarMenuButton asChild isActive={isActive}>
+                                  <Link
+                                    href={subitem.href}
+                                    className={cn(
+                                      "flex items-center justify-between w-full",
+                                      isActive
+                                        ? "bg-accent text-accent-foreground font-medium"
+                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                    )}
+                                    target={
+                                      subitem.externalLink
+                                        ? "_blank"
+                                        : undefined
+                                    }
+                                    rel={
+                                      subitem.externalLink
+                                        ? "noopener noreferrer"
+                                        : undefined
+                                    }
+                                  >
+                                    <span>{subitem.title}</span>
+                                    {subitem.externalLink && (
+                                      <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                                    )}
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            </motion.div>
+                          )
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </SidebarMenuItem>
 
               {/* Rest of main tabs */}
@@ -425,65 +482,122 @@ export function MainSidebar() {
                       </div>
                     </SidebarMenuButton>
 
-                    {isExpanded && (
-                      <SidebarMenu className="ml-6 w-auto mt-1 gap-0.5">
-                        {category.items.map((item: NavigationItem) => {
-                          const isActive =
-                            pathname === item.href ||
-                            pathname.endsWith(item.title.toLowerCase())
+                    <AnimatePresence mode="wait">
+                      {isExpanded && (
+                        <motion.div
+                          key={`category-${categoryId}`}
+                          initial={{
+                            height: 0,
+                            opacity: 0,
+                            marginTop: 0,
+                            marginBottom: 0,
+                          }}
+                          animate={{
+                            height: "auto",
+                            opacity: 1,
+                            marginTop: 4,
+                            marginBottom: 4,
+                          }}
+                          exit={{
+                            height: 0,
+                            opacity: 0,
+                            marginTop: 0,
+                            marginBottom: 0,
+                          }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                          className="overflow-hidden ml-6 w-auto"
+                          style={{ paddingBottom: 0 }}
+                        >
+                          <div className="flex flex-col gap-0.5">
+                            {category.items.map(
+                              (item: NavigationItem, itemIndex: number) => {
+                                const isActive =
+                                  pathname === item.href ||
+                                  pathname.endsWith(item.title.toLowerCase())
 
-                          return (
-                            <SidebarMenuItem key={item.title}>
-                              <SidebarMenuButton asChild isActive={isActive}>
-                                <Link
-                                  href={item.href}
-                                  className={cn(
-                                    "flex items-center justify-between w-full",
-                                    isActive
-                                      ? "bg-accent text-accent-foreground font-medium"
-                                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                                  )}
-                                  target={
-                                    item.externalLink ? "_blank" : undefined
-                                  }
-                                  rel={
-                                    item.externalLink
-                                      ? "noopener noreferrer"
-                                      : undefined
-                                  }
-                                  onMouseEnter={() =>
-                                    setHoveredItem(item.title)
-                                  }
-                                  onMouseLeave={() => setHoveredItem(null)}
-                                >
-                                  <span className="flex items-center">
-                                    {item.title}
-                                    {item.isNew && (
-                                      <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
-                                        New
-                                      </span>
-                                    )}
-                                  </span>
-                                  <span
-                                    className={cn(
-                                      "text-muted-foreground text-sm flex items-center",
-                                      hoveredItem === item.title &&
-                                        "text-accent-foreground",
-                                    )}
+                                // Calculate staggered delay but ensure total animation stays under 300ms
+                                const staggerDelay = Math.min(
+                                  itemIndex * 0.02,
+                                  0.15,
+                                )
+
+                                return (
+                                  <motion.div
+                                    key={item.title}
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{
+                                      opacity: 0,
+                                      y: -5,
+                                    }}
+                                    transition={{
+                                      duration: 0.15,
+                                      delay: staggerDelay,
+                                      ease: "easeOut",
+                                    }}
                                   >
-                                    {item.externalLink &&
-                                      hoveredItem === item.title && (
-                                        <ArrowUpRight className="ml-1 h-3.5 w-3.5 transition-opacity" />
-                                      )}
-                                    {item.demosCount}
-                                  </span>
-                                </Link>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          )
-                        })}
-                      </SidebarMenu>
-                    )}
+                                    <SidebarMenuItem className="mb-0">
+                                      <SidebarMenuButton
+                                        asChild
+                                        isActive={isActive}
+                                      >
+                                        <Link
+                                          href={item.href}
+                                          className={cn(
+                                            "flex items-center justify-between w-full",
+                                            isActive
+                                              ? "bg-accent text-accent-foreground font-medium"
+                                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                          )}
+                                          target={
+                                            item.externalLink
+                                              ? "_blank"
+                                              : undefined
+                                          }
+                                          rel={
+                                            item.externalLink
+                                              ? "noopener noreferrer"
+                                              : undefined
+                                          }
+                                          onMouseEnter={() =>
+                                            setHoveredItem(item.title)
+                                          }
+                                          onMouseLeave={() =>
+                                            setHoveredItem(null)
+                                          }
+                                        >
+                                          <span className="flex items-center">
+                                            {item.title}
+                                            {item.isNew && (
+                                              <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
+                                                New
+                                              </span>
+                                            )}
+                                          </span>
+                                          <span
+                                            className={cn(
+                                              "text-muted-foreground text-sm flex items-center",
+                                              hoveredItem === item.title &&
+                                                "text-accent-foreground",
+                                            )}
+                                          >
+                                            {item.externalLink &&
+                                              hoveredItem === item.title && (
+                                                <ArrowUpRight className="ml-1 h-3.5 w-3.5 transition-opacity" />
+                                              )}
+                                            {item.demosCount}
+                                          </span>
+                                        </Link>
+                                      </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                  </motion.div>
+                                )
+                              },
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </SidebarMenuItem>
                 )
               })}
