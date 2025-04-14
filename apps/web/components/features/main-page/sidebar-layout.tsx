@@ -43,6 +43,7 @@ import { sortByAtom } from "@/components/features/main-page/main-page-header"
 import type { SortOption } from "@/types/global"
 import { useUser } from "@clerk/nextjs"
 import { userStateAtom } from "@/lib/store/user-store"
+import { Help } from "./help"
 
 import {
   Sidebar,
@@ -53,6 +54,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarFooter,
 } from "@/components/ui/sidebar"
 
 // Import types from navigation-with-magic.tsx
@@ -166,6 +168,23 @@ export function MainSidebar() {
         return <Box className="mr-2 h-4 w-4" />
     }
   }
+
+  const [helpOpen, setHelpOpen] = React.useState(false)
+
+  // Add keyboard event handler
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Add handler for slash key using code
+      if (e.code === "Slash" || e.code === "IntlRo") {
+        e.preventDefault()
+        setHelpOpen((prev) => !prev)
+        return
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   return (
     <Sidebar className="hidden md:block">
@@ -472,6 +491,9 @@ export function MainSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="flex justify-end pr-4">
+        <Help open={helpOpen} onOpenChange={setHelpOpen} />
+      </SidebarFooter>
     </Sidebar>
   )
 }
