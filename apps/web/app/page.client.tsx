@@ -28,6 +28,8 @@ import {
   magicBannerVisibleAtom,
 } from "@/components/features/magic/magic-banner"
 import { CollectionsContainer } from "@/components/features/collections/collections-list"
+import { HomeTabLayout } from "@/components/features/home/home-tab-layout"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 const MainContent = React.memo(function MainContent({
   activeTab,
@@ -39,6 +41,7 @@ const MainContent = React.memo(function MainContent({
   handleTabChange,
 }: {
   activeTab:
+    | "home"
     | "categories"
     | "components"
     | "authors"
@@ -52,6 +55,7 @@ const MainContent = React.memo(function MainContent({
   prevSidebarState: boolean
   handleTabChange: (
     tab:
+      | "home"
       | "categories"
       | "components"
       | "authors"
@@ -62,6 +66,21 @@ const MainContent = React.memo(function MainContent({
 }) {
   const renderContent = () => {
     switch (activeTab) {
+      case "home":
+        return (
+          <motion.div
+            layout={prevSidebarState !== sidebarOpen}
+            initial={
+              prevSidebarState !== sidebarOpen ? { opacity: 0, y: 20 } : false
+            }
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              layout: { duration: 0.2 },
+            }}
+          >
+            <HomeTabLayout sortBy={sortBy} />
+          </motion.div>
+        )
       case "categories":
         return (
           <>
@@ -140,8 +159,13 @@ export function HomePageClient() {
   const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<Exclude<AppSection, "magic">>(
-    (searchParams.get("tab") as Exclude<AppSection, "magic">) || "components",
+  const isDesktop = useMediaQuery("(min-width: 768px)")
+
+  const [activeTab, setActiveTab] = useState<
+    Exclude<AppSection, "magic"> | "home"
+  >(
+    (searchParams.get("tab") as Exclude<AppSection, "magic"> | "home") ||
+      (isDesktop ? "home" : "components"),
   )
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
 
@@ -150,10 +174,13 @@ export function HomePageClient() {
   }, [setCurrentSection])
 
   useEffect(() => {
-    const tab = searchParams.get("tab") as Exclude<AppSection, "magic"> | null
+    const tab = searchParams.get("tab") as
+      | Exclude<AppSection, "magic">
+      | "home"
+      | null
     if (tab && tab !== activeTab) {
       setActiveTab(tab)
-      setSelectedTab(tab)
+      setSelectedTab(tab === "home" ? "components" : tab)
     }
   }, [searchParams, setSelectedTab, activeTab])
 
@@ -194,9 +221,9 @@ export function HomePageClient() {
     setPrevSidebarState(sidebarOpen)
   }, [sidebarOpen])
 
-  const handleTabChange = (newTab: Exclude<AppSection, "magic">) => {
+  const handleTabChange = (newTab: Exclude<AppSection, "magic"> | "home") => {
     setActiveTab(newTab)
-    setSelectedTab(newTab)
+    setSelectedTab(newTab === "home" ? "components" : newTab)
     setSelectedFilter("all")
   }
 

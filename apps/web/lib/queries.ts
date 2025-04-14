@@ -1,4 +1,4 @@
-import { Component, Demo, Tag, User } from "@/types/global"
+import { Component, Demo, Tag, User, DemoWithComponent } from "@/types/global"
 import {
   UseMutationResult,
   useMutation,
@@ -871,3 +871,142 @@ export async function hasUserPurchasedComponent(
 
   return !!data
 }
+
+// Hook for featured, popular and latest demos
+export function useFeaturedDemos() {
+  const supabase = useClerkSupabaseClient()
+  const adminUserIds = [
+    "user_2nA0HITg0H7hvozIDNdxvzinpei",
+    "user_2nElBLvklOKlAURm6W1PTu6yYFh",
+  ]
+  const adminLikedItemsLimit = 24 // Fetch more items for the slider
+
+  return useQuery({
+    queryKey: ["featured-demos"] as const,
+    queryFn: async () => {
+      // Fetch liked demos for all admin users
+      const likedResults = await Promise.all(
+        adminUserIds.map((userId) =>
+          supabase.rpc("get_admin_liked_demos_v1", {
+            p_user_id: userId,
+            p_limit: adminLikedItemsLimit,
+          }),
+        ),
+      )
+
+      // Process Liked Demos
+      let combinedLikedDemosRaw: AdminLikedDemo[] = []
+      likedResults.forEach((result) => {
+        if (result.error) {
+          console.error(
+            `Error fetching admin liked demos for one user:`,
+            result.error,
+          )
+        } else if (result.data) {
+          combinedLikedDemosRaw = combinedLikedDemosRaw.concat(
+            result.data as AdminLikedDemo[],
+          )
+        }
+      })
+
+      // Deduplicate liked demos using a Map, preserving first occurrence
+      const uniqueLikedDemosMap = new Map<number, AdminLikedDemo>()
+      combinedLikedDemosRaw.forEach((demo) => {
+        // Ensure demo and demo.id are valid before using the map
+        if (
+          demo &&
+          typeof demo.id === "number" &&
+          !uniqueLikedDemosMap.has(demo.id)
+        ) {
+          uniqueLikedDemosMap.set(demo.id, demo)
+        }
+      })
+
+      // Transform and Sort unique liked demos by updated_at desc as proxy for bookmarked_at
+      const uniqueLikedDemosTransformed = Array.from(
+        uniqueLikedDemosMap.values(),
+      )
+        .map(transformDemoResult) // Transform first
+        .sort((a, b) => {
+          // Then sort
+          // Handle potential null or undefined dates gracefully
+          const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0
+          const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0
+          return dateB - dateA // Descending order
+        })
+
+      return {
+        data: uniqueLikedDemosTransformed as DemoWithComponent[],
+        ids: new Set(uniqueLikedDemosTransformed.map((d) => d.id)),
+      }
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
+  })
+}
+
+// Hook to get popular demos - independent of featured demos
+export function useMainDemosExcludingFeatured() {
+  const supabase = useClerkSupabaseClient()
+
+  return useQuery({
+    queryKey: ["popular-demos"] as const,
+    queryFn: async () => {
+      const { data: filteredData, error } = await supabase.rpc(
+        "get_demos_list_v2",
+        {
+          p_sort_by: "downloads",
+          p_offset: 0,
+          p_limit: 24,
+          p_tag_slug: undefined,
+          p_include_private: false,
+        },
+      )
+
+      if (error) {
+        console.error("Error fetching popular demos:", error)
+        throw error
+      }
+
+      const transformedData = (filteredData || []).map(transformDemoResult)
+      return transformedData as DemoWithComponent[]
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
+  })
+}
+
+// Hook to get latest demos
+export function useLatestDemos() {
+  const supabase = useClerkSupabaseClient()
+
+  return useQuery({
+    queryKey: ["latest-demos"] as const,
+    queryFn: async () => {
+      const { data: filteredData, error } = await supabase.rpc(
+        "get_demos_list_v2",
+        {
+          p_sort_by: "date",
+          p_offset: 0,
+          p_limit: 24,
+          p_tag_slug: undefined,
+          p_include_private: false,
+        },
+      )
+
+      if (error) {
+        console.error("Error fetching latest demos:", error)
+        throw error
+      }
+
+      const transformedData = (filteredData || []).map(transformDemoResult)
+      return transformedData
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
+  })
+}
+
+// Define type for admin liked demo
+type AdminLikedDemo =
+  Database["public"]["Functions"]["get_admin_liked_demos_v1"]["Returns"][number]

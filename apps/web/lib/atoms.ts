@@ -1,6 +1,7 @@
 import { atom } from "jotai"
 
 export type AppSection =
+  | "home"
   | "components"
   | "templates"
   | "categories"
@@ -9,7 +10,9 @@ export type AppSection =
   | "collections"
   | "magic"
 
-export type TabChangeHandler = (tab: Exclude<AppSection, "magic">) => void
+export type MainTabType = Exclude<AppSection, "magic">
+
+export type TabChangeHandler = (tab: MainTabType | "home") => void
 
 // This atom will store the tab change handler function
 export const tabChangeHandlerAtom = atom<TabChangeHandler | null>(null)
@@ -18,14 +21,13 @@ export const tabChangeHandlerAtom = atom<TabChangeHandler | null>(null)
 export const currentSectionAtom = atom<AppSection>("components")
 
 // Selected tab on the main page
-export const selectedMainTabAtom =
-  atom<Exclude<AppSection, "magic">>("components")
+export const selectedMainTabAtom = atom<MainTabType>("components")
 
 /**
  * Helper function to generate a URL for the main page with a specific tab
  */
 export const getMainPageUrlWithTab = (
-  tab: Exclude<AppSection, "magic">,
+  tab: MainTabType | "home",
   sortBy?: string,
 ): string => {
   const params = new URLSearchParams()

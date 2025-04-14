@@ -24,6 +24,7 @@ import { setCookie } from "@/lib/cookies"
 export const sortByAtom = atom<SortOption>("recommended")
 
 const tabLabels = {
+  home: "Home",
   components: "Components",
   templates: "Templates",
   categories: "Categories",
@@ -34,6 +35,7 @@ const tabLabels = {
 
 interface ComponentsHeaderProps {
   activeTab:
+    | "home"
     | "categories"
     | "components"
     | "authors"
@@ -42,6 +44,7 @@ interface ComponentsHeaderProps {
     | "collections"
   onTabChange: (
     tab:
+      | "home"
       | "categories"
       | "components"
       | "authors"
@@ -111,6 +114,22 @@ export function ComponentsHeader({
     return () => viewport.removeEventListener("scroll", checkScroll)
   }, [])
 
+  // Handle initial tab setting based on device type
+  useEffect(() => {
+    if (isClient) {
+      const params = new URLSearchParams(searchParams.toString())
+      const tabParam = params.get("tab")
+
+      // If no tab is set, default to "home" on desktop, "components" on mobile
+      if (!tabParam) {
+        const defaultTab = isDesktop ? "home" : "components"
+        params.set("tab", defaultTab)
+        router.push(`?${params.toString()}`, { scroll: false })
+        onTabChange(defaultTab as "home" | "components")
+      }
+    }
+  }, [isClient, isDesktop, router, searchParams, onTabChange])
+
   const handleTabChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", value)
@@ -122,6 +141,7 @@ export function ComponentsHeader({
     router.push(`?${params.toString()}`, { scroll: false })
     onTabChange(
       value as
+        | "home"
         | "categories"
         | "components"
         | "authors"
@@ -149,6 +169,12 @@ export function ComponentsHeader({
           <div className="flex items-center gap-4">
             <Tabs value={activeTab} onValueChange={handleTabChange}>
               <TabsList className="h-auto gap-2 rounded-none bg-transparent px-0 py-1 text-foreground">
+                <TabsTrigger
+                  value="home"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-foreground data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Home
+                </TabsTrigger>
                 <TabsTrigger
                   value="components"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-foreground data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
