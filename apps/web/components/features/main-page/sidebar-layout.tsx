@@ -306,7 +306,7 @@ export function MainSidebar() {
                                 ease: "easeOut",
                               }}
                             >
-                              <SidebarMenuItem className="mb-0">
+                              <div className="mb-0">
                                 <SidebarMenuButton asChild isActive={isActive}>
                                   <Link
                                     href={subitem.href}
@@ -333,7 +333,7 @@ export function MainSidebar() {
                                     )}
                                   </Link>
                                 </SidebarMenuButton>
-                              </SidebarMenuItem>
+                              </div>
                             </motion.div>
                           )
                         })}
@@ -508,7 +508,7 @@ export function MainSidebar() {
                                       ease: "easeOut",
                                     }}
                                   >
-                                    <SidebarMenuItem className="mb-0">
+                                    <div className="mb-0">
                                       <SidebarMenuButton
                                         asChild
                                         isActive={isActive}
@@ -561,7 +561,7 @@ export function MainSidebar() {
                                           </span>
                                         </Link>
                                       </SidebarMenuButton>
-                                    </SidebarMenuItem>
+                                    </div>
                                   </motion.div>
                                 )
                               },
