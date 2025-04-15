@@ -23,6 +23,7 @@
     "@babel/types": "^7.25.6",
     "@clerk/nextjs": "^6.11.2",
     "@clerk/themes": "^2.1.35",
+    "@codemirror/autocomplete": "^6.18.6",
     "@codesandbox/sandpack-react": "^2.19.9",
     "@hookform/resolvers": "^3.9.1",
     "@monaco-editor/react": "^4.6.0",

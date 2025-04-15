@@ -139,7 +139,7 @@ export function ComponentPublishDialog({
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Publish Component
+          Publish Component | OLD
         </Button>
       </DialogTrigger>
 
