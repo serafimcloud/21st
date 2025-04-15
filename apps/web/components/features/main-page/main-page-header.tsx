@@ -1,13 +1,11 @@
-import { atom, useAtom } from "jotai"
-import { useMediaQuery } from "@/hooks/use-media-query"
+import { atom } from "jotai"
 import { ArrowUpDown } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useNavigation } from "@/hooks/use-navigation"
 
 import {
   Select,
@@ -19,11 +17,12 @@ import {
 
 import type { SortOption } from "@/types/global"
 import { SORT_OPTIONS } from "@/types/global"
-import { setCookie } from "@/lib/cookies"
+import type { MainTabType } from "@/lib/atoms"
 
 export const sortByAtom = atom<SortOption>("recommended")
 
 const tabLabels = {
+  home: "Home",
   components: "Components",
   templates: "Templates",
   categories: "Categories",
@@ -34,6 +33,7 @@ const tabLabels = {
 
 interface ComponentsHeaderProps {
   activeTab:
+    | "home"
     | "categories"
     | "components"
     | "authors"
@@ -42,6 +42,7 @@ interface ComponentsHeaderProps {
     | "collections"
   onTabChange: (
     tab:
+      | "home"
       | "categories"
       | "components"
       | "authors"
@@ -55,16 +56,23 @@ export function ComponentsHeader({
   activeTab,
   onTabChange,
 }: ComponentsHeaderProps) {
-  const [sortBy, setSortBy] = useAtom(sortByAtom)
-  const [sidebarOpen] = useAtom(sidebarOpenAtom)
-  const isDesktop = useMediaQuery("(min-width: 768px)")
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const [isClient, setIsClient] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const [showLeftGradient, setShowLeftGradient] = useState(false)
   const [showRightGradient, setShowRightGradient] = useState(true)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  // Use the custom hook for tab navigation
+  const {
+    activeTab: currentTab,
+    navigateToTab,
+    isDesktop,
+    sortBy,
+    handleSortChange,
+  } = useNavigation({
+    onTabChange: (tab) =>
+      onTabChange(tab as ComponentsHeaderProps["activeTab"]),
+  })
 
   useEffect(() => {
     setIsClient(true)
@@ -111,44 +119,24 @@ export function ComponentsHeader({
     return () => viewport.removeEventListener("scroll", checkScroll)
   }, [])
 
-  const handleTabChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("tab", value)
-    if (value === "components" && sortBy) {
-      params.set("sort", sortBy)
-    } else {
-      params.delete("sort")
-    }
-    router.push(`?${params.toString()}`, { scroll: false })
-    onTabChange(
-      value as
-        | "categories"
-        | "components"
-        | "authors"
-        | "pro"
-        | "templates"
-        | "collections",
-    )
-  }
-
-  const handleSortChange = (value: string) => {
-    setSortBy(value as SortOption)
-    setCookie({
-      name: "saved_sort_by",
-      value: value,
-      expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-      httpOnly: true,
-      sameSite: "lax",
-    })
-  }
-
   if (!isClient) {
     return (
       <div className="flex flex-col gap-4 mb-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) =>
+                navigateToTab(value as MainTabType | "home")
+              }
+            >
               <TabsList className="h-auto gap-2 rounded-none bg-transparent px-0 py-1 text-foreground">
+                <TabsTrigger
+                  value="home"
+                  className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-foreground data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
+                >
+                  Home
+                </TabsTrigger>
                 <TabsTrigger
                   value="components"
                   className="relative after:absolute after:inset-x-0 after:bottom-0 after:-mb-2 after:h-0.5 hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:after:bg-foreground data-[state=active]:hover:bg-accent data-[state=inactive]:text-foreground/70"
@@ -198,11 +186,21 @@ export function ComponentsHeader({
       <div className="flex items-center justify-between gap-4">
         {!isDesktop && (
           <div className="flex items-center gap-4">
-            <Select value={activeTab} onValueChange={handleTabChange}>
-              <SelectTrigger className="border-0 bg-transparent font-medium text-md shadow-none focus:ring-0">
+            <Select
+              value={activeTab}
+              onValueChange={(value) =>
+                navigateToTab(value as MainTabType | "home")
+              }
+            >
+              <SelectTrigger className="border-0 bg-transparent font-medium text-md shadow-none focus:ring-0 pl-0">
                 <SelectValue placeholder={tabLabels[activeTab]} />
               </SelectTrigger>
-              <SelectContent className="[&_*[role=option]>span]:end-2 [&_*[role=option]>span]:start-auto [&_*[role=option]]:pe-8 [&_*[role=option]]:ps-2">
+              <SelectContent 
+                side="bottom"
+                align="start"
+                alignOffset={-10}
+                className="[&_*[role=option]>span]:end-2 [&_*[role=option]>span]:start-auto [&_*[role=option]]:pe-8 [&_*[role=option]]:ps-2"
+              >
                 {Object.entries(tabLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}

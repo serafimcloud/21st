@@ -17,21 +17,15 @@ import { Icons } from "@/components/icons"
 import { ComponentCardSkeleton } from "./skeletons"
 import { ComponentPreviewDialog } from "../features/component-page/preview-dialog"
 import { toast } from "sonner"
+import { useTagDemos } from "@/lib/queries"
 
-type ComponentOrDemo =
-  | DemoWithComponent
-  | (Component & { user: User } & { view_count?: number })
-
-// --- Define the type alias for the admin liked demo function return type ---
-// Ensure the path matches your actual Supabase generated types
 type AdminLikedDemo =
   Database["public"]["Functions"]["get_admin_liked_demos_v1"]["Returns"][number]
-// ---
 
 interface BaseListProps {
   className?: string
   skeletonCount?: number
-  initialData?: ComponentOrDemo[]
+  initialData?: DemoWithComponent[]
 }
 
 interface MainListProps extends BaseListProps {
@@ -74,7 +68,7 @@ type ComponentsListProps =
 function useMainDemos(
   sortBy: SortOption,
   tagSlug?: string,
-  initialData?: ComponentOrDemo[],
+  initialData?: DemoWithComponent[],
 ) {
   const supabase = useClerkSupabaseClient()
   const adminUserIds = [
@@ -82,7 +76,7 @@ function useMainDemos(
     "user_2nElBLvklOKlAURm6W1PTu6yYFh",
   ]
   const itemsPerPage = 24
-  const adminLikedItemsLimit = 12 // Fetch 12 items per admin
+  const adminLikedItemsLimit = 12
 
   return useInfiniteQuery({
     queryKey: ["filtered-demos", sortBy, tagSlug, "with-admin-likes"] as const,
@@ -91,21 +85,18 @@ function useMainDemos(
       const isFirstPage = currentPage === 0
       const isRecommendedSort = sortBy === "recommended"
 
-      // --- Special handling for first page + recommended sort ---
       if (isFirstPage && isRecommendedSort) {
         const [likedResults, regularResult] = await Promise.all([
-          // Fetch liked demos for all admin users
           Promise.all(
             adminUserIds.map((userId) =>
               supabase.rpc("get_admin_liked_demos_v1", {
                 p_user_id: userId,
-                p_limit: adminLikedItemsLimit, // Use the new limit
+                p_limit: adminLikedItemsLimit,
               }),
             ),
           ),
-          // Fetch regular first page (recommended sort)
           supabase.rpc("get_demos_list_v2", {
-            p_sort_by: "recommended", // Explicitly use recommended sort
+            p_sort_by: "recommended",
             p_offset: 0,
             p_limit: itemsPerPage,
             p_tag_slug: tagSlug,
@@ -113,8 +104,7 @@ function useMainDemos(
           } as Database["public"]["Functions"]["get_demos_list_v2"]["Args"]),
         ])
 
-        // Process Liked Demos
-        let combinedLikedDemosRaw: AdminLikedDemo[] = [] // Use defined type
+        let combinedLikedDemosRaw: AdminLikedDemo[] = []
         likedResults.forEach((result) => {
           if (result.error) {
             console.error(
@@ -128,10 +118,8 @@ function useMainDemos(
           }
         })
 
-        // Deduplicate liked demos using a Map, preserving first occurrence
         const uniqueLikedDemosMap = new Map<number, AdminLikedDemo>()
         combinedLikedDemosRaw.forEach((demo) => {
-          // Ensure demo and demo.id are valid before using the map
           if (
             demo &&
             typeof demo.id === "number" &&
@@ -141,24 +129,20 @@ function useMainDemos(
           }
         })
 
-        // Transform and Sort unique liked demos by updated_at desc as proxy for bookmarked_at
         const uniqueLikedDemosTransformed = Array.from(
           uniqueLikedDemosMap.values(),
         )
-          .map(transformDemoResult) // Transform first
+          .map(transformDemoResult)
           .sort((a, b) => {
-            // Then sort
-            // Handle potential null or undefined dates gracefully
             const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0
             const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0
-            return dateB - dateA // Descending order
+            return dateB - dateA
           })
 
         const uniqueLikedDemoIds = new Set(
           uniqueLikedDemosTransformed.map((d) => d.id),
         )
 
-        // Process Regular Demos
         if (regularResult.error) {
           console.error(
             "Error fetching regular recommended demos:",
@@ -171,12 +155,10 @@ function useMainDemos(
         const totalCount = (regularDemosRaw[0] as any)?.total_count ?? 0
         const regularDemosTransformed = regularDemosRaw.map(transformDemoResult)
 
-        // Filter regular demos to remove duplicates from liked list
         const filteredRegularDemos = regularDemosTransformed.filter(
           (demo) => !uniqueLikedDemoIds.has(demo.id),
         )
 
-        // Combine: Sorted Liked demos first, then filtered regular recommended demos
         const finalPageData = [
           ...uniqueLikedDemosTransformed,
           ...filteredRegularDemos,
@@ -187,21 +169,19 @@ function useMainDemos(
           total_count: totalCount,
         }
       } else {
-        // --- Standard handling for other sorts or subsequent pages ---
         const offset = isRecommendedSort
           ? Math.max(
               0,
               currentPage * itemsPerPage -
                 adminLikedItemsLimit * adminUserIds.length,
-            ) // Adjust offset calculation if needed, or simplify if prepending logic guarantees correct pagination
+            )
           : currentPage * itemsPerPage
 
-        // Fetch pages normally using the provided sortBy and calculated offset
         const { data: filteredData, error } = await supabase.rpc(
           "get_demos_list_v2",
           {
-            p_sort_by: sortBy, // Use the current sortBy value
-            p_offset: currentPage * itemsPerPage, // Keep original offset logic for simplicity
+            p_sort_by: sortBy,
+            p_offset: currentPage * itemsPerPage,
             p_limit: itemsPerPage,
             p_tag_slug: tagSlug,
             p_include_private: false,
@@ -252,48 +232,10 @@ function useMainDemos(
   })
 }
 
-function useTagDemos(
-  tagSlug: string,
-  sortBy: SortOption,
-  initialData?: ComponentOrDemo[],
-) {
-  const supabase = useClerkSupabaseClient()
-  return useQuery({
-    queryKey: ["tag-filtered-demos", tagSlug, sortBy] as const,
-    queryFn: async () => {
-      const { data: filteredData, error } = await supabase.rpc(
-        "get_demos_list",
-        {
-          p_sort_by: sortBy,
-          p_offset: 0,
-          p_limit: 1000,
-          p_tag_slug: tagSlug,
-          p_include_private: false,
-        },
-      )
-
-      if (error) throw error
-      const transformedData = (filteredData || []).map(transformDemoResult)
-      return {
-        data: transformedData,
-        total_count: filteredData?.[0]?.total_count ?? 0,
-      }
-    },
-    initialData: initialData
-      ? {
-          data: initialData as DemoWithComponent[],
-          total_count: initialData.length,
-        }
-      : undefined,
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-  })
-}
-
 function useUserDemos(
   userId: string,
   tab: UserListProps["tab"],
-  initialData?: ComponentOrDemo[],
+  initialData?: DemoWithComponent[],
 ) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
@@ -332,7 +274,7 @@ function useUserDemos(
 function useSearchDemos(
   query: string,
   sortBy: SortOption,
-  initialData?: ComponentOrDemo[],
+  initialData?: DemoWithComponent[],
 ) {
   const supabase = useClerkSupabaseClient()
   return useInfiniteQuery({

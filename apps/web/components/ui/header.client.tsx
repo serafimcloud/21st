@@ -223,7 +223,7 @@ export function Header({
 
           <div
             className={cn(
-              "w-[400px]",
+              "hidden md:block w-[400px]",
               open ? "ml-4" : "absolute left-1/2 -translate-x-1/2",
             )}
           >
@@ -251,117 +251,121 @@ export function Header({
 
         <div className="flex items-center gap-1">
           <SignedIn>
-            {!isMobile && variant !== "publish" && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleBookmarksClick}
-                  className="mr-2"
-                  aria-label="Saved components"
-                >
-                  <Bookmark size={18} />
-                </Button>
-                {!open &&
-                  !userState.isSubscriptionLoading &&
-                  !userState.subscription && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      asChild
-                      className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
-                    >
-                      <Link
-                        href="/pricing"
-                        onClick={() =>
-                          trackAttribution(
-                            ATTRIBUTION_SOURCE.HEADER,
-                            SOURCE_DETAIL.HEADER_GET_PRO_LINK,
-                          )
-                        }
-                        className="bg-gradient-to-r from-[hsl(var(--primary-gradient-start))] to-[hsl(var(--primary-gradient-end))] bg-clip-text text-transparent"
-                      >
-                        <span className="font-medium">Get Pro</span>
-                      </Link>
-                    </Button>
-                  )}
-                <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse">
+            <div className="flex items-center">
+              {!isMobile && variant !== "publish" && (
+                <>
                   <Button
-                    asChild
-                    className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleBookmarksClick}
+                    className="mr-2"
+                    aria-label="Saved components"
                   >
-                    <Link href="/publish">Add new</Link>
+                    <Bookmark size={18} />
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                  {!open &&
+                    !userState.isSubscriptionLoading &&
+                    !userState.subscription && (
                       <Button
-                        className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10 !border !border-[hsl(var(--primary-gradient-start))] hover:!border-[hsl(var(--primary-gradient-start))] hover:opacity-90 hover:text-accent"
-                        size="icon"
-                        aria-label="Component options"
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
                       >
-                        <ChevronDown
-                          size={16}
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className="w-64"
-                      side="bottom"
-                      sideOffset={4}
-                      align="end"
-                    >
-                      <DropdownMenuItem asChild>
-                        <Link href="/publish" className="cursor-pointer">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium">
-                              Publish component
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Create and publish a new component to the registry
-                            </span>
-                          </div>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
                         <Link
-                          href="/publish/template"
-                          className="cursor-pointer"
+                          href="/pricing"
+                          onClick={() =>
+                            trackAttribution(
+                              ATTRIBUTION_SOURCE.HEADER,
+                              SOURCE_DETAIL.HEADER_GET_PRO_LINK,
+                            )
+                          }
+                          className="bg-gradient-to-r from-[hsl(var(--primary-gradient-start))] to-[hsl(var(--primary-gradient-end))] bg-clip-text text-transparent"
                         >
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium">
-                              Publish template
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Create and publish a new website template
-                            </span>
-                          </div>
+                          <span className="font-medium">Get Pro</span>
                         </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/import" className="cursor-pointer">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium flex items-center gap-1">
-                              Import from registry
-                              <Badge
-                                variant="secondary"
-                                className="h-5 text-[11px] tracking-wide font-medium uppercase px-1.5 py-0 leading-none"
-                              >
-                                beta
-                              </Badge>
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Import an existing component from shadcn registry
-                            </span>
-                          </div>
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </>
-            )}
+                      </Button>
+                    )}
+                  <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse">
+                    <Button
+                      asChild
+                      className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
+                    >
+                      <Link href="/publish">Add new</Link>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10 !border !border-[hsl(var(--primary-gradient-start))] hover:!border-[hsl(var(--primary-gradient-start))] hover:opacity-90 hover:text-accent"
+                          size="icon"
+                          aria-label="Component options"
+                        >
+                          <ChevronDown
+                            size={16}
+                            strokeWidth={2}
+                            aria-hidden="true"
+                          />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        className="w-64"
+                        side="bottom"
+                        sideOffset={4}
+                        align="end"
+                      >
+                        <DropdownMenuItem asChild>
+                          <Link href="/publish" className="cursor-pointer">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium">
+                                Publish component
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Create and publish a new component to the
+                                registry
+                              </span>
+                            </div>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/publish/template"
+                            className="cursor-pointer"
+                          >
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium">
+                                Publish template
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Create and publish a new website template
+                              </span>
+                            </div>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/import" className="cursor-pointer">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium flex items-center gap-1">
+                                Import from registry
+                                <Badge
+                                  variant="secondary"
+                                  className="h-5 text-[11px] tracking-wide font-medium uppercase px-1.5 py-0 leading-none"
+                                >
+                                  beta
+                                </Badge>
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Import an existing component from shadcn
+                                registry
+                              </span>
+                            </div>
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </>
+              )}
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer rounded-full ml-2">
                 <UserAvatar

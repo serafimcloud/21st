@@ -8,6 +8,7 @@ import {
   Component,
   Bookmark,
   Group,
+  Home,
 } from "lucide-react"
 
 export type MainNavigationItem = {
@@ -23,6 +24,11 @@ export type MainNavigationItem = {
 }
 
 export const mainNavigationItems: MainNavigationItem[] = [
+  {
+    title: "Home",
+    value: "home",
+    icon: Home,
+  },
   {
     title: "Components",
     value: "components",

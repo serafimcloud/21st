@@ -31,20 +31,15 @@ import {
   Sparkles,
   Group,
   Presentation,
+  Home,
 } from "lucide-react"
 import { useAtom } from "jotai"
-import {
-  AppSection,
-  currentSectionAtom,
-  selectedMainTabAtom,
-  getMainPageUrlWithTab,
-} from "@/lib/atoms"
-import { sortByAtom } from "@/components/features/main-page/main-page-header"
-import type { SortOption } from "@/types/global"
-import { useUser } from "@clerk/nextjs"
+import { AppSection } from "@/lib/atoms"
 import { userStateAtom } from "@/lib/store/user-store"
 import { Help } from "./help"
 import { motion, AnimatePresence } from "motion/react"
+import { useNavigation } from "@/hooks/use-navigation"
+import { useUser } from "@clerk/nextjs"
 
 import {
   Sidebar,
@@ -79,9 +74,8 @@ export function MainSidebar() {
   )
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]) // Start with Magic menu closed
 
-  const [currentSection, setCurrentSection] = useAtom(currentSectionAtom)
-  const [selectedMainTab, setSelectedMainTab] = useAtom(selectedMainTabAtom)
-  const [sortBy] = useAtom<SortOption>(sortByAtom)
+  // Use our custom tabs navigation hook
+  const { activeTab, currentSection, navigateToTab, sortBy } = useNavigation()
 
   // Use the filtered navigation that checks if Magic onboarding is completed
   const filteredCategories = useFilteredNavigation()
@@ -91,40 +85,6 @@ export function MainSidebar() {
 
   // Get the current tab from URL when available
   const urlTab = searchParams.get("tab") as Exclude<AppSection, "magic"> | null
-
-  // Update the current section and selected tab based on pathname and URL params
-  React.useEffect(() => {
-    // Check if we're on a magic page
-    if (pathname.startsWith("/magic")) {
-      setCurrentSection("magic")
-      return
-    }
-
-    // If we're on the main page with a tab parameter
-    if (pathname === "/" && urlTab) {
-      setCurrentSection("components") // Main section
-      setSelectedMainTab(urlTab) // Update the selected tab based on URL
-      return
-    }
-
-    // Default for other pages
-    if (pathname !== "/") {
-      setCurrentSection("components") // Default to components for other pages
-    }
-  }, [pathname, urlTab, setCurrentSection, setSelectedMainTab])
-
-  // Function to navigate to a main tab
-  const navigateToMainTab = (tab: Exclude<AppSection, "magic">) => {
-    // Update the selected tab immediately for responsive UI
-    setSelectedMainTab(tab)
-
-    // Navigate to main page with the selected tab
-    const url = getMainPageUrlWithTab(
-      tab,
-      tab === "components" ? sortBy : undefined,
-    )
-    router.push(url)
-  }
 
   // Toggle category expansion
   const toggleCategory = (categoryId: string) => {
@@ -142,17 +102,17 @@ export function MainSidebar() {
     )
   }
 
-  // Get the Components item and other items
-  const componentsItem = mainNavigationItems.find(
-    (item) => item.value === "components",
-  )
-  const otherItems = mainNavigationItems.filter(
-    (item) => item.value !== "components",
-  )
-
   // Map navigation value to icon component
   const getIconForNavItem = (value: string) => {
+    const item = mainNavigationItems.find((item) => item.value === value)
+    if (item) {
+      const Icon = item.icon
+      return <Icon className="mr-2 h-4 w-4" />
+    }
+    // Fallbacks
     switch (value) {
+      case "home":
+        return <Home className="mr-2 h-4 w-4" />
       case "components":
         return <Component className="mr-2 h-4 w-4" />
       case "templates":
@@ -235,33 +195,42 @@ export function MainSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Components tab first */}
-              {componentsItem && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={
-                      currentSection !== "magic" &&
-                      selectedMainTab === componentsItem.value &&
-                      !pathname.startsWith("/s/")
-                    }
-                    onClick={() =>
-                      navigateToMainTab(
-                        componentsItem.value as Exclude<AppSection, "magic">,
-                      )
-                    }
-                  >
-                    <div className="flex items-center w-full">
-                      {getIconForNavItem(componentsItem.value)}
-                      {componentsItem.title}
-                      {componentsItem.isNew && (
-                        <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
-                          New
-                        </span>
-                      )}
-                    </div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              {/* Home and Components first */}
+              {mainNavigationItems
+                .filter((item) => ["home", "components"].includes(item.value))
+                .map((item) => (
+                  <SidebarMenuItem key={item.value}>
+                    <SidebarMenuButton
+                      isActive={
+                        currentSection !== "magic" &&
+                        !pathname.startsWith("/s/") &&
+                        ((item.value === "home" &&
+                          (urlTab === "home" ||
+                            (!urlTab && pathname === "/"))) ||
+                          (item.value === "components" &&
+                            urlTab === "components") ||
+                          (item.value !== "home" &&
+                            item.value !== "components" &&
+                            activeTab === item.value))
+                      }
+                      onClick={() =>
+                        navigateToTab(
+                          item.value as Exclude<AppSection, "magic"> | "home",
+                        )
+                      }
+                    >
+                      <div className="flex items-center w-full">
+                        {getIconForNavItem(item.value)}
+                        {item.title}
+                        {item.isNew && (
+                          <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
+                            New
+                          </span>
+                        )}
+                      </div>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
 
               {/* Magic MCP collapsible menu */}
               <SidebarMenuItem className="group/menu-item relative">
@@ -337,7 +306,7 @@ export function MainSidebar() {
                                 ease: "easeOut",
                               }}
                             >
-                              <SidebarMenuItem className="mb-0">
+                              <div className="mb-0">
                                 <SidebarMenuButton asChild isActive={isActive}>
                                   <Link
                                     href={subitem.href}
@@ -364,7 +333,7 @@ export function MainSidebar() {
                                     )}
                                   </Link>
                                 </SidebarMenuButton>
-                              </SidebarMenuItem>
+                              </div>
                             </motion.div>
                           )
                         })}
@@ -374,32 +343,35 @@ export function MainSidebar() {
                 </AnimatePresence>
               </SidebarMenuItem>
 
-              {/* Rest of main tabs */}
-              {otherItems.map((item) => (
-                <SidebarMenuItem key={item.value}>
-                  <SidebarMenuButton
-                    isActive={
-                      currentSection !== "magic" &&
-                      selectedMainTab === item.value
-                    }
-                    onClick={() =>
-                      navigateToMainTab(
-                        item.value as Exclude<AppSection, "magic">,
-                      )
-                    }
-                  >
-                    <div className="flex items-center w-full">
-                      {getIconForNavItem(item.value)}
-                      {item.title}
-                      {item.isNew && (
-                        <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
-                          New
-                        </span>
-                      )}
-                    </div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {/* Templates and other items */}
+              {mainNavigationItems
+                .filter((item) => !["home", "components"].includes(item.value))
+                .map((item) => (
+                  <SidebarMenuItem key={item.value}>
+                    <SidebarMenuButton
+                      isActive={
+                        currentSection !== "magic" &&
+                        !pathname.startsWith("/s/") &&
+                        activeTab === item.value
+                      }
+                      onClick={() =>
+                        navigateToTab(
+                          item.value as Exclude<AppSection, "magic">,
+                        )
+                      }
+                    >
+                      <div className="flex items-center w-full">
+                        {getIconForNavItem(item.value)}
+                        {item.title}
+                        {item.isNew && (
+                          <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
+                            New
+                          </span>
+                        )}
+                      </div>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -536,7 +508,7 @@ export function MainSidebar() {
                                       ease: "easeOut",
                                     }}
                                   >
-                                    <SidebarMenuItem className="mb-0">
+                                    <div className="mb-0">
                                       <SidebarMenuButton
                                         asChild
                                         isActive={isActive}
@@ -589,7 +561,7 @@ export function MainSidebar() {
                                           </span>
                                         </Link>
                                       </SidebarMenuButton>
-                                    </SidebarMenuItem>
+                                    </div>
                                   </motion.div>
                                 )
                               },
