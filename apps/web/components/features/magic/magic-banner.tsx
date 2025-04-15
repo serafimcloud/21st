@@ -27,7 +27,7 @@ const MagicBannerContent = memo(function MagicBannerContent() {
     <div
       className="fixed top-14 z-50 border-b border-border bg-muted transition-[left] duration-200 ease-in-out"
       style={{
-        left: isSidebarOpen ? "calc(var(--sidebar-width, 0px) - 24px)" : "0",
+        left: isSidebarOpen ? "var(--sidebar-width, 0px)" : "0",
         right: "0",
       }}
     >
