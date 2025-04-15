@@ -48,7 +48,7 @@ export function Logo({
 
   return (
     <Link
-      href="/"
+      href="/?tab=home"
       className={cn(
         `${position} w-8 h-8 flex items-center justify-center left-4 top-3 rounded-full`,
         className,
