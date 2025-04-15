@@ -3,7 +3,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Container } from "@/components/ui/container"
-import { useAtom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 import { useSidebarHotkey } from "@/hooks/use-sidebar-hotkey"
 
@@ -20,7 +19,6 @@ export function MainLayout({
   children: React.ReactNode
   className?: string
 }) {
-  const [open] = useAtom(sidebarOpenAtom)
   useSidebarHotkey()
 
   return (

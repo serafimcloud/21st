@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { useAtom } from "jotai"
 import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 import { useSidebarVisibility } from "@/hooks/use-sidebar-visibility"
+import { useIsMobile } from "@/hooks/use-media-query"
 
 export function Container({
   children,
@@ -16,6 +17,17 @@ export function Container({
   const [open] = useAtom(sidebarOpenAtom)
   const shouldShowSidebar = useSidebarVisibility()
   const hasSidebar = shouldShowSidebar && open
+  const isMobile = useIsMobile()
+
+  // Server-side rendering always defaults to mobile view first to avoid width jumps
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Always use mobile layout before hydration is complete
+  const shouldAdjustForSidebar = mounted && !isMobile && hasSidebar
 
   return (
     <div
@@ -25,7 +37,7 @@ export function Container({
       )}
       style={{
         width: "min(100%, 3680px)",
-        maxWidth: hasSidebar ? "calc(100vw - 256px)" : "100vw",
+        maxWidth: shouldAdjustForSidebar ? "calc(100vw - 256px)" : "100vw",
       }}
     >
       {children}
