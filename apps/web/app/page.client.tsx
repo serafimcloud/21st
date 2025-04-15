@@ -19,6 +19,7 @@ import { MagicBanner } from "@/components/features/magic/magic-banner"
 import { CollectionsContainer } from "@/components/features/collections/collections-list"
 import { HomeTabLayout } from "@/components/features/home/home-layout"
 import { useNavigation } from "@/hooks/use-navigation"
+import { useIsMobile } from "@/hooks/use-mobile"
 import type { AppSection } from "@/lib/atoms"
 
 const MainContent = React.memo(function MainContent({
@@ -35,6 +36,7 @@ const MainContent = React.memo(function MainContent({
   handleTabChange: (tab: Exclude<AppSection, "magic"> | "home") => void
 }) {
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
+  const isMobile = useIsMobile()
 
   const renderContent = () => {
     switch (activeTab) {
@@ -91,7 +93,7 @@ const MainContent = React.memo(function MainContent({
 
   return (
     <div className="flex flex-col pb-4 pt-20">
-      {activeTab !== "home" && (
+      {(activeTab !== "home" || isMobile) && (
         <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
       )}
       {renderContent()}
