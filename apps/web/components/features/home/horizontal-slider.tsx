@@ -141,7 +141,7 @@ export function HorizontalSlider({
       </div>
 
       <div className="relative">
-        <ScrollArea ref={scrollAreaRef} className="w-full pb-4 -mx-1 px-1">
+        <ScrollArea ref={scrollAreaRef} className="w-full -mx-1 px-1">
           <div
             ref={scrollContainerRef}
             className="flex space-x-4"

@@ -90,7 +90,7 @@ const MainContent = React.memo(function MainContent({
   }
 
   return (
-    <div className="flex flex-col pb-10 pt-16">
+    <div className="flex flex-col pb-4 pt-20">
       {activeTab !== "home" && (
         <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
       )}
