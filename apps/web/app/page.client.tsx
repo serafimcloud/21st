@@ -17,7 +17,7 @@ import { ProList } from "@/components/features/pro/pro-list"
 import { TemplatesContainer } from "@/components/features/templates/templates-list"
 import { MagicBanner } from "@/components/features/magic/magic-banner"
 import { CollectionsContainer } from "@/components/features/collections/collections-list"
-import { HomeTabLayout } from "@/components/features/home/home-tab-layout"
+import { HomeTabLayout } from "@/components/features/home/home-layout"
 import { useNavigation } from "@/hooks/use-navigation"
 import type { AppSection } from "@/lib/atoms"
 

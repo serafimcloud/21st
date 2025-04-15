@@ -17,10 +17,9 @@ import { Icons } from "@/components/icons"
 import { ComponentCardSkeleton } from "./skeletons"
 import { ComponentPreviewDialog } from "../features/component-page/preview-dialog"
 import { toast } from "sonner"
+import { useTagDemos } from "@/lib/queries"
 
-type ComponentOrDemo =
-  | DemoWithComponent
-  | (Component & { user: User } & { view_count?: number })
+type DemoWithUser = DemoWithComponent & { user: User }
 
 // --- Define the type alias for the admin liked demo function return type ---
 // Ensure the path matches your actual Supabase generated types
@@ -31,7 +30,7 @@ type AdminLikedDemo =
 interface BaseListProps {
   className?: string
   skeletonCount?: number
-  initialData?: ComponentOrDemo[]
+  initialData?: DemoWithComponent[]
 }
 
 interface MainListProps extends BaseListProps {
@@ -74,7 +73,7 @@ type ComponentsListProps =
 function useMainDemos(
   sortBy: SortOption,
   tagSlug?: string,
-  initialData?: ComponentOrDemo[],
+  initialData?: DemoWithComponent[],
 ) {
   const supabase = useClerkSupabaseClient()
   const adminUserIds = [
@@ -252,48 +251,10 @@ function useMainDemos(
   })
 }
 
-function useTagDemos(
-  tagSlug: string,
-  sortBy: SortOption,
-  initialData?: ComponentOrDemo[],
-) {
-  const supabase = useClerkSupabaseClient()
-  return useQuery({
-    queryKey: ["tag-filtered-demos", tagSlug, sortBy] as const,
-    queryFn: async () => {
-      const { data: filteredData, error } = await supabase.rpc(
-        "get_demos_list",
-        {
-          p_sort_by: sortBy,
-          p_offset: 0,
-          p_limit: 1000,
-          p_tag_slug: tagSlug,
-          p_include_private: false,
-        },
-      )
-
-      if (error) throw error
-      const transformedData = (filteredData || []).map(transformDemoResult)
-      return {
-        data: transformedData,
-        total_count: filteredData?.[0]?.total_count ?? 0,
-      }
-    },
-    initialData: initialData
-      ? {
-          data: initialData as DemoWithComponent[],
-          total_count: initialData.length,
-        }
-      : undefined,
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-  })
-}
-
 function useUserDemos(
   userId: string,
   tab: UserListProps["tab"],
-  initialData?: ComponentOrDemo[],
+  initialData?: DemoWithComponent[],
 ) {
   const supabase = useClerkSupabaseClient()
   return useQuery({
@@ -332,7 +293,7 @@ function useUserDemos(
 function useSearchDemos(
   query: string,
   sortBy: SortOption,
-  initialData?: ComponentOrDemo[],
+  initialData?: DemoWithComponent[],
 ) {
   const supabase = useClerkSupabaseClient()
   return useInfiniteQuery({

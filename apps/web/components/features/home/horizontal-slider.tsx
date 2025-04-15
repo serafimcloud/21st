@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef, useState, useEffect } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Link } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ interface HorizontalSliderProps {
   viewAllLink?: string
   onViewAll?: () => void
   className?: string
+  totalCount?: number
 }
 
 export function HorizontalSlider({
@@ -27,6 +28,7 @@ export function HorizontalSlider({
   viewAllLink,
   onViewAll,
   className,
+  totalCount,
 }: HorizontalSliderProps) {
   const router = useRouter()
   const [showLeftButton, setShowLeftButton] = useState(false)
@@ -118,11 +120,24 @@ export function HorizontalSlider({
             onClick={handleViewAllClick}
           >
             {onViewAll ? (
-              <span className="cursor-pointer">View all</span>
-            ) : (
-              <a href={viewAllLink} className="flex items-center gap-1">
+              <span className="cursor-pointer flex items-center group">
                 View all
-              </a>
+                {totalCount !== undefined && (
+                  <span className="ml-1 text-muted-foreground group-hover:text-foreground">
+                    ({totalCount})
+                  </span>
+                )}
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </span>
+            ) : (
+              <Link href={viewAllLink} className="flex items-center gap-1 group">
+                View all
+                {totalCount !== undefined && (
+                  <span className="ml-1 text-muted-foreground group-hover:text-foreground">
+                    ({totalCount})
+                  </span>
+                )}
+              </Link>
             )}
           </Button>
         )}

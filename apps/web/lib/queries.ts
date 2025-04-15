@@ -1,4 +1,11 @@
-import { Component, Demo, Tag, User, DemoWithComponent } from "@/types/global"
+import {
+  Component,
+  Demo,
+  Tag,
+  User,
+  DemoWithComponent,
+  SortOption,
+} from "@/types/global"
 import {
   UseMutationResult,
   useMutation,
@@ -21,6 +28,7 @@ import {
 import { Json } from "@/types/supabase"
 import { PurchaseComponentError } from "@/app/api/components/purchase/route"
 import { useAuth } from "@clerk/nextjs"
+import { categories } from "@/lib/navigation"
 
 export const componentReadableDbFields = `
   *,
@@ -1010,3 +1018,50 @@ export function useLatestDemos() {
 // Define type for admin liked demo
 type AdminLikedDemo =
   Database["public"]["Functions"]["get_admin_liked_demos_v1"]["Returns"][number]
+
+// Hook to get demos by tag
+export function useTagDemos(
+  tagSlug: string,
+  sortBy: SortOption,
+  initialData?: DemoWithComponent[],
+  limit: number = 1000,
+) {
+  const supabase = useClerkSupabaseClient()
+  return useQuery({
+    queryKey: ["tag-filtered-demos", tagSlug, sortBy, limit] as const,
+    queryFn: async () => {
+      const { data: filteredData, error } = await supabase.rpc(
+        "get_demos_list",
+        {
+          p_sort_by: sortBy,
+          p_offset: 0,
+          p_limit: limit,
+          p_tag_slug: tagSlug,
+          p_include_private: false,
+        },
+      )
+
+      if (error) throw error
+      const transformedData = (filteredData || []).map(transformDemoResult)
+      return {
+        data: transformedData,
+        total_count: filteredData?.[0]?.total_count ?? 0,
+      }
+    },
+    initialData: initialData
+      ? {
+          data: initialData as DemoWithComponent[],
+          total_count: initialData.length,
+        }
+      : undefined,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+  })
+}
+
+// Function to get demos count from navigation data
+export function getTagDemosCount(tagSlug: string): number {
+  const allItems = categories.flatMap((category) => category.items)
+  const item = allItems.find((item) => item.href === `/s/${tagSlug}`)
+  return item?.demosCount ?? 0
+}
