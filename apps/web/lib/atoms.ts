@@ -18,10 +18,10 @@ export type TabChangeHandler = (tab: MainTabType | "home") => void
 export const tabChangeHandlerAtom = atom<TabChangeHandler | null>(null)
 
 // Current section the user is in
-export const currentSectionAtom = atom<AppSection>("components")
+export const currentSectionAtom = atom<AppSection>("home")
 
 // Selected tab on the main page
-export const selectedMainTabAtom = atom<MainTabType>("components")
+export const selectedMainTabAtom = atom<MainTabType | "home">("home")
 
 /**
  * Helper function to generate a URL for the main page with a specific tab

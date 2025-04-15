@@ -19,8 +19,6 @@ import { ComponentPreviewDialog } from "../features/component-page/preview-dialo
 import { toast } from "sonner"
 import { useTagDemos } from "@/lib/queries"
 
-type DemoWithUser = DemoWithComponent & { user: User }
-
 // --- Define the type alias for the admin liked demo function return type ---
 // Ensure the path matches your actual Supabase generated types
 type AdminLikedDemo =

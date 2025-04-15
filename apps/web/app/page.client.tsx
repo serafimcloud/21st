@@ -92,7 +92,9 @@ const MainContent = React.memo(function MainContent({
 
   return (
     <div className="flex flex-col pb-10 pt-16">
-      <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
+      {activeTab !== "home" && (
+        <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
+      )}
       {renderContent()}
     </div>
   )
@@ -103,7 +105,6 @@ export function HomePageClient() {
   const [isBannerVisible] = useAtom(magicBannerVisibleAtom)
   const [shouldShowBanner, setShouldShowBanner] = useState(false)
   const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
-
 
   // Используем наш новый хук для управления табами
   const { activeTab, sortBy, navigateToTab } = useNavigation()

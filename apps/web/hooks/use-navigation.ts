@@ -99,7 +99,7 @@ export function useNavigation(
 
     // If we're on the main page with a tab parameter
     if (pathname === "/" && urlTab) {
-      setCurrentSection("components") // Main section
+      setCurrentSection("home")
       setSelectedMainTab(urlTab === "home" ? "home" : urlTab)
       return
     }
@@ -108,8 +108,8 @@ export function useNavigation(
     if (pathname === "/" && !urlTab) {
       // If we should use responsive defaults, select based on device
       if (useResponsiveDefaults) {
-        const defaultTab = isDesktop ? "home" : "components"
-        setCurrentSection(defaultTab === "home" ? "home" : "components")
+        const defaultTab = "home"
+        setCurrentSection("home")
         setSelectedMainTab(defaultTab as MainTabType | "home")
 
         // Update URL if needed
@@ -128,7 +128,7 @@ export function useNavigation(
 
     // Default for other pages
     if (pathname !== "/") {
-      setCurrentSection("components") // Default to components for other pages
+      setCurrentSection("home") // Default to components for other pages
     }
   }, [
     pathname,
