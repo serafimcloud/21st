@@ -55,10 +55,8 @@ export function HorizontalSlider({
     }
 
     viewport.addEventListener("scroll", checkScroll)
-    // Initial check
     checkScroll()
 
-    // Also check when window resizes
     window.addEventListener("resize", checkScroll)
 
     return () => {
@@ -96,7 +94,6 @@ export function HorizontalSlider({
   }
 
   const handleViewAllClick = (e: React.MouseEvent) => {
-    // Always prevent default
     e.preventDefault()
     e.stopPropagation()
 
@@ -150,12 +147,11 @@ export function HorizontalSlider({
             className="flex space-x-4"
             style={{
               minWidth: "100%",
-              paddingLeft: "1px", // Prevent edge components from being cut off
+              paddingLeft: "1px",
               paddingRight: "1px",
             }}
           >
             {isLoading ? (
-              // Loading placeholders using ComponentCardSkeleton
               Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={`slider-skeleton-${i}`}
@@ -178,7 +174,6 @@ export function HorizontalSlider({
                     demo={item}
                     onClick={() => {
                       if (item.bundle_url?.html) {
-                        // Handle preview if needed
                         router.push(
                           `/${item.user.username}/${item.component.component_slug}/${item.demo_slug}`,
                         )
@@ -202,7 +197,6 @@ export function HorizontalSlider({
           <ScrollBar orientation="horizontal" className="invisible" />
         </ScrollArea>
 
-        {/* Navigation buttons */}
         <Button
           variant="outline"
           size="icon"
@@ -227,7 +221,6 @@ export function HorizontalSlider({
           <ChevronRight className="h-4 w-4" />
         </Button>
 
-        {/* Gradient masks */}
         <div
           className={cn(
             "pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-background to-transparent transition-opacity",

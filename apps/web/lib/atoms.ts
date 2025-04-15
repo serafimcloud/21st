@@ -14,18 +14,12 @@ export type MainTabType = Exclude<AppSection, "magic">
 
 export type TabChangeHandler = (tab: MainTabType | "home") => void
 
-// This atom will store the tab change handler function
 export const tabChangeHandlerAtom = atom<TabChangeHandler | null>(null)
 
-// Current section the user is in
 export const currentSectionAtom = atom<AppSection>("home")
 
-// Selected tab on the main page
 export const selectedMainTabAtom = atom<MainTabType | "home">("home")
 
-/**
- * Helper function to generate a URL for the main page with a specific tab
- */
 export const getMainPageUrlWithTab = (
   tab: MainTabType | "home",
   sortBy?: string,

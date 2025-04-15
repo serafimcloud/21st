@@ -21,7 +21,6 @@ import { HomeTabLayout } from "@/components/features/home/home-layout"
 import { useNavigation } from "@/hooks/use-navigation"
 import type { AppSection } from "@/lib/atoms"
 
-// Отдельный компонент для основного содержимого страницы
 const MainContent = React.memo(function MainContent({
   activeTab,
   prevSidebarState,
@@ -106,7 +105,6 @@ export function HomePageClient() {
   const [shouldShowBanner, setShouldShowBanner] = useState(false)
   const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
 
-  // Используем наш новый хук для управления табами
   const { activeTab, sortBy, navigateToTab } = useNavigation()
 
   useEffect(() => {

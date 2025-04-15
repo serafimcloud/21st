@@ -287,7 +287,6 @@ export async function getComponentDemos(
     return { data: null, error }
   }
 
-  // Transform the data to match DemoWithTags type
   const transformedData = data?.map((demo: any) => ({
     ...demo,
     tags: demo.tags.map((tagRelation: any) => tagRelation.tag),
@@ -306,7 +305,6 @@ export async function getComponentWithDemo(
   slug: string,
   demo_slug: string,
 ) {
-  // First get the user
   const { data: user, error: userError } = await supabase
     .from("users")
     .select("*")
@@ -318,7 +316,6 @@ export async function getComponentWithDemo(
     return { data: null, error: new Error(userError.message) }
   }
 
-  // Then get the component for this user
   const { data: component, error: componentError } = await supabase
     .from("components")
     .select(
@@ -428,7 +425,6 @@ export async function getComponentWithDemoForOG(
   slug: string,
   demo_slug: string,
 ) {
-  // First get the user
   const { data: user, error: userError } = await supabase
     .from("users")
     .select("*")
@@ -440,7 +436,6 @@ export async function getComponentWithDemoForOG(
     return { data: null, error: new Error(userError.message) }
   }
 
-  // Then get the component for this user
   const { data: component, error: componentError } = await supabase
     .from("components")
     .select(

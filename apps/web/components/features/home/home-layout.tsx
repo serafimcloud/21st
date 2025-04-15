@@ -34,7 +34,6 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
   const popularDemosQuery = useMainDemosExcludingFeatured()
   const latestDemosQuery = useLatestDemos()
 
-  // Define tag categories
   const tagCategories = useMemo(
     () => [
       { id: "hero", title: "Heros" },
@@ -49,7 +48,6 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
     [],
   )
 
-  // Create queries for each tag category
   const tagQueries = Object.fromEntries(
     tagCategories.map((category) => [
       category.id,
@@ -60,21 +58,16 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
   const { navigateToTab, handleSortChange } = useNavigation()
   const router = useRouter()
 
-  // Filter popular demos to remove any duplicates from featured demos
   const filteredPopularDemos = useMemo(() => {
     if (!popularDemosQuery.data) return []
 
-    // If featured demos aren't loaded yet, just return the popular demos
     if (!featuredDemosQuery.data?.ids) return popularDemosQuery.data
 
-    // Filter out items that appear in the featured list
     const featuredIds = featuredDemosQuery.data.ids
     return popularDemosQuery.data.filter((demo) => !featuredIds.has(demo.id))
   }, [popularDemosQuery.data, featuredDemosQuery.data?.ids])
 
-  // Define slider groups configuration
   const sliderGroups = useMemo(() => {
-    // Start with non-tag based groups
     const groups: SliderGroup[] = [
       {
         id: "featured",
@@ -102,7 +95,6 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
       },
     ]
 
-    // Add tag-based groups
     for (const category of tagCategories) {
       const query = tagQueries[category.id]
       if (query) {
@@ -129,7 +121,6 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
     tagQueries,
   ])
 
-  // Handle navigation to "View all" for a specific group
   const handleViewAll = (group: SliderGroup) => {
     if (group.tagSlug) {
       router.push(`/s/${group.tagSlug}`)
@@ -154,5 +145,3 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
     </div>
   )
 }
-
-// Hook to get latest demos function removed as it's now in queries.ts
