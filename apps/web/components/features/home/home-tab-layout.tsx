@@ -8,13 +8,8 @@ import {
 import { HorizontalSlider } from "./horizontal-slider"
 import { SortOption } from "@/types/global"
 import { DemoWithComponent } from "@/types/global"
-import { useRouter } from "next/navigation"
-import { getMainPageUrlWithTab } from "@/lib/atoms"
-import { useAtom } from "jotai"
 import { useMemo } from "react"
-import { selectedMainTabAtom } from "@/lib/atoms"
-import { sortByAtom } from "@/components/features/main-page/main-page-header"
-import { setCookie } from "@/lib/cookies"
+import { useNavigation } from "@/hooks/use-navigation"
 
 interface HomeTabLayoutProps {
   sortBy?: SortOption
@@ -33,9 +28,9 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
   const featuredDemosQuery = useFeaturedDemos()
   const popularDemosQuery = useMainDemosExcludingFeatured()
   const latestDemosQuery = useLatestDemos()
-  const router = useRouter()
-  const [, setSelectedMainTab] = useAtom(selectedMainTabAtom)
-  const [, setSortBy] = useAtom(sortByAtom)
+
+  // Используем наш новый хук вместо прямого доступа к атомам
+  const { navigateToTab, handleSortChange } = useNavigation()
 
   // Filter popular demos to remove any duplicates from featured demos
   const filteredPopularDemos = useMemo(() => {
@@ -79,24 +74,9 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
 
   // Handle navigation to "View all" for a specific group
   const handleViewAll = (group: SliderGroup) => {
-    // Always set the tab to components
-    setSelectedMainTab("components")
-
-    // Update the sort preference
-    setSortBy(group.targetSort as any)
-
-    // Save sort preference in cookie
-    setCookie({
-      name: "saved_sort_by",
-      value: group.targetSort,
-      expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-      httpOnly: true,
-      sameSite: "lax",
-    })
-
-    // Navigate to main page with the selected tab and sort
-    const url = getMainPageUrlWithTab("components", group.targetSort)
-    router.push(url)
+    // Обновляем сортировку и переходим к компонентам - все это теперь делается через хук
+    handleSortChange(group.targetSort)
+    navigateToTab("components")
   }
 
   return (

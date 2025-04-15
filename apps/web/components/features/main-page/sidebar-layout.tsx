@@ -34,19 +34,12 @@ import {
   Home,
 } from "lucide-react"
 import { useAtom } from "jotai"
-import {
-  AppSection,
-  currentSectionAtom,
-  selectedMainTabAtom,
-  getMainPageUrlWithTab,
-  MainTabType,
-} from "@/lib/atoms"
-import { sortByAtom } from "@/components/features/main-page/main-page-header"
-import type { SortOption } from "@/types/global"
-import { useUser } from "@clerk/nextjs"
+import { AppSection } from "@/lib/atoms"
 import { userStateAtom } from "@/lib/store/user-store"
 import { Help } from "./help"
 import { motion, AnimatePresence } from "motion/react"
+import { useNavigation } from "@/hooks/use-navigation"
+import { useUser } from "@clerk/nextjs"
 
 import {
   Sidebar,
@@ -81,9 +74,8 @@ export function MainSidebar() {
   )
   const [expandedItems, setExpandedItems] = React.useState<string[]>([]) // Start with Magic menu closed
 
-  const [currentSection, setCurrentSection] = useAtom(currentSectionAtom)
-  const [selectedMainTab, setSelectedMainTab] = useAtom(selectedMainTabAtom)
-  const [sortBy] = useAtom<SortOption>(sortByAtom)
+  // Use our custom tabs navigation hook
+  const { activeTab, currentSection, navigateToTab, sortBy } = useNavigation()
 
   // Use the filtered navigation that checks if Magic onboarding is completed
   const filteredCategories = useFilteredNavigation()
@@ -93,48 +85,6 @@ export function MainSidebar() {
 
   // Get the current tab from URL when available
   const urlTab = searchParams.get("tab") as Exclude<AppSection, "magic"> | null
-
-  // Update the current section and selected tab based on pathname and URL params
-  React.useEffect(() => {
-    // Check if we're on a magic page
-    if (pathname.startsWith("/magic")) {
-      setCurrentSection("magic")
-      return
-    }
-
-    // If we're on the main page with a tab parameter
-    if (pathname === "/" && urlTab) {
-      setCurrentSection("components") // Main section
-      setSelectedMainTab(urlTab === "home" ? "home" : urlTab)
-      return
-    }
-
-    // Default for main page with no tab parameter - set to home
-    if (pathname === "/" && !urlTab) {
-      setCurrentSection("home")
-      setSelectedMainTab("home")
-      // No need to navigate since we're already on the root page
-      return
-    }
-
-    // Default for other pages
-    if (pathname !== "/") {
-      setCurrentSection("components") // Default to components for other pages
-    }
-  }, [pathname, urlTab, setCurrentSection, setSelectedMainTab])
-
-  // Function to navigate to a main tab
-  const navigateToMainTab = (tab: MainTabType | "home") => {
-    // Update the selected tab immediately for responsive UI
-    setSelectedMainTab(tab)
-
-    // Navigate to main page with the selected tab
-    const url = getMainPageUrlWithTab(
-      tab,
-      tab === "components" ? sortBy : undefined,
-    )
-    router.push(url)
-  }
 
   // Toggle category expansion
   const toggleCategory = (categoryId: string) => {
@@ -261,10 +211,10 @@ export function MainSidebar() {
                             urlTab === "components") ||
                           (item.value !== "home" &&
                             item.value !== "components" &&
-                            selectedMainTab === item.value))
+                            activeTab === item.value))
                       }
                       onClick={() =>
-                        navigateToMainTab(
+                        navigateToTab(
                           item.value as Exclude<AppSection, "magic"> | "home",
                         )
                       }
@@ -402,10 +352,10 @@ export function MainSidebar() {
                       isActive={
                         currentSection !== "magic" &&
                         !pathname.startsWith("/s/") &&
-                        selectedMainTab === item.value
+                        activeTab === item.value
                       }
                       onClick={() =>
-                        navigateToMainTab(
+                        navigateToTab(
                           item.value as Exclude<AppSection, "magic">,
                         )
                       }
