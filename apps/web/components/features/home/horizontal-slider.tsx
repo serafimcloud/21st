@@ -10,6 +10,7 @@ import { DemoWithComponent } from "@/types/global"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ComponentCardSkeleton } from "@/components/ui/skeletons"
+import { ComponentPreviewDialog } from "@/components/features/component-page/preview-dialog"
 
 interface HorizontalSliderProps {
   title: string
@@ -35,6 +36,10 @@ export function HorizontalSlider({
   const [showRightButton, setShowRightButton] = useState(true)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [selectedDemo, setSelectedDemo] = useState<DemoWithComponent | null>(
+    null,
+  )
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
 
   useEffect(() => {
     const scrollArea = scrollAreaRef.current
@@ -97,11 +102,24 @@ export function HorizontalSlider({
     e.preventDefault()
     e.stopPropagation()
 
-    console.log("View All clicked")
-
     if (onViewAll) {
-      console.log("Calling onViewAll function")
       onViewAll()
+    }
+  }
+
+  const handleCardClick = (demo: DemoWithComponent) => {
+    if (
+      demo?.bundle_url &&
+      typeof demo.bundle_url === "object" &&
+      "html" in demo.bundle_url &&
+      demo.bundle_url.html
+    ) {
+      setSelectedDemo(demo)
+      setIsPreviewDialogOpen(true)
+    } else {
+      router.push(
+        `/${demo.user.username}/${demo.component.component_slug}/${demo.demo_slug || "default"}`,
+      )
     }
   }
 
@@ -127,7 +145,10 @@ export function HorizontalSlider({
                 <ChevronRight className="ml-1 h-4 w-4" />
               </span>
             ) : (
-              <Link href={viewAllLink} className="flex items-center gap-1 group">
+              <Link
+                href={viewAllLink}
+                className="flex items-center gap-1 group"
+              >
                 View all
                 {totalCount !== undefined && (
                   <span className="ml-1 text-muted-foreground group-hover:text-foreground">
@@ -172,17 +193,7 @@ export function HorizontalSlider({
                 >
                   <ComponentCard
                     demo={item}
-                    onClick={() => {
-                      if (item.bundle_url?.html) {
-                        router.push(
-                          `/${item.user.username}/${item.component.component_slug}/${item.demo_slug}`,
-                        )
-                      } else {
-                        router.push(
-                          `/${item.user.username}/${item.component.component_slug}/${item.demo_slug}`,
-                        )
-                      }
-                    }}
+                    onClick={() => handleCardClick(item)}
                     onCtrlClick={(url) => {
                       window.open(url, "_blank")
                       toast.success(
@@ -234,6 +245,14 @@ export function HorizontalSlider({
           )}
         />
       </div>
+
+      {selectedDemo && (
+        <ComponentPreviewDialog
+          isOpen={isPreviewDialogOpen}
+          onClose={() => setIsPreviewDialogOpen(false)}
+          demo={selectedDemo}
+        />
+      )}
     </div>
   )
 }

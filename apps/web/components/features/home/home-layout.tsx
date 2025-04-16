@@ -81,7 +81,7 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
         id: "popular",
         title: "Popular",
         items: filteredPopularDemos,
-        isLoading: popularDemosQuery.isLoading || featuredDemosQuery.isLoading,
+        isLoading: popularDemosQuery.isLoading,
         targetTab: "components",
         targetSort: "downloads",
       },

@@ -1026,7 +1026,7 @@ export function useTagDemos(
     queryKey: ["tag-filtered-demos", tagSlug, sortBy, limit] as const,
     queryFn: async () => {
       const { data: filteredData, error } = await supabase.rpc(
-        "get_demos_list",
+        "get_demos_list_v2",
         {
           p_sort_by: sortBy,
           p_offset: 0,
