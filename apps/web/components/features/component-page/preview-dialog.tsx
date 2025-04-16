@@ -88,6 +88,7 @@ export function ComponentPreviewDialog({
   const { resolvedTheme } = useTheme()
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light")
   const [isLoading, setIsLoading] = useState(true)
+  const [isPromptLoading, setIsPromptLoading] = useState(false)
   const [showUnlockDialog, setShowUnlockDialog] = useState(false)
   const accessState = useComponentAccess(demo.component, hasPurchased)
 
@@ -215,6 +216,9 @@ export function ComponentPreviewDialog({
       return
     }
 
+    // Set loading state before API call
+    setIsPromptLoading(true)
+
     try {
       const response = await fetch("/api/prompts", {
         method: "POST",
@@ -232,26 +236,115 @@ export function ComponentPreviewDialog({
       }
 
       const { prompt } = await response.json()
-      await navigator.clipboard.writeText(prompt)
-      toast.success("Prompt copied to clipboard")
 
-      if (capture) {
-        capture(
-          demo.component.id,
-          AnalyticsActivityType.COMPONENT_PROMPT_COPY,
-          user?.id,
-        )
+      // Use the more reliable clipboard copy approach
+      const copyToClipboard = (text: string) => {
+        // Try the modern clipboard API first
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard
+            .writeText(text)
+            .then(() => {
+              toast.success("Prompt copied to clipboard")
+            })
+            .catch((err) => {
+              console.error("Clipboard API failed:", err)
+              // Fall back to the textarea method
+              fallbackCopyTextToClipboard(text)
+            })
+        } else {
+          // Use fallback for non-secure contexts or older browsers
+          fallbackCopyTextToClipboard(text)
+        }
       }
 
-      trackEvent(AMPLITUDE_EVENTS.COPY_AI_PROMPT, {
-        componentId: demo.component.id,
-        componentName: demo.component.name,
-        promptType: selectedPromptType as PromptType,
-        action: "copy",
-      })
+      // Fallback method using textarea and document.execCommand
+      const fallbackCopyTextToClipboard = (text: string) => {
+        // Create a temporary textarea element
+        const textarea = document.createElement("textarea")
+        textarea.value = text
+
+        // Make the textarea out of viewport but fully visible to ensure it works
+        textarea.style.position = "fixed"
+        textarea.style.left = "0"
+        textarea.style.top = "0"
+        textarea.style.width = "2em"
+        textarea.style.height = "2em"
+        textarea.style.padding = "0"
+        textarea.style.border = "none"
+        textarea.style.outline = "none"
+        textarea.style.boxShadow = "none"
+        textarea.style.background = "transparent"
+
+        document.body.appendChild(textarea)
+
+        try {
+          // Focus and select the text
+          textarea.focus()
+          textarea.select()
+
+          // Execute copy command
+          const successful = document.execCommand("copy")
+
+          if (successful) {
+            toast.success("Prompt copied to clipboard")
+          } else {
+            console.error("execCommand failed")
+            toast.error("Failed to copy prompt - please copy manually")
+
+            // If we can't copy automatically, show the text for manual copying
+            textarea.style.width = "80%"
+            textarea.style.height = "200px"
+            textarea.style.background = "white"
+            textarea.style.color = "black"
+            textarea.style.zIndex = "10000"
+            textarea.style.padding = "10px"
+            textarea.style.top = "100px"
+            toast.info("You can manually copy the text from the text box")
+
+            // Let user know we've made the text visible
+            setTimeout(() => {
+              document.body.removeChild(textarea)
+            }, 10000)
+            return
+          }
+        } catch (err) {
+          console.error("Failed to copy text: ", err)
+          toast.error("Failed to copy prompt")
+        } finally {
+          // Clean up if we didn't leave it visible
+          if (textarea.parentNode) {
+            document.body.removeChild(textarea)
+          }
+        }
+      }
+
+      try {
+        copyToClipboard(prompt)
+
+        if (capture) {
+          capture(
+            demo.component.id,
+            AnalyticsActivityType.COMPONENT_PROMPT_COPY,
+            user?.id,
+          )
+        }
+
+        trackEvent(AMPLITUDE_EVENTS.COPY_AI_PROMPT, {
+          componentId: demo.component.id,
+          componentName: demo.component.name,
+          promptType: selectedPromptType as PromptType,
+          action: "copy",
+        })
+      } catch (error) {
+        console.error("Error in copy process:", error)
+        toast.error("Failed to copy prompt")
+      }
     } catch (error) {
       console.error("Error copying prompt:", error)
       toast.error("Failed to copy prompt")
+    } finally {
+      // Reset loading state when done
+      setIsPromptLoading(false)
     }
   }
 
@@ -282,6 +375,7 @@ export function ComponentPreviewDialog({
             !(demo.component.is_paid && accessState !== "UNLOCKED") &&
               "first:rounded-s-lg rounded-none",
           )}
+          disabled={isPromptLoading}
         >
           <Tooltip>
             <TooltipTrigger asChild>
@@ -290,6 +384,11 @@ export function ComponentPreviewDialog({
                   <>
                     <Lock size={16} />
                     <span>Unlock</span>
+                  </>
+                ) : isPromptLoading ? (
+                  <>
+                    <Spinner size={16} />
+                    <span>Generating...</span>
                   </>
                 ) : selectedPromptType === "v0-open" ? (
                   <>
@@ -309,9 +408,11 @@ export function ComponentPreviewDialog({
             <TooltipContent className="flex items-center gap-1.5">
               {demo.component.is_paid && accessState !== "UNLOCKED"
                 ? "Unlock component"
-                : selectedPromptType === "v0-open"
-                  ? "Open in v0"
-                  : "Copy prompt"}
+                : isPromptLoading
+                  ? "Generating prompt..."
+                  : selectedPromptType === "v0-open"
+                    ? "Open in v0"
+                    : "Copy prompt"}
               <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
                 ⌘X
               </kbd>
