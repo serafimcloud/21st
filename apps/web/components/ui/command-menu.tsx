@@ -56,6 +56,14 @@ import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
 
 const commandSearchQueryAtom = atomWithStorage("commandMenuSearch", "")
 
+// Custom CommandItem wrapper with responsive padding
+const ResponsiveCommandItem = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof CommandItem>) => (
+  <CommandItem className={cn("md:py-1.5 py-3", className)} {...props} />
+)
+
 const useKeyboardShortcuts = ({
   selectedComponent,
   setIsCopying,
@@ -377,7 +385,7 @@ export function CommandMenu() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="p-0 max-w-3xl h-[470px] overflow-hidden"
+        className="p-0 max-w-3xl h-[450px] md:h-[470px] overflow-hidden"
         hideCloseButton
       >
         <DialogTitle className="sr-only">Command Menu</DialogTitle>
@@ -398,10 +406,10 @@ export function CommandMenu() {
             className="h-11 w-full"
           />
           <div className="flex flex-1 min-h-0">
-            <CommandList className="w-1/2 border-r overflow-y-auto">
+            <CommandList className="w-full md:w-1/2 border-r overflow-y-auto">
               {searchQuery && (
                 <CommandGroup heading="Search">
-                  <CommandItem
+                  <ResponsiveCommandItem
                     value={`search-${searchQuery}`}
                     onSelect={() => {
                       router.push(`/q/${encodeURIComponent(searchQuery)}`)
@@ -413,7 +421,7 @@ export function CommandMenu() {
                   >
                     <Icons.search className="h-4 w-4" />
                     <span>Search for "{searchQuery}"</span>
-                  </CommandItem>
+                  </ResponsiveCommandItem>
                 </CommandGroup>
               )}
 
@@ -421,7 +429,7 @@ export function CommandMenu() {
                 <CommandGroup heading="Categories">
                   {filteredCategories.map((category) =>
                     category.items.map((item) => (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         key={item.title}
                         value={`category-${item.title}`}
                         onSelect={() => {
@@ -438,11 +446,13 @@ export function CommandMenu() {
                         className="flex items-center gap-2 whitespace-nowrap overflow-hidden"
                       >
                         <category.icon className="h-4 w-4 min-w-4 min-h-4 max-w-4 max-h-4" />
-                        <span className="truncate">{item.title}</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="truncate flex-shrink-0">
+                          {item.title}
+                        </span>
+                        <span className="text-xs text-muted-foreground truncate ml-1">
                           in {category.title}
                         </span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )),
                   )}
                 </CommandGroup>
@@ -459,7 +469,7 @@ export function CommandMenu() {
                   <CommandGroup heading="Profile">
                     {(!searchQuery ||
                       "view profile".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="profile-view"
                         onSelect={() => {
                           if (dbUser?.display_username) {
@@ -475,11 +485,11 @@ export function CommandMenu() {
                       >
                         <User className="h-4 w-4" />
                         <span>View Profile</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                     {(!searchQuery ||
                       "edit profile".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="profile-edit"
                         onSelect={() => {
                           setShowEditProfile(true)
@@ -491,7 +501,7 @@ export function CommandMenu() {
                       >
                         <Settings className="h-4 w-4" />
                         <span>Edit Profile</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                   </CommandGroup>
                   <CommandSeparator />
@@ -514,7 +524,7 @@ export function CommandMenu() {
                     {(!searchQuery ||
                       "go home".includes(searchQuery.toLowerCase())) &&
                       pathname !== "/" && (
-                        <CommandItem
+                        <ResponsiveCommandItem
                           value="action-home"
                           onSelect={() => {
                             router.push("/")
@@ -526,13 +536,13 @@ export function CommandMenu() {
                         >
                           <Home className="h-4 w-4" />
                           <span>Go Home</span>
-                        </CommandItem>
+                        </ResponsiveCommandItem>
                       )}
                     {(!searchQuery ||
                       "publish component".includes(
                         searchQuery.toLowerCase(),
                       )) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="action-publish"
                         onSelect={() => {
                           router.push("/publish")
@@ -544,13 +554,13 @@ export function CommandMenu() {
                       >
                         <Plus className="h-4 w-4" />
                         <span>Publish Component</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                     {(!searchQuery ||
                       "import registry".includes(
                         searchQuery.toLowerCase(),
                       )) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="action-import"
                         onSelect={() => {
                           router.push("/import")
@@ -570,11 +580,11 @@ export function CommandMenu() {
                             beta
                           </Badge>
                         </div>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                     {(!searchQuery ||
                       "api docs keys".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="action-api"
                         onSelect={() => {
                           router.push("/api-access")
@@ -586,11 +596,11 @@ export function CommandMenu() {
                       >
                         <Code className="h-4 w-4" />
                         <span>API Docs & Keys</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                     {(!searchQuery ||
                       "terms service".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="action-terms"
                         onSelect={() => {
                           window.open("/terms", "_blank")
@@ -602,11 +612,11 @@ export function CommandMenu() {
                       >
                         <FileText className="h-4 w-4" />
                         <span>Terms of Service</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                     {(!searchQuery ||
                       "toggle theme".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="action-theme"
                         onSelect={() => {
                           document.documentElement.classList.toggle("dark")
@@ -620,11 +630,11 @@ export function CommandMenu() {
                         <Icons.sun className="h-4 w-4 dark:hidden" />
                         <Icons.moon className="h-4 w-4 hidden dark:block" />
                         <span>Toggle Theme</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                     {(!searchQuery ||
                       "subscription".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="action-subscription"
                         onSelect={() => {
                           router.push("/subscription")
@@ -636,12 +646,12 @@ export function CommandMenu() {
                       >
                         <Icons.creditCard className="h-4 w-4" />
                         <span>Subscription</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                     {(!searchQuery ||
                       "toggle sidebar".includes(searchQuery.toLowerCase())) &&
                       shouldShowSidebar && (
-                        <CommandItem
+                        <ResponsiveCommandItem
                           value="action-sidebar"
                           onSelect={() => {
                             setSidebarOpen((prev) => !prev)
@@ -658,7 +668,7 @@ export function CommandMenu() {
                           <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-sans text-[11px] leading-none opacity-100 flex">
                             S
                           </kbd>
-                        </CommandItem>
+                        </ResponsiveCommandItem>
                       )}
                   </CommandGroup>
                   <CommandSeparator />
@@ -673,7 +683,7 @@ export function CommandMenu() {
                   <CommandGroup heading="Social">
                     {(!searchQuery ||
                       "twitter".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="social-twitter"
                         onSelect={() => {
                           window.open("https://x.com/serafimcloud", "_blank")
@@ -687,11 +697,11 @@ export function CommandMenu() {
                           <Icons.twitter className="h-3 w-3" />
                         </div>
                         <span>Twitter</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                     {(!searchQuery ||
                       "discord".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="social-discord"
                         onSelect={() => {
                           window.open("https://discord.gg/Qx4rFunHfm", "_blank")
@@ -703,11 +713,11 @@ export function CommandMenu() {
                       >
                         <Icons.discord className="h-4 w-4" />
                         <span>Discord</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                     {(!searchQuery ||
                       "github".includes(searchQuery.toLowerCase())) && (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         value="social-github"
                         onSelect={() => {
                           window.open(
@@ -722,7 +732,7 @@ export function CommandMenu() {
                       >
                         <Icons.gitHub className="h-4 w-4" />
                         <span>GitHub</span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     )}
                   </CommandGroup>
                   <CommandSeparator />
@@ -736,7 +746,7 @@ export function CommandMenu() {
                   <>
                     <CommandGroup heading="Quick Results">
                       {components.map((component) => (
-                        <CommandItem
+                        <ResponsiveCommandItem
                           key={`${component?.component?.name}-${component?.name}`}
                           value={`component-${component?.user_id}/${component?.component?.component_slug}/${component?.name}`}
                           onSelect={handleOpen}
@@ -752,7 +762,7 @@ export function CommandMenu() {
                               by {component?.component?.user?.username}
                             </span>
                           </div>
-                        </CommandItem>
+                        </ResponsiveCommandItem>
                       ))}
                     </CommandGroup>
                   </>
@@ -769,7 +779,7 @@ export function CommandMenu() {
                   <CommandSeparator />
                   <CommandGroup heading="Users">
                     {users.map((user) => (
-                      <CommandItem
+                      <ResponsiveCommandItem
                         key={user.id}
                         value={`user-${user.username}`}
                         onSelect={() => {
@@ -795,14 +805,14 @@ export function CommandMenu() {
                         <span className="text-xs text-muted-foreground">
                           {user.username}
                         </span>
-                      </CommandItem>
+                      </ResponsiveCommandItem>
                     ))}
                   </CommandGroup>
                 </>
               )}
             </CommandList>
 
-            <div className="w-1/2 p-4 pb-14 overflow-y-auto flex items-center justify-center">
+            <div className="hidden md:flex w-1/2 p-4 pb-14 overflow-y-auto items-center justify-center">
               {selectedComponent && selectedComponent.preview_url && (
                 <div className="p-4 w-full">
                   <h3 className="text-sm font-medium mb-2">

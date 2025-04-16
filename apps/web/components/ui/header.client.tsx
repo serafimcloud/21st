@@ -366,6 +366,19 @@ export function Header({
                 </>
               )}
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden mr-2"
+              onClick={() =>
+                document.dispatchEvent(
+                  new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+                )
+              }
+              aria-label="Search"
+            >
+              <Icons.search className="h-6 w-6" />
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer rounded-full ml-2">
                 <UserAvatar
