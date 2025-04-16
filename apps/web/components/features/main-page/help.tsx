@@ -144,7 +144,7 @@ export function Help({ open, onOpenChange }: HelpProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-full hover:bg-accent"
+          className="h-8 w-8 hover:bg-accent"
           aria-label="Help menu"
         >
           <HelpCircle className="h-4 w-4" />

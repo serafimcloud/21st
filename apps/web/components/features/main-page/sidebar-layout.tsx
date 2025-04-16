@@ -9,7 +9,7 @@ import {
 import { useFilteredNavigation } from "@/lib/navigation-with-magic"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { useSidebar } from "@/components/ui/sidebar"
+import { SidebarHeader, useSidebar } from "@/components/ui/sidebar"
 import { Icons } from "@/components/icons"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
@@ -58,6 +58,7 @@ import type {
   NavigationItem,
   NavigationCategory,
 } from "@/lib/navigation-with-magic"
+import { Button } from "@/components/ui/button"
 
 export function MainSidebar() {
   const { toggleSidebar } = useSidebar()
@@ -160,37 +161,7 @@ export function MainSidebar() {
 
   return (
     <Sidebar className="hidden md:block">
-      <div className="h-14 flex items-center justify-end pr-4">
-        <div className="relative h-8 w-8">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                aria-label="Toggle Sidebar"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  toggleSidebar()
-                }}
-                className={cn(
-                  "absolute inset-0 flex items-center justify-center rounded-sm cursor-pointer text-foreground transition-all duration-300 hover:bg-accent",
-                  showTrigger ? "opacity-100 scale-100" : "opacity-0 scale-90",
-                )}
-              >
-                <Icons.sidebar className="h-4 w-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent
-              className="flex items-center gap-1.5 z-50"
-              side="right"
-            >
-              <span>Toggle Sidebar</span>
-              <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
-                S
-              </kbd>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
+      <SidebarHeader className="h-14"/>
       <SidebarContent className="pb-14">
         <SidebarGroup>
           <SidebarGroupContent>
@@ -577,8 +548,38 @@ export function MainSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="flex justify-end pr-4">
-        <Help open={helpOpen} onOpenChange={setHelpOpen} />
+      <SidebarFooter className="flex justify-end pr-4 border-t">
+        <div className="flex items-center justify-between">
+          <Help open={helpOpen} onOpenChange={setHelpOpen} />
+          <div className="relative h-8 w-8">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 hover:bg-accent"
+                  aria-label="Toggle Sidebar"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation() 
+                    toggleSidebar()
+                  }}
+                >
+                  <Icons.sidebar className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                className="flex items-center gap-1.5 z-50"
+                side="right"
+              >
+                <span>Toggle Sidebar</span>
+                <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
+                  S
+                </kbd>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )
