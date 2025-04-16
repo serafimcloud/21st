@@ -211,7 +211,10 @@ export function Header({
         )}
       >
         <div
-          className={cn("flex items-center flex-1", open ? "ml-64 pl-3" : "")}
+          className={cn(
+            "flex items-center flex-1",
+            open ? "md:ml-64 md:pl-3" : "",
+          )}
         >
           <Logo />
           {text && !isMobile && (
@@ -555,6 +558,7 @@ export function Header({
           </SignedIn>
 
           <SignedOut>
+            {!isMobile && (
             <Button
               variant="ghost"
               size="sm"
@@ -578,10 +582,26 @@ export function Header({
                   Get Pro
                 </TextShimmer>
               </Link>
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden mr-2"
+              onClick={() =>
+                document.dispatchEvent(
+                  new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+                )
+              }
+              aria-label="Search"
+            >
+              <Icons.search className="h-6 w-6" />
             </Button>
-            <SignInButton>
-              <Button className="ml-2">Sign up</Button>
-            </SignInButton>
+            {!isMobile && (
+              <SignInButton>
+                <Button>Sign up</Button>
+              </SignInButton>
+            )}
           </SignedOut>
         </div>
       </header>
