@@ -6,7 +6,9 @@ import { DemosTable } from "@/components/features/studio/ui/components-table"
 import { ComponentPublishDialog } from "@/components/features/studio/editor-new/component-publish-dialog"
 import { ComponentPublishDialog as ComponentPublishDialogOld } from "@/components/features/studio/editor/component-publish-dialog"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, PlusCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useRouter, usePathname } from "next/navigation"
 
 interface StudioUsernameClientProps {
   user: User
@@ -21,6 +23,8 @@ export function StudioUsernameClient({
   isAdmin,
   isOwnProfile,
 }: StudioUsernameClientProps) {
+  const router = useRouter()
+  const pathname = usePathname()
   return (
     <StudioLayout user={user}>
       <div className="space-y-6">
@@ -37,6 +41,12 @@ export function StudioUsernameClient({
 
           {(isOwnProfile || isAdmin) && (
             <>
+              <Button
+                onClick={() => window.open(`${pathname}/publish/123`, "_blank")}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Publish Component
+              </Button>
               <ComponentPublishDialog />
               <ComponentPublishDialogOld userId={user.id} />
             </>

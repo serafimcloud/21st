@@ -7,7 +7,7 @@ import {
 } from "@codesandbox/sandpack-react"
 import { useTheme } from "next-themes"
 import { autocompletion, completionKeymap } from "@codemirror/autocomplete"
-
+import { files } from "./utils/sandpack-files"
 export const Editor = () => {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
@@ -21,16 +21,33 @@ export const Editor = () => {
   return (
     <div className="h-full w-full">
       <SandpackProvider
+        files={files}
         theme={resolvedTheme as "light" | "dark"}
-        template="react-ts"
-        options={{
-          externalResources: ["https://cdn.tailwindcss.com"],
+        template="vite-react-ts"
+        // options={{
+        //   externalResources: ["https://cdn.tailwindcss.com"],
+        // }}
+        customSetup={{
+          dependencies: {
+            // default Sandpack dependencies written explicitly
+            react: "^18.3.1",
+            "react-dom": "^18.2.0",
+          },
+          devDependencies: {
+            // default Sandpack dependencies written explicitly
+            "@types/react": "^18.0.28",
+            "@types/react-dom": "^18.0.11",
+            "@vitejs/plugin-react": "^4.1.4",
+            typescript: "^4.9.5",
+            vite: "4.1.4",
+            "esbuild-wasm": "^0.17.12",
+          },
         }}
       >
         <SandpackLayout>
           <SandpackFileExplorer />
           <SandpackCodeEditor
-            showLineNumbers={false}
+            showLineNumbers={true}
             showTabs={false}
             extensions={[
               autocompletion({
