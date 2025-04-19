@@ -10,6 +10,7 @@ import { cookies } from "next/headers"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { unstable_cache } from "next/cache"
 import { Logo } from "@/components/ui/logo"
+import { BASE_KEYWORDS, SITE_NAME, SITE_SLOGAN } from "@/lib/constants"
 
 interface TagPageProps {
   params: Promise<{
@@ -97,7 +98,7 @@ export async function generateMetadata(props: TagPageProps): Promise<Metadata> {
     const jsonLd = {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      name: `${tagInfo.name} Components | 21st.dev - The NPM for Design Engineers`,
+      name: `${tagInfo.name} Components | ${SITE_NAME} - ${SITE_SLOGAN}`,
       description: `Ready-to-use ${tagInfo.name.toLowerCase()} React components inspired by shadcn/ui.`,
       url: `${process.env.NEXT_PUBLIC_APP_URL}/s/${params.tag_slug}`,
       mainEntity: {
@@ -107,22 +108,19 @@ export async function generateMetadata(props: TagPageProps): Promise<Metadata> {
     }
 
     return {
-      title: `${tagInfo.name} Components | 21st.dev - The NPM for Design Engineers`,
+      title: `${tagInfo.name} Components | ${SITE_NAME} - ${SITE_SLOGAN}`,
       description: `Discover and share ${tagInfo.name.toLowerCase()} components. Ready-to-use React Tailwind components inspired by shadcn/ui.`,
       openGraph: {
-        title: `${tagInfo.name} Components | 21st.dev - The NPM for Design Engineers`,
+          title: `${tagInfo.name} Components | ${SITE_NAME} - ${SITE_SLOGAN}`,
         description: `Ready-to-use ${tagInfo.name.toLowerCase()} React Tailwind components inspired by shadcn/ui.`,
       },
       keywords: [
         `${tagInfo.name.toLowerCase()} components`,
-        "react components",
-        "design engineers",
-        "component library",
-        "tailwind components",
-        "ui components",
         `${tagInfo.name.toLowerCase()} shadcn/ui`,
+        `${tagInfo.name.toLowerCase()}`,
+        ...BASE_KEYWORDS,
       ],
-      other: {
+      other: {  
         "script:ld+json": JSON.stringify(jsonLd),
       },
     }

@@ -9,16 +9,16 @@ import { HeroSection } from "@/components/ui/hero-section"
 import { NewsletterDialog } from "@/components/ui/newsletter-dialog"
 import { HomePageClient } from "./page.client"
 import { Logo } from "@/components/ui/logo"
-
+import { SITE_NAME, SITE_SLOGAN, BASE_KEYWORDS } from "@/lib/constants"
 export const dynamic = "force-dynamic"
 
 export const generateMetadata = async (): Promise<Metadata> => {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "21st.dev - The NPM for Design Engineers",
+    name: `${SITE_NAME} - ${SITE_SLOGAN}`,
     description:
-      "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui. Built by design engineers, for design engineers.",
+      "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui.",
     url: process.env.NEXT_PUBLIC_APP_URL,
     potentialAction: {
       "@type": "SearchAction",
@@ -28,25 +28,18 @@ export const generateMetadata = async (): Promise<Metadata> => {
       },
       "query-input": "required name=search_term_string",
     },
+    keywords: BASE_KEYWORDS,
   }
 
   return {
-    title: "21st.dev – The NPM for Design Engineers",
+    title: `${SITE_NAME} – ${SITE_SLOGAN}`,
     description:
-      "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui. Built by design engineers, for design engineers.",
-    keywords: [
-      "react components",
-      "tailwind css",
-      "ui components",
-      "design engineers",
-      "component library",
-      "shadcn ui",
-      "publish components",
-    ],
+      "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui.",
+    keywords: [...BASE_KEYWORDS],
     openGraph: {
-      title: "21st.dev - The NPM for Design Engineers",
+      title: `${SITE_NAME} - ${SITE_SLOGAN}`,
       description:
-        "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui. Built by design engineers, for design engineers.",
+        "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui.",
       images: [
         {
           url: `${process.env.NEXT_PUBLIC_APP_URL}/og-image.png`,
@@ -57,9 +50,9 @@ export const generateMetadata = async (): Promise<Metadata> => {
     },
     twitter: {
       card: "summary_large_image",
-      title: "21st.dev - The NPM for Design Engineers",
+      title: `${SITE_NAME} - ${SITE_SLOGAN}`,
       description:
-        "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui. Built by design engineers, for design engineers.",
+        "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui.",
       images: [`${process.env.NEXT_PUBLIC_APP_URL}/og-image.png`],
     },
     other: {

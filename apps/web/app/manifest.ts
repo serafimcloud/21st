@@ -1,11 +1,11 @@
 import { MetadataRoute } from "next"
-
+import { SITE_NAME, SITE_SLOGAN } from "@/lib/constants"
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "21st.dev - The NPM for Design Engineers",
-    short_name: "21st.dev",
+    name: `${SITE_NAME} - ${SITE_SLOGAN}`,
+    short_name: `${SITE_NAME}`,
     description:
-      "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui. Built by design engineers, for design engineers.",
+      "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui.",
     start_url: "/",
     display: "standalone",
     background_color: "#FFFFFF",
