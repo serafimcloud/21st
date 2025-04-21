@@ -31,13 +31,13 @@ import {
 import { toast } from "sonner"
 
 // Backend API URL
-const API_BASE_URL = "http://localhost:8080" //"https://21st-studio.up.railway.app"
+const API_BASE_URL = "http://localhost:8080" //
 
 // Types
 interface FileEntry {
   name: string
-  isDir: boolean
-  path?: string
+  type: "file" | "dir"
+  path: string
   children?: FileEntry[]
 }
 
@@ -88,14 +88,13 @@ function PublishPageContent() {
   )
   const [previewURL, setPreviewURL] = useState<string | null>(null)
   const [files, setFiles] = useState<FileEntry[]>([])
-  const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
   const [code, setCode] = useState<string>("")
   const [newFileName, setNewFileName] = useState("")
   const [isCreatingFile, setIsCreatingFile] = useState(false)
   const [isFetching, setIsFetching] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
   const [isFileLoading, setIsFileLoading] = useState(false)
-  const wsRef = useRef<WebSocket | null>(null)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   // 1. Bootstrap sandbox or load existing one
@@ -153,28 +152,6 @@ function PublishPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Run only once on mount
 
-  // 2. Init WebSocket
-  useEffect(() => {
-    if (!projectId) return
-
-    // Create WebSocket connection to the backend
-    const wsUrl = `${API_BASE_URL.replace("https://", "wss://").replace("http://", "ws://")}/ws?projectId=${projectId}`
-    const ws = new WebSocket(wsUrl)
-
-    ws.onopen = () => console.log("WebSocket connected")
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error)
-      toast.error("WebSocket connection error")
-    }
-    ws.onclose = () => console.log("WebSocket closed")
-
-    wsRef.current = ws
-
-    return () => {
-      ws.close()
-    }
-  }, [projectId])
-
   // 3. Load file tree
   const fetchFileTree = async () => {
     if (!projectId) return
@@ -182,12 +159,44 @@ function PublishPageContent() {
     try {
       setIsFetching(true)
       const fileEntries = await fetchJSON(`/projects/${projectId}/files`)
-      setFiles(fileEntries)
+
+      // Map the API response to our FileEntry interface
+      const mappedEntries = fileEntries.map((entry: any) => ({
+        name: entry.name,
+        type: entry.type,
+        // Remove "/home/user" prefix from paths
+        path: entry.path.replace(/^\/home\/user/, ""),
+      }))
+
+      setFiles(mappedEntries)
     } catch (error) {
       console.error("Failed to load files:", error)
       toast.error("Failed to load files")
     } finally {
       setIsFetching(false)
+    }
+  }
+
+  // Fetch directory content
+  const fetchDirectoryContent = async (
+    dirPath: string,
+  ): Promise<FileEntry[]> => {
+    if (!projectId) return []
+    try {
+      const dirEntries = await fetchJSON(
+        `/projects/${projectId}/dir?path=${encodeURIComponent(dirPath)}`,
+      )
+      // Map the API response to our FileEntry interface
+      return dirEntries.map((entry: any) => ({
+        name: entry.name,
+        type: entry.type,
+        // Remove "/home/user" prefix from paths
+        path: entry.path.replace(/^\/home\/user/, ""),
+      }))
+    } catch (error) {
+      console.error(`Failed to load directory content for ${dirPath}:`, error)
+      toast.error(`Failed to load directory content for ${dirPath}`)
+      return [] // Return empty array on error
     }
   }
 
@@ -197,107 +206,144 @@ function PublishPageContent() {
     }
   }, [projectId])
 
-  // 4. Load file content when selected
+  // 4. Load content based on selection
   useEffect(() => {
-    if (!projectId || !selectedPath) return
+    // Clear editor if nothing is selected
+    if (!projectId || !selectedEntry) {
+      setCode("")
+      setIsFileLoading(false)
+      return
+    }
+
+    // Load content only if it's a file
+    if (selectedEntry.type === "file") {
+      loadFileContent(selectedEntry.path)
+    } else {
+      // Directory selected, clear editor
+      setCode("")
+      setIsFileLoading(false)
+    }
+    // Depend only on projectId and the selected entry object
+  }, [projectId, selectedEntry])
+
+  const loadFileContent = (filePath: string) => {
+    if (!projectId) return // Added check
+
+    // Ensure path is properly formatted without /home/user prefix
+    const cleanPath = filePath.replace(/^\/home\/user/, "")
 
     try {
       setIsFileLoading(true)
       fetch(
-        `${API_BASE_URL}/projects/${projectId}/file?path=${encodeURIComponent(selectedPath)}`,
+        `${API_BASE_URL}/projects/${projectId}/file?path=${encodeURIComponent(cleanPath)}`,
       )
         .then((res) => res.text())
         .then(setCode)
         .catch((error) => {
-          console.error("Failed to load file content:", error)
+          console.error(`Failed to load file content for ${cleanPath}:`, error)
           toast.error("Failed to load file content")
+          setCode("") // Clear code on error
         })
         .finally(() => setIsFileLoading(false))
     } catch (error) {
+      console.error("Error in loadFileContent:", error) // Log sync errors too
+      toast.error("Error initiating file load")
+      setCode("")
       setIsFileLoading(false)
     }
-  }, [projectId, selectedPath])
+  }
 
   // 5. Send code changes (debounced)
-  const sendChange = (content: string) => {
-    if (
-      !wsRef.current ||
-      wsRef.current.readyState !== WebSocket.OPEN ||
-      !selectedPath
-    )
-      return
+  const saveFileContent = async (filePath: string, content: string) => {
+    if (!projectId || !filePath) return
 
-    wsRef.current.send(
-      JSON.stringify({ type: "fileChange", path: selectedPath, content }),
-    )
+    try {
+      const cleanPath = filePath.replace(/^\/home\/user/, "")
+      await fetchJSON(
+        `/projects/${projectId}/file?path=${encodeURIComponent(cleanPath)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        },
+      )
+    } catch (error) {
+      console.error(`Failed to save file ${filePath}:`, error)
+      toast.error("Failed to save file changes")
+    }
   }
 
   const handleCodeChange = (value: string) => {
     setCode(value)
+    if (!selectedEntry || selectedEntry.type !== "file") return
+
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => sendChange(value), 500)
+    debounceRef.current = setTimeout(
+      () => saveFileContent(selectedEntry.path, value),
+      500,
+    )
   }
 
   // 6. Create new file
-  const createNewFile = () => {
-    if (
-      !projectId ||
-      !wsRef.current ||
-      wsRef.current.readyState !== WebSocket.OPEN ||
-      !newFileName
-    )
-      return
+  const createNewFile = async () => {
+    if (!projectId || !newFileName) return
 
-    const newFilePath = `/${newFileName}`
+    // Make sure the path is properly formatted
+    const newFilePath = newFileName.startsWith("/")
+      ? newFileName
+      : `/${newFileName}`
 
-    wsRef.current.send(
-      JSON.stringify({
-        type: "fileCreate",
-        path: newFilePath,
-        content: "",
-      }),
-    )
+    try {
+      await fetchJSON(
+        `/projects/${projectId}/file?path=${encodeURIComponent(newFilePath)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: "" }),
+        },
+      )
 
-    // Reset UI state
-    setNewFileName("")
-    setIsCreatingFile(false)
-    toast.success(`Created ${newFileName}`)
+      setNewFileName("")
+      setIsCreatingFile(false)
+      toast.success(`Created ${newFileName}`)
 
-    // Refresh file tree and select new file
-    setTimeout(() => {
-      fetchFileTree()
-      setSelectedPath(newFilePath)
-    }, 500)
+      // Refresh file tree and select the new file
+      await fetchFileTree()
+      const newlyCreatedEntry = files.find((f) => f.path === newFilePath)
+      setSelectedEntry(newlyCreatedEntry || null)
+    } catch (error) {
+      console.error(`Failed to create file ${newFilePath}:`, error)
+      toast.error("Failed to create file")
+    }
   }
 
   // 7. Delete file
-  const deleteFile = (fileName: string) => {
-    if (
-      !projectId ||
-      !wsRef.current ||
-      wsRef.current.readyState !== WebSocket.OPEN
-    )
-      return
+  const deleteFile = async (filePath: string) => {
+    if (!projectId) return
 
-    const filePath = `/${fileName}`
+    // Ensure the path is properly formatted (without /home/user prefix)
+    const cleanPath = filePath.replace(/^\/home\/user/, "")
 
-    wsRef.current.send(
-      JSON.stringify({
-        type: "fileDelete",
-        path: filePath,
-      }),
-    )
+    try {
+      await fetchJSON(
+        `/projects/${projectId}/file?path=${encodeURIComponent(cleanPath)}`,
+        {
+          method: "DELETE",
+        },
+      )
 
-    // Reset selection if the deleted file was selected
-    if (selectedPath === filePath) {
-      setSelectedPath(null)
-      setCode("")
+      // Reset selection if the deleted file was selected
+      if (selectedEntry?.path === filePath) {
+        setSelectedEntry(null)
+        setCode("")
+      }
+
+      toast.success(`Deleted ${filePath.split("/").pop() || filePath}`) // Show just filename in toast
+      fetchFileTree() // Refresh file tree immediately
+    } catch (error) {
+      console.error(`Failed to delete file ${cleanPath}:`, error)
+      toast.error("Failed to delete file")
     }
-
-    toast.success(`Deleted ${fileName}`)
-
-    // Refresh file tree
-    setTimeout(fetchFileTree, 500)
   }
 
   if (isInitializing) {
@@ -391,10 +437,11 @@ function PublishPageContent() {
             <CardContent className="p-0 overflow-y-auto flex-1">
               <FileTree
                 entries={files}
-                onSelect={setSelectedPath}
-                selectedPath={selectedPath}
+                onSelect={setSelectedEntry}
+                selectedPath={selectedEntry?.path || null}
                 onDelete={deleteFile}
                 isLoading={isFetching}
+                fetchDirectoryContent={fetchDirectoryContent}
               />
             </CardContent>
           </Card>
@@ -414,13 +461,13 @@ function PublishPageContent() {
                 <div className="h-full flex items-center justify-center">
                   <Loader2Icon className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : selectedPath ? (
+              ) : selectedEntry && selectedEntry.type === "file" ? (
                 <CodeMirror
                   value={code}
                   height="100%"
                   extensions={[
-                    selectedPath
-                      ? getLanguageExtension(selectedPath)
+                    selectedEntry
+                      ? getLanguageExtension(selectedEntry.path)
                       : javascript(),
                   ]}
                   theme={oneDark}
@@ -434,7 +481,9 @@ function PublishPageContent() {
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground">
-                  Select a file to start editing
+                  {selectedEntry && selectedEntry.type === "dir"
+                    ? `Directory: ${selectedEntry.path || selectedEntry.name}`
+                    : "Select a file to start editing"}
                 </div>
               )}
             </TabsContent>
@@ -473,15 +522,40 @@ function FileTree({
   selectedPath,
   onDelete,
   isLoading,
+  fetchDirectoryContent,
 }: {
   entries: FileEntry[]
-  onSelect: (path: string) => void
+  onSelect: (entry: FileEntry) => void
   selectedPath: string | null
-  onDelete: (fileName: string) => void
+  onDelete: (filePath: string) => void
   isLoading: boolean
+  fetchDirectoryContent: (dirPath: string) => Promise<FileEntry[]>
 }) {
-  const handleFileClick = (fileName: string) => {
-    onSelect(`/${fileName}`)
+  const [expandedDirs, setExpandedDirs] = useState<Record<string, FileEntry[]>>(
+    {},
+  )
+  const [loadingDirs, setLoadingDirs] = useState<Record<string, boolean>>({})
+
+  // Call onSelect with the full entry when a file is clicked
+  const handleFileClick = (entry: FileEntry) => {
+    onSelect(entry)
+  }
+
+  // Directory clicks load content but don't trigger onSelect for the editor pane
+  const handleDirClick = async (entry: FileEntry, e: React.MouseEvent) => {
+    if (!expandedDirs[entry.path] || e.ctrlKey) {
+      try {
+        setLoadingDirs((prev) => ({ ...prev, [entry.path]: true }))
+        const dirContents = await fetchDirectoryContent(entry.path) // Use prop
+        setExpandedDirs((prev) => ({ ...prev, [entry.path]: dirContents }))
+      } catch (error) {
+        // Error is already handled and toasted in the passed function
+        // console.error(`Failed to load contents of ${entry.path}:`, error) // Optional: log again here if needed
+        toast.error(`UI Error: Could not display contents for ${entry.name}`) // Add UI specific error toast
+      } finally {
+        setLoadingDirs((prev) => ({ ...prev, [entry.path]: false }))
+      }
+    }
   }
 
   if (isLoading && entries.length === 0) {
@@ -492,34 +566,64 @@ function FileTree({
     )
   }
 
-  return (
-    <ul className="text-sm py-2">
-      {entries.map((entry) => (
-        <li key={entry.name} className="py-1">
-          {entry.isDir ? (
-            <details className="group">
-              <summary className="flex items-center px-2 py-1 cursor-pointer hover:bg-muted rounded list-none">
-                <FolderIcon className="h-4 w-4 mr-1 text-blue-500" />
-                <span className="font-medium">{entry.name}</span>
+  const renderEntries = (items: FileEntry[], currentLevel = 0) => (
+    // Added currentLevel for potential indentation styling if needed later
+    <ul className={`text-sm py-1 ${currentLevel > 0 ? "pl-4" : ""}`}>
+      {items.map((entry) => (
+        <li key={entry.path} className="py-0.5">
+          {entry.type === "dir" ? (
+            <details className="group" open={!!expandedDirs[entry.path]}>
+              {" "}
+              {/* Keep details open if loaded */}
+              <summary
+                className={`flex items-center px-2 py-1 cursor-pointer hover:bg-muted rounded list-none ${
+                  selectedPath === entry.path ? "bg-accent" : "" // Highlight selected dir summary
+                }`}
+                onClick={(e) => {
+                  e.preventDefault() // Prevent default details toggle if needed, handle via state?
+                  handleDirClick(entry, e)
+                  // Optionally select the directory itself for context, if desired:
+                  // onSelect(entry)
+                }}
+              >
+                <FolderIcon className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
+                <span className="font-medium truncate" title={entry.name}>
+                  {entry.name}
+                </span>
+                {loadingDirs[entry.path] && (
+                  <Loader2Icon className="h-3 w-3 ml-auto animate-spin flex-shrink-0" />
+                )}
               </summary>
-              {/* We'd need another API call to get nested files */}
-              <ul className="pl-4 mt-1">
-                <li className="text-xs text-muted-foreground px-2 py-1">
-                  Directory listing not implemented
-                </li>
-              </ul>
+              {/* Render contents only if loaded */}
+              {expandedDirs[entry.path] && (
+                <div className="mt-1">
+                  {(() => {
+                    const content = expandedDirs[entry.path] // Assign to variable
+                    if (content && content.length > 0) {
+                      return renderEntries(content, currentLevel + 1)
+                    } else {
+                      return (
+                        <div className="text-xs text-muted-foreground px-2 py-1 pl-6">
+                          Empty directory
+                        </div>
+                      )
+                    }
+                  })()}
+                </div>
+              )}
             </details>
           ) : (
             <div className="flex items-center group">
               <button
-                className={`flex items-center w-full text-left px-2 py-1 hover:bg-muted rounded ${
-                  selectedPath === `/${entry.name}`
-                    ? "bg-muted font-medium"
+                className={`flex items-center w-full text-left px-2 py-1 hover:bg-muted rounded truncate ${
+                  selectedPath === entry.path
+                    ? "bg-accent font-medium" // Use accent for selection
                     : ""
                 }`}
-                onClick={() => handleFileClick(entry.name)}
+                onClick={() => handleFileClick(entry)}
+                title={entry.path}
               >
-                <FileIcon className="h-4 w-4 mr-1 text-gray-500" />
+                <FileIcon className="h-4 w-4 mr-1 text-gray-500 flex-shrink-0" />
                 {entry.name}
               </button>
               <DropdownMenu>
@@ -535,7 +639,7 @@ function FileTree({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
-                    onClick={() => onDelete(entry.name)}
+                    onClick={() => onDelete(entry.path)}
                   >
                     Delete file
                   </DropdownMenuItem>
@@ -545,9 +649,12 @@ function FileTree({
           )}
         </li>
       ))}
-      {entries.length === 0 && !isLoading && (
+      {/* Don't show "No files found" for subdirectories if they are just empty */}
+      {items.length === 0 && currentLevel === 0 && !isLoading && (
         <li className="px-2 text-muted-foreground">No files found</li>
       )}
     </ul>
   )
+
+  return renderEntries(entries)
 }
