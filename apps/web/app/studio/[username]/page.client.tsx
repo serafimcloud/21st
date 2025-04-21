@@ -42,7 +42,7 @@ export function StudioUsernameClient({
           {(isOwnProfile || isAdmin) && (
             <>
               <Button
-                onClick={() => window.open(`${pathname}/publish/123`, "_blank")}
+                onClick={() => window.open(`${pathname}/publish`, "_blank")}
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Publish Component
