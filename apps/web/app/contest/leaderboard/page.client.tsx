@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { toast } from "sonner"
-import { useUser } from "@clerk/nextjs"
 import { useRoundSubmissions, useToggleVote, type Round } from "@/lib/queries"
 import {
   LeaderboardList,
@@ -26,7 +24,6 @@ export function LeaderboardClient({
   seasonalTag,
 }: LeaderboardClientProps) {
   const [selectedCategory, setSelectedCategory] = useState<Category>("global")
-  const { user } = useUser()
 
   const {
     submissions = [],
@@ -96,7 +93,7 @@ export function LeaderboardClient({
                 value="seasonal"
                 className="data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-10 px-2 !shadow-none"
               >
-                {seasonalTag?.name || "Seasonal"}
+                {seasonalTag?.name}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -105,7 +102,11 @@ export function LeaderboardClient({
 
       {/* Components List */}
       <div className="space-y-4">
-        <LeaderboardList submissions={filteredRows} roundId={currentRound.id} />
+        <LeaderboardList
+          submissions={filteredRows}
+          roundId={currentRound.id}
+          toggleVote={toggleVote}
+        />
       </div>
 
       {/* Scoring Info */}
