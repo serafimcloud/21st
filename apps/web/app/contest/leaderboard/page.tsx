@@ -94,7 +94,7 @@ export default async function LeaderboardPage() {
                   <div className="flex items-center justify-between pb-3 border-b mb-4">
                     <h3 className="font-medium">Component Hunt Rules</h3>
                     <Button asChild>
-                      <Link href="/contest/submit">Submit Your Component</Link>
+                      <Link href="/publish">Submit Your Component</Link>
                     </Button>
                   </div>
                   <div className="bg-background rounded-lg border border-border overflow-hidden">

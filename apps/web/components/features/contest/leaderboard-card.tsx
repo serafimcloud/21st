@@ -4,8 +4,9 @@ import React, { useRef, useCallback, useState } from "react"
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Loader2, ThumbsUp, ExternalLink, Video } from "lucide-react"
+import { Loader2, ThumbsUp, Video, Tag } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { UserAvatar } from "../../ui/user-avatar"
 
 // VideoPreview component for hover video functionality
 const videoLoadingCache = new Map<string, boolean>()
@@ -143,15 +144,10 @@ export function LeaderboardCard({
   const tags = submission.tags || []
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      onClick={() => handleDemoClick(submission)}
-    >
-      <div className="group relative flex flex-row items-start gap-4 rounded-xl px-0 py-4 transition-all duration-300 sm:-mx-4 sm:p-4 cursor-pointer hover:sm:bg-gray-100 dark:hover:sm:bg-gray-800">
-        {/* Left - Preview Image with Video */}
-        <div className="relative aspect-[4/3] w-32 rounded-lg overflow-hidden shrink-0 group">
+    <div onClick={() => handleDemoClick(submission)}>
+      <div className="group relative flex flex-col sm:flex-row items-start gap-4 rounded-xl px-0 py-4 transition-all duration-300 sm:-mx-4 sm:p-4 cursor-pointer hover:sm:bg-gray-100 dark:hover:sm:bg-gray-800">
+        {/* Preview Image with Video (Top on mobile, Left on desktop) */}
+        <div className="relative aspect-[4/3] w-full sm:w-32 rounded-lg overflow-hidden shrink-0 group mb-4 sm:mb-0">
           <div className="absolute inset-0">
             <img
               src={submission.preview_url || "/placeholder.svg"}
@@ -177,85 +173,105 @@ export function LeaderboardCard({
           </div>
         </div>
 
-        {/* Middle - Content */}
-        <div className="flex flex-1 flex-col">
-          {/* Title and External Link */}
-          <div className="flex items-center">
-            <h3 className="text-base font-semibold text-foreground group-hover:text-primary">
-              {index + 1}. {submission.name}
-            </h3>
-            <ExternalLink className="relative hidden h-3.5 w-3.5 cursor-pointer px-1 text-muted-foreground transition-all hover:text-primary group-hover:inline-block ml-1" />
-          </div>
+        {/* Content Area (Below Preview on mobile, middle on desktop) */}
+        <div className="flex-1 flex flex-row justify-between w-full">
+          {/* Left column (Title, Author, Tags) */}
+          <div className="flex flex-col space-y-2 flex-1 sm:min-h-24 justify-between">
+            <div className="space-y-1">
+              {/* Title */}
+              <h3 className="text-base font-semibold text-foreground group-hover:text-primary">
+                {index + 1}. {componentData.name || submission.name}
+              </h3>
 
-          {/* Description */}
-          <p className="text-base text-muted-foreground">
-            {componentData.name || "No description"}
-          </p>
-
-          {/* Tags */}
-          <div className="mt-1 flex flex-row flex-wrap items-center gap-2">
-            {Array.isArray(tags) &&
-              tags.map((tag, tagIndex) => (
-                <Badge
-                  key={typeof tag === "string" ? tag : tag.slug || tagIndex}
-                  variant="outline"
-                  className="text-xs font-normal hover:bg-secondary"
-                >
-                  {typeof tag === "string" ? tag : tag.slug || "unknown"}
-                </Badge>
-              ))}
-          </div>
-        </div>
-
-        {/* Right - Stats */}
-        <div className="flex flex-row gap-2">
-          {/* Votes */}
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              variant="outline"
-              size="icon"
-              className={cn(
-                "size-12 rounded-xl border-2 transition-colors duration-200",
-                submission.has_voted
-                  ? "border-primary bg-primary/10"
-                  : "hover:border-primary",
+              {/* Description */}
+              {submission.name !== "Default" && (
+                <p className="text-base text-muted-foreground">
+                  {submission.name}
+                </p>
               )}
-              onClick={(e) => handleVote(e, submission.id)}
-              disabled={isVoting}
-              aria-label={submission.has_voted ? "Remove vote" : "Vote"}
-            >
-              <div className="flex flex-col items-center gap-1">
-                {isVoting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <motion.div
-                    initial={{ scale: 1 }}
-                    animate={submission.has_voted ? { scale: [1, 1.2, 1] } : {}}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ThumbsUp
-                      className={cn(
-                        "h-3.5 w-3.5 transition-colors",
-                        submission.has_voted
-                          ? "text-primary"
-                          : "text-muted-foreground",
-                      )}
-                    />
-                  </motion.div>
-                )}
-                <motion.div
-                  key={`votes-${submission.votes || 0}`}
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-sm font-semibold leading-none"
-                >
-                  {submission.votes || 0}
-                </motion.div>
+
+              {/* User Avatar */}
+              <div className="flex items-center gap-2">
+                <UserAvatar
+                  src={userData.image_url || "/placeholder.svg"}
+                  alt={userData.name || "User"}
+                  size={20}
+                  user={userData}
+                  isClickable
+                />
+                <span className="text-sm text-muted-foreground">
+                  {userData.name || userData.username || "Anonymous"}
+                </span>
               </div>
-            </Button>
-          </motion.div>
+            </div>
+
+            {/* Tags */}
+            <div className="flex flex-row flex-wrap items-center gap-2 mt-2">
+              <Tag size={14} className="text-muted-foreground" />
+              {Array.isArray(tags) &&
+                tags.map((tag, tagIndex) => (
+                  <Badge
+                    key={typeof tag === "string" ? tag : tag.slug || tagIndex}
+                    variant="outline"
+                    className="text-xs font-normal hover:bg-secondary"
+                  >
+                    {typeof tag === "string" ? tag : tag.slug || "unknown"}
+                  </Badge>
+                ))}
+            </div>
+          </div>
+
+          {/* Votes (Right on both mobile and desktop) */}
+          <div className="flex ml-4 shrink-0">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                variant="outline"
+                size="icon"
+                className={cn(
+                  "size-12 rounded-lg border transition-colors duration-200",
+                  submission.has_voted
+                    ? "border-primary bg-primary/10"
+                    : "hover:border-primary",
+                )}
+                onClick={(e) => handleVote(e, submission.id)}
+                disabled={isVoting}
+                aria-label={submission.has_voted ? "Remove vote" : "Vote"}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  {isVoting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <motion.div
+                      initial={{ scale: 1 }}
+                      animate={
+                        submission.has_voted ? { scale: [1, 1.1, 1] } : {}
+                      }
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ThumbsUp
+                        className={cn(
+                          "h-3.5 w-3.5 transition-colors",
+                          submission.has_voted
+                            ? "text-primary"
+                            : "text-muted-foreground",
+                        )}
+                      />
+                    </motion.div>
+                  )}
+                  <motion.div
+                    key={`votes-${submission.votes || 0}`}
+                    initial={{ opacity: 0, y: -3 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm font-semibold leading-none"
+                  >
+                    {submission.votes || 0}
+                  </motion.div>
+                </div>
+              </Button>
+            </motion.div>
+          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
