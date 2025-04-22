@@ -296,7 +296,7 @@ export function ComponentPagePreview({
     },
     ...({ fileLabels: customFileLabels } as any),
   }
-
+  console.log(demo?.bundle_hash)
   return (
     <motion.div
       layout
@@ -334,7 +334,7 @@ export function ComponentPagePreview({
             <LoadingSpinner text={loadingText} />
           </div>
         )}
-        {bundle?.html && (
+        {bundle?.html && demo?.bundle_hash !== "0" && (
           <iframe
             src={isDarkTheme ? `${bundle?.html}?dark=true` : bundle?.html}
             className="w-full h-full"

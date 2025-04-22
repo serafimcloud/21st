@@ -27,7 +27,7 @@ export default function Page(): JSX.Element {
                 Contest Overview
               </h1>
 
-              <Button asChild className="gap-2" size="lg">
+              <Button asChild className="gap-2">
                 <Link href="/contest/leaderboard">
                   <Trophy className="h-4 w-4" />
                   View Current Leaderboard
@@ -161,7 +161,7 @@ export default function Page(): JSX.Element {
 
             <section className="space-y-4">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
-                💰 Awards & Budget ($5 000 / week)
+                💰 Awards & Budget ($2 000 / week)
               </h2>
               <div className="rounded-lg border border-border">
                 <Table>
@@ -177,7 +177,7 @@ export default function Page(): JSX.Element {
                       <TableCell className="font-medium">
                         Global Awards (3)
                       </TableCell>
-                      <TableCell>🥇 $1 400 • 🥈 $800 • 🥉 $400</TableCell>
+                      <TableCell>🥇 $600 • 🥈 $350 • 🥉 $200</TableCell>
                       <TableCell>
                         Highest scores across <em className="italic">all</em>{" "}
                         categories
@@ -188,7 +188,7 @@ export default function Page(): JSX.Element {
                         Category Awards (9)
                       </TableCell>
                       <TableCell>
-                        🥇 $400 • 🥈 $250 • 🥉 $150 per category
+                        🥇 $150 • 🥈 $100 • 🥉 $50 per category
                       </TableCell>
                       <TableCell>
                         Three winners in{" "}
@@ -200,7 +200,7 @@ export default function Page(): JSX.Element {
                       <TableCell className="font-medium">
                         Total Weekly Payout
                       </TableCell>
-                      <TableCell className="font-bold">$5 000</TableCell>
+                      <TableCell className="font-bold">$2 000</TableCell>
                       <TableCell></TableCell>
                     </TableRow>
                   </TableBody>

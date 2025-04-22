@@ -9,6 +9,7 @@ import {
   type Category,
 } from "@/components/features/contest/leaderboard-list"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Loader2 } from "lucide-react"
 
 interface Tag {
   id: string
@@ -28,27 +29,30 @@ export function LeaderboardClient({
   const { user } = useUser()
 
   const {
-    data: submissions = [],
-    uiSlugs,
-    marketingSlugs,
+    submissions = [],
     getFilteredSubmissions,
+    isLoading,
+    error,
   } = useRoundSubmissions(currentRound.id)
   const toggleVote = useToggleVote(currentRound.id)
 
-  // Filter by category
+  // Фильтруем по категории
   const filteredRows = getFilteredSubmissions(selectedCategory)
 
-  const handleVote = async (demoId: number) => {
-    if (!user) {
-      toast.error("Please sign in to vote")
-      return
-    }
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
 
-    try {
-      await toggleVote.mutateAsync({ demoId })
-    } catch (error) {
-      // Error is handled by the mutation
-    }
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-8 text-destructive">
+        Error loading submissions: {error.message}
+      </div>
+    )
   }
 
   return (
@@ -101,13 +105,7 @@ export function LeaderboardClient({
 
       {/* Components List */}
       <div className="space-y-4">
-        <LeaderboardList
-          rows={filteredRows}
-          isLoading={submissions.length === 0}
-          category={selectedCategory}
-          onVote={handleVote}
-          isVoting={toggleVote.isPending}
-        />
+        <LeaderboardList submissions={filteredRows} roundId={currentRound.id} />
       </div>
 
       {/* Scoring Info */}

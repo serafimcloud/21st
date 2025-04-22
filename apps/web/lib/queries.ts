@@ -13,7 +13,7 @@ import {
   useQuery,
 } from "@tanstack/react-query"
 import { makeSlugFromName } from "@/components/features/publish/hooks/use-is-check-slug-available"
-import { SupabaseClient, createClient } from "@supabase/supabase-js"
+import { SupabaseClient } from "@supabase/supabase-js"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { useUser } from "@clerk/nextjs"
 import { Database } from "@/types/supabase"
@@ -29,9 +29,7 @@ import { Json } from "@/types/supabase"
 import { PurchaseComponentError } from "@/app/api/components/purchase/route"
 import { useAuth } from "@clerk/nextjs"
 import { categories } from "@/lib/navigation"
-import { toast } from "react-hot-toast"
-import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { useState, useEffect, useCallback } from "react"
+import { useCallback } from "react"
 
 export const componentReadableDbFields = `
   *,
@@ -1148,204 +1146,205 @@ export function useToggleVote(roundId: number | null) {
   })
 }
 
-type DemoHuntVote = {
-  demo_id: number
-}
-
-type DemoHuntLeaderboardRow = {
+export type DemoHuntLeaderboardRow = {
   id: number
-  round_id: number
-  demo_name: string
-  preview_url: string | null
-  description: string | null
-  final_score: number
-  votes: number
-  installs: number
-  views: number
-  global_rank: number
-  tags: { id: number; slug: string }[]
+  name: string
+  final_score: number | null
+  global_rank: number | null
+  votes: number | null
+  installs: number | null
+  view_count: number | null
+  bookmarks_count: number | null
   has_voted: boolean
-  component_data: {
-    id: number
-    name: string
-  }
   user_data: {
-    id: string
     username: string
     display_image_url: string | null
   }
-  bundle_url: string | null
+  component_data: {
+    name: string
+  }
+  tags: {
+    slug: string
+  }[]
 }
 
-export const getRoundSubmissions = async (
+type DemoHuntCategoryLeaderboardRow =
+  Database["public"]["Views"]["demo_hunt_leaderboard"]["Row"]
+
+export async function getRoundSubmissions(
   supabase: SupabaseClient<Database>,
   roundId: number,
-): Promise<DemoHuntLeaderboardRow[]> => {
-  console.log("[getRoundSubmissions] Fetching submissions for round", roundId)
-
-  const { data: submissions, error } = await supabase
+) {
+  const { data, error } = await supabase
     .from("demo_hunt_leaderboard")
     .select("*")
     .eq("round_id", roundId)
+    .returns<DemoHuntCategoryLeaderboardRow[]>()
+
+  if (error) throw error
+
+  console.log(
+    "Raw data from DB:",
+    data?.map((d) => ({ id: d.id, tags: d.tags })),
+  )
+
+  return (data || []).map(
+    (row: DemoHuntCategoryLeaderboardRow): DemoHuntLeaderboardRow => {
+      // Нормализуем теги
+      const rawTags = (row.tags as any) || []
+      const normalizedTags = Array.isArray(rawTags)
+        ? rawTags.map((tag: any) => ({
+            // Обрабатываем оба формата: строку и объект со свойством slug
+            slug: (typeof tag === "string"
+              ? tag
+              : tag.slug || ""
+            ).toLowerCase(),
+          }))
+        : []
+
+      console.log(`Row ${row.id} normalized tags:`, normalizedTags)
+
+      return {
+        id: row.id!,
+        name: row.demo_slug || "",
+        final_score: row.final_score,
+        global_rank: row.global_rank,
+        votes: row.votes,
+        installs: row.installs,
+        view_count: row.view_count,
+        bookmarks_count: row.bookmarks_count,
+        has_voted: row.has_voted || false,
+        user_data: {
+          username: (row.component_user_data as any)?.username || "",
+          display_image_url:
+            (row.component_user_data as any)?.display_image_url || null,
+        },
+        component_data: {
+          name: (row.component_data as any)?.name || "",
+        },
+        tags: normalizedTags,
+      }
+    },
+  )
+}
+
+export async function getHuntDemosList(
+  supabase: SupabaseClient<Database>,
+  roundId: number,
+) {
+  const { data, error } = await supabase.rpc("get_hunt_demos_list", {
+    p_round_id: roundId,
+  })
 
   if (error) {
-    console.error("[getRoundSubmissions] Error fetching submissions:", error)
+    console.error("Error fetching hunt demos:", error)
     throw error
   }
 
-  console.log("[getRoundSubmissions] Raw submissions data:", submissions)
-
-  if (!submissions) {
-    console.log("[getRoundSubmissions] No submissions found")
-    return []
-  }
-
-  // Transform the data to match DemoHuntLeaderboardRow type
-  const transformedSubmissions: DemoHuntLeaderboardRow[] = submissions.map(
-    (submission) => ({
-      id: submission.demo_id!,
-      round_id: submission.round_id!,
-      demo_name: submission.demo_name!,
-      preview_url: submission.preview_url,
-      description: submission.demo_name, // Using demo_name as description for now
-      final_score: submission.final_score || 0,
-      votes: submission.votes || 0,
-      installs: submission.installs || 0,
-      views: submission.views || 0,
-      global_rank: submission.global_rank || 0,
-      tags: submission.tags as { id: number; slug: string }[],
-      has_voted: submission.has_voted || false,
-      component_data: {
-        id: submission.component_id!,
-        name: submission.component_name!,
-      },
-      user_data: {
-        id: submission.demo_owner_id!,
-        username: submission.demo_owner_username!,
-        display_image_url: submission.display_image_url,
-      },
-      bundle_url: submission.video_url,
-    }),
-  )
-
-  console.log(
-    "[getRoundSubmissions] Transformed submissions:",
-    transformedSubmissions,
-  )
-
-  return transformedSubmissions
+  return data
 }
 
-type RoundSubmissionsReturn = {
-  data: DemoHuntLeaderboardRow[]
-  uiSlugs: string[] | undefined
-  marketingSlugs: string[] | undefined
-  getFilteredSubmissions: (category: string) => DemoHuntLeaderboardRow[]
-}
-
-export function useRoundSubmissions(
-  roundId: number | null,
-): RoundSubmissionsReturn {
+export const useRoundSubmissions = (roundId: number | null) => {
   const supabase = useClerkSupabaseClient()
 
-  const { data: submissions = [] } = useQuery({
-    queryKey: ["hunt_round_submissions", roundId],
-    queryFn: () => getRoundSubmissions(supabase, roundId!),
+  const {
+    data: submissions,
+    isLoading,
+    error,
+    ...rest
+  } = useQuery({
+    queryKey: ["demo-hunt-submissions", roundId],
+    queryFn: async () => {
+      if (!roundId) return []
+
+      // Используем новую функцию
+      const data = await getHuntDemosList(supabase, roundId)
+
+      // Дополнительное преобразование для правильной работы с ComponentPreviewDialog
+      return (data || []).map((submission: any) => {
+        // Убедимся, что component_data это объект
+        const componentData =
+          typeof submission.component_data === "object"
+            ? submission.component_data || {}
+            : {}
+
+        // Используем as any чтобы избежать ошибок типизации
+        const result = submission as any
+
+        // Добавляем компонент
+        result.component = {
+          id: componentData.id || 0,
+          name: componentData.name || "",
+          component_slug: componentData.component_slug || "",
+          user_id: componentData.user_id || "",
+          is_paid: !!componentData.is_paid,
+          is_public: !!componentData.is_public,
+          price: componentData.price || null,
+          user: result.component_user_data || {},
+          // Другие необходимые поля
+          downloads_count: componentData.downloads_count || 0,
+          likes_count: componentData.likes_count || 0,
+          license: componentData.license || null,
+          registry: componentData.registry || null,
+        }
+
+        return result
+      })
+    },
     enabled: !!roundId,
   })
 
-  // Slugs from navigation.ts
+  // Категории для фильтрации
   const uiSlugs = [
-    "accordion",
-    "ai-chat",
-    "alert",
-    "avatar",
-    "badge",
-    "button",
-    "calendar",
-    "card",
-    "carousel",
-    "checkbox",
-    "date-picker",
-    "modal-dialog",
-    "dropdown",
-    "empty-state",
-    "file-tree",
-    "upload-download",
-    "form",
-    "icons",
-    "input",
-    "link",
-    "menu",
-    "notification",
-    "number",
-    "pagination",
-    "popover",
-    "radio-group",
-    "sidebar",
-    "sign-in",
-    "registration-signup",
-    "select",
-    "slider",
-    "spinner-loader",
-    "table",
-    "chip-tag",
-    "tabs",
-    "textarea",
-    "toast",
-    "toggle",
-    "tooltip"
+    "accordion", "ai-chat", "alert", "avatar", "badge", "button", "calendar",
+    "card", "carousel", "checkbox", "date-picker", "modal-dialog", "dropdown",
+    "empty-state", "file-tree", "upload-download", "form", "icons", "input",
+    "link", "menu", "notification", "number", "pagination", "popover",
+    "radio-group", "sidebar", "sign-in", "registration-signup", "select",
+    "slider", "spinner-loader", "table", "chip-tag", "tabs", "textarea",
+    "toast", "toggle", "tooltip"
   ]
-
   const marketingSlugs = [
-    "announcement",
-    "background",
-    "border",
-    "call-to-action",
-    "clients",
-    "comparison",
-    "dock",
-    "features",
-    "footer",
-    "hero",
-    "hook",
-    "image",
-    "map",
-    "navbar-navigation",
-    "pricing-section",
-    "scroll-area",
-    "testimonials",
-    "text",
-    "video"
+    "announcement", "background", "border", "call-to-action", "clients",
+    "comparison", "dock", "features", "footer", "hero", "hook", "image",
+    "map", "navbar-navigation", "pricing-section", "scroll-area",
+    "testimonials", "text", "video"
   ]
 
-  const getFilteredSubmissions = (category: string) => {
-    if (!category || category === "global") return submissions
+  const getFilteredSubmissions = useCallback(
+    (category: string) => {
+      if (!submissions) return []
+      if (category === "global") return submissions
 
-    if (category === "seasonal") {
-      return submissions.filter((submission) =>
-        submission.tags?.some((tag) => tag.id === submission.round_id),
-      )
-    }
+      return submissions.filter((submission: any) => {
+        // Убедимся, что tags массив перед применением map
+        const submissionTags = Array.isArray(submission.tags)
+          ? submission.tags
+          : []
+        const submissionSlugs = submissionTags.map((tag: any) => {
+          return typeof tag === "string" ? tag : tag?.slug || ""
+        })
 
-    const categorySlugMap = {
-      ui: uiSlugs,
-      marketing: marketingSlugs,
-    }
-
-    const slugs = categorySlugMap[category as keyof typeof categorySlugMap]
-    if (!slugs) return []
-
-    return submissions.filter((submission) =>
-      submission.tags?.some((tag) => slugs.includes(tag.slug)),
-    )
-  }
+        // Фильтруем по категории
+        if (category === "ui") {
+          return submissionSlugs.some((slug: string) => uiSlugs.includes(slug))
+        } else if (category === "marketing") {
+          return submissionSlugs.some((slug: string) =>
+            marketingSlugs.includes(slug),
+          )
+        }
+        return false
+      })
+    },
+    [submissions],
+  )
 
   return {
-    data: submissions,
-    uiSlugs,
-    marketingSlugs,
+    submissions,
     getFilteredSubmissions,
+    isLoading,
+    error,
+    ...rest,
   }
 }
 

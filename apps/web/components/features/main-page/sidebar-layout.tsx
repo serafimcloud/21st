@@ -349,8 +349,8 @@ export function MainSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* Contest Group */}
+      
+        {/*
         <SidebarGroup>
           <SidebarGroupLabel className="text-sm font-semibold text-foreground">
             <TextShimmer
@@ -358,7 +358,7 @@ export function MainSidebar() {
               duration={1.2}
               spread={2}
             >
-              $5000 Weekly Contest
+              $2000 Weekly Contest
             </TextShimmer>
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -391,7 +391,8 @@ export function MainSidebar() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> 
+        */}
 
         {/* Add You section */}
         <SidebarGroup>
