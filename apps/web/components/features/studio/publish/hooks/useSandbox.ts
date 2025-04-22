@@ -4,7 +4,6 @@ import { toast } from "sonner"
 
 interface FileEntry {
   name: string
-  type: "file" | "dir"
   path: string
 }
 
@@ -39,7 +38,7 @@ export function useSandbox() {
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
   const [code, setCode] = useState<string>("")
   const [isInitializing, setIsInitializing] = useState(true)
-  const [isFetchingFiles, setIsFetchingFiles] = useState(false)
+  const [isFetchingTree, setIsFetchingTree] = useState(false)
   const [isFileLoading, setIsFileLoading] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -106,17 +105,27 @@ export function useSandbox() {
 
   // --- File Tree Operations ---
   const fetchFileTree = useCallback(async () => {
-    if (!projectId || isFetchingFiles) return
+    if (!projectId || isFetchingTree) return
 
     console.log(`Fetching file tree for project: ${projectId}`)
-    setIsFetchingFiles(true)
+    setIsFetchingTree(true)
     try {
-      const fileEntries = await fetchJSON(`/projects/${projectId}/files`)
-      const mappedEntries = fileEntries.map((entry: any) => ({
-        name: entry.name,
-        type: entry.type,
-        path: entry.path.replace(/^\/home\/user/, ""),
-      }))
+      const filePaths: string[] = await fetchJSON(
+        `/projects/${projectId}/files`,
+      )
+
+      const mappedEntries: FileEntry[] = filePaths
+        .map((path) => {
+          const cleanPath = path.replace(/^\//, "")
+          const segments = cleanPath.split("/").filter(Boolean)
+          const name = segments[segments.length - 1] || cleanPath
+          return {
+            name: name,
+            path: cleanPath,
+          }
+        })
+        .sort((a, b) => a.path.localeCompare(b.path))
+
       setFiles(mappedEntries)
       console.log("File tree fetched successfully.")
     } catch (error) {
@@ -124,9 +133,9 @@ export function useSandbox() {
       toast.error(`Failed to load file tree: ${error}`)
       setFiles([])
     } finally {
-      setIsFetchingFiles(false)
+      setIsFetchingTree(false)
     }
-  }, [projectId, isFetchingFiles])
+  }, [projectId])
 
   // Fetches the initial file tree once the project ID is available.
   useEffect(() => {
@@ -135,43 +144,17 @@ export function useSandbox() {
     }
   }, [projectId, isInitializing, fetchFileTree])
 
-  const fetchDirectoryContent = useCallback(
-    async (dirPath: string): Promise<FileEntry[]> => {
-      if (!projectId) return []
-      const cleanPath = dirPath.replace(/^\/home\/user/, "")
-      console.log(`Fetching directory content: ${cleanPath}`)
-      try {
-        const dirEntries = await fetchJSON(
-          `/projects/${projectId}/dir?path=${encodeURIComponent(cleanPath)}`,
-        )
-        console.log(`Directory content fetched for: ${cleanPath}`)
-        return dirEntries.map((entry: any) => ({
-          name: entry.name,
-          type: entry.type,
-          path: entry.path.replace(/^\/home\/user/, ""),
-        }))
-      } catch (error) {
-        console.error(
-          `Failed to load directory content for ${cleanPath}:`,
-          error,
-        )
-        toast.error(`Failed to load directory: ${dirPath.split("/").pop()}`)
-        return []
-      }
-    },
-    [projectId],
-  )
-
   // --- File Content Operations ---
   const loadFileContent = useCallback(
     async (entry: FileEntry) => {
-      if (!projectId || entry.type !== "file") {
+      const isFile = entry.path.includes(".") || !entry.path.endsWith("/")
+      if (!projectId || !isFile) {
         setCode("")
         setIsFileLoading(false)
         return
       }
 
-      const cleanPath = entry.path.replace(/^\/home\/user/, "")
+      const cleanPath = entry.path.replace(/^\//, "")
       console.log(`Loading file content: ${cleanPath}`)
       setIsFileLoading(true)
       try {
@@ -200,7 +183,9 @@ export function useSandbox() {
   // Loads file content when a file entry is selected.
   useEffect(() => {
     if (selectedEntry) {
-      if (selectedEntry.type === "file") {
+      const isFile =
+        selectedEntry.path.includes(".") || !selectedEntry.path.endsWith("/")
+      if (isFile) {
         loadFileContent(selectedEntry)
       } else {
         setCode("")
@@ -216,7 +201,7 @@ export function useSandbox() {
   const saveFileContent = useCallback(
     async (filePath: string, content: string) => {
       if (!projectId || !filePath) return
-      const cleanPath = filePath.replace(/^\/home\/user/, "")
+      const cleanPath = filePath.replace(/^\//, "")
       console.log(`Saving file content: ${cleanPath}`)
       try {
         await fetchJSON(
@@ -240,7 +225,10 @@ export function useSandbox() {
   const handleCodeChange = useCallback(
     (value: string) => {
       setCode(value)
-      if (!selectedEntry || selectedEntry.type !== "file") return
+      if (!selectedEntry) return
+      const isFile =
+        selectedEntry.path.includes(".") || !selectedEntry.path.endsWith("/")
+      if (!isFile) return
 
       if (debounceRef.current) clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(() => {
@@ -254,9 +242,7 @@ export function useSandbox() {
   const createNewFile = useCallback(
     async (newFilePath: string) => {
       if (!projectId || !newFilePath) return false
-      const cleanPath = newFilePath.startsWith("/")
-        ? newFilePath
-        : `/${newFilePath}`
+      const cleanPath = newFilePath.replace(/^\//, "")
 
       console.log(`Creating new file: ${cleanPath}`)
       try {
@@ -284,7 +270,7 @@ export function useSandbox() {
   const deleteFile = useCallback(
     async (filePath: string) => {
       if (!projectId) return
-      const cleanPath = filePath.replace(/^\/home\/user/, "")
+      const cleanPath = filePath.replace(/^\//, "")
       console.log(`Deleting file: ${cleanPath}`)
       try {
         await fetchJSON(
@@ -315,14 +301,13 @@ export function useSandbox() {
     selectedEntry,
     code,
     isInitializing,
-    isFetchingFiles,
+    isFetchingTree,
     isFileLoading,
     setSelectedEntry,
     handleCodeChange,
     createNewFile,
     deleteFile,
     refreshFileTree: fetchFileTree,
-    fetchDirectoryContent,
   }
 }
 

@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState, useRef, Suspense } from "react"
+import { useEffect, useState, useRef, Suspense, useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Sandpack } from "@codesandbox/sandpack-react"
+// Sandpack removed as it's not used directly with the new hook/approach
+// import { Sandpack } from "@codesandbox/sandpack-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -16,6 +17,8 @@ import {
   RefreshCwIcon,
   TrashIcon,
   Loader2Icon,
+  ChevronDownIcon,
+  ChevronRightIcon,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -24,26 +27,103 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
+import {
+  useSandbox,
+  UseSandboxReturn,
+} from "@/components/features/studio/publish/hooks/useSandbox"
 
-// Backend API URL
-const API_BASE_URL = "http://localhost:8080" //
+// FileEntry from hook - might need adjustment based on final hook structure
+type FileEntry = UseSandboxReturn["files"][number]
 
-// Types
-interface FileEntry {
-  name: string
-  type: "file" | "dir"
-  path: string
-  children?: FileEntry[]
+// Type for the nested structure used by FileTree
+interface TreeNode extends FileEntry {
+  children?: TreeNode[]
+  type: "file" | "dir" // Add type explicitly for rendering
 }
 
-// Utility
-const fetchJSON = async (url: string, opts: RequestInit = {}) => {
-  const fullUrl = url.startsWith("http") ? url : `${API_BASE_URL}${url}`
-  const res = await fetch(fullUrl, opts)
-  if (!res.ok) throw new Error(await res.text())
-  return res.json()
+// Utility to build nested tree from flat paths
+const buildTree = (entries: FileEntry[]): TreeNode[] => {
+  const tree: TreeNode[] = []
+  const map: { [key: string]: TreeNode } = {} // Map paths to nodes for quick lookup
+
+  // Sort entries to ensure parents are processed before children
+  const sortedEntries = [...entries].sort((a, b) =>
+    a.path.localeCompare(b.path),
+  )
+
+  sortedEntries.forEach((entry) => {
+    const pathSegments = entry.path.split("/").filter(Boolean)
+    let currentLevel = map
+    let currentPath = ""
+
+    pathSegments.forEach((segment: string, index: number) => {
+      currentPath = currentPath ? `${currentPath}/${segment}` : `/${segment}` // Construct full path
+      const isLastSegment = index === pathSegments.length - 1
+
+      if (!map[currentPath]) {
+        const newNode: TreeNode = {
+          ...entry, // Spread original entry data (like name from hook)
+          name: segment, // Use segment name for display
+          path: currentPath, // Use the constructed full path
+          type: isLastSegment && entry.path.includes(".") ? "file" : "dir", // Basic type detection
+          children: [],
+        }
+        map[currentPath] = newNode
+
+        // Find parent and add node to its children
+        const parentPathSegments = pathSegments.slice(0, index)
+        const parentFullPath =
+          parentPathSegments.length > 0
+            ? `/${parentPathSegments.join("/")}`
+            : null
+
+        if (parentFullPath && map[parentFullPath]) {
+          if (map[parentFullPath].type === "dir") {
+            if (!map[parentFullPath].children) {
+              map[parentFullPath].children = []
+            }
+            map[parentFullPath].children?.push(newNode)
+          }
+        } else {
+          // If no parent found in map, it's a root node
+          tree.push(newNode)
+        }
+      }
+      // If it's a directory, ensure it has children array
+      if (
+        !isLastSegment &&
+        map[currentPath].type === "dir" &&
+        !map[currentPath].children
+      ) {
+        map[currentPath].children = []
+      }
+    })
+  })
+
+  // Sort children at each level (directories first, then alphabetically)
+  const sortChildren = (nodes: TreeNode[]) => {
+    nodes.sort((a: TreeNode, b: TreeNode) => {
+      // Compare types using non-null assertion
+      if (a!.type === "dir" && b!.type === "file") return -1
+      if (a!.type === "file" && b!.type === "dir") return 1
+
+      // Compare names using non-null assertion
+      return a!.name.localeCompare(b!.name)
+    })
+    nodes.forEach((node) => {
+      // Check if children exist before sorting them - simplified check
+      if (node?.children?.length) {
+        sortChildren(node.children)
+      }
+    })
+  }
+
+  sortChildren(tree)
+  return tree
 }
 
+// Utility Functions (getFileExtension, getMonacoLanguage) remain the same
+// ... (keep existing getFileExtension and getMonacoLanguage)
 const getFileExtension = (filename: string): string => {
   return filename.slice(((filename.lastIndexOf(".") - 1) >>> 0) + 2)
 }
@@ -79,269 +159,45 @@ const getMonacoLanguage = (filename: string) => {
 
 // Main Component Content
 function PublishPageContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [projectId, setProjectId] = useState<string | null>(
-    searchParams.get("projectId"),
-  )
-  const [previewURL, setPreviewURL] = useState<string | null>(null)
-  const [files, setFiles] = useState<FileEntry[]>([])
-  const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
-  const [code, setCode] = useState<string>("")
+  // Use the custom hook
+  const {
+    projectId,
+    previewURL,
+    files, // This is now the flat list from the hook
+    selectedEntry,
+    code,
+    isInitializing,
+    isFetchingTree, // Use the renamed state from the hook
+    isFileLoading,
+    setSelectedEntry,
+    handleCodeChange,
+    createNewFile: hookCreateNewFile,
+    deleteFile: hookDeleteFile,
+    refreshFileTree,
+  } = useSandbox()
+
   const [newFileName, setNewFileName] = useState("")
   const [isCreatingFile, setIsCreatingFile] = useState(false)
-  const [isFetching, setIsFetching] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(true)
-  const [isFileLoading, setIsFileLoading] = useState(false)
-  const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  // Local state for the tree structure derived from flat 'files'
+  const fileTree = useMemo(() => buildTree(files), [files])
 
-  // 1. Bootstrap sandbox or load existing one
-  useEffect(() => {
-    const initializeSandbox = async () => {
-      setIsInitializing(true)
-      const existingProjectId = searchParams.get("projectId")
-
-      if (existingProjectId) {
-        try {
-          // Attempt to load existing project details
-          const { previewURL } = await fetchJSON(
-            `/projects/${existingProjectId}`,
-          )
-          setProjectId(existingProjectId)
-          setPreviewURL(previewURL)
-          toast.info(`Restored sandbox: ${existingProjectId}`)
-        } catch (error) {
-          console.error("Failed to load existing sandbox:", error)
-          toast.warning("Failed to load existing sandbox, creating a new one.")
-          // If loading fails, create a new project
-          await createNewSandbox()
-        }
-      } else {
-        // Create a new project if no projectId in URL
-        await createNewSandbox()
+  // Handle file creation input
+  const handleCreateFile = async () => {
+    if (!newFileName) return
+    setIsCreatingFile(true)
+    const createdPath = await hookCreateNewFile(newFileName)
+    if (createdPath) {
+      // Find the newly created entry in the updated flat list
+      // Note: refreshFileTree should update 'files', triggering re-render
+      // We might need a brief delay or check if 'files' includes the new path
+      // before trying to select it.
+      const newEntry = files.find((f: FileEntry) => f.path === createdPath)
+      if (newEntry) {
+        setSelectedEntry(newEntry) // Select the new file
       }
-      setIsInitializing(false)
-    }
-
-    const createNewSandbox = async () => {
-      try {
-        const { projectId: newProjectId, previewURL: newPreviewURL } =
-          await fetchJSON("/projects", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ template: "nextjs-builder" }),
-          })
-        setProjectId(newProjectId)
-        setPreviewURL(newPreviewURL)
-        // Update URL with the new projectId
-        router.push(
-          `${window.location.pathname}?projectId=${newProjectId}`,
-          { scroll: false }, // Use Next.js router for client-side navigation
-        )
-        toast.success("New sandbox created successfully")
-      } catch (error) {
-        console.error("Failed to create sandbox:", error)
-        toast.error("Failed to create sandbox")
-        // Potentially add retry logic or guide user
-      }
-    }
-
-    initializeSandbox()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Run only once on mount
-
-  // 3. Load file tree
-  const fetchFileTree = async () => {
-    if (!projectId) return
-
-    try {
-      setIsFetching(true)
-      const fileEntries = await fetchJSON(`/projects/${projectId}/files`)
-
-      // Map the API response to our FileEntry interface
-      const mappedEntries = fileEntries.map((entry: any) => ({
-        name: entry.name,
-        type: entry.type,
-        // Remove "/home/user" prefix from paths
-        path: entry.path.replace(/^\/home\/user/, ""),
-      }))
-
-      setFiles(mappedEntries)
-    } catch (error) {
-      console.error("Failed to load files:", error)
-      toast.error("Failed to load files")
-    } finally {
-      setIsFetching(false)
-    }
-  }
-
-  // Fetch directory content
-  const fetchDirectoryContent = async (
-    dirPath: string,
-  ): Promise<FileEntry[]> => {
-    if (!projectId) return []
-    try {
-      const dirEntries = await fetchJSON(
-        `/projects/${projectId}/dir?path=${encodeURIComponent(dirPath)}`,
-      )
-      // Map the API response to our FileEntry interface
-      return dirEntries.map((entry: any) => ({
-        name: entry.name,
-        type: entry.type,
-        // Remove "/home/user" prefix from paths
-        path: entry.path.replace(/^\/home\/user/, ""),
-      }))
-    } catch (error) {
-      console.error(`Failed to load directory content for ${dirPath}:`, error)
-      toast.error(`Failed to load directory content for ${dirPath}`)
-      return [] // Return empty array on error
-    }
-  }
-
-  useEffect(() => {
-    if (projectId) {
-      fetchFileTree()
-    }
-  }, [projectId])
-
-  // 4. Load content based on selection
-  useEffect(() => {
-    // Clear editor if nothing is selected
-    if (!projectId || !selectedEntry) {
-      setCode("")
-      setIsFileLoading(false)
-      return
-    }
-
-    // Load content only if it's a file
-    if (selectedEntry.type === "file") {
-      loadFileContent(selectedEntry.path)
-    } else {
-      // Directory selected, clear editor
-      setCode("")
-      setIsFileLoading(false)
-    }
-    // Depend only on projectId and the selected entry object
-  }, [projectId, selectedEntry])
-
-  const loadFileContent = (filePath: string) => {
-    if (!projectId) return // Added check
-
-    // Ensure path is properly formatted without /home/user prefix
-    const cleanPath = filePath.replace(/^\/home\/user/, "")
-
-    try {
-      setIsFileLoading(true)
-      fetch(
-        `${API_BASE_URL}/projects/${projectId}/file?path=${encodeURIComponent(cleanPath)}`,
-      )
-        .then((res) => res.text())
-        .then(setCode)
-        .catch((error) => {
-          console.error(`Failed to load file content for ${cleanPath}:`, error)
-          toast.error("Failed to load file content")
-          setCode("") // Clear code on error
-        })
-        .finally(() => setIsFileLoading(false))
-    } catch (error) {
-      console.error("Error in loadFileContent:", error) // Log sync errors too
-      toast.error("Error initiating file load")
-      setCode("")
-      setIsFileLoading(false)
-    }
-  }
-
-  // 5. Send code changes (debounced)
-  const saveFileContent = async (filePath: string, content: string) => {
-    if (!projectId || !filePath) return
-
-    try {
-      const cleanPath = filePath.replace(/^\/home\/user/, "")
-      await fetchJSON(
-        `/projects/${projectId}/file?path=${encodeURIComponent(cleanPath)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
-        },
-      )
-    } catch (error) {
-      console.error(`Failed to save file ${filePath}:`, error)
-      toast.error("Failed to save file changes")
-    }
-  }
-
-  const handleCodeChange = (value: string) => {
-    setCode(value)
-    if (!selectedEntry || selectedEntry.type !== "file") return
-
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(
-      () => saveFileContent(selectedEntry.path, value),
-      800,
-    )
-  }
-
-  // 6. Create new file
-  const createNewFile = async () => {
-    if (!projectId || !newFileName) return
-
-    // Make sure the path is properly formatted
-    const newFilePath = newFileName.startsWith("/")
-      ? newFileName
-      : `/${newFileName}`
-
-    try {
-      await fetchJSON(
-        `/projects/${projectId}/file?path=${encodeURIComponent(newFilePath)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: "" }),
-        },
-      )
-
       setNewFileName("")
-      setIsCreatingFile(false)
-      toast.success(`Created ${newFileName}`)
-
-      // Refresh file tree and select the new file
-      await fetchFileTree()
-      const newlyCreatedEntry = files.find((f) => f.path === newFilePath)
-      setSelectedEntry(newlyCreatedEntry || null)
-    } catch (error) {
-      console.error(`Failed to create file ${newFilePath}:`, error)
-      toast.error("Failed to create file")
     }
-  }
-
-  // 7. Delete file
-  const deleteFile = async (filePath: string) => {
-    if (!projectId) return
-
-    // Ensure the path is properly formatted (without /home/user prefix)
-    const cleanPath = filePath.replace(/^\/home\/user/, "")
-
-    try {
-      await fetchJSON(
-        `/projects/${projectId}/file?path=${encodeURIComponent(cleanPath)}`,
-        {
-          method: "DELETE",
-        },
-      )
-
-      // Reset selection if the deleted file was selected
-      if (selectedEntry?.path === filePath) {
-        setSelectedEntry(null)
-        setCode("")
-      }
-
-      toast.success(`Deleted ${filePath.split("/").pop() || filePath}`) // Show just filename in toast
-      fetchFileTree() // Refresh file tree immediately
-    } catch (error) {
-      console.error(`Failed to delete file ${cleanPath}:`, error)
-      toast.error("Failed to delete file")
-    }
+    setIsCreatingFile(false) // Ensure this resets even on failure
   }
 
   if (isInitializing) {
@@ -355,6 +211,15 @@ function PublishPageContent() {
     )
   }
 
+  // Determine language for Monaco based on selectedEntry path
+  const editorLanguage = selectedEntry?.path
+    ? getMonacoLanguage(selectedEntry.path)
+    : "plaintext"
+  // Determine if the selected entry is considered a file (for editor display)
+  const isSelectedFile = selectedEntry?.path
+    ? selectedEntry.path.includes(".") || !selectedEntry.path.endsWith("/")
+    : false
+
   return (
     <div className="h-screen w-full flex flex-col">
       {/* Header */}
@@ -367,7 +232,7 @@ function PublishPageContent() {
         )}
         <Button
           size="sm"
-          onClick={() => window.location.reload()}
+          onClick={() => window.location.reload()} // Keep simple reload for now
           className="ml-auto"
         >
           Reset
@@ -385,18 +250,18 @@ function PublishPageContent() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => setIsCreatingFile(true)}
-                  disabled={isFetching}
+                  onClick={() => setIsCreatingFile(true)} // Toggle input visibility
+                  disabled={isFetchingTree} // Use hook state
                 >
                   <PlusIcon className="h-4 w-4" />
                 </Button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={fetchFileTree}
-                  disabled={isFetching}
+                  onClick={refreshFileTree} // Use hook function
+                  disabled={isFetchingTree} // Use hook state
                 >
-                  {isFetching ? (
+                  {isFetchingTree ? (
                     <Loader2Icon className="h-4 w-4 animate-spin" />
                   ) : (
                     <RefreshCwIcon className="h-4 w-4" />
@@ -409,11 +274,11 @@ function PublishPageContent() {
               <div className="p-2 border-b">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="filename.js"
+                    placeholder="path/filename.js" // Update placeholder
                     value={newFileName}
                     onChange={(e) => setNewFileName(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") createNewFile()
+                      if (e.key === "Enter") handleCreateFile()
                       if (e.key === "Escape") {
                         setIsCreatingFile(false)
                         setNewFileName("")
@@ -423,23 +288,27 @@ function PublishPageContent() {
                   />
                   <Button
                     size="sm"
-                    onClick={createNewFile}
-                    disabled={!newFileName}
+                    onClick={handleCreateFile}
+                    disabled={!newFileName || isCreatingFile}
                   >
-                    Create
+                    {isCreatingFile ? (
+                      <Loader2Icon className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Create"
+                    )}
                   </Button>
                 </div>
               </div>
             )}
 
             <CardContent className="p-0 overflow-y-auto flex-1">
+              {/* Pass the generated tree and use hook functions */}
               <FileTree
-                entries={files}
-                onSelect={setSelectedEntry}
+                treeNodes={fileTree}
+                onSelect={setSelectedEntry} // Use hook setter
                 selectedPath={selectedEntry?.path || null}
-                onDelete={deleteFile}
-                isLoading={isFetching}
-                fetchDirectoryContent={fetchDirectoryContent}
+                onDelete={hookDeleteFile} // Use hook delete function
+                isLoading={isFetchingTree} // Use hook loading state
               />
             </CardContent>
           </Card>
@@ -459,10 +328,11 @@ function PublishPageContent() {
                 <div className="h-full flex items-center justify-center">
                   <Loader2Icon className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : selectedEntry && selectedEntry.type === "file" ? (
+              ) : // Use derived state to check if it's a file
+              isSelectedFile ? (
                 <Editor
                   height="100%"
-                  language={getMonacoLanguage(selectedEntry.path)}
+                  language={editorLanguage}
                   value={code}
                   onChange={(value) => handleCodeChange(value || "")}
                   theme="vs-dark"
@@ -480,8 +350,8 @@ function PublishPageContent() {
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground">
-                  {selectedEntry && selectedEntry.type === "dir"
-                    ? `Directory: ${selectedEntry.path || selectedEntry.name}`
+                  {selectedEntry
+                    ? `Directory: ${selectedEntry.path}` // Show path for directories
                     : "Select a file to start editing"}
                 </div>
               )}
@@ -491,6 +361,7 @@ function PublishPageContent() {
                 <iframe
                   src={previewURL}
                   className="w-full h-full border rounded"
+                  title="Sandbox Preview"
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -514,50 +385,101 @@ export default function PublishPage() {
   )
 }
 
-// FileTree Component
+// FileTree Component - Reworked for nested structure
 function FileTree({
-  entries,
+  treeNodes, // Now receives the pre-built nested tree
   onSelect,
   selectedPath,
   onDelete,
   isLoading,
-  fetchDirectoryContent,
 }: {
-  entries: FileEntry[]
-  onSelect: (entry: FileEntry) => void
+  treeNodes: TreeNode[]
+  onSelect: (entry: FileEntry) => void // onSelect expects the original flat FileEntry
   selectedPath: string | null
   onDelete: (filePath: string) => void
   isLoading: boolean
-  fetchDirectoryContent: (dirPath: string) => Promise<FileEntry[]>
 }) {
-  const [expandedDirs, setExpandedDirs] = useState<Record<string, FileEntry[]>>(
-    {},
-  )
-  const [loadingDirs, setLoadingDirs] = useState<Record<string, boolean>>({})
+  const [expandedDirs, setExpandedDirs] = useState<Record<string, boolean>>({})
 
-  // Call onSelect with the full entry when a file is clicked
-  const handleFileClick = (entry: FileEntry) => {
-    onSelect(entry)
+  const toggleDir = (path: string) => {
+    setExpandedDirs((prev) => ({ ...prev, [path]: !prev[path] }))
   }
 
-  // Directory clicks load content but don't trigger onSelect for the editor pane
-  const handleDirClick = async (entry: FileEntry, e: React.MouseEvent) => {
-    if (!expandedDirs[entry.path] || e.ctrlKey) {
-      try {
-        setLoadingDirs((prev) => ({ ...prev, [entry.path]: true }))
-        const dirContents = await fetchDirectoryContent(entry.path) // Use prop
-        setExpandedDirs((prev) => ({ ...prev, [entry.path]: dirContents }))
-      } catch (error) {
-        // Error is already handled and toasted in the passed function
-        // console.error(`Failed to load contents of ${entry.path}:`, error) // Optional: log again here if needed
-        toast.error(`UI Error: Could not display contents for ${entry.name}`) // Add UI specific error toast
-      } finally {
-        setLoadingDirs((prev) => ({ ...prev, [entry.path]: false }))
-      }
+  // Recursive function to render nodes
+  const renderNode = (node: TreeNode, level: number) => {
+    const isExpanded = expandedDirs[node.path]
+
+    if (node.type === "dir") {
+      return (
+        <li key={node.path} className={`py-0.5 ${level > 0 ? "ml-4" : ""}`}>
+          <div className="flex items-center group">
+            <button
+              className={`flex items-center w-full text-left px-2 py-1 hover:bg-muted rounded truncate ${
+                selectedPath === node.path ? "bg-accent font-medium" : ""
+              }`}
+              onClick={() => toggleDir(node.path)}
+              title={node.path}
+            >
+              {isExpanded ? (
+                <ChevronDownIcon className="h-4 w-4 mr-1 flex-shrink-0" />
+              ) : (
+                <ChevronRightIcon className="h-4 w-4 mr-1 flex-shrink-0" />
+              )}
+              <FolderIcon className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
+              <span className="font-medium truncate">{node.name}</span>
+            </button>
+            {/* Optional: Add delete for folders if needed */}
+            {/* <DropdownMenu> ... </DropdownMenu> */}
+          </div>
+          {isExpanded && node.children && (
+            <ul className="text-sm">
+              {node.children.map((child) => renderNode(child, level + 1))}
+            </ul>
+          )}
+        </li>
+      )
+    } else {
+      // File node
+      return (
+        <li key={node.path} className={`py-0.5 ${level > 0 ? "ml-4" : ""}`}>
+          <div className="flex items-center group">
+            <button
+              className={`flex items-center w-full text-left px-2 py-1 hover:bg-muted rounded truncate ${
+                selectedPath === node.path ? "bg-accent font-medium" : ""
+              }`}
+              // Pass the required FileEntry fields from the TreeNode
+              onClick={() => onSelect({ name: node.name, path: node.path })}
+              title={node.path}
+            >
+              <FileIcon className="h-4 w-4 mr-1 text-gray-500 flex-shrink-0" />
+              {node.name}
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-1 flex-shrink-0"
+                >
+                  <TrashIcon className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => onDelete(node.path)}
+                >
+                  Delete file
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </li>
+      )
     }
   }
 
-  if (isLoading && entries.length === 0) {
+  if (isLoading && treeNodes.length === 0) {
     return (
       <div className="flex justify-center items-center py-8">
         <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -565,95 +487,12 @@ function FileTree({
     )
   }
 
-  const renderEntries = (items: FileEntry[], currentLevel = 0) => (
-    // Added currentLevel for potential indentation styling if needed later
-    <ul className={`text-sm py-1 ${currentLevel > 0 ? "pl-4" : ""}`}>
-      {items.map((entry) => (
-        <li key={entry.path} className="py-0.5">
-          {entry.type === "dir" ? (
-            <details className="group" open={!!expandedDirs[entry.path]}>
-              {" "}
-              {/* Keep details open if loaded */}
-              <summary
-                className={`flex items-center px-2 py-1 cursor-pointer hover:bg-muted rounded list-none ${
-                  selectedPath === entry.path ? "bg-accent" : "" // Highlight selected dir summary
-                }`}
-                onClick={(e) => {
-                  e.preventDefault() // Prevent default details toggle if needed, handle via state?
-                  handleDirClick(entry, e)
-                  // Optionally select the directory itself for context, if desired:
-                  // onSelect(entry)
-                }}
-              >
-                <FolderIcon className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
-                <span className="font-medium truncate" title={entry.name}>
-                  {entry.name}
-                </span>
-                {loadingDirs[entry.path] && (
-                  <Loader2Icon className="h-3 w-3 ml-auto animate-spin flex-shrink-0" />
-                )}
-              </summary>
-              {/* Render contents only if loaded */}
-              {expandedDirs[entry.path] && (
-                <div className="mt-1">
-                  {(() => {
-                    const content = expandedDirs[entry.path] // Assign to variable
-                    if (content && content.length > 0) {
-                      return renderEntries(content, currentLevel + 1)
-                    } else {
-                      return (
-                        <div className="text-xs text-muted-foreground px-2 py-1 pl-6">
-                          Empty directory
-                        </div>
-                      )
-                    }
-                  })()}
-                </div>
-              )}
-            </details>
-          ) : (
-            <div className="flex items-center group">
-              <button
-                className={`flex items-center w-full text-left px-2 py-1 hover:bg-muted rounded truncate ${
-                  selectedPath === entry.path
-                    ? "bg-accent font-medium" // Use accent for selection
-                    : ""
-                }`}
-                onClick={() => handleFileClick(entry)}
-                title={entry.path}
-              >
-                <FileIcon className="h-4 w-4 mr-1 text-gray-500 flex-shrink-0" />
-                {entry.name}
-              </button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-                  >
-                    <TrashIcon className="h-3 w-3 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => onDelete(entry.path)}
-                  >
-                    Delete file
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-        </li>
-      ))}
-      {/* Don't show "No files found" for subdirectories if they are just empty */}
-      {items.length === 0 && currentLevel === 0 && !isLoading && (
+  return (
+    <ul className="text-sm py-1">
+      {treeNodes.map((node) => renderNode(node, 0))}
+      {treeNodes.length === 0 && !isLoading && (
         <li className="px-2 text-muted-foreground">No files found</li>
       )}
     </ul>
   )
-
-  return renderEntries(entries)
 }
