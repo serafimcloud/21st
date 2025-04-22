@@ -19,7 +19,8 @@ interface Round {
   week_number: number
   start_at: string
   end_at: string
-  seasonal_tag_id: string | null
+  seasonal_tag_id: number | null
+  created_at: string
 }
 
 interface Tag {
@@ -65,10 +66,12 @@ async function getCurrentRoundWithTag(): Promise<{
       .eq("id", round.seasonal_tag_id)
       .single()
 
-    seasonalTag = tag ? {
-      id: tag.id.toString(), // Convert number to string to match Tag interface
-      name: tag.name
-    } : null
+    seasonalTag = tag
+      ? {
+          id: tag.id.toString(), // Convert number to string to match Tag interface
+          name: tag.name,
+        }
+      : null
   }
 
   return { round, seasonalTag }

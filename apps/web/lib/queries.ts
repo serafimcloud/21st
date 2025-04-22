@@ -30,6 +30,7 @@ import { PurchaseComponentError } from "@/app/api/components/purchase/route"
 import { useAuth } from "@clerk/nextjs"
 import { categories } from "@/lib/navigation"
 import { toast } from "react-hot-toast"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
 
 export const componentReadableDbFields = `
   *,
@@ -1146,74 +1147,145 @@ export function useToggleVote(roundId: number | null) {
   })
 }
 
-// Update getRoundSubmissions to include vote information
+type ComponentHuntVote = {
+  component_id: number
+}
+
+type ComponentHuntLeaderboardRow = {
+  component_id: number | null
+  name: string | null
+  preview_url: string | null
+  description: string | null
+  final_score: number | null
+  global_rank: number | null
+  category_rank: number | null
+  category: string | null
+  views: number | null
+  votes: number | null
+  installs: number | null
+}
+
 export async function getRoundSubmissions(
   supabase: SupabaseClient<Database>,
   roundId: number,
+  userId: string | null,
 ) {
-  console.log("[getRoundSubmissions] Fetching submissions for round", roundId)
-  if (!roundId) return []
-
-  // ① глобальный
-  console.log("[getRoundSubmissions] Fetching global leaderboard...")
-  const { data: globalRows, error: gErr } = await supabase
-    .from("component_hunt_global_leaderboard")
+  const { data: submissions } = await supabase
+    .from("component_hunt_leaderboard")
     .select(
-      "component_id,name,preview_url,description,final_score,global_rank,has_voted,votes_count",
+      `
+      component_id,
+      name,
+      preview_url,
+      description,
+      final_score,
+      global_rank,
+      category_rank,
+      category,
+      views,
+      votes,
+      installs,
+      component:components!component_id (
+        id,
+        name,
+        description,
+        preview_url,
+        website_url,
+        repository_url,
+        component_slug,
+        license,
+        is_private,
+        is_disabled,
+        downloads_count,
+        views_count,
+        likes_count,
+        created_at,
+        updated_at,
+        user:users!user_id (
+          id,
+          username,
+          display_username,
+          avatar_url,
+          email
+        ),
+        tags:component_tags (
+          tags (
+            id,
+            name,
+            slug
+          )
+        )
+      )
+    `,
     )
     .eq("round_id", roundId)
+    .order("final_score", { ascending: false })
+    .limit(100)
 
-  if (gErr) {
-    console.error("[getRoundSubmissions] Global leaderboard error:", gErr)
-    throw gErr
-  }
+  if (!submissions) return []
 
-  // ② категорийные
-  console.log("[getRoundSubmissions] Fetching category leaderboard...")
-  const { data: catRows, error: cErr } = await supabase
-    .from("component_hunt_category_leaderboard")
-    .select(
-      "component_id,name,preview_url,description,final_score,category,category_rank,has_voted,votes_count",
+  // Get user votes if logged in
+  let userVotes: Record<number, boolean> = {}
+  if (userId) {
+    const { data: votes } = await supabase
+      .from("component_hunt_votes")
+      .select("component_id")
+      .eq("round_id", roundId)
+      .eq("user_id", userId)
+
+    userVotes = (votes || []).reduce(
+      (acc: Record<number, boolean>, vote: ComponentHuntVote) => {
+        acc[vote.component_id] = true
+        return acc
+      },
+      {} as Record<number, boolean>,
     )
-    .eq("round_id", roundId)
-
-  if (cErr) {
-    console.error("[getRoundSubmissions] Category leaderboard error:", cErr)
-    throw cErr
   }
 
-  // ③ объединяем и мапим к общему типу
-  const globalSubmissions = (globalRows || []).map((r) => ({
-    component_id: r.component_id || 0,
-    name: r.name || "",
-    preview_url: r.preview_url,
-    description: r.description,
-    category: "global",
-    final_score: r.final_score || 0,
-    rank: r.global_rank || 0,
-    has_voted: r.has_voted || false,
-    votes_count: r.votes_count || 0,
-  }))
-
-  const categorySubmissions = (catRows || []).map((r) => ({
-    component_id: r.component_id || 0,
-    name: r.name || "",
-    preview_url: r.preview_url,
-    description: r.description,
-    category: r.category as Submission["category"],
-    final_score: r.final_score || 0,
-    rank: r.category_rank || 0,
-    has_voted: r.has_voted || false,
-    votes_count: r.votes_count || 0,
-  }))
-
-  const allSubmissions = [...globalSubmissions, ...categorySubmissions]
-  console.log(
-    "[getRoundSubmissions] Found",
-    allSubmissions.length,
-    "total submissions",
+  // Map to expected format with full component data
+  return submissions.map(
+    (submission: ComponentHuntLeaderboardRow & { component: any }) => ({
+      id: submission.component_id, // Demo ID
+      component_id: submission.component_id,
+      name: submission.name || "",
+      preview_url: submission.preview_url,
+      description: submission.description,
+      demo_slug: "default", // Contest submissions always use default demo
+      user: submission.component?.user,
+      user_id: submission.component?.user?.id,
+      created_at: submission.component?.created_at,
+      updated_at: submission.component?.updated_at,
+      view_count: submission.views || 0,
+      bookmarks_count: submission.votes || 0,
+      demo_code: "",
+      demo_dependencies: "",
+      demo_direct_registry_dependencies: {},
+      compiled_css: "",
+      video_url: null,
+      embedding: null,
+      embedding_oai: null,
+      fts: null,
+      pro_preview_image_url: null,
+      // Contest specific fields
+      final_score: submission.final_score || 0,
+      global_rank: submission.global_rank,
+      category_rank: submission.category_rank,
+      category: submission.category || "global",
+      has_voted: userVotes[submission.component_id || 0] || false,
+      votes_count: submission.votes || 0,
+      views_count: submission.views || 0,
+      downloads_count: submission.installs || 0,
+      // Component data
+      component: submission.component
+        ? {
+            ...submission.component,
+            tags: submission.component.tags?.map((t: any) => t.tags) || [],
+            user: submission.component.user,
+          }
+        : null,
+      tags: submission.component?.tags?.map((t: any) => t.tags) || [],
+    }),
   )
-  return allSubmissions
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1229,9 +1301,12 @@ export function useContestRounds() {
 
 export function useRoundSubmissions(roundId: number | null) {
   const supabase = useClerkSupabaseClient()
+  const { user } = useUser()
+
   return useQuery({
     queryKey: ["component-hunt-submissions", roundId],
-    queryFn: () => (roundId ? getRoundSubmissions(supabase, roundId) : []),
+    queryFn: () =>
+      roundId ? getRoundSubmissions(supabase, roundId, user?.id ?? null) : [],
     enabled: !!roundId,
   })
 }

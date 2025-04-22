@@ -8,19 +8,21 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, ThumbsUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
+import { ComponentPreviewDialog } from "@/components/features/component-page/preview-dialog"
+import { DemoWithComponent } from "@/types/global"
 
 export type Category = "global" | "marketing" | "ui" | "seasonal"
 
-export type LeaderboardRow = {
-  component_id: number
-  name: string
-  preview_url: string | null
-  description: string | null
-  final_score: number
+export type LeaderboardRow = DemoWithComponent & {
   global_rank?: number | null
   category_rank?: number | null
   has_voted?: boolean
   votes_count?: number
+  name: string
+  description: string | null
+  final_score: number
+  component_id: number
 }
 
 interface LeaderboardListProps {
@@ -38,6 +40,11 @@ export function LeaderboardList({
   onVote,
   isVoting,
 }: LeaderboardListProps) {
+  const [selectedDemo, setSelectedDemo] = useState<DemoWithComponent | null>(
+    null,
+  )
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -55,40 +62,36 @@ export function LeaderboardList({
   }
 
   return (
-    <div className="space-y-4">
-      {rows.map((row, idx) => (
-        <motion.div
-          key={`${category}-${row.component_id}-${idx}`}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: idx * 0.05 }}
-        >
-          {console.log("Component Data:", {
-            id: row.component_id,
-            name: row.name,
-            preview: row.preview_url,
-            description: row.description,
-            score: row.final_score,
-            globalRank: row.global_rank,
-            categoryRank: row.category_rank,
-            hasVoted: row.has_voted,
-            votesCount: row.votes_count,
-            category,
-          })}
-          <Card className="group relative bg-background hover:bg-muted/50 transition-all duration-200 px-0 py-2 sm:-mx-2 sm:p-3 shadow-none border-none">
-            <Link href={`/c/${row.component_id}`} className="block">
+    <>
+      <div className="space-y-4">
+        {rows.map((row, idx) => (
+          <motion.div
+            key={`${category}-${row.component_id}-${idx}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: idx * 0.05 }}
+          >
+            <Card
+              className="group relative bg-background hover:bg-muted/50 transition-all duration-200 px-0 py-2 sm:-mx-2 sm:p-3 shadow-none border-none cursor-pointer"
+              onClick={() => {
+                if (row.bundle_url?.html) {
+                  setSelectedDemo(row)
+                  setIsPreviewOpen(true)
+                }
+              }}
+            >
               <div className="flex items-start gap-3">
                 {/* Preview Image */}
                 <Avatar className="h-10 w-10 rounded-lg flex-shrink-0 bg-muted">
                   {row.preview_url ? (
                     <AvatarImage
                       src={row.preview_url}
-                      alt={row.name}
+                      alt={row.name || ""}
                       className="object-cover rounded-lg"
                     />
                   ) : (
                     <AvatarFallback className="text-base font-semibold bg-primary/5 text-primary rounded-lg">
-                      {row.name.slice(0, 2).toUpperCase()}
+                      {(row.name || "").slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   )}
                 </Avatar>
@@ -135,6 +138,7 @@ export function LeaderboardList({
                         )}
                         onClick={(e) => {
                           e.preventDefault()
+                          e.stopPropagation()
                           onVote(row.component_id)
                         }}
                         disabled={isVoting}
@@ -146,10 +150,21 @@ export function LeaderboardList({
                   </div>
                 </div>
               </div>
-            </Link>
-          </Card>
-        </motion.div>
-      ))}
-    </div>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {selectedDemo && (
+        <ComponentPreviewDialog
+          isOpen={isPreviewOpen}
+          onClose={() => {
+            setIsPreviewOpen(false)
+            setSelectedDemo(null)
+          }}
+          demo={selectedDemo}
+        />
+      )}
+    </>
   )
 }
