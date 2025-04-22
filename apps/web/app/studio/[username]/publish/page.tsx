@@ -7,12 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ResizablePanelGroup, ResizablePanel } from "@/components/ui/resizable"
-import CodeMirror from "@uiw/react-codemirror"
-import { javascript } from "@codemirror/lang-javascript"
-import { html } from "@codemirror/lang-html"
-import { css } from "@codemirror/lang-css"
-import { json } from "@codemirror/lang-json"
-import { oneDark } from "@codemirror/theme-one-dark"
+import Editor from "@monaco-editor/react"
 import { Input } from "@/components/ui/input"
 import {
   PlusIcon,
@@ -53,29 +48,32 @@ const getFileExtension = (filename: string): string => {
   return filename.slice(((filename.lastIndexOf(".") - 1) >>> 0) + 2)
 }
 
-const getLanguageExtension = (filename: string) => {
+const getMonacoLanguage = (filename: string) => {
   const ext = getFileExtension(filename).toLowerCase()
 
   switch (ext) {
     case "js":
+      return "javascript"
     case "jsx":
+      return "javascript"
     case "ts":
+      return "typescript"
     case "tsx":
-      return javascript()
+      return "typescript"
     case "html":
     case "htm":
     case "svg":
     case "xml":
-      return html()
+      return "html"
     case "css":
     case "scss":
     case "sass":
     case "less":
-      return css()
+      return "css"
     case "json":
-      return json()
+      return "json"
     default:
-      return javascript()
+      return "javascript"
   }
 }
 
@@ -280,7 +278,7 @@ function PublishPageContent() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(
       () => saveFileContent(selectedEntry.path, value),
-      500,
+      800,
     )
   }
 
@@ -462,22 +460,23 @@ function PublishPageContent() {
                   <Loader2Icon className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : selectedEntry && selectedEntry.type === "file" ? (
-                <CodeMirror
-                  value={code}
+                <Editor
                   height="100%"
-                  extensions={[
-                    selectedEntry
-                      ? getLanguageExtension(selectedEntry.path)
-                      : javascript(),
-                  ]}
-                  theme={oneDark}
-                  onChange={handleCodeChange}
-                  basicSetup={{
-                    lineNumbers: true,
-                    highlightActiveLine: true,
-                    highlightSelectionMatches: true,
-                    autocompletion: true,
+                  language={getMonacoLanguage(selectedEntry.path)}
+                  value={code}
+                  onChange={(value) => handleCodeChange(value || "")}
+                  theme="vs-dark"
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    wordWrap: "on",
+                    automaticLayout: true,
                   }}
+                  loading={
+                    <div className="h-full flex items-center justify-center">
+                      <Loader2Icon className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  }
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground">

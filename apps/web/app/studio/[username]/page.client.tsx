@@ -3,7 +3,6 @@
 import { User, DemoWithComponent } from "@/types/global"
 import { StudioLayout } from "@/components/features/studio/studio-layout"
 import { DemosTable } from "@/components/features/studio/ui/components-table"
-import { ComponentPublishDialog } from "@/components/features/studio/editor-new/component-publish-dialog"
 import { ComponentPublishDialog as ComponentPublishDialogOld } from "@/components/features/studio/editor/component-publish-dialog"
 import Link from "next/link"
 import { ArrowLeft, PlusCircle } from "lucide-react"
@@ -47,7 +46,6 @@ export function StudioUsernameClient({
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Publish Component
               </Button>
-              <ComponentPublishDialog />
               <ComponentPublishDialogOld userId={user.id} />
             </>
           )}

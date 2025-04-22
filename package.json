@@ -26,6 +26,7 @@
     "@codemirror/lang-javascript": "^6.2.3",
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/theme-one-dark": "^6.1.2",
+    "@monaco-editor/react": "^4.6.0",
     "@radix-ui/react-radio-group": "^1.2.3",
     "@tanstack/react-table": "^8.21.2",
     "@uiw/react-codemirror": "^4.23.10",
