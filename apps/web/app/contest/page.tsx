@@ -11,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Trophy } from "lucide-react"
 
 export default function Page(): JSX.Element {
   return (
@@ -20,9 +22,18 @@ export default function Page(): JSX.Element {
         <Header />
         <div className="flex-1 my-[11vh] max-w-[800px] mx-auto w-full px-4">
           <div className="space-y-8 text-foreground">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Contest Overview
-            </h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h1 className="text-3xl font-bold tracking-tight">
+                Contest Overview
+              </h1>
+
+              <Button asChild className="gap-2" size="lg">
+                <Link href="/contest/leaderboard">
+                  <Trophy className="h-4 w-4" />
+                  View Current Leaderboard
+                </Link>
+              </Button>
+            </div>
 
             <section className="space-y-4">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
@@ -199,6 +210,15 @@ export default function Page(): JSX.Element {
                 Overlap allowed: the same component can take multiple prizes
                 (e.g., Global 🥈 + UI 🥇).
               </p>
+
+              <div className="flex justify-center pt-2">
+                <Button asChild variant="outline" className="gap-2">
+                  <Link href="/contest/leaderboard">
+                    <Trophy className="h-4 w-4" />
+                    View Current Leaderboard
+                  </Link>
+                </Button>
+              </div>
             </section>
 
             <div className="h-px bg-border" />
@@ -258,6 +278,38 @@ export default function Page(): JSX.Element {
                 <span className="font-semibold">real-world usage metrics</span>{" "}
                 are combined into a single score to decide the leaderboard.
               </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="rounded-lg border p-4 text-center space-y-2">
+                  <div className="font-medium text-xl">Votes</div>
+                  <p className="text-sm text-muted-foreground">
+                    Direct upvotes from community members
+                  </p>
+                </div>
+
+                <div className="rounded-lg border p-4 text-center space-y-2">
+                  <div className="font-medium text-xl">Installs</div>
+                  <p className="text-sm text-muted-foreground">
+                    Number of times a component has been downloaded
+                  </p>
+                </div>
+
+                <div className="rounded-lg border p-4 text-center space-y-2">
+                  <div className="font-medium text-xl">Views</div>
+                  <p className="text-sm text-muted-foreground">
+                    Traffic to the component's detail page
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-center pt-4">
+                <Button asChild variant="outline" className="gap-2">
+                  <Link href="/contest/leaderboard">
+                    <Trophy className="h-4 w-4" />
+                    See The Leaderboard
+                  </Link>
+                </Button>
+              </div>
             </section>
 
             <section className="space-y-4">

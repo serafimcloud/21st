@@ -4,7 +4,6 @@ import {
   Layers,
   Users,
   Crown,
-  FolderKanban,
   Component,
   Bookmark,
   Group,

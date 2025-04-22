@@ -146,8 +146,8 @@ export function HeroSection() {
               transition={{ delay: 0.6, duration: 0.8 }}
               className="text-center"
             >
-              <p className="text-muted-foreground mb-2">Optimized for</p>
-              <div className="flex flex-col gap-8">
+              <p className="text-muted-foreground mb-4">Optimized for</p>
+              <div className="flex flex-col gap-2">
                 {/* IDE Logos */}
                 <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 md:gap-12 text-foreground max-w-[350px] md:max-w-[800px] mx-auto">
                   <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">

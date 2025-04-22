@@ -29,6 +29,7 @@ import { Json } from "@/types/supabase"
 import { PurchaseComponentError } from "@/app/api/components/purchase/route"
 import { useAuth } from "@clerk/nextjs"
 import { categories } from "@/lib/navigation"
+import { toast } from "react-hot-toast"
 
 export const componentReadableDbFields = `
   *,
@@ -1059,4 +1060,178 @@ export function getTagDemosCount(tagSlug: string): number {
   const allItems = categories.flatMap((category) => category.items)
   const item = allItems.find((item) => item.href === `/s/${tagSlug}`)
   return item?.demosCount ?? 0
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  TYPES
+// ─────────────────────────────────────────────────────────────────────────
+export type Round = {
+  id: number
+  week_number: number
+  start_at: string
+  end_at: string
+  seasonal_tag_id: number | null
+  created_at: string
+}
+
+export type Submission = {
+  component_id: number
+  name: string
+  preview_url: string | null
+  description: string | null
+  category: string // marketing / ui / seasonal / global
+  final_score: number
+  rank: number // rank внутри категории или глобальный
+  has_voted?: boolean // whether current user has voted
+  votes_count?: number // total number of votes
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  ROUNDS
+// ─────────────────────────────────────────────────────────────────────────
+export async function getContestRounds(supabase: SupabaseClient<Database>) {
+  console.log("[getContestRounds] Fetching contest rounds...")
+  const { data, error } = await supabase
+    .from("component_hunt_rounds")
+    .select("*")
+    .order("start_at", { ascending: false })
+
+  if (error) {
+    console.error("[getContestRounds] Error:", error)
+    throw error
+  }
+  console.log("[getContestRounds] Found", data?.length, "rounds")
+  return data as Round[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  VOTING
+// ─────────────────────────────────────────────────────────────────────────
+export function useToggleVote(roundId: number | null) {
+  const supabase = useClerkSupabaseClient()
+  const queryClient = useQueryClient()
+  const { user } = useUser()
+
+  return useMutation({
+    mutationFn: async ({ componentId }: { componentId: number }) => {
+      if (!roundId) throw new Error("No round selected")
+      if (!user) throw new Error("Must be logged in to vote")
+
+      const { data, error } = await supabase.rpc("hunt_toggle_vote", {
+        p_round_id: roundId,
+        p_component_id: componentId,
+      })
+
+      if (error) throw error
+
+      return data as boolean // true if vote was added, false if removed
+    },
+    onSuccess: (added, { componentId }) => {
+      // Show success toast using sonner
+      import("sonner").then(({ toast }) => {
+        toast.success(added ? "Upvoted!" : "Vote removed")
+      })
+
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({
+        queryKey: ["component-hunt-submissions", roundId],
+      })
+    },
+    onError: (error) => {
+      // Show error toast using sonner
+      import("sonner").then(({ toast }) => {
+        toast.error(error.message)
+      })
+    },
+  })
+}
+
+// Update getRoundSubmissions to include vote information
+export async function getRoundSubmissions(
+  supabase: SupabaseClient<Database>,
+  roundId: number,
+) {
+  console.log("[getRoundSubmissions] Fetching submissions for round", roundId)
+  if (!roundId) return []
+
+  // ① глобальный
+  console.log("[getRoundSubmissions] Fetching global leaderboard...")
+  const { data: globalRows, error: gErr } = await supabase
+    .from("component_hunt_global_leaderboard")
+    .select(
+      "component_id,name,preview_url,description,final_score,global_rank,has_voted,votes_count",
+    )
+    .eq("round_id", roundId)
+
+  if (gErr) {
+    console.error("[getRoundSubmissions] Global leaderboard error:", gErr)
+    throw gErr
+  }
+
+  // ② категорийные
+  console.log("[getRoundSubmissions] Fetching category leaderboard...")
+  const { data: catRows, error: cErr } = await supabase
+    .from("component_hunt_category_leaderboard")
+    .select(
+      "component_id,name,preview_url,description,final_score,category,category_rank,has_voted,votes_count",
+    )
+    .eq("round_id", roundId)
+
+  if (cErr) {
+    console.error("[getRoundSubmissions] Category leaderboard error:", cErr)
+    throw cErr
+  }
+
+  // ③ объединяем и мапим к общему типу
+  const globalSubmissions = (globalRows || []).map((r) => ({
+    component_id: r.component_id || 0,
+    name: r.name || "",
+    preview_url: r.preview_url,
+    description: r.description,
+    category: "global",
+    final_score: r.final_score || 0,
+    rank: r.global_rank || 0,
+    has_voted: r.has_voted || false,
+    votes_count: r.votes_count || 0,
+  }))
+
+  const categorySubmissions = (catRows || []).map((r) => ({
+    component_id: r.component_id || 0,
+    name: r.name || "",
+    preview_url: r.preview_url,
+    description: r.description,
+    category: r.category as Submission["category"],
+    final_score: r.final_score || 0,
+    rank: r.category_rank || 0,
+    has_voted: r.has_voted || false,
+    votes_count: r.votes_count || 0,
+  }))
+
+  const allSubmissions = [...globalSubmissions, ...categorySubmissions]
+  console.log(
+    "[getRoundSubmissions] Found",
+    allSubmissions.length,
+    "total submissions",
+  )
+  return allSubmissions
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  REACT‑QUERY HOOKS (не менялись)
+// ─────────────────────────────────────────────────────────────────────────
+export function useContestRounds() {
+  const supabase = useClerkSupabaseClient()
+  return useQuery({
+    queryKey: ["component-hunt-rounds"],
+    queryFn: () => getContestRounds(supabase),
+  })
+}
+
+export function useRoundSubmissions(roundId: number | null) {
+  const supabase = useClerkSupabaseClient()
+  return useQuery({
+    queryKey: ["component-hunt-submissions", roundId],
+    queryFn: () => (roundId ? getRoundSubmissions(supabase, roundId) : []),
+    enabled: !!roundId,
+  })
 }

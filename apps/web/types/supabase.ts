@@ -235,6 +235,13 @@ export type Database = {
             foreignKeyName: "component_analytics_component_id_fkey"
             columns: ["component_id"]
             isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_analytics_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
             referencedRelation: "components"
             referencedColumns: ["id"]
           },
@@ -292,6 +299,13 @@ export type Database = {
             foreignKeyName: "component_dependencies_closure_component_id_fkey"
             columns: ["component_id"]
             isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
             referencedRelation: "components"
             referencedColumns: ["id"]
           },
@@ -313,6 +327,13 @@ export type Database = {
             foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
             columns: ["dependency_component_id"]
             isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
+            columns: ["dependency_component_id"]
+            isOneToOne: false
             referencedRelation: "components"
             referencedColumns: ["id"]
           },
@@ -321,6 +342,289 @@ export type Database = {
             columns: ["dependency_component_id"]
             isOneToOne: false
             referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_hunt_rounds: {
+        Row: {
+          created_at: string | null
+          end_at: string
+          id: number
+          seasonal_tag_id: number | null
+          start_at: string
+          week_number: number
+        }
+        Insert: {
+          created_at?: string | null
+          end_at: string
+          id?: never
+          seasonal_tag_id?: number | null
+          start_at: string
+          week_number: number
+        }
+        Update: {
+          created_at?: string | null
+          end_at?: string
+          id?: never
+          seasonal_tag_id?: number | null
+          start_at?: string
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_hunt_rounds_seasonal_tag_id_fkey"
+            columns: ["seasonal_tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_hunt_scores: {
+        Row: {
+          bonus_percent: number | null
+          category: Database["public"]["Enums"]["component_hunt_category"]
+          category_rank: number | null
+          component_id: number
+          created_at: string | null
+          final_score: number | null
+          global_rank: number | null
+          id: number
+          installs: number | null
+          round_id: number
+          views: number | null
+          votes: number | null
+        }
+        Insert: {
+          bonus_percent?: number | null
+          category: Database["public"]["Enums"]["component_hunt_category"]
+          category_rank?: number | null
+          component_id: number
+          created_at?: string | null
+          final_score?: number | null
+          global_rank?: number | null
+          id?: never
+          installs?: number | null
+          round_id: number
+          views?: number | null
+          votes?: number | null
+        }
+        Update: {
+          bonus_percent?: number | null
+          category?: Database["public"]["Enums"]["component_hunt_category"]
+          category_rank?: number | null
+          component_id?: number
+          created_at?: string | null
+          final_score?: number | null
+          global_rank?: number | null
+          id?: never
+          installs?: number | null
+          round_id?: number
+          views?: number | null
+          votes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_hunt_votes: {
+        Row: {
+          component_id: number
+          id: number
+          round_id: number
+          user_id: string
+          voted_at: string | null
+        }
+        Insert: {
+          component_id: number
+          id?: never
+          round_id: number
+          user_id: string
+          voted_at?: string | null
+        }
+        Update: {
+          component_id?: number
+          id?: never
+          round_id?: number
+          user_id?: string
+          voted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_hunt_votes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_votes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_votes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_votes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_votes_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_votes_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "component_hunt_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_hunt_winners: {
+        Row: {
+          category:
+            | Database["public"]["Enums"]["component_hunt_category"]
+            | null
+          component_id: number
+          created_at: string | null
+          id: number
+          is_global: boolean | null
+          prize_tier: number
+          round_id: number
+        }
+        Insert: {
+          category?:
+            | Database["public"]["Enums"]["component_hunt_category"]
+            | null
+          component_id: number
+          created_at?: string | null
+          id?: never
+          is_global?: boolean | null
+          prize_tier: number
+          round_id: number
+        }
+        Update: {
+          category?:
+            | Database["public"]["Enums"]["component_hunt_category"]
+            | null
+          component_id?: number
+          created_at?: string | null
+          id?: never
+          is_global?: boolean | null
+          prize_tier?: number
+          round_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_hunt_winners_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_winners_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_winners_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_winners_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_winners_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_winners_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
             referencedColumns: ["id"]
           },
         ]
@@ -347,6 +651,13 @@ export type Database = {
             columns: ["component_id"]
             isOneToOne: false
             referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_likes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
             referencedColumns: ["id"]
           },
           {
@@ -398,6 +709,13 @@ export type Database = {
             columns: ["component_id"]
             isOneToOne: false
             referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_tags_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
             referencedColumns: ["id"]
           },
           {
@@ -532,14 +850,28 @@ export type Database = {
             columns: ["hunter_username"]
             isOneToOne: false
             referencedRelation: "component_dependencies_graph_view"
-            referencedColumns: ["source_author_username"]
+            referencedColumns: ["dependency_author_username"]
           },
           {
             foreignKeyName: "components_hunter_username_fkey"
             columns: ["hunter_username"]
             isOneToOne: false
             referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["source_author_username"]
+          },
+          {
+            foreignKeyName: "components_hunter_username_fkey"
+            columns: ["hunter_username"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
             referencedColumns: ["dependency_author_username"]
+          },
+          {
+            foreignKeyName: "components_hunter_username_fkey"
+            columns: ["hunter_username"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["source_author_username"]
           },
           {
             foreignKeyName: "components_hunter_username_fkey"
@@ -605,6 +937,13 @@ export type Database = {
             foreignKeyName: "components_purchases_component_id_fkey"
             columns: ["component_id"]
             isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_purchases_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
             referencedRelation: "components"
             referencedColumns: ["id"]
           },
@@ -660,6 +999,13 @@ export type Database = {
             columns: ["component_id"]
             isOneToOne: false
             referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_to_collections_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
             referencedColumns: ["id"]
           },
           {
@@ -743,8 +1089,8 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
-          bundle_hash?: string | null
-          bundle_html_url?: string | null
+          bundle_hash: string | null
+          bundle_html_url: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -813,6 +1159,13 @@ export type Database = {
             columns: ["component_id"]
             isOneToOne: false
             referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demos_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
             referencedColumns: ["id"]
           },
           {
@@ -1004,6 +1357,13 @@ export type Database = {
             foreignKeyName: "fk_component"
             columns: ["component_id"]
             isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_component"
+            columns: ["component_id"]
+            isOneToOne: false
             referencedRelation: "components"
             referencedColumns: ["id"]
           },
@@ -1078,7 +1438,7 @@ export type Database = {
           price: number | null
           stripe_plan_id: string | null
           type: string | null
-          version: 1 | 2
+          version: number
         }
         Insert: {
           add_usage?: number | null
@@ -1089,7 +1449,7 @@ export type Database = {
           price?: number | null
           stripe_plan_id?: string | null
           type?: string | null
-          version: 1 | 2
+          version?: number
         }
         Update: {
           add_usage?: number | null
@@ -1100,7 +1460,7 @@ export type Database = {
           price?: number | null
           stripe_plan_id?: string | null
           type?: string | null
-          version: 1 | 2
+          version?: number
         }
         Relationships: []
       }
@@ -1219,6 +1579,13 @@ export type Database = {
             columns: ["component_id"]
             isOneToOne: true
             referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: true
+            referencedRelation: "component_dependencies_graph_view_v2"
             referencedColumns: ["id"]
           },
           {
@@ -1603,6 +1970,13 @@ export type Database = {
             foreignKeyName: "component_dependencies_closure_component_id_fkey"
             columns: ["component_id"]
             isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
             referencedRelation: "components"
             referencedColumns: ["id"]
           },
@@ -1618,6 +1992,13 @@ export type Database = {
             columns: ["dependency_component_id"]
             isOneToOne: false
             referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
+            columns: ["dependency_component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
             referencedColumns: ["id"]
           },
           {
@@ -1646,6 +2027,307 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_dependencies_graph_view_v2: {
+        Row: {
+          code: string | null
+          component_id: number | null
+          component_names: Json | null
+          component_slug: string | null
+          created_at: string | null
+          demo_code: string | null
+          demo_dependencies: Json | null
+          demo_direct_registry_dependencies: Json | null
+          dependencies: Json | null
+          dependency_author_display_username: string | null
+          dependency_author_username: string | null
+          dependency_component_id: number | null
+          depth: number | null
+          description: string | null
+          direct_registry_dependencies: Json | null
+          downloads_count: number | null
+          fts: unknown | null
+          global_css_extension: string | null
+          id: number | null
+          is_demo_dependency: boolean | null
+          is_public: boolean | null
+          license: string | null
+          likes_count: number | null
+          name: string | null
+          preview_url: string | null
+          registry: string | null
+          source_author_display_username: string | null
+          source_author_username: string | null
+          source_component_slug: string | null
+          tailwind_config_extension: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_dependencies_closure_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
+            columns: ["dependency_component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
+            columns: ["dependency_component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
+            columns: ["dependency_component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
+            columns: ["dependency_component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "components_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_hunt_category_leaderboard: {
+        Row: {
+          category:
+            | Database["public"]["Enums"]["component_hunt_category"]
+            | null
+          category_rank: number | null
+          component_id: number | null
+          description: string | null
+          final_score: number | null
+          name: string | null
+          preview_url: string | null
+          round_id: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_hunt_current_round: {
+        Row: {
+          end_at: string | null
+          id: number | null
+          seasonal_tag_id: number | null
+          start_at: string | null
+          week_number: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_hunt_rounds_seasonal_tag_id_fkey"
+            columns: ["seasonal_tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_hunt_global_leaderboard: {
+        Row: {
+          component_id: number | null
+          description: string | null
+          final_score: number | null
+          global_rank: number | null
+          name: string | null
+          preview_url: string | null
+          round_id: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_hunt_leaderboard: {
+        Row: {
+          category:
+            | Database["public"]["Enums"]["component_hunt_category"]
+            | null
+          category_rank: number | null
+          component_id: number | null
+          description: string | null
+          final_score: number | null
+          global_rank: number | null
+          installs: number | null
+          name: string | null
+          preview_url: string | null
+          round_id: number | null
+          views: number | null
+          votes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
             referencedColumns: ["id"]
           },
         ]
@@ -1728,6 +2410,13 @@ export type Database = {
             foreignKeyName: "component_analytics_component_id_fkey"
             columns: ["component_id"]
             isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_analytics_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
             referencedRelation: "components"
             referencedColumns: ["id"]
           },
@@ -1788,9 +2477,7 @@ export type Database = {
         }[]
       }
       check_api_key: {
-        Args: {
-          api_key: string
-        }
+        Args: { api_key: string }
         Returns: Json
       }
       create_api_key: {
@@ -1814,9 +2501,7 @@ export type Database = {
         }
       }
       delete_component: {
-        Args: {
-          component_id: number
-        }
+        Args: { component_id: number }
         Returns: boolean
       }
       get_active_authors: {
@@ -1837,10 +2522,7 @@ export type Database = {
         }[]
       }
       get_active_authors_with_top_components: {
-        Args: {
-          p_offset?: number
-          p_limit?: number
-        }
+        Args: { p_offset?: number; p_limit?: number }
         Returns: {
           id: string
           username: string
@@ -1859,10 +2541,7 @@ export type Database = {
         }[]
       }
       get_admin_liked_demos_v1: {
-        Args: {
-          p_user_id: string
-          p_limit?: number
-        }
+        Args: { p_user_id: string; p_limit?: number }
         Returns: {
           id: number
           name: string
@@ -1902,9 +2581,7 @@ export type Database = {
         Returns: number
       }
       get_author_payout_stats: {
-        Args: {
-          p_author_id: string
-        }
+        Args: { p_author_id: string }
         Returns: Json
       }
       get_collection_components_v1: {
@@ -1997,9 +2674,7 @@ export type Database = {
         }[]
       }
       get_liked_components: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: Json[]
       }
       get_pro_publishers: {
@@ -2035,9 +2710,7 @@ export type Database = {
         Returns: string
       }
       get_section_previews: {
-        Args: {
-          p_demo_ids: number[]
-        }
+        Args: { p_demo_ids: number[] }
         Returns: {
           demo_id: number
           preview_url: string
@@ -2092,10 +2765,7 @@ export type Database = {
         }[]
       }
       get_user_bookmarks_list: {
-        Args: {
-          p_user_id: string
-          p_include_private?: boolean
-        }
+        Args: { p_user_id: string; p_include_private?: boolean }
         Returns: {
           id: number
           name: string
@@ -2109,16 +2779,11 @@ export type Database = {
         }[]
       }
       get_user_components_counts: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: Json
       }
       get_user_profile_demo_list: {
-        Args: {
-          p_user_id: string
-          p_include_private?: boolean
-        }
+        Args: { p_user_id: string; p_include_private?: boolean }
         Returns: {
           id: number
           name: string
@@ -2131,20 +2796,54 @@ export type Database = {
           component_user_data: Json
         }[]
       }
+      get_user_profile_demo_list_v2: {
+        Args: { p_user_id: string }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          created_at: string
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          total_count: number
+          view_count: number
+          bookmarks_count: number
+          bundle_url: Json
+          is_private: boolean
+          submission_status: string
+          moderators_feedback: string
+        }[]
+      }
       get_user_state: {
-        Args: {
-          user_id_param: string
-        }
+        Args: { user_id_param: string }
         Returns: Json
+      }
+      hunt_component_tag_slugs: {
+        Args: { cid: number }
+        Returns: string[]
+      }
+      hunt_marketing_slugs: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      hunt_toggle_vote: {
+        Args: { p_round_id: number; p_component_id: number }
+        Returns: boolean
+      }
+      hunt_ui_slugs: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
       }
       increment: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
       increment_api_requests: {
-        Args: {
-          key_id: string
-        }
+        Args: { key_id: string }
         Returns: undefined
       }
       insert_code_embedding: {
@@ -2158,9 +2857,9 @@ export type Database = {
         }
         Returns: undefined
       }
-      insert_embedding:
-        | {
-            Args: {
+      insert_embedding: {
+        Args:
+          | {
               p_id: string
               p_item_id: number
               p_item_type: string
@@ -2168,28 +2867,21 @@ export type Database = {
               p_usage_description: string
               p_metadata: Json
             }
-            Returns: undefined
-          }
-        | {
-            Args: {
+          | {
               p_item_id: number
               p_item_type: string
               p_embedding: string
               p_usage_description: string
               p_metadata: Json
             }
-            Returns: undefined
-          }
+        Returns: undefined
+      }
       is_trigger_operation: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       like_component_by_demo: {
-        Args: {
-          p_user_id: string
-          p_demo_id: number
-          p_liked: boolean
-        }
+        Args: { p_user_id: string; p_demo_id: number; p_liked: boolean }
         Returns: undefined
       }
       match_embeddings: {
@@ -2227,25 +2919,19 @@ export type Database = {
         }[]
       }
       purchase_component: {
-        Args: {
-          p_user_id: string
-          p_component_id: number
-        }
+        Args: { p_user_id: string; p_component_id: number }
         Returns: Json
       }
-      record_mcp_component_usage:
-        | {
-            Args: {
+      record_mcp_component_usage: {
+        Args:
+          | {
               p_user_id: string
               p_api_key: string
               p_search_query: string
               p_component_ids: number[]
               p_author_ids: string[]
             }
-            Returns: Json
-          }
-        | {
-            Args: {
+          | {
               p_user_id: string
               p_api_key: string
               p_search_query: string
@@ -2253,16 +2939,14 @@ export type Database = {
               p_component_names: string[]
               p_author_ids: string[]
             }
-            Returns: Json
-          }
+        Returns: Json
+      }
       requesting_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
       search_components_preview: {
-        Args: {
-          p_search_query: string
-        }
+        Args: { p_search_query: string }
         Returns: {
           id: number
           name: string
@@ -2309,16 +2993,31 @@ export type Database = {
           usage_data: Json
         }[]
       }
-      update_component_dependencies_closure: {
+      search_demos_ai_oai_v2: {
         Args: {
-          p_component_id: number
-          p_demo_slug?: string
+          search_query: string
+          query_embedding: string
+          match_threshold: number
         }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          demo_slug: string
+          user_id: string
+          component_data: Json
+          user_data: Json
+          usage_data: Json
+        }[]
+      }
+      update_component_dependencies_closure: {
+        Args: { p_component_id: number; p_demo_slug?: string }
         Returns: undefined
       }
-      update_component_with_tags:
-        | {
-            Args: {
+      update_component_with_tags: {
+        Args:
+          | {
               p_component_id: number
               p_name?: string
               p_description?: string
@@ -2326,10 +3025,7 @@ export type Database = {
               p_preview_url?: string
               p_tags?: Json
             }
-            Returns: undefined
-          }
-        | {
-            Args: {
+          | {
               p_component_id: number
               p_name?: string
               p_description?: string
@@ -2338,31 +3034,24 @@ export type Database = {
               p_website_url?: string
               p_tags?: Json
             }
-            Returns: undefined
-          }
+        Returns: undefined
+      }
       update_demo_tags: {
-        Args: {
-          p_demo_id: number
-          p_tags: Json
-        }
+        Args: { p_demo_id: number; p_tags: Json }
         Returns: undefined
       }
       update_template_tags: {
-        Args: {
-          p_template_id: number
-          p_tags: Json
-        }
+        Args: { p_template_id: number; p_tags: Json }
         Returns: undefined
       }
       vec_dim: {
-        Args: {
-          v: string
-        }
+        Args: { v: string }
         Returns: number
       }
     }
     Enums: {
       api_plan: "free" | "pro" | "enterprise"
+      component_hunt_category: "marketing" | "ui" | "seasonal"
       payment_status: "pending" | "paid" | "rejected"
       submission_status: "on_review" | "featured" | "posted"
       user_role:
@@ -2409,27 +3098,29 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -2437,20 +3128,22 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -2458,20 +3151,22 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -2479,21 +3174,23 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -2502,6 +3199,24 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      api_plan: ["free", "pro", "enterprise"],
+      component_hunt_category: ["marketing", "ui", "seasonal"],
+      payment_status: ["pending", "paid", "rejected"],
+      submission_status: ["on_review", "featured", "posted"],
+      user_role: [
+        "designer",
+        "frontend_developer",
+        "backend_developer",
+        "product_manager",
+        "entrepreneur",
+      ],
+    },
+  },
+} as const
