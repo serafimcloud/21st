@@ -27,25 +27,25 @@ export function LeaderboardClient({
   const [selectedCategory, setSelectedCategory] = useState<Category>("global")
   const { user } = useUser()
 
-  const { data: submissions = [], isLoading: isLoadingSubmissions } =
-    useRoundSubmissions(currentRound.id)
+  const {
+    data: submissions = [],
+    uiSlugs,
+    marketingSlugs,
+    getFilteredSubmissions,
+  } = useRoundSubmissions(currentRound.id)
   const toggleVote = useToggleVote(currentRound.id)
 
   // Filter by category
-  const filteredRows = submissions.filter((s) =>
-    selectedCategory === "global"
-      ? s.category === "global"
-      : s.category === selectedCategory,
-  )
+  const filteredRows = getFilteredSubmissions(selectedCategory)
 
-  const handleVote = async (componentId: number) => {
+  const handleVote = async (demoId: number) => {
     if (!user) {
       toast.error("Please sign in to vote")
       return
     }
 
     try {
-      await toggleVote.mutateAsync({ componentId })
+      await toggleVote.mutateAsync({ demoId })
     } catch (error) {
       // Error is handled by the mutation
     }
@@ -103,7 +103,7 @@ export function LeaderboardClient({
       <div className="space-y-4">
         <LeaderboardList
           rows={filteredRows}
-          isLoading={isLoadingSubmissions}
+          isLoading={submissions.length === 0}
           category={selectedCategory}
           onVote={handleVote}
           isVoting={toggleVote.isPending}

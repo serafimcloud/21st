@@ -31,6 +31,7 @@ import { useAuth } from "@clerk/nextjs"
 import { categories } from "@/lib/navigation"
 import { toast } from "react-hot-toast"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
+import { useState, useEffect, useCallback } from "react"
 
 export const componentReadableDbFields = `
   *,
@@ -1114,20 +1115,20 @@ export function useToggleVote(roundId: number | null) {
   const { user } = useUser()
 
   return useMutation({
-    mutationFn: async ({ componentId }: { componentId: number }) => {
+    mutationFn: async ({ demoId }: { demoId: number }) => {
       if (!roundId) throw new Error("No round selected")
       if (!user) throw new Error("Must be logged in to vote")
 
-      const { data, error } = await supabase.rpc("hunt_toggle_vote", {
+      const { data, error } = await supabase.rpc("hunt_toggle_demo_vote", {
         p_round_id: roundId,
-        p_component_id: componentId,
+        p_demo_id: demoId,
       })
 
       if (error) throw error
 
       return data as boolean // true if vote was added, false if removed
     },
-    onSuccess: (added, { componentId }) => {
+    onSuccess: (added, { demoId }) => {
       // Show success toast using sonner
       import("sonner").then(({ toast }) => {
         toast.success(added ? "Upvoted!" : "Vote removed")
@@ -1135,7 +1136,7 @@ export function useToggleVote(roundId: number | null) {
 
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({
-        queryKey: ["component-hunt-submissions", roundId],
+        queryKey: ["demo-hunt-submissions", roundId],
       })
     },
     onError: (error) => {
@@ -1147,166 +1148,214 @@ export function useToggleVote(roundId: number | null) {
   })
 }
 
-type ComponentHuntVote = {
-  component_id: number
+type DemoHuntVote = {
+  demo_id: number
 }
 
-type ComponentHuntLeaderboardRow = {
-  component_id: number | null
-  name: string | null
+type DemoHuntLeaderboardRow = {
+  id: number
+  round_id: number
+  demo_name: string
   preview_url: string | null
   description: string | null
-  final_score: number | null
-  global_rank: number | null
-  category_rank: number | null
-  category: string | null
-  views: number | null
-  votes: number | null
-  installs: number | null
+  final_score: number
+  votes: number
+  installs: number
+  views: number
+  global_rank: number
+  tags: { id: number; slug: string }[]
+  has_voted: boolean
+  component_data: {
+    id: number
+    name: string
+  }
+  user_data: {
+    id: string
+    username: string
+    display_image_url: string | null
+  }
+  bundle_url: string | null
 }
 
-export async function getRoundSubmissions(
+export const getRoundSubmissions = async (
   supabase: SupabaseClient<Database>,
   roundId: number,
-  userId: string | null,
-) {
-  const { data: submissions } = await supabase
-    .from("component_hunt_leaderboard")
-    .select(
-      `
-      component_id,
-      name,
-      preview_url,
-      description,
-      final_score,
-      global_rank,
-      category_rank,
-      category,
-      views,
-      votes,
-      installs,
-      component:components!component_id (
-        id,
-        name,
-        description,
-        preview_url,
-        website_url,
-        repository_url,
-        component_slug,
-        license,
-        is_private,
-        is_disabled,
-        downloads_count,
-        views_count,
-        likes_count,
-        created_at,
-        updated_at,
-        user:users!user_id (
-          id,
-          username,
-          display_username,
-          avatar_url,
-          email
-        ),
-        tags:component_tags (
-          tags (
-            id,
-            name,
-            slug
-          )
-        )
-      )
-    `,
-    )
+): Promise<DemoHuntLeaderboardRow[]> => {
+  console.log("[getRoundSubmissions] Fetching submissions for round", roundId)
+
+  const { data: submissions, error } = await supabase
+    .from("demo_hunt_leaderboard")
+    .select("*")
     .eq("round_id", roundId)
-    .order("final_score", { ascending: false })
-    .limit(100)
 
-  if (!submissions) return []
+  if (error) {
+    console.error("[getRoundSubmissions] Error fetching submissions:", error)
+    throw error
+  }
 
-  // Get user votes if logged in
-  let userVotes: Record<number, boolean> = {}
-  if (userId) {
-    const { data: votes } = await supabase
-      .from("component_hunt_votes")
-      .select("component_id")
-      .eq("round_id", roundId)
-      .eq("user_id", userId)
+  console.log("[getRoundSubmissions] Raw submissions data:", submissions)
 
-    userVotes = (votes || []).reduce(
-      (acc: Record<number, boolean>, vote: ComponentHuntVote) => {
-        acc[vote.component_id] = true
-        return acc
+  if (!submissions) {
+    console.log("[getRoundSubmissions] No submissions found")
+    return []
+  }
+
+  // Transform the data to match DemoHuntLeaderboardRow type
+  const transformedSubmissions: DemoHuntLeaderboardRow[] = submissions.map(
+    (submission) => ({
+      id: submission.demo_id!,
+      round_id: submission.round_id!,
+      demo_name: submission.demo_name!,
+      preview_url: submission.preview_url,
+      description: submission.demo_name, // Using demo_name as description for now
+      final_score: submission.final_score || 0,
+      votes: submission.votes || 0,
+      installs: submission.installs || 0,
+      views: submission.views || 0,
+      global_rank: submission.global_rank || 0,
+      tags: submission.tags as { id: number; slug: string }[],
+      has_voted: submission.has_voted || false,
+      component_data: {
+        id: submission.component_id!,
+        name: submission.component_name!,
       },
-      {} as Record<number, boolean>,
+      user_data: {
+        id: submission.demo_owner_id!,
+        username: submission.demo_owner_username!,
+        display_image_url: submission.display_image_url,
+      },
+      bundle_url: submission.video_url,
+    }),
+  )
+
+  console.log(
+    "[getRoundSubmissions] Transformed submissions:",
+    transformedSubmissions,
+  )
+
+  return transformedSubmissions
+}
+
+type RoundSubmissionsReturn = {
+  data: DemoHuntLeaderboardRow[]
+  uiSlugs: string[] | undefined
+  marketingSlugs: string[] | undefined
+  getFilteredSubmissions: (category: string) => DemoHuntLeaderboardRow[]
+}
+
+export function useRoundSubmissions(
+  roundId: number | null,
+): RoundSubmissionsReturn {
+  const supabase = useClerkSupabaseClient()
+
+  const { data: submissions = [] } = useQuery({
+    queryKey: ["hunt_round_submissions", roundId],
+    queryFn: () => getRoundSubmissions(supabase, roundId!),
+    enabled: !!roundId,
+  })
+
+  // Slugs from navigation.ts
+  const uiSlugs = [
+    "accordion",
+    "ai-chat",
+    "alert",
+    "avatar",
+    "badge",
+    "button",
+    "calendar",
+    "card",
+    "carousel",
+    "checkbox",
+    "date-picker",
+    "modal-dialog",
+    "dropdown",
+    "empty-state",
+    "file-tree",
+    "upload-download",
+    "form",
+    "icons",
+    "input",
+    "link",
+    "menu",
+    "notification",
+    "number",
+    "pagination",
+    "popover",
+    "radio-group",
+    "sidebar",
+    "sign-in",
+    "registration-signup",
+    "select",
+    "slider",
+    "spinner-loader",
+    "table",
+    "chip-tag",
+    "tabs",
+    "textarea",
+    "toast",
+    "toggle",
+    "tooltip"
+  ]
+
+  const marketingSlugs = [
+    "announcement",
+    "background",
+    "border",
+    "call-to-action",
+    "clients",
+    "comparison",
+    "dock",
+    "features",
+    "footer",
+    "hero",
+    "hook",
+    "image",
+    "map",
+    "navbar-navigation",
+    "pricing-section",
+    "scroll-area",
+    "testimonials",
+    "text",
+    "video"
+  ]
+
+  const getFilteredSubmissions = (category: string) => {
+    if (!category || category === "global") return submissions
+
+    if (category === "seasonal") {
+      return submissions.filter((submission) =>
+        submission.tags?.some((tag) => tag.id === submission.round_id),
+      )
+    }
+
+    const categorySlugMap = {
+      ui: uiSlugs,
+      marketing: marketingSlugs,
+    }
+
+    const slugs = categorySlugMap[category as keyof typeof categorySlugMap]
+    if (!slugs) return []
+
+    return submissions.filter((submission) =>
+      submission.tags?.some((tag) => slugs.includes(tag.slug)),
     )
   }
 
-  // Map to expected format with full component data
-  return submissions.map(
-    (submission: ComponentHuntLeaderboardRow & { component: any }) => ({
-      id: submission.component_id, // Demo ID
-      component_id: submission.component_id,
-      name: submission.name || "",
-      preview_url: submission.preview_url,
-      description: submission.description,
-      demo_slug: "default", // Contest submissions always use default demo
-      user: submission.component?.user,
-      user_id: submission.component?.user?.id,
-      created_at: submission.component?.created_at,
-      updated_at: submission.component?.updated_at,
-      view_count: submission.views || 0,
-      bookmarks_count: submission.votes || 0,
-      demo_code: "",
-      demo_dependencies: "",
-      demo_direct_registry_dependencies: {},
-      compiled_css: "",
-      video_url: null,
-      embedding: null,
-      embedding_oai: null,
-      fts: null,
-      pro_preview_image_url: null,
-      // Contest specific fields
-      final_score: submission.final_score || 0,
-      global_rank: submission.global_rank,
-      category_rank: submission.category_rank,
-      category: submission.category || "global",
-      has_voted: userVotes[submission.component_id || 0] || false,
-      votes_count: submission.votes || 0,
-      views_count: submission.views || 0,
-      downloads_count: submission.installs || 0,
-      // Component data
-      component: submission.component
-        ? {
-            ...submission.component,
-            tags: submission.component.tags?.map((t: any) => t.tags) || [],
-            user: submission.component.user,
-          }
-        : null,
-      tags: submission.component?.tags?.map((t: any) => t.tags) || [],
-    }),
-  )
+  return {
+    data: submissions,
+    uiSlugs,
+    marketingSlugs,
+    getFilteredSubmissions,
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-//  REACT‑QUERY HOOKS (не менялись)
+//  REACT‑QUERY HOOKS
 // ─────────────────────────────────────────────────────────────────────────
 export function useContestRounds() {
   const supabase = useClerkSupabaseClient()
   return useQuery({
-    queryKey: ["component-hunt-rounds"],
+    queryKey: ["demo-hunt-rounds"],
     queryFn: () => getContestRounds(supabase),
-  })
-}
-
-export function useRoundSubmissions(roundId: number | null) {
-  const supabase = useClerkSupabaseClient()
-  const { user } = useUser()
-
-  return useQuery({
-    queryKey: ["component-hunt-submissions", roundId],
-    queryFn: () =>
-      roundId ? getRoundSubmissions(supabase, roundId, user?.id ?? null) : [],
-    enabled: !!roundId,
   })
 }
