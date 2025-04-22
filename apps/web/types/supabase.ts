@@ -381,254 +381,6 @@ export type Database = {
           },
         ]
       }
-      component_hunt_scores: {
-        Row: {
-          bonus_percent: number | null
-          category: Database["public"]["Enums"]["component_hunt_category"]
-          category_rank: number | null
-          component_id: number
-          created_at: string | null
-          final_score: number | null
-          global_rank: number | null
-          id: number
-          installs: number | null
-          round_id: number
-          views: number | null
-          votes: number | null
-        }
-        Insert: {
-          bonus_percent?: number | null
-          category: Database["public"]["Enums"]["component_hunt_category"]
-          category_rank?: number | null
-          component_id: number
-          created_at?: string | null
-          final_score?: number | null
-          global_rank?: number | null
-          id?: never
-          installs?: number | null
-          round_id: number
-          views?: number | null
-          votes?: number | null
-        }
-        Update: {
-          bonus_percent?: number | null
-          category?: Database["public"]["Enums"]["component_hunt_category"]
-          category_rank?: number | null
-          component_id?: number
-          created_at?: string | null
-          final_score?: number | null
-          global_rank?: number | null
-          id?: never
-          installs?: number | null
-          round_id?: number
-          views?: number | null
-          votes?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view_v2"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components_with_username"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_current_round"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_rounds"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      component_hunt_votes: {
-        Row: {
-          component_id: number
-          id: number
-          round_id: number
-          user_id: string
-          voted_at: string | null
-        }
-        Insert: {
-          component_id: number
-          id?: never
-          round_id: number
-          user_id: string
-          voted_at?: string | null
-        }
-        Update: {
-          component_id?: number
-          id?: never
-          round_id?: number
-          user_id?: string
-          voted_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "component_hunt_votes_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_votes_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view_v2"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_votes_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_votes_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components_with_username"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_votes_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_current_round"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_votes_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_rounds"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_votes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "referral_analytics"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "component_hunt_votes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      component_hunt_winners: {
-        Row: {
-          category:
-            | Database["public"]["Enums"]["component_hunt_category"]
-            | null
-          component_id: number
-          created_at: string | null
-          id: number
-          is_global: boolean | null
-          prize_tier: number
-          round_id: number
-        }
-        Insert: {
-          category?:
-            | Database["public"]["Enums"]["component_hunt_category"]
-            | null
-          component_id: number
-          created_at?: string | null
-          id?: never
-          is_global?: boolean | null
-          prize_tier: number
-          round_id: number
-        }
-        Update: {
-          category?:
-            | Database["public"]["Enums"]["component_hunt_category"]
-            | null
-          component_id?: number
-          created_at?: string | null
-          id?: never
-          is_global?: boolean | null
-          prize_tier?: number
-          round_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "component_hunt_winners_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_winners_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view_v2"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_winners_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_winners_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components_with_username"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_winners_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_current_round"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_winners_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_rounds"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       component_likes: {
         Row: {
           component_id: number
@@ -1046,6 +798,182 @@ export type Database = {
             columns: ["demo_id"]
             isOneToOne: false
             referencedRelation: "demos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_hunt_scores: {
+        Row: {
+          category: Database["public"]["Enums"]["demo_hunt_category"]
+          category_rank: number | null
+          created_at: string | null
+          demo_id: number
+          final_score: number | null
+          global_rank: number | null
+          id: number
+          installs: number | null
+          round_id: number
+          views: number | null
+          votes: number | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["demo_hunt_category"]
+          category_rank?: number | null
+          created_at?: string | null
+          demo_id: number
+          final_score?: number | null
+          global_rank?: number | null
+          id?: never
+          installs?: number | null
+          round_id: number
+          views?: number | null
+          votes?: number | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["demo_hunt_category"]
+          category_rank?: number | null
+          created_at?: string | null
+          demo_id?: number
+          final_score?: number | null
+          global_rank?: number | null
+          id?: never
+          installs?: number | null
+          round_id?: number
+          views?: number | null
+          votes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_hunt_scores_demo_id_fkey"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "demos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_hunt_votes: {
+        Row: {
+          demo_id: number
+          id: number
+          round_id: number
+          user_id: string
+          voted_at: string | null
+        }
+        Insert: {
+          demo_id: number
+          id?: never
+          round_id: number
+          user_id: string
+          voted_at?: string | null
+        }
+        Update: {
+          demo_id?: number
+          id?: never
+          round_id?: number
+          user_id?: string
+          voted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_hunt_votes_demo_id_fkey"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "demos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_votes_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_votes_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_hunt_winners: {
+        Row: {
+          category: Database["public"]["Enums"]["demo_hunt_category"] | null
+          created_at: string | null
+          demo_id: number
+          id: number
+          is_global: boolean | null
+          prize_tier: number
+          round_id: number
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["demo_hunt_category"] | null
+          created_at?: string | null
+          demo_id: number
+          id?: never
+          is_global?: boolean | null
+          prize_tier: number
+          round_id: number
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["demo_hunt_category"] | null
+          created_at?: string | null
+          demo_id?: number
+          id?: never
+          is_global?: boolean | null
+          prize_tier?: number
+          round_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_hunt_winners_demo_id_fkey"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "demos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_winners_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_winners_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
             referencedColumns: ["id"]
           },
         ]
@@ -2139,64 +2067,6 @@ export type Database = {
           },
         ]
       }
-      component_hunt_category_leaderboard: {
-        Row: {
-          category:
-            | Database["public"]["Enums"]["component_hunt_category"]
-            | null
-          category_rank: number | null
-          component_id: number | null
-          description: string | null
-          final_score: number | null
-          name: string | null
-          preview_url: string | null
-          round_id: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view_v2"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components_with_username"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_current_round"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_rounds"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       component_hunt_current_round: {
         Row: {
           end_at: string | null
@@ -2211,123 +2081,6 @@ export type Database = {
             columns: ["seasonal_tag_id"]
             isOneToOne: false
             referencedRelation: "tags"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      component_hunt_global_leaderboard: {
-        Row: {
-          component_id: number | null
-          description: string | null
-          final_score: number | null
-          global_rank: number | null
-          name: string | null
-          preview_url: string | null
-          round_id: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view_v2"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components_with_username"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_current_round"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_rounds"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      component_hunt_leaderboard: {
-        Row: {
-          category:
-            | Database["public"]["Enums"]["component_hunt_category"]
-            | null
-          category_rank: number | null
-          component_id: number | null
-          description: string | null
-          final_score: number | null
-          global_rank: number | null
-          installs: number | null
-          name: string | null
-          preview_url: string | null
-          round_id: number | null
-          views: number | null
-          votes: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "component_dependencies_graph_view_v2"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_component_id_fkey"
-            columns: ["component_id"]
-            isOneToOne: false
-            referencedRelation: "components_with_username"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_current_round"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "component_hunt_scores_round_id_fkey"
-            columns: ["round_id"]
-            isOneToOne: false
-            referencedRelation: "component_hunt_rounds"
             referencedColumns: ["id"]
           },
         ]
@@ -2379,6 +2132,95 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_hunt_category_leaderboard: {
+        Row: {
+          bookmarks_count: number | null
+          bundle_url: Json | null
+          category: Database["public"]["Enums"]["demo_hunt_category"] | null
+          category_rank: number | null
+          component_data: Json | null
+          component_user_data: Json | null
+          demo_slug: string | null
+          final_score: number | null
+          has_voted: boolean | null
+          id: number | null
+          installs: number | null
+          name: string | null
+          preview_url: string | null
+          round_id: number | null
+          updated_at: string | null
+          user_data: Json | null
+          video_url: string | null
+          view_count: number | null
+          votes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_hunt_scores_demo_id_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "demos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_hunt_global_leaderboard: {
+        Row: {
+          bookmarks_count: number | null
+          bundle_url: Json | null
+          component_data: Json | null
+          component_user_data: Json | null
+          demo_slug: string | null
+          final_score: number | null
+          global_rank: number | null
+          has_voted: boolean | null
+          id: number | null
+          name: string | null
+          preview_url: string | null
+          round_id: number | null
+          updated_at: string | null
+          user_data: Json | null
+          video_url: string | null
+          view_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_hunt_scores_demo_id_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "demos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_current_round"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "component_hunt_rounds"
             referencedColumns: ["id"]
           },
         ]
@@ -2830,8 +2672,8 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
-      hunt_toggle_vote: {
-        Args: { p_round_id: number; p_component_id: number }
+      hunt_toggle_demo_vote: {
+        Args: { p_round_id: number; p_demo_id: number }
         Returns: boolean
       }
       hunt_ui_slugs: {
@@ -3051,7 +2893,7 @@ export type Database = {
     }
     Enums: {
       api_plan: "free" | "pro" | "enterprise"
-      component_hunt_category: "marketing" | "ui" | "seasonal"
+      demo_hunt_category: "marketing" | "ui" | "seasonal"
       payment_status: "pending" | "paid" | "rejected"
       submission_status: "on_review" | "featured" | "posted"
       user_role:
@@ -3207,7 +3049,7 @@ export const Constants = {
   public: {
     Enums: {
       api_plan: ["free", "pro", "enterprise"],
-      component_hunt_category: ["marketing", "ui", "seasonal"],
+      demo_hunt_category: ["marketing", "ui", "seasonal"],
       payment_status: ["pending", "paid", "rejected"],
       submission_status: ["on_review", "featured", "posted"],
       user_role: [
