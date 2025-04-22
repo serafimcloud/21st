@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
 
 export type RoundInfo = {
   id: number
@@ -35,14 +34,6 @@ export function RoundHeader({ currentRound, isLoading }: RoundHeaderProps) {
 
   return (
     <div className="mb-8 space-y-2">
-      <Link
-        href="/contest"
-        className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Contest Info
-      </Link>
-
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">

@@ -33,6 +33,7 @@ import {
   Presentation,
   Home,
   Swords,
+  Trophy,
 } from "lucide-react"
 import { useAtom } from "jotai"
 import { AppSection } from "@/lib/atoms"
@@ -372,6 +373,19 @@ export function MainSidebar() {
                   <div className="flex items-center w-full">
                     <Swords className="mr-2 h-4 w-4" />
                     Contest Overview
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={pathname === "/contest/leaderboard"}
+                  onClick={() => {
+                    router.push("/contest/leaderboard")
+                  }}
+                >
+                  <div className="flex items-center w-full">
+                    <Trophy className="mr-2 h-4 w-4" />
+                    Leaderboard
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, Loader2, ThumbsUp } from "lucide-react"
+import { Loader2, ThumbsUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -55,7 +55,7 @@ export function LeaderboardList({
   }
 
   return (
-    <>
+    <div className="space-y-4">
       {rows.map((row, idx) => (
         <motion.div
           key={`${category}-${row.component_id}-${idx}`}
@@ -63,83 +63,93 @@ export function LeaderboardList({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: idx * 0.05 }}
         >
-          <Card className="p-4 flex gap-4 hover:shadow-md transition-shadow">
-            <div className="flex-shrink-0 w-10 text-center font-semibold">
-              {idx < 3 ? (
-                <Trophy
-                  className={`h-5 w-5 mx-auto ${
-                    idx === 0
-                      ? "text-yellow-500"
-                      : idx === 1
-                        ? "text-gray-400"
-                        : "text-amber-700"
-                  }`}
-                />
-              ) : (
-                <span className="text-lg">
-                  {category === "global" ? row.global_rank : row.category_rank}
-                </span>
-              )}
-            </div>
-
-            <Link href={`/c/${row.component_id}`} className="flex flex-1 gap-4">
-              <Avatar className="h-16 w-16 rounded-md border flex-shrink-0">
-                {row.preview_url ? (
-                  <AvatarImage src={row.preview_url} alt={row.name} />
-                ) : (
-                  <AvatarFallback className="text-sm bg-muted">
-                    {row.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-
-              <div className="flex flex-col gap-1 overflow-hidden">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium leading-tight truncate max-w-[260px]">
-                    {row.name}
-                  </span>
-                  {category !== "global" && (
-                    <Badge variant="secondary" className="capitalize">
-                      {category}
-                    </Badge>
+          {console.log("Component Data:", {
+            id: row.component_id,
+            name: row.name,
+            preview: row.preview_url,
+            description: row.description,
+            score: row.final_score,
+            globalRank: row.global_rank,
+            categoryRank: row.category_rank,
+            hasVoted: row.has_voted,
+            votesCount: row.votes_count,
+            category,
+          })}
+          <Card className="group relative bg-background hover:bg-muted/50 transition-all duration-200 px-0 py-2 sm:-mx-2 sm:p-3 shadow-none border-none">
+            <Link href={`/c/${row.component_id}`} className="block">
+              <div className="flex items-start gap-3">
+                {/* Preview Image */}
+                <Avatar className="h-10 w-10 rounded-lg flex-shrink-0 bg-muted">
+                  {row.preview_url ? (
+                    <AvatarImage
+                      src={row.preview_url}
+                      alt={row.name}
+                      className="object-cover rounded-lg"
+                    />
+                  ) : (
+                    <AvatarFallback className="text-base font-semibold bg-primary/5 text-primary rounded-lg">
+                      {row.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   )}
-                </div>
+                </Avatar>
 
-                {row.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {row.description}
-                  </p>
-                )}
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-sm text-foreground group-hover:text-primary transition-all duration-300">
+                      {(category === "global"
+                        ? row.global_rank
+                        : row.category_rank) || idx + 1}
+                      . {row.name}
+                    </h3>
+                    {category !== "global" && (
+                      <Badge
+                        variant="secondary"
+                        className="capitalize bg-primary/10 text-primary border-0 text-xs px-2 py-0"
+                      >
+                        {category}
+                      </Badge>
+                    )}
+                  </div>
 
-                <div className="mt-1 text-sm">
-                  <span className="font-semibold">
-                    {row.final_score.toLocaleString()}
-                  </span>{" "}
-                  points
+                  {row.description && (
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {row.description}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1.5">
+                    <div>
+                      <span className="font-medium text-foreground">
+                        {row.final_score.toLocaleString()}
+                      </span>{" "}
+                      points
+                    </div>
+                    {onVote && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "gap-1.5 h-6 px-2 hover:bg-primary/10",
+                          row.has_voted && "text-primary bg-primary/10",
+                        )}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          onVote(row.component_id)
+                        }}
+                        disabled={isVoting}
+                      >
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                        <span>{row.votes_count || 0}</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </Link>
-
-            {onVote && (
-              <div className="flex items-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn("gap-2", row.has_voted && "text-primary")}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    onVote(row.component_id)
-                  }}
-                  disabled={isVoting}
-                >
-                  <ThumbsUp className="h-4 w-4" />
-                  <span>{row.votes_count || 0}</span>
-                </Button>
-              </div>
-            )}
           </Card>
         </motion.div>
       ))}
-    </>
+    </div>
   )
 }
