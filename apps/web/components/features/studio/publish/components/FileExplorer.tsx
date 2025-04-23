@@ -1,5 +1,16 @@
 import { useState } from "react"
-import { FileEntry } from "../api"
+// Remove import of old FileEntry type
+// import { FileEntry } from "../api"
+// Define or import the correct FileEntry type if not globally available
+// Assuming FileEntry is defined in page.tsx or a shared types file
+// If not, define it here:
+interface FileEntry {
+  // Use the same definition as in page.tsx
+  name: string
+  type: "file" | "dir"
+  path: string
+  isSymlink: boolean
+}
 import { PlusIcon, RefreshCwIcon, Loader2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,13 +19,14 @@ import { FileTree } from "./FileTree"
 
 interface FileExplorerProps {
   entries: FileEntry[]
-  onSelect: (entry: FileEntry) => void
+  onSelect: (entry: FileEntry) => void // Should now match FileEntry defined above/in page.tsx
   selectedPath: string | null
-  onDelete: (filePath: string) => void
+  // Update prop types for handlers
+  onDelete: (filePath: string) => void // Kept the simple signature
   onCreateFile: (fileName: string) => void
   onRefresh: () => void
   isLoading: boolean
-  fetchDirectoryContent: (dirPath: string) => Promise<FileEntry[]>
+  fetchDirectoryContent: (dirPath: string) => Promise<FileEntry[]> // Expecting the new FileEntry type
 }
 
 export function FileExplorer({

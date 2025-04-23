@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { FileEntry } from "../api"
 import { FolderIcon, FileIcon, Loader2Icon, TrashIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -8,6 +7,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
+interface FileEntry {
+  name: string
+  type: "file" | "dir"
+  path: string
+  isSymlink: boolean
+}
 
 interface FileTreeProps {
   entries: FileEntry[]
@@ -36,7 +42,8 @@ export function FileTree({
   }
 
   const handleDirClick = async (entry: FileEntry, e: React.MouseEvent) => {
-    if (!expandedDirs[entry.path] || e.ctrlKey) {
+    const isCtrlOrCmd = e.ctrlKey || e.metaKey
+    if (!expandedDirs[entry.path] || isCtrlOrCmd) {
       try {
         setLoadingDirs((prev) => ({ ...prev, [entry.path]: true }))
         const dirContents = await fetchDirectoryContent(entry.path)
@@ -46,6 +53,11 @@ export function FileTree({
       } finally {
         setLoadingDirs((prev) => ({ ...prev, [entry.path]: false }))
       }
+    } else {
+      setExpandedDirs((prev) => {
+        const { [entry.path]: _, ...rest } = prev
+        return rest
+      })
     }
   }
 

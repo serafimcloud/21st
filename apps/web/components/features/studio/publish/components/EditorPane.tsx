@@ -1,6 +1,7 @@
 import { Loader2Icon } from "lucide-react"
 import Editor from "@monaco-editor/react"
 import { getMonacoLanguage } from "../utils"
+import { useTheme } from "next-themes"
 
 interface EditorPaneProps {
   selectedFile: { path: string; type: string } | null
@@ -33,13 +34,15 @@ export function EditorPane({
     )
   }
 
+  const { resolvedTheme } = useTheme()
+
   return (
     <Editor
       height="100%"
       language={getMonacoLanguage(selectedFile.path)}
       value={code}
       onChange={(value) => onCodeChange(value || "")}
-      theme="vs-dark"
+      theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
       options={{
         minimap: { enabled: false },
         fontSize: 14,

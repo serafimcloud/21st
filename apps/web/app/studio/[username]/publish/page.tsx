@@ -5,146 +5,172 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ResizablePanelGroup, ResizablePanel } from "@/components/ui/resizable"
 import { toast } from "sonner"
-import { FileEntry } from "@/components/features/studio/publish/api"
-import {
-  initializeProject,
-  fetchFileTree,
-  fetchDirectoryContent,
-  loadFileContent,
-  saveFileContent,
-  createFile,
-  deleteFile,
-} from "@/components/features/studio/publish/api"
+import type { ReaddirEntry, FSStatResult } from "@codesandbox/sdk"
 import { FileExplorer } from "@/components/features/studio/publish/components/FileExplorer"
 import { EditorPane } from "@/components/features/studio/publish/components/EditorPane"
 import { PreviewPane } from "@/components/features/studio/publish/components/PreviewPane"
 import { PublishHeader } from "@/components/features/studio/publish/components/PublishHeader"
 import { Loader2Icon } from "lucide-react"
+import { useSandbox } from "@/components/features/studio/publish/hooks/useSandbox"
+
+interface FileEntry {
+  path: string
+  type: "file" | "dir"
+  name: string
+  isSymlink: boolean
+}
 
 function PublishPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [projectId, setProjectId] = useState<string | null>(
-    searchParams.get("projectId"),
-  )
-  const [previewURL, setPreviewURL] = useState<string | null>(null)
   const [files, setFiles] = useState<FileEntry[]>([])
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
   const [code, setCode] = useState<string>("")
-  const [isFetching, setIsFetching] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(true)
+  const [isTreeLoading, setIsTreeLoading] = useState(false)
   const [isFileLoading, setIsFileLoading] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
+  const {
+    sandbox,
+    sandboxId,
+    previewURL,
+    isLoading: isSandboxLoading,
+  } = useSandbox({
+    defaultSandboxId: searchParams.get("sandboxId"),
+  })
+
+  console.log("sandbox")
+
   useEffect(() => {
-    const initialize = async () => {
-      setIsInitializing(true)
-      try {
-        const { projectId: newProjectId, previewURL: newPreviewURL } =
-          await initializeProject(projectId)
-        setProjectId(newProjectId)
-        setPreviewURL(newPreviewURL)
-        if (newProjectId !== projectId) {
-          router.push(`${window.location.pathname}?projectId=${newProjectId}`, {
-            scroll: false,
-          })
-        }
-      } catch (error) {
-        console.error("Failed to initialize project:", error)
-        toast.error("Failed to initialize project")
-      } finally {
-        setIsInitializing(false)
-      }
+    if (sandboxId && sandboxId !== searchParams.get("sandboxId")) {
+      router.push(`${window.location.pathname}?sandboxId=${sandboxId}`, {
+        scroll: false,
+      })
     }
+  }, [sandboxId, router, searchParams])
 
-    initialize()
-  }, [])
+  const mapReaddirEntryToFileEntry = (
+    entry: ReaddirEntry,
+    parentPath: string,
+  ): FileEntry => ({
+    name: entry.name,
+    path: `${parentPath === "/" ? "" : parentPath}/${entry.name}`,
+    type: entry.type === "directory" ? "dir" : "file",
+    isSymlink: entry.isSymlink,
+  })
 
-  const loadFileTree = async (projectId: string) => {
+  const loadRootDirectory = async () => {
+    if (!sandbox) return
+    setIsTreeLoading(true)
     try {
-      setIsFetching(true)
-      const fileEntries = await fetchFileTree(projectId)
-      setFiles(fileEntries)
+      const entries = await sandbox.fs.readdir("/")
+      setFiles(entries.map((entry) => mapReaddirEntryToFileEntry(entry, "/")))
     } catch (error) {
-      console.error("Failed to load files:", error)
-      toast.error("Failed to load files")
+      console.error("Failed to load root directory:", error)
+      toast.error("Failed to load project files")
+      setFiles([])
     } finally {
-      setIsFetching(false)
+      setIsTreeLoading(false)
     }
   }
 
   useEffect(() => {
-    if (projectId) {
-      loadFileTree(projectId)
-    }
-  }, [projectId])
+    loadRootDirectory()
+  }, [sandbox])
 
   useEffect(() => {
-    if (!projectId || !selectedEntry || selectedEntry.type !== "file") {
+    if (!sandbox || !selectedEntry || selectedEntry.type !== "file") {
       setCode("")
       setIsFileLoading(false)
       return
     }
 
     const loadContent = async () => {
+      setIsFileLoading(true)
       try {
-        setIsFileLoading(true)
-        const content = await loadFileContent(projectId, selectedEntry.path)
+        const content = await sandbox.fs.readTextFile(selectedEntry.path)
         setCode(content)
       } catch (error) {
         console.error("Failed to load file content:", error)
-        toast.error("Failed to load file content")
+        toast.error(`Failed to load ${selectedEntry.name}`)
         setCode("")
+        setSelectedEntry(null)
       } finally {
         setIsFileLoading(false)
       }
     }
 
     loadContent()
-  }, [projectId, selectedEntry])
+  }, [sandbox, selectedEntry])
 
   const handleCodeChange = (value: string) => {
     setCode(value)
-    if (!selectedEntry || selectedEntry.type !== "file") return
+    if (!sandbox || !selectedEntry || selectedEntry.type !== "file") return
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
       try {
-        await saveFileContent(projectId!, selectedEntry.path, value)
+        await sandbox.fs.writeTextFile(selectedEntry.path, value)
       } catch (error) {
         console.error("Failed to save file:", error)
-        toast.error("Failed to save file")
+        toast.error(`Failed to save ${selectedEntry.name}`)
       }
     }, 800)
   }
 
-  const handleCreateFile = async (fileName: string) => {
-    if (!projectId) return
+  const handleCreateFile = async (filePath: string) => {
+    if (!sandbox) return
+    const fullPath = filePath.startsWith("/") ? filePath : `/${filePath}`
     try {
-      await createFile(projectId, fileName)
-      await loadFileTree(projectId)
-      const newFile = files.find((f) => f.path === `/${fileName}`)
-      if (newFile) setSelectedEntry(newFile)
-      toast.success(`Created ${fileName}`)
+      await sandbox.fs.writeTextFile(fullPath, "")
+      await loadRootDirectory()
+      const newEntry: FileEntry = {
+        name: filePath.split("/").pop() || filePath,
+        path: fullPath,
+        type: "file",
+        isSymlink: false,
+      }
+      setSelectedEntry(newEntry)
+      toast.success(`Created ${filePath}`)
     } catch (error) {
       console.error("Failed to create file:", error)
-      toast.error("Failed to create file")
+      toast.error(`Failed to create ${filePath}`)
     }
   }
 
-  const handleDeleteFile = async (filePath: string) => {
-    if (!projectId) return
+  const handleDeleteEntry = async (entryPath: string) => {
+    if (!sandbox) return
     try {
-      await deleteFile(projectId, filePath)
-      if (selectedEntry?.path === filePath) {
+      let isDir = false
+      try {
+        const statResult = await sandbox.fs.stat(entryPath)
+        isDir = statResult.type === "directory"
+      } catch (statError) {
+        console.warn(`Stat failed for ${entryPath} during delete:`, statError)
+      }
+
+      await sandbox.fs.remove(entryPath, isDir)
+      if (selectedEntry?.path === entryPath) {
         setSelectedEntry(null)
         setCode("")
       }
-      await loadFileTree(projectId)
-      toast.success(`Deleted ${filePath.split("/").pop()}`)
+      await loadRootDirectory()
+      toast.success(`Deleted ${entryPath.split("/").pop()}`)
     } catch (error) {
-      console.error("Failed to delete file:", error)
-      toast.error("Failed to delete file")
+      console.error(`Failed to delete ${entryPath}:`, error)
+      toast.error(`Failed to delete ${entryPath.split("/").pop()}`)
+    }
+  }
+
+  const handleLoadDirectory = async (dirPath: string): Promise<FileEntry[]> => {
+    if (!sandbox) throw new Error("Sandbox not available")
+    try {
+      const entries = await sandbox.fs.readdir(dirPath)
+      return entries.map((entry) => mapReaddirEntryToFileEntry(entry, dirPath))
+    } catch (error) {
+      console.error(`Failed to load directory ${dirPath}:`, error)
+      toast.error(`Failed to load contents of ${dirPath.split("/").pop()}`)
+      return []
     }
   }
 
@@ -152,7 +178,7 @@ function PublishPageContent() {
     window.location.reload()
   }
 
-  if (isInitializing) {
+  if (isSandboxLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -163,9 +189,20 @@ function PublishPageContent() {
     )
   }
 
+  if (!sandbox) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-destructive">
+          <p className="text-lg">Failed to initialize sandbox.</p>
+          <button onClick={handleReset}>Retry</button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-screen w-full flex flex-col">
-      <PublishHeader projectId={projectId} onReset={handleReset} />
+      <PublishHeader sandboxId={sandboxId} onReset={handleReset} />
 
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         <ResizablePanel defaultSize={20} minSize={15} className="border-r">
@@ -173,13 +210,11 @@ function PublishPageContent() {
             entries={files}
             onSelect={setSelectedEntry}
             selectedPath={selectedEntry?.path || null}
-            onDelete={handleDeleteFile}
+            onDelete={handleDeleteEntry}
             onCreateFile={handleCreateFile}
-            onRefresh={() => projectId && loadFileTree(projectId)}
-            isLoading={isFetching}
-            fetchDirectoryContent={(dirPath) =>
-              fetchDirectoryContent(projectId!, dirPath)
-            }
+            onRefresh={loadRootDirectory}
+            isLoading={isTreeLoading}
+            fetchDirectoryContent={handleLoadDirectory}
           />
         </ResizablePanel>
 
