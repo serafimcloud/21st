@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Trophy } from "lucide-react"
 
-export default function Page(): JSX.Element {
+export default function Page() {
   return (
     <div className="min-h-screen">
       <div className="min-h-screen flex flex-col">
