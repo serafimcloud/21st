@@ -5,11 +5,11 @@ import { useState } from "react"
 // Assuming FileEntry is defined in page.tsx or a shared types file
 // If not, define it here:
 interface FileEntry {
-  // Use the same definition as in page.tsx
   name: string
   type: "file" | "dir"
   path: string
   isSymlink: boolean
+  children?: FileEntry[]
 }
 import { PlusIcon, RefreshCwIcon, Loader2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -19,14 +19,12 @@ import { FileTree } from "./FileTree"
 
 interface FileExplorerProps {
   entries: FileEntry[]
-  onSelect: (entry: FileEntry) => void // Should now match FileEntry defined above/in page.tsx
+  onSelect: (entry: FileEntry) => void
   selectedPath: string | null
-  // Update prop types for handlers
-  onDelete: (filePath: string) => void // Kept the simple signature
+  onDelete: (filePath: string) => void
   onCreateFile: (fileName: string) => void
   onRefresh: () => void
   isLoading: boolean
-  fetchDirectoryContent: (dirPath: string) => Promise<FileEntry[]> // Expecting the new FileEntry type
 }
 
 export function FileExplorer({
@@ -37,7 +35,6 @@ export function FileExplorer({
   onCreateFile,
   onRefresh,
   isLoading,
-  fetchDirectoryContent,
 }: FileExplorerProps) {
   const [isCreatingFile, setIsCreatingFile] = useState(false)
   const [newFileName, setNewFileName] = useState("")
@@ -112,7 +109,6 @@ export function FileExplorer({
           selectedPath={selectedPath}
           onDelete={onDelete}
           isLoading={isLoading}
-          fetchDirectoryContent={fetchDirectoryContent}
         />
       </CardContent>
     </Card>

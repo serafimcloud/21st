@@ -13,6 +13,7 @@ interface FileEntry {
   type: "file" | "dir"
   path: string
   isSymlink: boolean
+  children?: FileEntry[]
 }
 
 interface FileTreeProps {
@@ -21,7 +22,6 @@ interface FileTreeProps {
   selectedPath: string | null
   onDelete: (filePath: string) => void
   isLoading: boolean
-  fetchDirectoryContent: (dirPath: string) => Promise<FileEntry[]>
 }
 
 export function FileTree({
@@ -30,35 +30,19 @@ export function FileTree({
   selectedPath,
   onDelete,
   isLoading,
-  fetchDirectoryContent,
 }: FileTreeProps) {
-  const [expandedDirs, setExpandedDirs] = useState<Record<string, FileEntry[]>>(
-    {},
-  )
-  const [loadingDirs, setLoadingDirs] = useState<Record<string, boolean>>({})
+  const [expandedDirs, setExpandedDirs] = useState<Record<string, boolean>>({})
 
   const handleFileClick = (entry: FileEntry) => {
     onSelect(entry)
   }
 
-  const handleDirClick = async (entry: FileEntry, e: React.MouseEvent) => {
-    const isCtrlOrCmd = e.ctrlKey || e.metaKey
-    if (!expandedDirs[entry.path] || isCtrlOrCmd) {
-      try {
-        setLoadingDirs((prev) => ({ ...prev, [entry.path]: true }))
-        const dirContents = await fetchDirectoryContent(entry.path)
-        setExpandedDirs((prev) => ({ ...prev, [entry.path]: dirContents }))
-      } catch (error) {
-        console.error(`Failed to load contents of ${entry.path}:`, error)
-      } finally {
-        setLoadingDirs((prev) => ({ ...prev, [entry.path]: false }))
-      }
-    } else {
-      setExpandedDirs((prev) => {
-        const { [entry.path]: _, ...rest } = prev
-        return rest
-      })
-    }
+  const handleDirClick = (entry: FileEntry, e: React.MouseEvent) => {
+    e.preventDefault()
+    setExpandedDirs((prev) => ({
+      ...prev,
+      [entry.path]: !prev[entry.path],
+    }))
   }
 
   if (isLoading && entries.length === 0) {
@@ -74,38 +58,27 @@ export function FileTree({
       {items.map((entry) => (
         <li key={entry.path} className="py-0.5">
           {entry.type === "dir" ? (
-            <details className="group" open={!!expandedDirs[entry.path]}>
+            <details className="group" open={expandedDirs[entry.path]}>
               <summary
                 className={`flex items-center px-2 py-1 cursor-pointer hover:bg-muted rounded list-none ${
                   selectedPath === entry.path ? "bg-accent" : ""
                 }`}
-                onClick={(e) => {
-                  e.preventDefault()
-                  handleDirClick(entry, e)
-                }}
+                onClick={(e) => handleDirClick(entry, e)}
               >
                 <FolderIcon className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
                 <span className="font-medium truncate" title={entry.name}>
                   {entry.name}
                 </span>
-                {loadingDirs[entry.path] && (
-                  <Loader2Icon className="h-3 w-3 ml-auto animate-spin flex-shrink-0" />
-                )}
               </summary>
-              {expandedDirs[entry.path] && (
+              {entry.children && (
                 <div className="mt-1">
-                  {(() => {
-                    const content = expandedDirs[entry.path]
-                    if (content && content.length > 0) {
-                      return renderEntries(content, currentLevel + 1)
-                    } else {
-                      return (
-                        <div className="text-xs text-muted-foreground px-2 py-1 pl-6">
-                          Empty directory
-                        </div>
-                      )
-                    }
-                  })()}
+                  {entry.children.length > 0 ? (
+                    renderEntries(entry.children, currentLevel + 1)
+                  ) : (
+                    <div className="text-xs text-muted-foreground px-2 py-1 pl-6">
+                      Empty directory
+                    </div>
+                  )}
                 </div>
               )}
             </details>
