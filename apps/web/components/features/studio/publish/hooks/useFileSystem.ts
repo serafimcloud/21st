@@ -3,7 +3,16 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { toast } from "sonner"
 
 const ROOT_PATH = "/project/sandbox"
-const EXCLUDED_NAMES = ["node_modules", "dist"]
+const EXCLUDED_NAMES = [
+  "node_modules",
+  "dist",
+  "yarn.lock",
+  "vite-env.d.ts",
+  "public",
+  "pnpm-lock.yaml",
+  "index.html",
+  "package.json",
+]
 
 export interface FileEntry {
   path: string

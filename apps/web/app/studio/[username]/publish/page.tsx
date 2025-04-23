@@ -2,8 +2,11 @@
 
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { ResizablePanelGroup, ResizablePanel } from "@/components/ui/resizable"
+import {
+  ResizableHandle,
+  ResizablePanelGroup,
+  ResizablePanel,
+} from "@/components/ui/resizable"
 import { FileExplorer } from "@/components/features/studio/publish/components/FileExplorer"
 import { EditorPane } from "@/components/features/studio/publish/components/EditorPane"
 import { PreviewPane } from "@/components/features/studio/publish/components/PreviewPane"
@@ -20,6 +23,7 @@ function PublishPageContent() {
   const router = useRouter()
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
   const [code, setCode] = useState<string>("")
+  const [isPreviewVisible, setIsPreviewVisible] = useState(true)
 
   const {
     sandbox,
@@ -35,7 +39,6 @@ function PublishPageContent() {
     isTreeLoading,
     isFileLoading,
     loadRootDirectory,
-    loadDirectory,
     loadFileContent,
     saveFileContent,
     createFile,
@@ -108,6 +111,10 @@ function PublishPageContent() {
     window.location.reload()
   }
 
+  const togglePreviewVisibility = () => {
+    setIsPreviewVisible((prev) => !prev)
+  }
+
   if (isSandboxLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
@@ -132,7 +139,12 @@ function PublishPageContent() {
 
   return (
     <div className="h-screen w-full flex flex-col">
-      <PublishHeader sandboxId={sandboxId} onReset={handleReset} />
+      <PublishHeader
+        sandboxId={sandboxId}
+        onReset={handleReset}
+        isPreviewVisible={isPreviewVisible}
+        onTogglePreview={togglePreviewVisibility}
+      />
 
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         <ResizablePanel defaultSize={20} minSize={15} className="border-r">
@@ -144,30 +156,31 @@ function PublishPageContent() {
             onCreateFile={handleCreateFile}
             onRefresh={loadRootDirectory}
             isLoading={isTreeLoading}
-            fetchDirectoryContent={loadDirectory}
           />
         </ResizablePanel>
-
-        <ResizablePanel defaultSize={80} minSize={55}>
-          <Tabs defaultValue="editor" className="h-full flex flex-col">
-            <TabsList className="mx-2 mt-2">
-              <TabsTrigger value="editor">Editor</TabsTrigger>
-              <TabsTrigger value="preview" disabled={!previewURL}>
-                Preview
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="editor" className="flex-1 min-h-0 p-2">
+        <ResizableHandle />
+        <ResizablePanel defaultSize={80} minSize={20}>
+          <ResizablePanelGroup direction="horizontal" className="h-full">
+            <ResizablePanel
+              defaultSize={isPreviewVisible ? 50 : 100}
+              minSize={30}
+            >
               <EditorPane
                 selectedFile={selectedEntry}
                 code={code}
                 onCodeChange={handleCodeChange}
                 isLoading={isFileLoading}
               />
-            </TabsContent>
-            <TabsContent value="preview" className="flex-1 min-h-0 p-2">
-              <PreviewPane previewURL={previewURL} />
-            </TabsContent>
-          </Tabs>
+            </ResizablePanel>
+            {isPreviewVisible && (
+              <>
+                <ResizableHandle />
+                <ResizablePanel defaultSize={50} minSize={30}>
+                  <PreviewPane previewURL={previewURL} />
+                </ResizablePanel>
+              </>
+            )}
+          </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
