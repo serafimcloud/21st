@@ -164,7 +164,20 @@ const SubmissionsAdminPage: FC = () => {
       }
 
       toast.success(`Submission status updated to ${status}`)
-      await fetchSubmissions()
+
+      // Обновляем локальное состояние вместо полной перезагрузки
+      setSubmissions((prevSubmissions) =>
+        prevSubmissions.map((sub) =>
+          sub.component_data.id === componentId
+            ? {
+                ...sub,
+                submission_status: status,
+                moderators_feedback: feedback || "",
+              }
+            : sub,
+        ),
+      )
+
       setSelectedSubmission(null)
       setFeedback("")
     } catch (error: unknown) {
@@ -209,10 +222,79 @@ const SubmissionsAdminPage: FC = () => {
       }
 
       toast.success("Demo information updated successfully")
-      await fetchSubmissions()
+
+      // Обновляем локальное состояние вместо полной перезагрузки
+      const updatedName = name || editDemoName
+      const updatedSlug = slug || editDemoSlug
+      const targetId = componentId || editingDemo!.component_data.id
+
+      setSubmissions((prevSubmissions) =>
+        prevSubmissions.map((sub) =>
+          sub.component_data.id === targetId
+            ? {
+                ...sub,
+                name: updatedName,
+                demo_slug: updatedSlug,
+              }
+            : sub,
+        ),
+      )
+
       setEditingDemo(null)
       setEditDemoName("")
       setEditDemoSlug("")
+    } catch (error: unknown) {
+      console.error("Error updating demo information:", error)
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to update demo information"
+      toast.error(errorMessage)
+    }
+  }
+
+  // Add a direct update function that doesn't require the dialog to be open
+  const updateDemoInfoDirect = async (
+    componentId: number,
+    name: string,
+    slug: string,
+  ) => {
+    try {
+      const demoParams = {
+        p_component_id: componentId,
+        p_demo_name: name,
+        p_demo_slug: slug,
+      }
+
+      const response = (await supabase.rpc(
+        "update_demo_info_as_admin",
+        demoParams,
+      )) as PostgrestSingleResponse<AdminRpcResponse>
+
+      const { data, error } = response
+
+      if (error) {
+        throw error
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || "Failed to update demo information")
+      }
+
+      toast.success("Demo information updated to defaults")
+
+      // Обновляем локальное состояние вместо полной перезагрузки
+      setSubmissions((prevSubmissions) =>
+        prevSubmissions.map((sub) =>
+          sub.component_data.id === componentId
+            ? {
+                ...sub,
+                name: name,
+                demo_slug: slug,
+              }
+            : sub,
+        ),
+      )
     } catch (error: unknown) {
       console.error("Error updating demo information:", error)
       const errorMessage =
@@ -247,46 +329,6 @@ const SubmissionsAdminPage: FC = () => {
 
     // Auto-save immediately without opening dialog
     updateDemoInfoDirect(submission.component_data.id, defaultName, defaultSlug)
-  }
-
-  // Add a direct update function that doesn't require the dialog to be open
-  const updateDemoInfoDirect = async (
-    componentId: number,
-    name: string,
-    slug: string,
-  ) => {
-    try {
-      const demoParams = {
-        p_component_id: componentId,
-        p_demo_name: name,
-        p_demo_slug: slug,
-      }
-
-      const response = (await supabase.rpc(
-        "update_demo_info_as_admin",
-        demoParams,
-      )) as PostgrestSingleResponse<AdminRpcResponse>
-
-      const { data, error } = response
-
-      if (error) {
-        throw error
-      }
-
-      if (data && !data.success) {
-        throw new Error(data.error || "Failed to update demo information")
-      }
-
-      toast.success("Demo information updated to defaults")
-      await fetchSubmissions()
-    } catch (error: unknown) {
-      console.error("Error updating demo information:", error)
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to update demo information"
-      toast.error(errorMessage)
-    }
   }
 
   const getStatusAsEnum = (status: string | null): SubmissionStatus => {
