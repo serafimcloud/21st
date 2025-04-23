@@ -154,6 +154,9 @@ importers:
       '@codesandbox/sandpack-react':
         specifier: ^2.19.9
         version: 2.19.9(react-dom@19.0.0)(react@19.0.0)
+      '@codesandbox/sdk':
+        specifier: ^0.11.2
+        version: 0.11.2
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.9.1(react-hook-form@7.53.1)
@@ -2430,6 +2433,11 @@ packages:
       react-devtools-inline: 4.4.0
       react-dom: 19.0.0(react@19.0.0)
       react-is: 17.0.2
+    dev: false
+
+  /@codesandbox/sdk@0.11.2:
+    resolution: {integrity: sha512-sn8+rdrdfRiQ/BeJxHLLXV+J1fiMtL0KGCgFzN8tg/VEHQVvVD31o1xL6j8pg9fm2FVPFWCnZbhMFaj6jOaqyQ==}
+    hasBin: true
     dev: false
 
   /@cspotcode/source-map-support@0.8.1:
