@@ -26,7 +26,7 @@ export function Footer({ className, isOpenSource = true }: FooterProps) {
             </span>
           </div>
         )}
-        <div className="flex flex-row h-auto pb-4 mt-2 sm:mt-0 gap-4 text-center items-center justify-between md:h-14 md:py-0">
+        <div className="flex flex-row h-auto pb-4 mt-2 sm:mt-0 gap-4 text-center items-center justify-between md:h-12 md:py-0">
           <div className="flex items-center text-sm text-muted-foreground">
             21st Labs Inc.
           </div>
