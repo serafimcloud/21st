@@ -38,6 +38,10 @@ const PublishPage = () => {
   useEffect(() => {
     if (sandbox) {
       console.log("Sandbox:", sandbox)
+
+      sandbox.fs.readdir("/").then((files) => {
+        console.log("Files:", files)
+      })
     }
   }, [sandbox])
 
