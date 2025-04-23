@@ -1008,8 +1008,8 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
-          bundle_hash?: string | null
-          bundle_html_url?: string | null
+          bundle_hash: string | null
+          bundle_html_url: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -2876,6 +2876,14 @@ export type Database = {
               p_tags?: Json
             }
         Returns: undefined
+      }
+      update_demo_info_as_admin: {
+        Args: {
+          p_component_id: number
+          p_demo_name: string
+          p_demo_slug: string
+        }
+        Returns: Json
       }
       update_demo_tags: {
         Args: { p_demo_id: number; p_tags: Json }
