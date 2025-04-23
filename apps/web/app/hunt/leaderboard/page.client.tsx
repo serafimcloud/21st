@@ -5,8 +5,9 @@ import { useRoundSubmissions, useToggleVote, type Round } from "@/lib/queries"
 import {
   LeaderboardList,
   type Category,
-} from "@/components/features/contest/leaderboard-list"
+} from "@/components/features/hunt/leaderboard-list"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Header } from "@/components/ui/header.client"
 import { Loader2 } from "lucide-react"
 
 interface Tag {
@@ -53,9 +54,11 @@ export function LeaderboardClient({
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="space-y-6">
+    <div className="min-h-screen">
+      <Header />
+      <div className="space-y-8">
+        {/* Header Section */}
+        <div className="space-y-6">
         <div className="flex flex-col gap-1.5">
           <h2 className="text-2xl font-semibold">Top Components</h2>
           <div className="text-sm text-muted-foreground">
@@ -136,6 +139,7 @@ export function LeaderboardClient({
                 </span>
               </li>
             </ul>
+          </div>
           </div>
         </div>
       </div>

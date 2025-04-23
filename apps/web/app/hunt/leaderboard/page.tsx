@@ -4,7 +4,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { LeaderboardClient } from "./page.client"
-import { Header } from "@/components/ui/header.client"
 import { Footer } from "@/components/ui/footer"
 import { Logo } from "@/components/ui/logo"
 
@@ -84,7 +83,6 @@ export default async function LeaderboardPage() {
     <div className="min-h-screen">
       <div className="min-h-screen flex flex-col">
         <Logo className="z-50" />
-        <Header />
         <div className="flex-1 mt-[11vh] max-w-[640px] mx-auto w-full px-4">
           <div className="min-h-screen w-full bg-background antialiased mt-14">
             <div className="p-3 sm:p-6">

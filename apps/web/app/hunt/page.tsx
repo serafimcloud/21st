@@ -1,7 +1,6 @@
-import React from "react"
+import React, { Suspense } from "react"
 import Link from "next/link"
 import { Logo } from "@/components/ui/logo"
-import { Header } from "@/components/ui/header.client"
 import { Footer } from "@/components/ui/footer"
 import {
   Table,
@@ -13,22 +12,25 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Trophy } from "lucide-react"
+import { Header } from "@/components/ui/header.client"
 
 export default function Page() {
   return (
     <div className="min-h-screen">
       <div className="min-h-screen flex flex-col">
         <Logo className="z-50" />
-        <Header />
+        <Suspense>
+          <Header />
+        </Suspense>
         <div className="flex-1 my-[11vh] max-w-[800px] mx-auto w-full px-4">
           <div className="space-y-8 text-foreground">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h1 className="text-3xl font-bold tracking-tight">
-                Contest Overview
+                Component Hunt Overview
               </h1>
 
               <Button asChild className="gap-2">
-                <Link href="/contest/leaderboard">
+                <Link href="/hunt/leaderboard">
                   <Trophy className="h-4 w-4" />
                   View Current Leaderboard
                 </Link>
@@ -49,7 +51,7 @@ export default function Page() {
                 collected during the week.
               </p>
             </section>
-
+            {/* 
             <div className="h-px bg-border" />
 
             <section className="space-y-4">
@@ -70,7 +72,7 @@ export default function Page() {
                   weekly submission window closes (see timeline below).
                 </li>
               </ul>
-            </section>
+            </section> */}
 
             <div className="h-px bg-border" />
 

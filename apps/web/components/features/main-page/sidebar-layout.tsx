@@ -365,22 +365,22 @@ export function MainSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={pathname === "/contest"}
+                  isActive={pathname === "/hunt"}
                   onClick={() => {
-                    router.push("/contest")
+                    router.push("/hunt")
                   }}
                 >
                   <div className="flex items-center w-full">
                     <Swords className="mr-2 h-4 w-4" />
-                    Contest Overview
+                    Component Hunt Overview
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={pathname === "/contest/leaderboard"}
+                  isActive={pathname === "/hunt/leaderboard"}
                   onClick={() => {
-                    router.push("/contest/leaderboard")
+                    router.push("/hunt/leaderboard")
                   }}
                 >
                   <div className="flex items-center w-full">
