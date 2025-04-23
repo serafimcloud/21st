@@ -32,6 +32,8 @@ import {
   Group,
   Presentation,
   Home,
+  Swords,
+  Trophy,
 } from "lucide-react"
 import { useAtom } from "jotai"
 import { AppSection } from "@/lib/atoms"
@@ -59,6 +61,7 @@ import type {
   NavigationCategory,
 } from "@/lib/navigation-with-magic"
 import { Button } from "@/components/ui/button"
+import { TextShimmer } from "@/components/ui/text-shimmer"
 
 export function MainSidebar() {
   const { toggleSidebar } = useSidebar()
@@ -161,7 +164,7 @@ export function MainSidebar() {
 
   return (
     <Sidebar className="hidden md:block">
-      <SidebarHeader className="h-14"/>
+      <SidebarHeader className="h-14" />
       <SidebarContent className="pb-14">
         <SidebarGroup>
           <SidebarGroupContent>
@@ -346,6 +349,50 @@ export function MainSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+      
+        {/*
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sm font-semibold text-foreground">
+            <TextShimmer
+              className="font-medium [--base-color:hsl(var(--mono-gradient-start))] [--base-gradient-color:hsl(var(--mono-gradient-end))] dark:[--base-color:hsl(var(--mono-gradient-start))] dark:[--base-gradient-color:hsl(var(--mono-gradient-end))]"
+              duration={1.2}
+              spread={2}
+            >
+              $2000 Weekly Contest
+            </TextShimmer>
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={pathname === "/hunt"}
+                  onClick={() => {
+                    router.push("/hunt")
+                  }}
+                >
+                  <div className="flex items-center w-full">
+                    <Swords className="mr-2 h-4 w-4" />
+                    Component Hunt Overview
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={pathname === "/hunt/leaderboard"}
+                  onClick={() => {
+                    router.push("/hunt/leaderboard")
+                  }}
+                >
+                  <div className="flex items-center w-full">
+                    <Trophy className="mr-2 h-4 w-4" />
+                    Leaderboard
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup> 
+        */}
 
         {/* Add You section */}
         <SidebarGroup>
@@ -561,7 +608,7 @@ export function MainSidebar() {
                   aria-label="Toggle Sidebar"
                   onClick={(e) => {
                     e.preventDefault()
-                    e.stopPropagation() 
+                    e.stopPropagation()
                     toggleSidebar()
                   }}
                 >
