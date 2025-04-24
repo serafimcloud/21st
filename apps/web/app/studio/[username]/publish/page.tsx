@@ -17,10 +17,19 @@ import {
   type FileEntry,
 } from "@/components/features/studio/publish/hooks/useFileSystem"
 
+const DEFAULT_FILE_ENTRY: FileEntry = {
+  name: "component.tsx",
+  path: "/src/component.tsx",
+  type: "file",
+  isSymlink: false,
+}
+
 function PublishPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
+  const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(
+    DEFAULT_FILE_ENTRY,
+  )
   const [code, setCode] = useState<string>("")
 
   const {

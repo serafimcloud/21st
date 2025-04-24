@@ -507,13 +507,17 @@ export function FileTree({
         },
         {} as Record<string, boolean>,
       )
-      // Only set state if it hasn't been set before or entries changed significantly
-      // This basic check prevents resetting on minor updates if needed later.
-      if (Object.keys(expandedDirs).length === 0) {
+
+      // Reset expanded state when entries structure changes significantly
+      const currentDirPaths = Object.keys(expandedDirs)
+      const entriesChanged =
+        allDirPaths.length !== currentDirPaths.length ||
+        allDirPaths.some((path) => !currentDirPaths.includes(path))
+
+      if (Object.keys(expandedDirs).length === 0 || entriesChanged) {
         setExpandedDirs(initialExpandedState)
       }
     }
-    // Run only when entries load or loading state changes from true to false
   }, [entries, isLoading])
 
   if (isLoading && entries.length === 0) {
