@@ -307,6 +307,9 @@ importers:
       micro:
         specifier: ^10.0.1
         version: 10.0.1
+      monaco-jsx-highlighter:
+        specifier: ^2.77.77
+        version: 2.77.77(@babel/parser@7.26.1)(@babel/traverse@7.25.9)(monaco-editor@0.52.2)
       motion:
         specifier: ^11.18.0
         version: 11.18.0(react-dom@19.0.0)(react@19.0.0)
@@ -12000,6 +12003,19 @@ packages:
 
   /monaco-editor@0.52.2:
     resolution: {integrity: sha512-GEQWEZmfkOGLdd3XK8ryrfWz3AIP8YymVXiPHEdewrUq7mh0qrKrfHLNCXcbB6sTnMLnOZ3ztSiKcciFUkIJwQ==}
+    dev: false
+
+  /monaco-jsx-highlighter@2.77.77(@babel/parser@7.26.1)(@babel/traverse@7.25.9)(monaco-editor@0.52.2):
+    resolution: {integrity: sha512-goQ4bJtcQzxJnqkx6OvXnlt+28SXt3Dnv9t40BEzv2ElJYjp7SpLqVtzZPnSRn8cisxPBLm6reJ76fOwUnaLiA==}
+    engines: {node: '>=10', npm: '>=7'}
+    peerDependencies:
+      '@babel/parser': 6.x || 7.x
+      '@babel/traverse': 6.x || 7.x
+      monaco-editor: '>=0.21'
+    dependencies:
+      '@babel/parser': 7.26.1
+      '@babel/traverse': 7.25.9
+      monaco-editor: 0.52.2
     dev: false
 
   /motion-dom@11.16.4:

@@ -76,6 +76,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.446.0",
     "micro": "^10.0.1",
+    "monaco-jsx-highlighter": "^2.77.77",
     "motion": "^11.18.0",
     "next": "15.2.4",
     "next-themes": "^0.3.0",
