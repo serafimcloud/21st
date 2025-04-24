@@ -3,7 +3,6 @@ import { useClerkSupabaseClient } from "@/lib/clerk"
 import { toast } from "sonner"
 import { Submission, SubmissionStatus, AdminRpcResponse } from "../types"
 import type { PostgrestSingleResponse } from "@supabase/supabase-js"
-import { sendSubmissionStatusEmail } from "@/lib/emails/send-submission-status"
 
 export const useSubmissions = (isAdmin: boolean) => {
   const supabase = useClerkSupabaseClient()
@@ -59,6 +58,39 @@ export const useSubmissions = (isAdmin: boolean) => {
     }
   }
 
+  const sendStatusNotification = async (
+    submission: Submission,
+    status: SubmissionStatus,
+    feedback?: string,
+  ) => {
+    try {
+      const response = await fetch("/api/emails/submission-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          submission,
+          status,
+          feedback,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to send notification")
+      }
+
+      console.log(`✅ Notification sent successfully for status: ${status}`)
+      return true
+    } catch (error) {
+      console.error("Error sending notification:", error)
+      // Не показываем ошибку пользователю, просто логируем
+      return false
+    }
+  }
+
   const updateSubmissionStatus = async (
     componentId: number,
     status: SubmissionStatus,
@@ -105,17 +137,14 @@ export const useSubmissions = (isAdmin: boolean) => {
 
       // Send email notification if we found the submission
       if (updatedSubmission) {
-        try {
-          await sendSubmissionStatusEmail({
-            submission: updatedSubmission,
-            status,
-            feedback: feedback || undefined,
-          })
-        } catch (emailError) {
+        // Вызываем серверный API для отправки уведомления
+        sendStatusNotification(
+          updatedSubmission,
+          status,
+          feedback || undefined,
+        ).catch((emailError) => {
           console.error("Error sending status update email:", emailError)
-          // Don't throw here, we'll just log the error and continue
-          // The status update was successful, so we don't want to show an error toast
-        }
+        })
       }
 
       toast.success(`Submission status updated to ${status}`)

@@ -4,12 +4,32 @@ import type {
   Submission,
   SubmissionStatus,
 } from "@/components/features/admin/types"
+import { config } from "dotenv"
+import * as path from "path"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error("RESEND_API_KEY environment variable is not set")
+// Проверяем, выполняется ли код на сервере или клиенте
+const isServer = typeof window === "undefined"
+
+// Загружаем переменные окружения из .env.local, если функция запускается вне Next.js
+if (isServer && !process.env.NEXT_PUBLIC_APP_URL) {
+  try {
+    config({ path: path.resolve(process.cwd(), ".env.local") })
+    console.log("Loaded environment variables from .env.local")
+  } catch (error) {
+    console.warn("Failed to load environment variables from .env.local:", error)
+  }
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Инициализируем Resend только на сервере
+let resend: Resend | undefined
+if (isServer) {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY environment variable is not set")
+  } else {
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+}
 
 interface SendSubmissionStatusEmailParams {
   submission: Submission
@@ -22,35 +42,57 @@ export async function sendSubmissionStatusEmail({
   status,
   feedback,
 }: SendSubmissionStatusEmailParams) {
+  // Если функция вызывается на клиенте, выводим предупреждение и возвращаем успех
+  if (!isServer) {
+    console.warn("Email sending is only available on the server side")
+    return { success: true, data: null }
+  }
+
   try {
-    const componentName = submission.name || submission.component_data.name
+    const componentName = submission.component_data.name
+    const demoName = submission.name ? `| ${submission.name}` : ""
     const username =
       submission.user_data.display_name || submission.user_data.username
-    const userEmail = submission.user_data.email
 
-    // If we don't have an email, log an error and return
-    if (!userEmail) {
-      console.error(
-        `Cannot send email: No email found for user ${username} (ID: ${submission.user_data.id})`,
-      )
+    // Получаем email пользователя из базы данных
+    const userId = submission.user_data.id
+    const { data: userData, error: userError } = await supabaseWithAdminAccess
+      .from("users")
+      .select("email")
+      .eq("id", userId)
+      .single()
+
+    if (userError || !userData?.email) {
+      console.error("Failed to get user email:", userError)
       return {
         success: false,
-        error: "No email address available for user",
+        error: "Failed to get user email",
       }
     }
 
-    // Create component URL
+    const userEmail = userData.email
+
+    // Проверяем наличие API ключа и инициализированного Resend
+    if (!resend) {
+      console.error("Resend is not initialized, cannot send email")
+      return {
+        success: false,
+        error: "Resend API client is not initialized",
+      }
+    }
+
+    // Создаем URL компонента
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://21st.dev"
-    const componentSlug =
-      submission.demo_slug || submission.component_data.component_slug
-    const componentUrl = `${baseUrl}/component/${componentSlug}`
+    const componentUrl = `${baseUrl}/${submission.user_data.username}/${submission.component_data.component_slug}/${submission.demo_slug}`
 
     const data = await resend.emails.send({
-      from: "21st.dev Team <notifications@21st.dev>",
+      from: "Serafim from 21st.dev <serafim@hey.21st.dev>",
       to: userEmail,
+      replyTo: "21st.dev Support <support@21st.dev>",
       subject: getEmailSubject(status, componentName),
       react: SubmissionStatusEmail({
         componentName,
+        demoName,
         status,
         feedback,
         username,
@@ -83,7 +125,7 @@ function getEmailSubject(
     case "featured":
       return `🌟 Your component "${componentName}" has been featured!`
     case "posted":
-      return `✅ Your component "${componentName}" has been approved`
+      return `Your component "${componentName}" has been posted, but not featured`
     case "rejected":
       return `Update on your submission: "${componentName}"`
     default:

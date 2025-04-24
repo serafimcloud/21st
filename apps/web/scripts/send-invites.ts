@@ -1,3 +1,4 @@
+
 import { config } from "dotenv"
 import * as path from "path"
 import { sendInvites } from "../lib/emails/send-invites"

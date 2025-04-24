@@ -14,6 +14,7 @@ import { SubmissionStatus } from "@/components/features/admin/types"
 
 interface SubmissionStatusEmailProps {
   componentName: string
+  demoName?: string
   status: SubmissionStatus
   feedback?: string
   username: string
@@ -22,35 +23,40 @@ interface SubmissionStatusEmailProps {
 
 export const SubmissionStatusEmail = ({
   componentName,
+  demoName,
   status,
   feedback,
   username,
   componentUrl,
 }: SubmissionStatusEmailProps) => {
+  const fullComponentName = demoName
+    ? `${componentName}. Demo: ${demoName}`
+    : componentName
+
   const getStatusData = () => {
     switch (status) {
       case "featured":
         return {
           title: "Your submission has been featured! 🌟",
-          message: `Congratulations! Your component "${componentName}" has been featured on 21st.dev. This means your work will be showcased to the entire community.`,
+          message: `Congratulations! Your component "${fullComponentName}" has been featured on 21st.dev. This means your work will be showcased to the entire community.`,
           buttonText: "View Your Featured Component",
         }
       case "posted":
         return {
-          title: "Your submission has been approved! ✅",
-          message: `Good news! Your component "${componentName}" has been approved and is now live on 21st.dev.`,
+          title: "Your submission has been approved",
+          message: `Your component "${fullComponentName}" has been published and is available via direct link. However, it's not featured in our public listings yet as it doesn't fully meet our quality guidelines. If you'd like your component to be featured, please review our guidelines and make necessary improvements.`,
           buttonText: "View Your Component",
         }
       case "rejected":
         return {
           title: "Update on your submission",
-          message: `We've reviewed your component "${componentName}" and unfortunately, we cannot accept it in its current form. Please see the feedback below for more details.`,
+          message: `We've reviewed your component "${fullComponentName}" and unfortunately, we cannot accept it in its current form. Please see the feedback below for more details.`,
           buttonText: "Submit a New Component",
         }
       default:
         return {
           title: "Update on your submission",
-          message: `We have an update regarding your component "${componentName}" on 21st.dev.`,
+          message: `We have an update regarding your component "${fullComponentName}" on 21st.dev.`,
           buttonText: "Check Status",
         }
     }
