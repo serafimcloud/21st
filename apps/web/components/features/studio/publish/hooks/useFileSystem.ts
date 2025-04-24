@@ -11,14 +11,19 @@ const ALWAYS_HIDDEN_FILES = [
   "vite-env.d.ts",
   "public",
   "pnpm-lock.yaml",
-]
-const ADVANCED_VIEW_HIDDEN_FILES = [
-  "index.html",
-  "README.md",
   "vite.config.ts",
   "tsconfig.json",
   "tsconfig.node.json",
+  "index.html",
   "main.tsx",
+  "README.md",
+  "components.json",
+]
+const ADVANCED_VIEW_HIDDEN_FILES = [
+  "package.json",
+  "app.tsx",
+  "lib",
+  "components",
 ]
 
 export interface FileEntry {
@@ -52,6 +57,7 @@ const loadDirectoryRecursively = async (
   showAdvancedView: boolean,
 ): Promise<FileEntry[]> => {
   const entries = await sandbox.fs.readdir(normalizePath(path))
+
   const filteredEntries = entries.filter((entry) => {
     // Always filter out certain files
     if (

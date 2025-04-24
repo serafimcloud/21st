@@ -20,20 +20,20 @@ import {
   RefreshCwIcon,
   Loader2Icon,
   FolderPlusIcon,
-  SlidersHorizontal,
+  EyeIcon,
+  EyeOffIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { FileTree } from "./FileTree"
+import { cn } from "@/lib/utils"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 
 interface FileExplorerProps {
   entries: FileEntry[]
@@ -66,7 +66,6 @@ export function FileExplorer({
   const [newFileName, setNewFileName] = useState("")
   const [isCreatingDirectory, setIsCreatingDirectory] = useState(false)
   const [newDirectoryName, setNewDirectoryName] = useState("")
-  const [showAdvancedToggle, setShowAdvancedToggle] = useState(false)
 
   const handleCreateFile = () => {
     if (newFileName) {
@@ -112,7 +111,7 @@ export function FileExplorer({
           >
             <FolderPlusIcon className="h-4 w-4" />
           </Button>
-          <Button
+          {/* <Button
             size="icon"
             variant="ghost"
             onClick={onRefresh}
@@ -123,36 +122,44 @@ export function FileExplorer({
             ) : (
               <RefreshCwIcon className="h-4 w-4" />
             )}
-          </Button>
+          </Button> */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setShowAdvancedToggle((prev) => !prev)}
+                  variant="outline"
+                  size="sm"
+                  onClick={onToggleAdvancedView}
+                  className={cn(
+                    "bg-background/80 backdrop-blur-sm shadow-sm border transition-colors",
+                  )}
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
+                  {advancedView ? (
+                    <>
+                      <EyeIcon className="h-4 w-4 mr-2" />
+                      Simple view
+                    </>
+                  ) : (
+                    <>
+                      <EyeOffIcon className="h-4 w-4 mr-2" />
+                      Advanced view
+                    </>
+                  )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Advanced settings</TooltipContent>
+              <TooltipContent
+                side="bottom"
+                align="end"
+                className="max-w-[220px]"
+              >
+                {advancedView
+                  ? "Switch to Simple view: only shows files that you need"
+                  : "Switch to Advanced view: shows files that are used under the hood"}
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
       </div>
-
-      {showAdvancedToggle && (
-        <div className="p-2 border-b flex items-center gap-2">
-          <Switch
-            id="advanced-view"
-            checked={advancedView}
-            onCheckedChange={onToggleAdvancedView}
-          />
-          <Label htmlFor="advanced-view" className="text-sm">
-            Show all files
-          </Label>
-        </div>
-      )}
 
       {isCreatingFile && (
         <div className="p-2 border-b">
