@@ -23,7 +23,6 @@ function PublishPageContent() {
   const router = useRouter()
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
   const [code, setCode] = useState<string>("")
-  const [isPreviewVisible, setIsPreviewVisible] = useState(true)
 
   const {
     sandboxRef,
@@ -146,10 +145,6 @@ function PublishPageContent() {
     window.location.reload()
   }
 
-  const togglePreviewVisibility = () => {
-    setIsPreviewVisible((prev) => !prev)
-  }
-
   if (isSandboxLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
@@ -174,12 +169,7 @@ function PublishPageContent() {
 
   return (
     <div className="h-screen w-full flex flex-col">
-      <PublishHeader
-        sandboxId={sandboxId}
-        onReset={handleReset}
-        isPreviewVisible={isPreviewVisible}
-        onTogglePreview={togglePreviewVisibility}
-      />
+      <PublishHeader sandboxId={sandboxId} onReset={handleReset} />
 
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         <ResizablePanel defaultSize={20} minSize={15} className="border-r">
@@ -199,27 +189,13 @@ function PublishPageContent() {
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel defaultSize={80} minSize={20}>
-          <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel
-              defaultSize={isPreviewVisible ? 50 : 100}
-              minSize={30}
-            >
-              <EditorPane
-                selectedFile={selectedEntry}
-                code={code}
-                onCodeChange={handleCodeChange}
-                isLoading={isFileLoading}
-              />
-            </ResizablePanel>
-            {isPreviewVisible && (
-              <>
-                <ResizableHandle />
-                <ResizablePanel defaultSize={50} minSize={30}>
-                  <PreviewPane previewURL={previewURL} />
-                </ResizablePanel>
-              </>
-            )}
-          </ResizablePanelGroup>
+          <PreviewPane
+            previewURL={previewURL}
+            selectedFile={selectedEntry}
+            code={code}
+            onCodeChange={handleCodeChange}
+            isFileLoading={isFileLoading}
+          />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

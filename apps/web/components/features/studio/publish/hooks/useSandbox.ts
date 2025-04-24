@@ -25,8 +25,16 @@ export const useSandbox = ({
       const connectedSandbox = await connectToSandbox(startData)
       const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
 
-      setPreviewURL(newPreviewURL || null)
       sandboxRef.current = connectedSandbox
+
+      setInterval(() => {
+        const newPreviewURL = sandboxRef.current?.ports.getPreviewUrl(5173)
+        console.log("newPreviewURL", newPreviewURL)
+        setPreviewURL(newPreviewURL || null)
+      }, 1000 * 5)
+
+      setPreviewURL(newPreviewURL || null)
+
       setSandboxConnectionHash(
         Math.random().toString(36).substring(2) + Date.now().toString(36),
       )
