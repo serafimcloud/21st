@@ -28,6 +28,9 @@ if (isServer) {
   }
 }
 
+const TEST_MODE = false
+const TEST_EMAIL = ""
+
 interface SendSubmissionStatusEmailParams {
   submission: Submission
   status: SubmissionStatus
@@ -49,23 +52,31 @@ export async function sendSubmissionStatusEmail({
     const demoName = submission.name ? `| ${submission.name}` : ""
     const username =
       submission.user_data.display_name || submission.user_data.username
+    let userEmail: string
 
-    const userId = submission.user_data.id
-    const { data: userData, error: userError } = await supabaseWithAdminAccess
-      .from("users")
-      .select("email")
-      .eq("id", userId)
-      .single()
+    if (TEST_MODE) {
+      userEmail = TEST_EMAIL
+      console.log(
+        `🧪 TEST MODE: Email will be sent to ${TEST_EMAIL} instead of the actual user`,
+      )
+    } else {
+      const userId = submission.user_data.id
+      const { data: userData, error: userError } = await supabaseWithAdminAccess
+        .from("users")
+        .select("email")
+        .eq("id", userId)
+        .single()
 
-    if (userError || !userData?.email) {
-      console.error("Failed to get user email:", userError)
-      return {
-        success: false,
-        error: "Failed to get user email",
+      if (userError || !userData?.email) {
+        console.error("Failed to get user email:", userError)
+        return {
+          success: false,
+          error: "Failed to get user email",
+        }
       }
-    }
 
-    const userEmail = userData.email
+      userEmail = userData.email
+    }
 
     if (!resend) {
       console.error("Resend is not initialized, cannot send email")
