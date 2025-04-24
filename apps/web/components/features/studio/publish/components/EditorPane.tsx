@@ -105,6 +105,8 @@ function EditorPaneOriginal({
       ...compilerOpts,
       allowUnreachableCode: true, // kills TS 7027
       allowUnusedLabels: true, // usually paired with it
+      noUnusedLocals: true,
+      noUnusedParameters: true,
     })
 
     // keep JS in sync if you ever switch languages
@@ -112,6 +114,8 @@ function EditorPaneOriginal({
       ...compilerOpts,
       allowUnreachableCode: true,
       allowUnusedLabels: true,
+      noUnusedLocals: true,
+      noUnusedParameters: true,
     })
 
     monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
