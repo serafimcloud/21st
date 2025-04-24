@@ -40,6 +40,8 @@ function PublishPageContent() {
     files,
     isTreeLoading,
     isFileLoading,
+    advancedView,
+    toggleAdvancedView,
     loadRootDirectory,
     loadFileContent,
     saveFileContent,
@@ -191,6 +193,8 @@ function PublishPageContent() {
             onRename={handleRenameEntry}
             onRefresh={loadRootDirectory}
             isLoading={isTreeLoading}
+            advancedView={advancedView}
+            onToggleAdvancedView={toggleAdvancedView}
           />
         </ResizablePanel>
         <ResizableHandle />

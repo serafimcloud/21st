@@ -3,15 +3,17 @@ import { useState, useEffect, useRef, RefObject } from "react"
 import { toast } from "sonner"
 
 const ROOT_PATH = "/project/sandbox"
-const EXCLUDED_NAMES = [
+
+const ALWAYS_HIDDEN_FILES = [
   "node_modules",
   "dist",
   "yarn.lock",
   "vite-env.d.ts",
   "public",
   "pnpm-lock.yaml",
+]
+const ADVANCED_VIEW_HIDDEN_FILES = [
   "index.html",
-  // "package.json",
   "README.md",
   "vite.config.ts",
   "tsconfig.json",
@@ -47,19 +49,36 @@ const mapReaddirEntryToFileEntry = (
 const loadDirectoryRecursively = async (
   sandbox: SandboxSession,
   path: string,
+  showAdvancedView: boolean,
 ): Promise<FileEntry[]> => {
   const entries = await sandbox.fs.readdir(normalizePath(path))
-  const filteredEntries = entries.filter(
-    (entry) =>
-      !EXCLUDED_NAMES.includes(entry.name) && !entry.name.startsWith("."),
-  )
+  const filteredEntries = entries.filter((entry) => {
+    // Always filter out certain files
+    if (
+      ALWAYS_HIDDEN_FILES.includes(entry.name) ||
+      entry.name.startsWith(".")
+    ) {
+      return false
+    }
+
+    // Filter out advanced view files only if not in advanced mode
+    if (!showAdvancedView && ADVANCED_VIEW_HIDDEN_FILES.includes(entry.name)) {
+      return false
+    }
+
+    return true
+  })
   const fileEntries = filteredEntries.map((entry) =>
     mapReaddirEntryToFileEntry(entry, path),
   )
 
   for (const entry of fileEntries) {
     if (entry.type === "dir") {
-      entry.children = await loadDirectoryRecursively(sandbox, entry.path)
+      entry.children = await loadDirectoryRecursively(
+        sandbox,
+        entry.path,
+        showAdvancedView,
+      )
     }
   }
 
@@ -78,6 +97,7 @@ export const useFileSystem = ({
   const [files, setFiles] = useState<FileEntry[]>([])
   const [isTreeLoading, setIsTreeLoading] = useState(false)
   const [isFileLoading, setIsFileLoading] = useState(false)
+  const [advancedView, setAdvancedView] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   const fsWrapper = async <T>(
@@ -103,9 +123,8 @@ export const useFileSystem = ({
     setIsTreeLoading(true)
     try {
       const rootEntries = await fsWrapper((sandbox) =>
-        loadDirectoryRecursively(sandbox, ROOT_PATH),
+        loadDirectoryRecursively(sandbox, ROOT_PATH, advancedView),
       )
-      console.log("rootEntries", rootEntries)
       if (rootEntries) setFiles(rootEntries)
     } catch (error) {
       console.error("Failed to load root directory:", error)
@@ -118,7 +137,7 @@ export const useFileSystem = ({
 
   useEffect(() => {
     loadRootDirectory()
-  }, [sandboxConnectionHash])
+  }, [sandboxConnectionHash, advancedView])
 
   const loadFileContent = async (filePath: string): Promise<string> => {
     setIsFileLoading(true)
@@ -155,7 +174,7 @@ export const useFileSystem = ({
   const createFile = async (filePath: string) => {
     try {
       await fsWrapper((sandbox) =>
-        sandbox.fs.writeTextFile(normalizePath(filePath), ""),
+        sandbox.fs.writeTextFile(normalizePath(filePath), "// TODO: Add code"),
       )
       await loadRootDirectory()
     } catch (error) {
@@ -216,10 +235,16 @@ export const useFileSystem = ({
     }
   }
 
+  const toggleAdvancedView = () => {
+    setAdvancedView((prev) => !prev)
+  }
+
   return {
     files,
     isTreeLoading,
     isFileLoading,
+    advancedView,
+    toggleAdvancedView,
     loadRootDirectory,
     loadFileContent,
     saveFileContent,

@@ -20,11 +20,20 @@ import {
   RefreshCwIcon,
   Loader2Icon,
   FolderPlusIcon,
+  SlidersHorizontal,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { FileTree } from "./FileTree"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 interface FileExplorerProps {
   entries: FileEntry[]
@@ -36,6 +45,8 @@ interface FileExplorerProps {
   onRename: (oldPath: string, newName: string) => Promise<string>
   onRefresh: () => void
   isLoading: boolean
+  advancedView: boolean
+  onToggleAdvancedView: () => void
 }
 
 export function FileExplorer({
@@ -48,11 +59,14 @@ export function FileExplorer({
   onRename,
   onRefresh,
   isLoading,
+  advancedView,
+  onToggleAdvancedView,
 }: FileExplorerProps) {
   const [isCreatingFile, setIsCreatingFile] = useState(false)
   const [newFileName, setNewFileName] = useState("")
   const [isCreatingDirectory, setIsCreatingDirectory] = useState(false)
   const [newDirectoryName, setNewDirectoryName] = useState("")
+  const [showAdvancedToggle, setShowAdvancedToggle] = useState(false)
 
   const handleCreateFile = () => {
     if (newFileName) {
@@ -110,8 +124,35 @@ export function FileExplorer({
               <RefreshCwIcon className="h-4 w-4" />
             )}
           </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setShowAdvancedToggle((prev) => !prev)}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Advanced settings</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
+
+      {showAdvancedToggle && (
+        <div className="p-2 border-b flex items-center gap-2">
+          <Switch
+            id="advanced-view"
+            checked={advancedView}
+            onCheckedChange={onToggleAdvancedView}
+          />
+          <Label htmlFor="advanced-view" className="text-sm">
+            Show all files
+          </Label>
+        </div>
+      )}
 
       {isCreatingFile && (
         <div className="p-2 border-b">

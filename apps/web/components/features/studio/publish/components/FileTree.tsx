@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   FolderIcon,
   FileIcon,
@@ -481,6 +481,40 @@ export function FileTree({
   onRename,
 }: FileTreeProps) {
   const [expandedDirs, setExpandedDirs] = useState<Record<string, boolean>>({})
+
+  // Function to recursively collect all directory paths
+  const getAllDirectoryPaths = (items: FileEntry[]): string[] => {
+    let paths: string[] = []
+    for (const item of items) {
+      if (item.type === "dir") {
+        paths.push(item.path)
+        if (item.children) {
+          paths = paths.concat(getAllDirectoryPaths(item.children))
+        }
+      }
+    }
+    return paths
+  }
+
+  // Effect to set initial expanded state
+  useEffect(() => {
+    if (entries.length > 0 && !isLoading) {
+      const allDirPaths = getAllDirectoryPaths(entries)
+      const initialExpandedState = allDirPaths.reduce(
+        (acc, path) => {
+          acc[path] = true
+          return acc
+        },
+        {} as Record<string, boolean>,
+      )
+      // Only set state if it hasn't been set before or entries changed significantly
+      // This basic check prevents resetting on minor updates if needed later.
+      if (Object.keys(expandedDirs).length === 0) {
+        setExpandedDirs(initialExpandedState)
+      }
+    }
+    // Run only when entries load or loading state changes from true to false
+  }, [entries, isLoading])
 
   if (isLoading && entries.length === 0) {
     return (
