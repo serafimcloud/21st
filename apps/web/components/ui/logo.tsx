@@ -40,8 +40,8 @@ export function Logo({
 
   const svgLogo = (
     <svg
-      width={24}
-      height={24}
+      width="100%"
+      height="100%"
       viewBox="0 0 60 60"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -79,7 +79,7 @@ export function Logo({
       <div
         ref={logoRef}
         className={cn(
-          `${position} w-8 h-8 flex items-center justify-center left-4 top-3 rounded-full group cursor-pointer relative`,
+          `${position === "fixed" ? position : ""} w-8 h-8 flex items-center justify-center ${position === "fixed" ? "left-4 top-3" : ""} rounded-full group cursor-pointer relative`,
           className,
         )}
         onClick={toggleMenu}
@@ -108,7 +108,7 @@ export function Logo({
       <Link
         href="/?tab=home"
         className={cn(
-          `${position} w-8 h-8 flex items-center justify-center left-4 top-3 rounded-full group cursor-pointer`,
+          `${position === "fixed" ? position : ""} w-8 h-8 flex items-center justify-center ${position === "fixed" ? "left-4 top-3" : ""} rounded-full group cursor-pointer`,
           className,
         )}
         onClick={toggleMenu}

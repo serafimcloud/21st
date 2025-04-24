@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     // Check API key
     const { data: keyCheck, error: keyError } = await supabase.rpc(
-      "check_api_key",
+      "check_api_key_v2",
       { api_key: apiKey },
     )
 
