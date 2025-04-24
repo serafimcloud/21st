@@ -34,7 +34,6 @@ export function LeaderboardClient({
   } = useRoundSubmissions(currentRound.id)
   const toggleVote = useToggleVote(currentRound.id)
 
-  // Фильтруем по категории
   const filteredRows = getFilteredSubmissions(selectedCategory)
 
   if (isLoading) {
@@ -57,7 +56,6 @@ export function LeaderboardClient({
     <div className="min-h-screen">
       <Header />
       <div className="space-y-8">
-        {/* Header Section */}
         <div className="space-y-6">
         <div className="flex flex-col gap-1.5">
           <h2 className="text-2xl font-semibold">Top Components</h2>
@@ -66,7 +64,6 @@ export function LeaderboardClient({
           </div>
         </div>
 
-        {/* Category Tabs */}
         <div className="flex items-center justify-between border-b">
           <Tabs
             value={selectedCategory}
@@ -103,7 +100,6 @@ export function LeaderboardClient({
         </div>
       </div>
 
-      {/* Components List */}
       <div className="space-y-4">
         <LeaderboardList
           submissions={filteredRows}
@@ -112,7 +108,6 @@ export function LeaderboardClient({
         />
       </div>
 
-      {/* Scoring Info */}
       <div className="mt-8 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b">
           <h3 className="font-medium">How Scoring Works</h3>

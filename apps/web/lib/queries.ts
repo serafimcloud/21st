@@ -1079,11 +1079,11 @@ export type Submission = {
   name: string
   preview_url: string | null
   description: string | null
-  category: string // marketing / ui / seasonal / global
+  category: string
   final_score: number
-  rank: number // rank внутри категории или глобальный
-  has_voted?: boolean // whether current user has voted
-  votes_count?: number // total number of votes
+  rank: number
+  has_voted?: boolean
+  votes_count?: number
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1167,7 +1167,6 @@ export type DemoHuntLeaderboardRow = {
     slug: string
   }[]
 }
-
 type DemoHuntCategoryLeaderboardRow =
   Database["public"]["Views"]["demo_hunt_leaderboard"]["Row"]
 
@@ -1190,11 +1189,9 @@ export async function getRoundSubmissions(
 
   return (data || []).map(
     (row: DemoHuntCategoryLeaderboardRow): DemoHuntLeaderboardRow => {
-      // Нормализуем теги
       const rawTags = (row.tags as any) || []
       const normalizedTags = Array.isArray(rawTags)
         ? rawTags.map((tag: any) => ({
-            // Обрабатываем оба формата: строку и объект со свойством slug
             slug: (typeof tag === "string"
               ? tag
               : tag.slug || ""
@@ -1243,7 +1240,6 @@ export async function getHuntDemosList(
 
   return data
 }
-
 export const useRoundSubmissions = (roundId: number | null) => {
   const supabase = useClerkSupabaseClient()
 
@@ -1257,21 +1253,16 @@ export const useRoundSubmissions = (roundId: number | null) => {
     queryFn: async () => {
       if (!roundId) return []
 
-      // Используем новую функцию
       const data = await getHuntDemosList(supabase, roundId)
 
-      // Дополнительное преобразование для правильной работы с ComponentPreviewDialog
       return (data || []).map((submission: any) => {
-        // Убедимся, что component_data это объект
         const componentData =
           typeof submission.component_data === "object"
             ? submission.component_data || {}
             : {}
 
-        // Используем as any чтобы избежать ошибок типизации
         const result = submission as any
 
-        // Добавляем компонент
         result.component = {
           id: componentData.id || 0,
           name: componentData.name || "",
@@ -1281,7 +1272,6 @@ export const useRoundSubmissions = (roundId: number | null) => {
           is_public: !!componentData.is_public,
           price: componentData.price || null,
           user: result.component_user_data || {},
-          // Другие необходимые поля
           downloads_count: componentData.downloads_count || 0,
           likes_count: componentData.likes_count || 0,
           license: componentData.license || null,
@@ -1294,7 +1284,6 @@ export const useRoundSubmissions = (roundId: number | null) => {
     enabled: !!roundId,
   })
 
-  // Категории для фильтрации
   const uiSlugs = [
     "accordion", "ai-chat", "alert", "avatar", "badge", "button", "calendar",
     "card", "carousel", "checkbox", "date-picker", "modal-dialog", "dropdown",
@@ -1317,7 +1306,6 @@ export const useRoundSubmissions = (roundId: number | null) => {
       if (category === "global") return submissions
 
       return submissions.filter((submission: any) => {
-        // Убедимся, что tags массив перед применением map
         const submissionTags = Array.isArray(submission.tags)
           ? submission.tags
           : []
@@ -1325,7 +1313,6 @@ export const useRoundSubmissions = (roundId: number | null) => {
           return typeof tag === "string" ? tag : tag?.slug || ""
         })
 
-        // Фильтруем по категории
         if (category === "ui") {
           return submissionSlugs.some((slug: string) => uiSlugs.includes(slug))
         } else if (category === "marketing") {
@@ -1348,9 +1335,6 @@ export const useRoundSubmissions = (roundId: number | null) => {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-//  REACT‑QUERY HOOKS
-// ─────────────────────────────────────────────────────────────────────────
 export function useContestRounds() {
   const supabase = useClerkSupabaseClient()
   return useQuery({

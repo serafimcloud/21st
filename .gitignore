@@ -42,5 +42,3 @@ yarn-error.log*
 video-converter
 rename
 
-# Admin directories
-**/admin/

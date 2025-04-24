@@ -1008,8 +1008,8 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
-          bundle_hash?: string | null
-          bundle_html_url?: string | null
+          bundle_hash: string | null
+          bundle_html_url: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -2914,7 +2914,7 @@ export type Database = {
       api_plan: "free" | "pro" | "enterprise"
       demo_hunt_category: "marketing" | "ui" | "seasonal"
       payment_status: "pending" | "paid" | "rejected"
-      submission_status: "on_review" | "featured" | "posted"
+      submission_status: "on_review" | "featured" | "posted" | "rejected"
       user_role:
         | "designer"
         | "frontend_developer"
@@ -3070,7 +3070,7 @@ export const Constants = {
       api_plan: ["free", "pro", "enterprise"],
       demo_hunt_category: ["marketing", "ui", "seasonal"],
       payment_status: ["pending", "paid", "rejected"],
-      submission_status: ["on_review", "featured", "posted"],
+      submission_status: ["on_review", "featured", "posted", "rejected"],
       user_role: [
         "designer",
         "frontend_developer",
