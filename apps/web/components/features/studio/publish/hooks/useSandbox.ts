@@ -26,7 +26,6 @@ export const useSandbox = ({
 
       const connectedSandbox = await connectToSandbox(startData)
       const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
-
       sandboxRef.current = connectedSandbox
 
       // setInterval(() => {
@@ -55,12 +54,12 @@ export const useSandbox = ({
   }
 
   useEffect(() => {
-    initialize(true)
+    initialize()
   }, [defaultSandboxId])
 
   const reconnectSandbox = async () => {
     if (!sandboxId) return
-    await initialize()
+    await initialize(true)
   }
 
   return {
