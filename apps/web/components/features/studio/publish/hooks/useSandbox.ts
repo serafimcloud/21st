@@ -16,8 +16,10 @@ export const useSandbox = ({
   const [previewURL, setPreviewURL] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const initialize = async () => {
-    setIsLoading(true)
+  const initialize = async (isReconnecting = false) => {
+    if (!isReconnecting) {
+      setIsLoading(true)
+    }
     try {
       const { sandboxId: newSandboxId, startData } =
         await connectToServerSandbox(sandboxId)
@@ -27,11 +29,11 @@ export const useSandbox = ({
 
       sandboxRef.current = connectedSandbox
 
-      setInterval(() => {
-        const newPreviewURL = sandboxRef.current?.ports.getPreviewUrl(5173)
-        console.log("newPreviewURL", newPreviewURL)
-        setPreviewURL(newPreviewURL || null)
-      }, 1000 * 5)
+      // setInterval(() => {
+      //   const newPreviewURL = sandboxRef.current?.ports.getPreviewUrl(5173)
+      //   console.log("newPreviewURL", newPreviewURL)
+      //   setPreviewURL(newPreviewURL || null)
+      // }, 1000 * 5)
 
       setPreviewURL(newPreviewURL || null)
 
@@ -46,12 +48,14 @@ export const useSandbox = ({
       setSandboxConnectionHash(null)
       setPreviewURL(null)
     } finally {
-      setIsLoading(false)
+      if (!isReconnecting) {
+        setIsLoading(false)
+      }
     }
   }
 
   useEffect(() => {
-    initialize()
+    initialize(true)
   }, [defaultSandboxId])
 
   const reconnectSandbox = async () => {
