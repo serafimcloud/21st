@@ -8,10 +8,8 @@ import { config } from "dotenv"
 import * as path from "path"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
-// Проверяем, выполняется ли код на сервере или клиенте
 const isServer = typeof window === "undefined"
 
-// Загружаем переменные окружения из .env.local, если функция запускается вне Next.js
 if (isServer && !process.env.NEXT_PUBLIC_APP_URL) {
   try {
     config({ path: path.resolve(process.cwd(), ".env.local") })
@@ -21,7 +19,6 @@ if (isServer && !process.env.NEXT_PUBLIC_APP_URL) {
   }
 }
 
-// Инициализируем Resend только на сервере
 let resend: Resend | undefined
 if (isServer) {
   if (!process.env.RESEND_API_KEY) {
@@ -42,7 +39,6 @@ export async function sendSubmissionStatusEmail({
   status,
   feedback,
 }: SendSubmissionStatusEmailParams) {
-  // Если функция вызывается на клиенте, выводим предупреждение и возвращаем успех
   if (!isServer) {
     console.warn("Email sending is only available on the server side")
     return { success: true, data: null }
@@ -54,7 +50,6 @@ export async function sendSubmissionStatusEmail({
     const username =
       submission.user_data.display_name || submission.user_data.username
 
-    // Получаем email пользователя из базы данных
     const userId = submission.user_data.id
     const { data: userData, error: userError } = await supabaseWithAdminAccess
       .from("users")
@@ -72,7 +67,6 @@ export async function sendSubmissionStatusEmail({
 
     const userEmail = userData.email
 
-    // Проверяем наличие API ключа и инициализированного Resend
     if (!resend) {
       console.error("Resend is not initialized, cannot send email")
       return {
@@ -81,7 +75,6 @@ export async function sendSubmissionStatusEmail({
       }
     }
 
-    // Создаем URL компонента
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://21st.dev"
     const componentUrl = `${baseUrl}/${submission.user_data.username}/${submission.component_data.component_slug}/${submission.demo_slug}`
 

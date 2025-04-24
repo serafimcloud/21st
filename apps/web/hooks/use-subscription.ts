@@ -13,10 +13,8 @@ export interface PlanInfo {
   cancel_at_period_end?: boolean
   portal_url?: string
   stripe_subscription_id?: string
-  // Данные об использовании
   usage: number
   limit: number
-  // Дополнительная информация о плане
   planData?: {
     id: number
     stripe_plan_id: string

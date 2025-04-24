@@ -80,10 +80,7 @@ const DEFAULT_FAQS = [
 ]
 
 export function FAQ({ simplified = false, faqs = DEFAULT_FAQS }: FAQProps) {
-  // Выбираем наиболее важные вопросы для simplified режима
-  const displayFaqs = simplified
-    ? faqs.slice(0, 5) // Показываем только первые 5 вопросов в simplified режиме
-    : faqs
+  const displayFaqs = simplified ? faqs.slice(0, 5) : faqs
 
   return (
     <section className={simplified ? "" : "py-10 lg:py-24"}>

@@ -3,7 +3,6 @@ import { BillingSettingsClient } from "@/app/settings/billing/page.client"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
-// Расширенный тип для информации о подписке и лимитах
 export interface PlanInfo {
   id?: string
   name: string
@@ -14,10 +13,8 @@ export interface PlanInfo {
   cancel_at_period_end?: boolean
   portal_url?: string
   stripe_subscription_id?: string
-  // Данные об использовании
   usage: number
   limit: number
-  // Дополнительная информация о плане
   planData?: {
     id: number
     stripe_plan_id: string
@@ -29,11 +26,7 @@ export interface PlanInfo {
   }
 }
 
-/**
- * Получает текущую информацию о плане и лимитах пользователя
- */
 async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
-  // Данные плана по умолчанию
   const defaultPlanInfo: PlanInfo = {
     name: PLAN_LIMITS.free.displayName,
     type: "free",
@@ -49,7 +42,6 @@ async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
   }
 
   try {
-    // 1. Получаем активную подписку пользователя
     const { data: userPlan, error: planError } = await supabaseWithAdminAccess
       .from("users_to_plans")
       .select(
@@ -74,46 +66,35 @@ async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
       .eq("status", "active")
       .maybeSingle()
 
-    // 2. Получаем информацию об использовании
     const { data: usageData, error: usageError } = await supabaseWithAdminAccess
       .from("usages")
       .select("*")
       .eq("user_id", userId)
       .maybeSingle()
 
-    // Если произошла ошибка при запросе плана, возвращаем план по умолчанию
     if (planError) {
       console.error("Error fetching plan:", planError)
       return defaultPlanInfo
     }
 
-    // Если нет активного плана, возвращаем бесплатный план
     if (!userPlan) {
       return {
         ...defaultPlanInfo,
-        // Если есть данные об использовании, используем их
         usage: usageData?.usage || 0,
         limit: usageData?.limit || PLAN_LIMITS.free.generationsPerMonth,
       }
     }
 
-    // Получаем информацию о плане
     const plansData = userPlan.plans as any
     const planType = (plansData?.type || "free") as PlanType
 
-    // Данные из meta
     const meta = (userPlan.meta as Record<string, any>) || {}
 
-    // Определяем лимит использования
-    // 1. Сначала проверяем, есть ли специфичный лимит в таблице usages
-    // 2. Если нет, используем лимит из плана + add_usage
-    // 3. Если ничего не определено, используем дефолтный лимит для типа плана
     const planLimit =
       usageData?.limit ||
       PLAN_LIMITS[planType].generationsPerMonth + (plansData?.add_usage || 0) ||
       PLAN_LIMITS[planType].generationsPerMonth
 
-    // Подготавливаем информацию о плане
     const planInfo: PlanInfo = {
       id: userPlan.id.toString(),
       name:
@@ -149,7 +130,6 @@ async function getCurrentPlan(userId: string | null): Promise<PlanInfo> {
   }
 }
 
-// Always fetch fresh data on page load
 export const dynamic = "force-dynamic"
 
 export default async function BillingSettingsPage({
@@ -162,17 +142,14 @@ export default async function BillingSettingsPage({
   const resolvedSearchParams = await searchParams
   const { userId } = await auth()
 
-  // Получаем информацию о подписке и лимитах
   const subscription = await getCurrentPlan(userId)
 
-  // Access searchParams after resolving the promise
   const success = resolvedSearchParams?.success === "true"
   const canceled = resolvedSearchParams?.canceled === "true"
 
   return (
     <div className="container pb-4 px-0">
       <div className="space-y-6">
-        {/* Client Component with subscription data */}
         <BillingSettingsClient
           subscription={subscription}
           successParam={success}

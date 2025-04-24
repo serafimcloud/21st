@@ -86,7 +86,6 @@ export const useSubmissions = (isAdmin: boolean) => {
       return true
     } catch (error) {
       console.error("Error sending notification:", error)
-      // Не показываем ошибку пользователю, просто логируем
       return false
     }
   }
@@ -117,12 +116,10 @@ export const useSubmissions = (isAdmin: boolean) => {
         throw new Error(data.error || "Failed to update submission")
       }
 
-      // Find the submission that was updated
       const updatedSubmission = submissions.find(
         (sub) => sub.component_data.id === componentId,
       )
 
-      // Update local state
       setSubmissions((prevSubmissions) =>
         prevSubmissions.map((sub) =>
           sub.component_data.id === componentId
@@ -135,9 +132,7 @@ export const useSubmissions = (isAdmin: boolean) => {
         ),
       )
 
-      // Send email notification if we found the submission
       if (updatedSubmission) {
-        // Вызываем серверный API для отправки уведомления
         sendStatusNotification(
           updatedSubmission,
           status,

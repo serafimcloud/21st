@@ -4,7 +4,6 @@ import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   try {
-    // Извлекаем данные из запроса
     const body = await request.json()
     const { submission, status, feedback } = body as {
       submission: Submission
@@ -12,7 +11,6 @@ export async function POST(request: Request) {
       feedback?: string
     }
 
-    // Проверяем, что все необходимые данные присутствуют
     if (!submission || !status) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
@@ -20,14 +18,12 @@ export async function POST(request: Request) {
       )
     }
 
-    // Отправляем уведомление
     const result = await sendSubmissionStatusEmail({
       submission,
       status,
       feedback,
     })
 
-    // Возвращаем результат
     if (result.success) {
       return NextResponse.json({ success: true, data: result.data })
     } else {
