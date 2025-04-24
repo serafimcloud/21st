@@ -241,6 +241,41 @@ export const useFileSystem = ({
     }
   }
 
+  const addDependencyToPackageJson = async (
+    packageName: string,
+    version: string,
+  ) => {
+    try {
+      const packageJsonPath = normalizePath("/package.json")
+      const content = await fsWrapper((sandbox) =>
+        sandbox.fs.readTextFile(packageJsonPath),
+      )
+
+      if (!content) throw new Error("Failed to read package.json")
+
+      const packageJson = JSON.parse(content)
+      if (!packageJson.dependencies) {
+        packageJson.dependencies = {}
+      }
+
+      packageJson.dependencies[packageName] = `^${version}`
+
+      await fsWrapper((sandbox) =>
+        sandbox.fs.writeTextFile(
+          packageJsonPath,
+          JSON.stringify(packageJson, null, 2),
+        ),
+      )
+
+      toast.success(`Added ${packageName}@${version} to dependencies`)
+      await loadRootDirectory()
+    } catch (error) {
+      console.error(`Failed to add dependency ${packageName}:`, error)
+      toast.error(`Failed to add ${packageName} to dependencies`)
+      throw error
+    }
+  }
+
   const toggleAdvancedView = () => {
     setAdvancedView((prev) => !prev)
   }
@@ -258,5 +293,6 @@ export const useFileSystem = ({
     createDirectory,
     deleteEntry,
     renameEntry,
+    addDependencyToPackageJson,
   }
 }

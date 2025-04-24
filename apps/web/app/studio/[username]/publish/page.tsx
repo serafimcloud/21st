@@ -39,6 +39,9 @@ function PublishPageContent() {
     isSandboxLoading,
     sandboxConnectionHash,
     reconnectSandbox,
+    // dependencies
+    missingDependencyInfo,
+    clearMissingDependencyInfo,
   } = useSandbox({
     defaultSandboxId: searchParams.get("sandboxId"),
   })
@@ -56,11 +59,22 @@ function PublishPageContent() {
     deleteEntry,
     createDirectory,
     renameEntry,
+    addDependencyToPackageJson,
   } = useFileSystem({
     sandboxRef,
     reconnectSandbox,
     sandboxConnectionHash,
   })
+
+  useEffect(() => {
+    if (missingDependencyInfo) {
+      addDependencyToPackageJson(
+        missingDependencyInfo.packageName,
+        missingDependencyInfo.latestVersion,
+      )
+      clearMissingDependencyInfo()
+    }
+  }, [missingDependencyInfo])
 
   useEffect(() => {
     if (sandboxId && sandboxId !== searchParams.get("sandboxId")) {

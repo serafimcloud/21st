@@ -2,6 +2,7 @@ import { SandboxSession } from "@codesandbox/sdk"
 import { connectToSandbox } from "@codesandbox/sdk/browser"
 import { useEffect, useRef, useState } from "react"
 import { connectToServerSandbox } from "../api"
+import { getLatestPackageVersionFromError } from "../utils/dependencies"
 
 export const useSandbox = ({
   defaultSandboxId,
@@ -9,16 +10,21 @@ export const useSandbox = ({
   defaultSandboxId: string | null
 }) => {
   const sandboxRef = useRef<SandboxSession | null>(null)
+  const shellRef = useRef(null)
   const [sandboxId, setSandboxId] = useState<string | null>(defaultSandboxId)
   const [sandboxConnectionHash, setSandboxConnectionHash] = useState<
     string | null
   >(null)
   const [previewURL, setPreviewURL] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isSandboxLoading, setIsSandboxLoading] = useState(true)
+  const [missingDependencyInfo, setMissingDependencyInfo] = useState<{
+    packageName: string
+    latestVersion: string
+  } | null>(null)
 
   const initialize = async (isReconnecting = false) => {
     if (!isReconnecting) {
-      setIsLoading(true)
+      setIsSandboxLoading(true)
     }
     try {
       const { sandboxId: newSandboxId, startData } =
@@ -27,6 +33,36 @@ export const useSandbox = ({
       const connectedSandbox = await connectToSandbox(startData)
       const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
       sandboxRef.current = connectedSandbox
+
+      const shells = await connectedSandbox.shells.getShells()
+      // console.log("ALL SHELS", shells.map((s) => s.name))
+
+      shells.forEach((shell) => {
+        console.log(shell.name, "shell output", shell.status)
+      })
+
+      const runningShell = shells.find(
+        (shell) =>
+          shell.name === "pnpm run install-and-dev" &&
+          shell.status === "RUNNING",
+      )
+
+      const openedRunningShell = await connectedSandbox.shells.open(
+        runningShell!.id,
+      )
+
+      openedRunningShell.onOutput(async (data) => {
+        console.log("data", data)
+        const latestPackageVersion =
+          await getLatestPackageVersionFromError(data)
+        if (latestPackageVersion) {
+          setMissingDependencyInfo(latestPackageVersion)
+        }
+      })
+
+      console.log("openedRunningShell", openedRunningShell)
+
+      console.log("runningShell", runningShell)
 
       // setInterval(() => {
       //   const newPreviewURL = sandboxRef.current?.ports.getPreviewUrl(5173)
@@ -48,7 +84,7 @@ export const useSandbox = ({
       setPreviewURL(null)
     } finally {
       if (!isReconnecting) {
-        setIsLoading(false)
+        setIsSandboxLoading(false)
       }
     }
   }
@@ -62,12 +98,18 @@ export const useSandbox = ({
     await initialize(true)
   }
 
+  const clearMissingDependencyInfo = () => {
+    setMissingDependencyInfo(null)
+  }
+
   return {
     sandboxRef,
     sandboxId,
     previewURL,
-    isSandboxLoading: isLoading,
+    isSandboxLoading,
     sandboxConnectionHash,
     reconnectSandbox,
+    missingDependencyInfo,
+    clearMissingDependencyInfo,
   }
 }

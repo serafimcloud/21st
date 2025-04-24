@@ -137,13 +137,13 @@ export function FileExplorer({
                 >
                   {advancedView ? (
                     <>
-                      <EyeIcon className="h-4 w-4 mr-2" />
-                      Simple view
+                      <EyeOffIcon className="h-4 w-4 mr-2" />
+                      Advanced view
                     </>
                   ) : (
                     <>
-                      <EyeOffIcon className="h-4 w-4 mr-2" />
-                      Advanced view
+                      <EyeIcon className="h-4 w-4 mr-2" />
+                      Simple view
                     </>
                   )}
                 </Button>
