@@ -26,10 +26,12 @@ function PublishPageContent() {
   const [isPreviewVisible, setIsPreviewVisible] = useState(true)
 
   const {
-    sandbox,
+    sandboxRef,
     sandboxId,
     previewURL,
-    isLoading: isSandboxLoading,
+    isSandboxLoading,
+    sandboxConnectionHash,
+    reconnectSandbox,
   } = useSandbox({
     defaultSandboxId: searchParams.get("sandboxId"),
   })
@@ -45,7 +47,11 @@ function PublishPageContent() {
     deleteEntry,
     createDirectory,
     renameEntry,
-  } = useFileSystem(sandbox)
+  } = useFileSystem({
+    sandboxRef,
+    reconnectSandbox,
+    sandboxConnectionHash,
+  })
 
   useEffect(() => {
     if (sandboxId && sandboxId !== searchParams.get("sandboxId")) {
@@ -56,7 +62,11 @@ function PublishPageContent() {
   }, [sandboxId, router, searchParams])
 
   useEffect(() => {
-    if (!sandbox || !selectedEntry || selectedEntry.type !== "file") {
+    if (
+      !sandboxRef.current ||
+      !selectedEntry ||
+      selectedEntry.type !== "file"
+    ) {
       setCode("")
       return
     }
@@ -72,11 +82,12 @@ function PublishPageContent() {
     }
 
     loadContent()
-  }, [sandbox, selectedEntry, loadFileContent])
+  }, [sandboxRef, selectedEntry, isSandboxLoading])
 
   const handleCodeChange = (value: string) => {
     setCode(value)
-    if (!sandbox || !selectedEntry || selectedEntry.type !== "file") return
+    if (!sandboxRef.current || !selectedEntry || selectedEntry.type !== "file")
+      return
     saveFileContent(selectedEntry.path, value)
   }
 
@@ -148,7 +159,7 @@ function PublishPageContent() {
     )
   }
 
-  if (!sandbox) {
+  if (!sandboxRef.current) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-destructive">

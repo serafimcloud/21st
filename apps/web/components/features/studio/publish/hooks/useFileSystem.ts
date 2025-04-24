@@ -1,5 +1,5 @@
 import { SandboxSession, ReaddirEntry } from "@codesandbox/sdk"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, RefObject } from "react"
 import { toast } from "sonner"
 
 const ROOT_PATH = "/project/sandbox"
@@ -66,20 +66,47 @@ const loadDirectoryRecursively = async (
   return fileEntries
 }
 
-export const useFileSystem = (sandbox: SandboxSession | null) => {
+export const useFileSystem = ({
+  sandboxRef,
+  reconnectSandbox,
+  sandboxConnectionHash,
+}: {
+  sandboxRef: RefObject<SandboxSession | null>
+  reconnectSandbox: () => Promise<void>
+  sandboxConnectionHash: string | null
+}) => {
   const [files, setFiles] = useState<FileEntry[]>([])
   const [isTreeLoading, setIsTreeLoading] = useState(false)
   const [isFileLoading, setIsFileLoading] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
-  console.log("files", files)
+  const fsWrapper = async <T>(
+    operation: (sandbox: SandboxSession) => Promise<T>,
+  ): Promise<T | undefined> => {
+    if (!sandboxRef.current) return
 
-  const loadRootDirectory = useCallback(async () => {
-    if (!sandbox) return
+    try {
+      return await operation(sandboxRef.current)
+    } catch (error) {
+      try {
+        await reconnectSandbox()
+        if (!sandboxRef.current) throw new Error("Failed to reconnect sandbox")
+        return await operation(sandboxRef.current)
+      } catch (error) {
+        console.error("Failed to execute operation:", error)
+        throw error
+      }
+    }
+  }
+
+  const loadRootDirectory = async () => {
     setIsTreeLoading(true)
     try {
-      const rootEntries = await loadDirectoryRecursively(sandbox, ROOT_PATH)
-      setFiles(rootEntries)
+      const rootEntries = await fsWrapper((sandbox) =>
+        loadDirectoryRecursively(sandbox, ROOT_PATH),
+      )
+      console.log("rootEntries", rootEntries)
+      if (rootEntries) setFiles(rootEntries)
     } catch (error) {
       console.error("Failed to load root directory:", error)
       toast.error("Failed to load project files")
@@ -87,81 +114,71 @@ export const useFileSystem = (sandbox: SandboxSession | null) => {
     } finally {
       setIsTreeLoading(false)
     }
-  }, [sandbox])
+  }
 
   useEffect(() => {
     loadRootDirectory()
-  }, [loadRootDirectory])
+  }, [sandboxConnectionHash])
 
-  const loadFileContent = useCallback(
-    async (filePath: string): Promise<string> => {
-      if (!sandbox) throw new Error("Sandbox not available")
-      setIsFileLoading(true)
+  const loadFileContent = async (filePath: string): Promise<string> => {
+    setIsFileLoading(true)
+    try {
+      const content = await fsWrapper((sandbox) =>
+        sandbox.fs.readTextFile(normalizePath(filePath)),
+      )
+      if (!content) throw new Error("Failed to load file content")
+      return content
+    } catch (error) {
+      console.error(`Failed to load file content for ${filePath}:`, error)
+      toast.error(`Failed to load file`)
+      throw error
+    } finally {
+      setIsFileLoading(false)
+    }
+  }
+
+  const saveFileContent = (filePath: string, value: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    debounceRef.current = setTimeout(async () => {
       try {
-        const content = await sandbox.fs.readTextFile(normalizePath(filePath))
-        return content
+        await fsWrapper((sandbox) =>
+          sandbox.fs.writeTextFile(normalizePath(filePath), value),
+        )
       } catch (error) {
-        console.error(`Failed to load file content for ${filePath}:`, error)
-        toast.error(`Failed to load file`)
-        throw error
-      } finally {
-        setIsFileLoading(false)
+        console.error("Failed to save file:", error)
+        toast.error(`Failed to save ${filePath.split("/").pop()}`)
       }
-    },
-    [sandbox],
-  )
+    }, 800)
+  }
 
-  const saveFileContent = useCallback(
-    (filePath: string, value: string) => {
-      if (!sandbox) return
+  const createFile = async (filePath: string) => {
+    try {
+      await fsWrapper((sandbox) =>
+        sandbox.fs.writeTextFile(normalizePath(filePath), ""),
+      )
+      await loadRootDirectory()
+    } catch (error) {
+      console.error(`Failed to create file ${filePath}:`, error)
+      toast.error(`Failed to create ${filePath.split("/").pop()}`)
+      throw error
+    }
+  }
 
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-      debounceRef.current = setTimeout(async () => {
-        try {
-          await sandbox.fs.writeTextFile(normalizePath(filePath), value)
-        } catch (error) {
-          console.error("Failed to save file:", error)
-          toast.error(`Failed to save ${filePath.split("/").pop()}`)
-        }
-      }, 800)
-    },
-    [sandbox],
-  )
+  const createDirectory = async (dirPath: string) => {
+    try {
+      await fsWrapper((sandbox) => sandbox.fs.mkdir(normalizePath(dirPath)))
+      await loadRootDirectory()
+    } catch (error) {
+      console.error(`Failed to create directory ${dirPath}:`, error)
+      toast.error(`Failed to create directory ${dirPath.split("/").pop()}`)
+      throw error
+    }
+  }
 
-  const createFile = useCallback(
-    async (filePath: string) => {
-      if (!sandbox) throw new Error("Sandbox not available")
-      try {
-        await sandbox.fs.writeTextFile(normalizePath(filePath), "")
-        await loadRootDirectory()
-      } catch (error) {
-        console.error(`Failed to create file ${filePath}:`, error)
-        toast.error(`Failed to create ${filePath.split("/").pop()}`)
-        throw error
-      }
-    },
-    [sandbox, loadRootDirectory],
-  )
-
-  const createDirectory = useCallback(
-    async (dirPath: string) => {
-      if (!sandbox) throw new Error("Sandbox not available")
-      try {
-        await sandbox.fs.mkdir(normalizePath(dirPath))
-        await loadRootDirectory()
-      } catch (error) {
-        console.error(`Failed to create directory ${dirPath}:`, error)
-        toast.error(`Failed to create directory ${dirPath.split("/").pop()}`)
-        throw error
-      }
-    },
-    [sandbox, loadRootDirectory],
-  )
-
-  const deleteEntry = useCallback(
-    async (entryPath: string) => {
-      if (!sandbox) throw new Error("Sandbox not available")
-      try {
+  const deleteEntry = async (entryPath: string) => {
+    try {
+      await fsWrapper(async (sandbox) => {
         let isDir = false
         try {
           const statResult = await sandbox.fs.stat(normalizePath(entryPath))
@@ -170,39 +187,34 @@ export const useFileSystem = (sandbox: SandboxSession | null) => {
           console.warn(`Stat failed for ${entryPath} during delete:`, statError)
         }
 
-        await sandbox.fs.remove(normalizePath(entryPath), isDir)
-        await loadRootDirectory()
-      } catch (error) {
-        console.error(`Failed to delete ${entryPath}:`, error)
-        toast.error(`Failed to delete ${entryPath.split("/").pop()}`)
-        throw error
-      }
-    },
-    [sandbox, loadRootDirectory],
-  )
+        return sandbox.fs.remove(normalizePath(entryPath), isDir)
+      })
+      await loadRootDirectory()
+    } catch (error) {
+      console.error(`Failed to delete ${entryPath}:`, error)
+      toast.error(`Failed to delete ${entryPath.split("/").pop()}`)
+      throw error
+    }
+  }
 
-  const renameEntry = useCallback(
-    async (oldPath: string, newName: string) => {
-      if (!sandbox) throw new Error("Sandbox not available")
+  const renameEntry = async (oldPath: string, newName: string) => {
+    try {
+      const pathParts = oldPath.split("/")
+      const parentPath = pathParts.slice(0, -1).join("/")
+      const newPath = `${parentPath ? parentPath + "/" : ""}${newName}`
 
-      try {
-        const pathParts = oldPath.split("/")
-        const parentPath = pathParts.slice(0, -1).join("/")
-        const newPath = `${parentPath ? parentPath + "/" : ""}${newName}`
+      await fsWrapper((sandbox) =>
+        sandbox.fs.rename(normalizePath(oldPath), normalizePath(newPath)),
+      )
 
-        // Use the rename method that is available in the SDK
-        await sandbox.fs.rename(normalizePath(oldPath), normalizePath(newPath))
-
-        await loadRootDirectory()
-        return newPath
-      } catch (error) {
-        console.error(`Failed to rename ${oldPath} to ${newName}:`, error)
-        toast.error(`Failed to rename to ${newName}`)
-        throw error
-      }
-    },
-    [sandbox, loadRootDirectory],
-  )
+      await loadRootDirectory()
+      return newPath
+    } catch (error) {
+      console.error(`Failed to rename ${oldPath} to ${newName}:`, error)
+      toast.error(`Failed to rename to ${newName}`)
+      throw error
+    }
+  }
 
   return {
     files,
