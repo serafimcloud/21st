@@ -33,6 +33,7 @@ interface FileExplorerProps {
   onDelete: (filePath: string) => void
   onCreateFile: (fileName: string) => void
   onCreateDirectory: (dirName: string) => void
+  onRename: (oldPath: string, newName: string) => Promise<string>
   onRefresh: () => void
   isLoading: boolean
 }
@@ -44,6 +45,7 @@ export function FileExplorer({
   onDelete,
   onCreateFile,
   onCreateDirectory,
+  onRename,
   onRefresh,
   isLoading,
 }: FileExplorerProps) {
@@ -168,6 +170,7 @@ export function FileExplorer({
           isLoading={isLoading}
           onCreateFile={onCreateFile}
           onCreateDirectory={onCreateDirectory}
+          onRename={onRename}
         />
       </CardContent>
     </Card>

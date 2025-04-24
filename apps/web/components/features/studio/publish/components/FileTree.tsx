@@ -6,6 +6,7 @@ import {
   TrashIcon,
   FilePlusIcon,
   FolderPlusIcon,
+  PencilIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -32,6 +33,7 @@ interface FileTreeProps {
   isLoading: boolean
   onCreateFile: (filePath: string) => void
   onCreateDirectory: (dirPath: string) => void
+  onRename?: (oldPath: string, newName: string) => Promise<string>
 }
 
 interface FileTreeItemProps {
@@ -42,6 +44,7 @@ interface FileTreeItemProps {
   onDelete: (filePath: string) => void
   onCreateFile: (filePath: string) => void
   onCreateDirectory: (dirPath: string) => void
+  onRename?: (oldPath: string, newName: string) => Promise<string>
   expandedDirs: Record<string, boolean>
   setExpandedDirs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
 }
@@ -54,6 +57,7 @@ function FileTreeItem({
   onDelete,
   onCreateFile,
   onCreateDirectory,
+  onRename,
   expandedDirs,
   setExpandedDirs,
 }: FileTreeItemProps) {
@@ -61,6 +65,8 @@ function FileTreeItem({
   const [newFileName, setNewFileName] = useState("")
   const [isCreatingDirectory, setIsCreatingDirectory] = useState(false)
   const [newDirectoryName, setNewDirectoryName] = useState("")
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [newName, setNewName] = useState("")
   const [showActions, setShowActions] = useState(false)
 
   const handleFileClick = () => {
@@ -105,6 +111,7 @@ function FileTreeItem({
     setNewFileName("")
     setIsCreatingDirectory(false)
     setNewDirectoryName("")
+    setIsRenaming(false)
   }
 
   const startCreateFile = (e: React.MouseEvent) => {
@@ -121,79 +128,134 @@ function FileTreeItem({
     setIsCreatingFile(false) // Ensure only one input is shown
   }
 
+  const startRename = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setNewName(entry.name)
+    setIsRenaming(true)
+  }
+
+  const handleRename = async () => {
+    if (newName && newName !== entry.name && onRename) {
+      try {
+        await onRename(entry.path, newName)
+        setIsRenaming(false)
+      } catch (error) {
+        // Error handling is done in the hook
+      }
+    } else {
+      setIsRenaming(false)
+    }
+  }
+
   return (
     <li
       className="py-0.5 group/item"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => {
         // Don't hide actions if an input is active
-        if (!isCreatingFile && !isCreatingDirectory) {
+        if (!isCreatingFile && !isCreatingDirectory && !isRenaming) {
           setShowActions(false)
         }
       }}
     >
       {entry.type === "dir" ? (
         <details className="group" open={expandedDirs[entry.path]}>
-          <summary
-            className={`flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-muted rounded list-none ${
-              selectedPath === entry.path ? "bg-accent" : ""
-            }`}
-            onClick={handleDirClick}
-            style={{ paddingLeft: `${level * 1 + 0.5}rem` }} // Indentation
-          >
-            <div className="flex items-center overflow-hidden">
-              <FolderIcon className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
-              <span className="font-medium truncate" title={entry.name}>
-                {entry.name}
-              </span>
-            </div>
+          {isRenaming ? (
             <div
-              className={`flex items-center gap-1 action-icon transition-opacity ${
-                showActions
-                  ? "opacity-100"
-                  : "opacity-0 group-hover/item:opacity-100"
-              }`}
+              className="flex gap-1 py-1 pl-2"
+              style={{ paddingLeft: `${level * 1 + 0.5}rem` }}
             >
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename()
+                  if (e.key === "Escape") handleCancelCreate()
+                }}
+                className="h-6 text-xs"
+                autoFocus
+                onBlur={() => setTimeout(handleCancelCreate, 150)}
+              />
               <Button
-                size="icon"
-                variant="ghost"
-                className="h-5 w-5"
-                onClick={startCreateFile}
-                title="Create file"
+                size="sm"
+                onClick={handleRename}
+                disabled={!newName || newName === entry.name}
               >
-                <FilePlusIcon className="h-3 w-3 text-muted-foreground" />
+                Rename
               </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-5 w-5"
-                onClick={startCreateDirectory}
-                title="Create directory"
-              >
-                <FolderPlusIcon className="h-3 w-3 text-muted-foreground" />
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-5 w-5"
-                    onClick={(e) => e.stopPropagation()} // Prevent summary click
-                  >
-                    <TrashIcon className="h-3 w-3 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => onDelete(entry.path)}
-                  >
-                    Delete folder
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
-          </summary>
+          ) : (
+            <summary
+              className={`flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-muted rounded list-none ${
+                selectedPath === entry.path ? "bg-accent" : ""
+              }`}
+              onClick={handleDirClick}
+              style={{ paddingLeft: `${level * 1 + 0.5}rem` }} // Indentation
+            >
+              <div className="flex items-center overflow-hidden">
+                <FolderIcon className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
+                <span className="font-medium truncate" title={entry.name}>
+                  {entry.name}
+                </span>
+              </div>
+              <div
+                className={`flex items-center gap-1 action-icon transition-opacity ${
+                  showActions
+                    ? "opacity-100"
+                    : "opacity-0 group-hover/item:opacity-100"
+                }`}
+              >
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5"
+                  onClick={startRename}
+                  title="Rename folder"
+                >
+                  <PencilIcon className="h-3 w-3 text-muted-foreground" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5"
+                  onClick={startCreateFile}
+                  title="Create file"
+                >
+                  <FilePlusIcon className="h-3 w-3 text-muted-foreground" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5"
+                  onClick={startCreateDirectory}
+                  title="Create directory"
+                >
+                  <FolderPlusIcon className="h-3 w-3 text-muted-foreground" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-5 w-5"
+                      onClick={(e) => e.stopPropagation()} // Prevent summary click
+                    >
+                      <TrashIcon className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => onDelete(entry.path)}
+                    >
+                      Delete folder
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </summary>
+          )}
 
           {/* Input field for creating file */}
           {isCreatingFile && (
@@ -263,6 +325,7 @@ function FileTreeItem({
                   onDelete={onDelete}
                   onCreateFile={onCreateFile}
                   onCreateDirectory={onCreateDirectory}
+                  onRename={onRename}
                   expandedDirs={expandedDirs}
                   setExpandedDirs={setExpandedDirs}
                 />
@@ -287,39 +350,73 @@ function FileTreeItem({
           onMouseEnter={() => setShowActions(true)}
           onMouseLeave={() => setShowActions(false)}
         >
-          <button
-            className={`flex items-center flex-1 text-left px-2 py-1 hover:bg-muted rounded truncate ${
-              selectedPath === entry.path ? "bg-accent font-medium" : ""
-            }`}
-            onClick={handleFileClick}
-            title={entry.path}
-          >
-            <FileIcon className="h-4 w-4 mr-1 text-gray-500 flex-shrink-0" />
-            {entry.name}
-          </button>
-          <div
-            className={`action-icon transition-opacity ${
-              showActions
-                ? "opacity-100"
-                : "opacity-0 group-hover/item:opacity-100"
-            }`}
-          >
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-5 w-5">
-                  <TrashIcon className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => onDelete(entry.path)}
+          {isRenaming ? (
+            <div className="flex gap-1 py-1 flex-1">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename()
+                  if (e.key === "Escape") handleCancelCreate()
+                }}
+                className="h-6 text-xs"
+                autoFocus
+                onBlur={() => setTimeout(handleCancelCreate, 150)}
+              />
+              <Button
+                size="sm"
+                onClick={handleRename}
+                disabled={!newName || newName === entry.name}
+              >
+                Rename
+              </Button>
+            </div>
+          ) : (
+            <>
+              <button
+                className={`flex items-center flex-1 text-left px-2 py-1 hover:bg-muted rounded truncate ${
+                  selectedPath === entry.path ? "bg-accent font-medium" : ""
+                }`}
+                onClick={handleFileClick}
+                title={entry.path}
+              >
+                <FileIcon className="h-4 w-4 mr-1 text-gray-500 flex-shrink-0" />
+                {entry.name}
+              </button>
+              <div
+                className={`action-icon transition-opacity ${
+                  showActions
+                    ? "opacity-100"
+                    : "opacity-0 group-hover/item:opacity-100"
+                }`}
+              >
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5"
+                  onClick={startRename}
+                  title="Rename file"
                 >
-                  Delete file
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                  <PencilIcon className="h-3 w-3 text-muted-foreground" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-5 w-5">
+                      <TrashIcon className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => onDelete(entry.path)}
+                    >
+                      Delete file
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </>
+          )}
         </div>
       )}
     </li>
@@ -335,6 +432,7 @@ interface FileTreeRecursiveProps {
   onDelete: (filePath: string) => void
   onCreateFile: (filePath: string) => void
   onCreateDirectory: (dirPath: string) => void
+  onRename?: (oldPath: string, newName: string) => Promise<string>
   expandedDirs: Record<string, boolean>
   setExpandedDirs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
 }
@@ -347,6 +445,7 @@ function FileTreeRecursive({
   onDelete,
   onCreateFile,
   onCreateDirectory,
+  onRename,
   expandedDirs,
   setExpandedDirs,
 }: FileTreeRecursiveProps) {
@@ -362,6 +461,7 @@ function FileTreeRecursive({
           onDelete={onDelete}
           onCreateFile={onCreateFile}
           onCreateDirectory={onCreateDirectory}
+          onRename={onRename}
           expandedDirs={expandedDirs}
           setExpandedDirs={setExpandedDirs}
         />
@@ -378,6 +478,7 @@ export function FileTree({
   isLoading,
   onCreateFile,
   onCreateDirectory,
+  onRename,
 }: FileTreeProps) {
   const [expandedDirs, setExpandedDirs] = useState<Record<string, boolean>>({})
 
@@ -404,6 +505,7 @@ export function FileTree({
           onDelete={onDelete}
           onCreateFile={onCreateFile}
           onCreateDirectory={onCreateDirectory}
+          onRename={onRename}
           expandedDirs={expandedDirs}
           setExpandedDirs={setExpandedDirs}
         />

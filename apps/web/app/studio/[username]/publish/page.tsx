@@ -44,6 +44,7 @@ function PublishPageContent() {
     createFile,
     deleteEntry,
     createDirectory,
+    renameEntry,
   } = useFileSystem(sandbox)
 
   useEffect(() => {
@@ -108,6 +109,26 @@ function PublishPageContent() {
     }
   }
 
+  const handleRenameEntry = async (oldPath: string, newName: string) => {
+    try {
+      const newPath = await renameEntry(oldPath, newName)
+
+      // Update selected entry if it was the renamed one
+      if (selectedEntry?.path === oldPath) {
+        setSelectedEntry({
+          ...selectedEntry,
+          path: newPath,
+          name: newName,
+        })
+      }
+
+      return newPath
+    } catch (error) {
+      // Error is handled in the hook
+      return oldPath
+    }
+  }
+
   const handleReset = () => {
     window.location.reload()
   }
@@ -156,6 +177,7 @@ function PublishPageContent() {
             onDelete={handleDeleteEntry}
             onCreateFile={handleCreateFile}
             onCreateDirectory={createDirectory}
+            onRename={handleRenameEntry}
             onRefresh={loadRootDirectory}
             isLoading={isTreeLoading}
           />

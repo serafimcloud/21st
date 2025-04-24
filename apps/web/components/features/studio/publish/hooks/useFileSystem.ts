@@ -181,6 +181,29 @@ export const useFileSystem = (sandbox: SandboxSession | null) => {
     [sandbox, loadRootDirectory],
   )
 
+  const renameEntry = useCallback(
+    async (oldPath: string, newName: string) => {
+      if (!sandbox) throw new Error("Sandbox not available")
+
+      try {
+        const pathParts = oldPath.split("/")
+        const parentPath = pathParts.slice(0, -1).join("/")
+        const newPath = `${parentPath ? parentPath + "/" : ""}${newName}`
+
+        // Use the rename method that is available in the SDK
+        await sandbox.fs.rename(normalizePath(oldPath), normalizePath(newPath))
+
+        await loadRootDirectory()
+        return newPath
+      } catch (error) {
+        console.error(`Failed to rename ${oldPath} to ${newName}:`, error)
+        toast.error(`Failed to rename to ${newName}`)
+        throw error
+      }
+    },
+    [sandbox, loadRootDirectory],
+  )
+
   return {
     files,
     isTreeLoading,
@@ -191,5 +214,6 @@ export const useFileSystem = (sandbox: SandboxSession | null) => {
     createFile,
     createDirectory,
     deleteEntry,
+    renameEntry,
   }
 }
