@@ -133,6 +133,7 @@ export function FileExplorer({
                   className={cn(
                     "bg-background/80 backdrop-blur-sm shadow-sm border transition-colors",
                   )}
+                  disabled={isLoading}
                 >
                   {advancedView ? (
                     <>

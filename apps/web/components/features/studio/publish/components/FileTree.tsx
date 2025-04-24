@@ -36,20 +36,217 @@ interface FileTreeProps {
   onRename?: (oldPath: string, newName: string) => Promise<string>
 }
 
-interface FileTreeItemProps {
+// Reusable input form for file/directory creation and renaming
+function InlineInputForm({
+  placeholder,
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  buttonText = "Create",
+  autoFocus = true,
+}: {
+  placeholder?: string
+  value: string
+  onChange: (value: string) => void
+  onSubmit: () => void
+  onCancel: () => void
+  buttonText?: string
+  autoFocus?: boolean
+}) {
+  return (
+    <div className="flex gap-1 py-1">
+      <Input
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSubmit()
+          if (e.key === "Escape") onCancel()
+        }}
+        className="h-6 text-xs"
+        autoFocus={autoFocus}
+        onBlur={() => setTimeout(onCancel, 150)}
+      />
+      <Button size="sm" onClick={onSubmit} disabled={!value}>
+        {buttonText}
+      </Button>
+    </div>
+  )
+}
+
+// Action buttons for file/directory operations
+function TreeItemActions({
+  showActions,
+  onRename,
+  onDelete,
+  onCreateFile,
+  onCreateDirectory,
+  itemType,
+  itemName,
+}: {
+  showActions: boolean
+  onRename?: () => void
+  onDelete: () => void
+  onCreateFile?: () => void
+  onCreateDirectory?: () => void
+  itemType: "file" | "dir"
+  itemName: string
+}) {
+  const actionClasses = `transition-opacity ${
+    showActions ? "opacity-100" : "opacity-0 group-hover/item:opacity-100"
+  }`
+
+  return (
+    <div className={`flex items-center gap-1 action-icon ${actionClasses}`}>
+      {onRename && (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-5 w-5"
+          onClick={onRename}
+          title={`Rename ${itemType}`}
+        >
+          <PencilIcon className="h-3 w-3 text-muted-foreground" />
+        </Button>
+      )}
+
+      {itemType === "dir" && onCreateFile && (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-5 w-5"
+          onClick={onCreateFile}
+          title="Create file"
+        >
+          <FilePlusIcon className="h-3 w-3 text-muted-foreground" />
+        </Button>
+      )}
+
+      {itemType === "dir" && onCreateDirectory && (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-5 w-5"
+          onClick={onCreateDirectory}
+          title="Create directory"
+        >
+          <FolderPlusIcon className="h-3 w-3 text-muted-foreground" />
+        </Button>
+      )}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-5 w-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TrashIcon className="h-3 w-3 text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={onDelete}
+          >
+            Delete {itemType}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
+
+// Component for file entries
+function FileItem({
+  entry,
+  level,
+  onSelect,
+  selectedPath,
+  onDelete,
+  onRename,
+}: {
   entry: FileEntry
   level: number
   onSelect: (entry: FileEntry) => void
   selectedPath: string | null
   onDelete: (filePath: string) => void
-  onCreateFile: (filePath: string) => void
-  onCreateDirectory: (dirPath: string) => void
   onRename?: (oldPath: string, newName: string) => Promise<string>
-  expandedDirs: Record<string, boolean>
-  setExpandedDirs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
+}) {
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [newName, setNewName] = useState(entry.name)
+  const [showActions, setShowActions] = useState(false)
+
+  const handleRename = async () => {
+    if (newName && newName !== entry.name && onRename) {
+      try {
+        await onRename(entry.path, newName)
+      } catch (error) {
+        // Error handling is done in the hook
+      }
+      setIsRenaming(false)
+    } else {
+      setIsRenaming(false)
+    }
+  }
+
+  const startRename = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setNewName(entry.name)
+    setIsRenaming(true)
+  }
+
+  const cancelRename = () => {
+    setIsRenaming(false)
+  }
+
+  return (
+    <li
+      className="py-0.5 group/item"
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => !isRenaming && setShowActions(false)}
+      style={{ paddingLeft: `${level * 1}rem` }}
+    >
+      {isRenaming ? (
+        <InlineInputForm
+          value={newName}
+          onChange={setNewName}
+          onSubmit={handleRename}
+          onCancel={cancelRename}
+          buttonText="Rename"
+        />
+      ) : (
+        <div className="flex items-center justify-between">
+          <button
+            className={`flex items-center flex-1 text-left px-2 py-1 hover:bg-muted rounded truncate ${
+              selectedPath === entry.path ? "bg-accent font-medium" : ""
+            }`}
+            onClick={() => onSelect(entry)}
+            title={entry.path}
+          >
+            <FileIcon className="h-4 w-4 mr-1 text-gray-500 flex-shrink-0" />
+            {entry.name}
+          </button>
+
+          <TreeItemActions
+            showActions={showActions}
+            onRename={() =>
+              startRename({ stopPropagation: () => {} } as React.MouseEvent)
+            }
+            onDelete={() => onDelete(entry.path)}
+            itemType="file"
+            itemName={entry.name}
+          />
+        </div>
+      )}
+    </li>
+  )
 }
 
-function FileTreeItem({
+// Component for directory entries
+function DirectoryItem({
   entry,
   level,
   onSelect,
@@ -60,21 +257,27 @@ function FileTreeItem({
   onRename,
   expandedDirs,
   setExpandedDirs,
-}: FileTreeItemProps) {
+}: {
+  entry: FileEntry
+  level: number
+  onSelect: (entry: FileEntry) => void
+  selectedPath: string | null
+  onDelete: (filePath: string) => void
+  onCreateFile: (filePath: string) => void
+  onCreateDirectory: (dirPath: string) => void
+  onRename?: (oldPath: string, newName: string) => Promise<string>
+  expandedDirs: Record<string, boolean>
+  setExpandedDirs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
+}) {
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [newName, setNewName] = useState(entry.name)
   const [isCreatingFile, setIsCreatingFile] = useState(false)
   const [newFileName, setNewFileName] = useState("")
   const [isCreatingDirectory, setIsCreatingDirectory] = useState(false)
   const [newDirectoryName, setNewDirectoryName] = useState("")
-  const [isRenaming, setIsRenaming] = useState(false)
-  const [newName, setNewName] = useState("")
   const [showActions, setShowActions] = useState(false)
 
-  const handleFileClick = () => {
-    onSelect(entry)
-  }
-
-  const handleDirClick = (e: React.MouseEvent) => {
-    // Prevent details toggle when clicking icons
+  const toggleExpanded = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest(".action-icon")) {
       e.preventDefault()
       return
@@ -92,7 +295,6 @@ function FileTreeItem({
       onCreateFile(`${parentPath}/${newFileName}`)
       setNewFileName("")
       setIsCreatingFile(false)
-      setShowActions(false) // Hide actions after creation
     }
   }
 
@@ -102,37 +304,7 @@ function FileTreeItem({
       onCreateDirectory(`${parentPath}/${newDirectoryName}`)
       setNewDirectoryName("")
       setIsCreatingDirectory(false)
-      setShowActions(false) // Hide actions after creation
     }
-  }
-
-  const handleCancelCreate = () => {
-    setIsCreatingFile(false)
-    setNewFileName("")
-    setIsCreatingDirectory(false)
-    setNewDirectoryName("")
-    setIsRenaming(false)
-  }
-
-  const startCreateFile = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setIsCreatingFile(true)
-    setIsCreatingDirectory(false) // Ensure only one input is shown
-  }
-
-  const startCreateDirectory = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setIsCreatingDirectory(true)
-    setIsCreatingFile(false) // Ensure only one input is shown
-  }
-
-  const startRename = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setNewName(entry.name)
-    setIsRenaming(true)
   }
 
   const handleRename = async () => {
@@ -148,296 +320,158 @@ function FileTreeItem({
     }
   }
 
+  const startRename = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setNewName(entry.name)
+    setIsRenaming(true)
+  }
+
+  const startCreateFile = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setIsCreatingFile(true)
+    setIsCreatingDirectory(false)
+  }
+
+  const startCreateDirectory = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setIsCreatingDirectory(true)
+    setIsCreatingFile(false)
+  }
+
+  const cancelCreate = () => {
+    setIsCreatingFile(false)
+    setNewFileName("")
+    setIsCreatingDirectory(false)
+    setNewDirectoryName("")
+    setIsRenaming(false)
+  }
+
+  const indentStyle = { paddingLeft: `${level * 1 + 0.5}rem` }
+  const childIndentStyle = { paddingLeft: `${(level + 1) * 1 + 0.5}rem` }
+
   return (
     <li
       className="py-0.5 group/item"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => {
-        // Don't hide actions if an input is active
         if (!isCreatingFile && !isCreatingDirectory && !isRenaming) {
           setShowActions(false)
         }
       }}
     >
-      {entry.type === "dir" ? (
-        <details className="group" open={expandedDirs[entry.path]}>
-          {isRenaming ? (
-            <div
-              className="flex gap-1 py-1 pl-2"
-              style={{ paddingLeft: `${level * 1 + 0.5}rem` }}
-            >
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename()
-                  if (e.key === "Escape") handleCancelCreate()
-                }}
-                className="h-6 text-xs"
-                autoFocus
-                onBlur={() => setTimeout(handleCancelCreate, 150)}
-              />
-              <Button
-                size="sm"
-                onClick={handleRename}
-                disabled={!newName || newName === entry.name}
-              >
-                Rename
-              </Button>
-            </div>
-          ) : (
-            <summary
-              className={`flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-muted rounded list-none ${
-                selectedPath === entry.path ? "bg-accent" : ""
-              }`}
-              onClick={handleDirClick}
-              style={{ paddingLeft: `${level * 1 + 0.5}rem` }} // Indentation
-            >
-              <div className="flex items-center overflow-hidden">
-                <FolderIcon className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
-                <span className="font-medium truncate" title={entry.name}>
-                  {entry.name}
-                </span>
-              </div>
-              <div
-                className={`flex items-center gap-1 action-icon transition-opacity ${
-                  showActions
-                    ? "opacity-100"
-                    : "opacity-0 group-hover/item:opacity-100"
-                }`}
-              >
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5"
-                  onClick={startRename}
-                  title="Rename folder"
-                >
-                  <PencilIcon className="h-3 w-3 text-muted-foreground" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5"
-                  onClick={startCreateFile}
-                  title="Create file"
-                >
-                  <FilePlusIcon className="h-3 w-3 text-muted-foreground" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5"
-                  onClick={startCreateDirectory}
-                  title="Create directory"
-                >
-                  <FolderPlusIcon className="h-3 w-3 text-muted-foreground" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-5 w-5"
-                      onClick={(e) => e.stopPropagation()} // Prevent summary click
-                    >
-                      <TrashIcon className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => onDelete(entry.path)}
-                    >
-                      Delete folder
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </summary>
-          )}
-
-          {/* Input field for creating file */}
-          {isCreatingFile && (
-            <div
-              className="flex gap-1 py-1 pl-6"
-              style={{ paddingLeft: `${(level + 1) * 1 + 0.5}rem` }}
-            >
-              <Input
-                placeholder="filename.js"
-                value={newFileName}
-                onChange={(e) => setNewFileName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateFile()
-                  if (e.key === "Escape") handleCancelCreate()
-                }}
-                className="h-6 text-xs"
-                autoFocus
-                onBlur={() => setTimeout(handleCancelCreate, 150)} // Delay blur to allow button click
-              />
-              <Button
-                size="sm"
-                onClick={handleCreateFile}
-                disabled={!newFileName}
-              >
-                Create
-              </Button>
-            </div>
-          )}
-
-          {/* Input field for creating directory */}
-          {isCreatingDirectory && (
-            <div
-              className="flex gap-1 py-1 pl-6"
-              style={{ paddingLeft: `${(level + 1) * 1 + 0.5}rem` }}
-            >
-              <Input
-                placeholder="folder-name"
-                value={newDirectoryName}
-                onChange={(e) => setNewDirectoryName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateDirectory()
-                  if (e.key === "Escape") handleCancelCreate()
-                }}
-                className="h-6 text-xs"
-                autoFocus
-                onBlur={() => setTimeout(handleCancelCreate, 150)} // Delay blur to allow button click
-              />
-              <Button
-                size="sm"
-                onClick={handleCreateDirectory}
-                disabled={!newDirectoryName}
-              >
-                Create
-              </Button>
-            </div>
-          )}
-
-          {/* Render children */}
-          {entry.children && (
-            <div className="mt-0.5">
-              {entry.children.length > 0 ? (
-                <FileTreeRecursive
-                  items={entry.children}
-                  level={level + 1}
-                  onSelect={onSelect}
-                  selectedPath={selectedPath}
-                  onDelete={onDelete}
-                  onCreateFile={onCreateFile}
-                  onCreateDirectory={onCreateDirectory}
-                  onRename={onRename}
-                  expandedDirs={expandedDirs}
-                  setExpandedDirs={setExpandedDirs}
-                />
-              ) : (
-                !isCreatingFile &&
-                !isCreatingDirectory && (
-                  <div
-                    className="text-xs text-muted-foreground px-2 py-1"
-                    style={{ paddingLeft: `${(level + 1) * 1 + 0.5}rem` }}
-                  >
-                    Empty directory
-                  </div>
-                )
-              )}
-            </div>
-          )}
-        </details>
-      ) : (
-        <div
-          className="flex items-center group/item justify-between"
-          style={{ paddingLeft: `${level * 1 + 0.5}rem` }} // Indentation
-          onMouseEnter={() => setShowActions(true)}
-          onMouseLeave={() => setShowActions(false)}
-        >
-          {isRenaming ? (
-            <div className="flex gap-1 py-1 flex-1">
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename()
-                  if (e.key === "Escape") handleCancelCreate()
-                }}
-                className="h-6 text-xs"
-                autoFocus
-                onBlur={() => setTimeout(handleCancelCreate, 150)}
-              />
-              <Button
-                size="sm"
-                onClick={handleRename}
-                disabled={!newName || newName === entry.name}
-              >
-                Rename
-              </Button>
-            </div>
-          ) : (
-            <>
-              <button
-                className={`flex items-center flex-1 text-left px-2 py-1 hover:bg-muted rounded truncate ${
-                  selectedPath === entry.path ? "bg-accent font-medium" : ""
-                }`}
-                onClick={handleFileClick}
-                title={entry.path}
-              >
-                <FileIcon className="h-4 w-4 mr-1 text-gray-500 flex-shrink-0" />
+      <details className="group" open={expandedDirs[entry.path]}>
+        {isRenaming ? (
+          <div className="flex gap-1 py-1 pl-2" style={indentStyle}>
+            <InlineInputForm
+              value={newName}
+              onChange={setNewName}
+              onSubmit={handleRename}
+              onCancel={cancelCreate}
+              buttonText="Rename"
+            />
+          </div>
+        ) : (
+          <summary
+            className={`flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-muted rounded list-none ${
+              selectedPath === entry.path ? "bg-accent" : ""
+            }`}
+            onClick={toggleExpanded}
+            style={indentStyle}
+          >
+            <div className="flex items-center overflow-hidden">
+              <FolderIcon className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
+              <span className="font-medium truncate" title={entry.name}>
                 {entry.name}
-              </button>
+              </span>
+            </div>
+
+            <TreeItemActions
+              showActions={showActions}
+              onRename={() =>
+                startRename({
+                  stopPropagation: () => {},
+                  preventDefault: () => {},
+                } as React.MouseEvent)
+              }
+              onCreateFile={() =>
+                startCreateFile({
+                  stopPropagation: () => {},
+                  preventDefault: () => {},
+                } as React.MouseEvent)
+              }
+              onCreateDirectory={() =>
+                startCreateDirectory({
+                  stopPropagation: () => {},
+                  preventDefault: () => {},
+                } as React.MouseEvent)
+              }
+              onDelete={() => onDelete(entry.path)}
+              itemType="dir"
+              itemName={entry.name}
+            />
+          </summary>
+        )}
+
+        {isCreatingFile && (
+          <div className="flex gap-1 py-1" style={childIndentStyle}>
+            <InlineInputForm
+              placeholder="filename.js"
+              value={newFileName}
+              onChange={setNewFileName}
+              onSubmit={handleCreateFile}
+              onCancel={cancelCreate}
+            />
+          </div>
+        )}
+
+        {isCreatingDirectory && (
+          <div className="flex gap-1 py-1" style={childIndentStyle}>
+            <InlineInputForm
+              placeholder="folder-name"
+              value={newDirectoryName}
+              onChange={setNewDirectoryName}
+              onSubmit={handleCreateDirectory}
+              onCancel={cancelCreate}
+            />
+          </div>
+        )}
+
+        <div className="mt-0.5">
+          {entry.children && entry.children.length > 0 ? (
+            <FileList
+              items={entry.children}
+              level={level + 1}
+              onSelect={onSelect}
+              selectedPath={selectedPath}
+              onDelete={onDelete}
+              onCreateFile={onCreateFile}
+              onCreateDirectory={onCreateDirectory}
+              onRename={onRename}
+              expandedDirs={expandedDirs}
+              setExpandedDirs={setExpandedDirs}
+            />
+          ) : (
+            !isCreatingFile &&
+            !isCreatingDirectory && (
               <div
-                className={`action-icon transition-opacity ${
-                  showActions
-                    ? "opacity-100"
-                    : "opacity-0 group-hover/item:opacity-100"
-                }`}
+                className="text-xs text-muted-foreground px-2 py-1"
+                style={childIndentStyle}
               >
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5"
-                  onClick={startRename}
-                  title="Rename file"
-                >
-                  <PencilIcon className="h-3 w-3 text-muted-foreground" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-5 w-5">
-                      <TrashIcon className="h-3 w-3 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => onDelete(entry.path)}
-                    >
-                      Delete file
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                Empty directory
               </div>
-            </>
+            )
           )}
         </div>
-      )}
+      </details>
     </li>
   )
 }
 
-// Renamed original renderEntries to FileTreeRecursive for clarity
-interface FileTreeRecursiveProps {
-  items: FileEntry[]
-  level: number
-  onSelect: (entry: FileEntry) => void
-  selectedPath: string | null
-  onDelete: (filePath: string) => void
-  onCreateFile: (filePath: string) => void
-  onCreateDirectory: (dirPath: string) => void
-  onRename?: (oldPath: string, newName: string) => Promise<string>
-  expandedDirs: Record<string, boolean>
-  setExpandedDirs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
-}
-
-function FileTreeRecursive({
+// Renamed from FileTreeRecursive to FileList for clarity
+function FileList({
   items,
   level,
   onSelect,
@@ -448,24 +482,47 @@ function FileTreeRecursive({
   onRename,
   expandedDirs,
   setExpandedDirs,
-}: FileTreeRecursiveProps) {
+}: {
+  items: FileEntry[]
+  level: number
+  onSelect: (entry: FileEntry) => void
+  selectedPath: string | null
+  onDelete: (filePath: string) => void
+  onCreateFile: (filePath: string) => void
+  onCreateDirectory: (dirPath: string) => void
+  onRename?: (oldPath: string, newName: string) => Promise<string>
+  expandedDirs: Record<string, boolean>
+  setExpandedDirs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
+}) {
   return (
-    <ul className={`text-sm py-0.5`}>
-      {items.map((entry) => (
-        <FileTreeItem
-          key={entry.path}
-          entry={entry}
-          level={level}
-          onSelect={onSelect}
-          selectedPath={selectedPath}
-          onDelete={onDelete}
-          onCreateFile={onCreateFile}
-          onCreateDirectory={onCreateDirectory}
-          onRename={onRename}
-          expandedDirs={expandedDirs}
-          setExpandedDirs={setExpandedDirs}
-        />
-      ))}
+    <ul className="text-sm py-0.5">
+      {items.map((entry) =>
+        entry.type === "dir" ? (
+          <DirectoryItem
+            key={entry.path}
+            entry={entry}
+            level={level}
+            onSelect={onSelect}
+            selectedPath={selectedPath}
+            onDelete={onDelete}
+            onCreateFile={onCreateFile}
+            onCreateDirectory={onCreateDirectory}
+            onRename={onRename}
+            expandedDirs={expandedDirs}
+            setExpandedDirs={setExpandedDirs}
+          />
+        ) : (
+          <FileItem
+            key={entry.path}
+            entry={entry}
+            level={level}
+            onSelect={onSelect}
+            selectedPath={selectedPath}
+            onDelete={onDelete}
+            onRename={onRename}
+          />
+        ),
+      )}
     </ul>
   )
 }
@@ -482,7 +539,28 @@ export function FileTree({
 }: FileTreeProps) {
   const [expandedDirs, setExpandedDirs] = useState<Record<string, boolean>>({})
 
-  // Function to recursively collect all directory paths
+  useEffect(() => {
+    if (entries.length > 0 && !isLoading) {
+      const allDirPaths = getAllDirectoryPaths(entries)
+      const initialExpandedState = allDirPaths.reduce(
+        (acc, path) => {
+          acc[path] = true
+          return acc
+        },
+        {} as Record<string, boolean>,
+      )
+
+      const currentDirPaths = Object.keys(expandedDirs)
+      const entriesChanged =
+        allDirPaths.length !== currentDirPaths.length ||
+        allDirPaths.some((path) => !currentDirPaths.includes(path))
+
+      if (Object.keys(expandedDirs).length === 0 || entriesChanged) {
+        setExpandedDirs(initialExpandedState)
+      }
+    }
+  }, [entries, isLoading])
+
   const getAllDirectoryPaths = (items: FileEntry[]): string[] => {
     let paths: string[] = []
     for (const item of items) {
@@ -495,30 +573,6 @@ export function FileTree({
     }
     return paths
   }
-
-  // Effect to set initial expanded state
-  useEffect(() => {
-    if (entries.length > 0 && !isLoading) {
-      const allDirPaths = getAllDirectoryPaths(entries)
-      const initialExpandedState = allDirPaths.reduce(
-        (acc, path) => {
-          acc[path] = true
-          return acc
-        },
-        {} as Record<string, boolean>,
-      )
-
-      // Reset expanded state when entries structure changes significantly
-      const currentDirPaths = Object.keys(expandedDirs)
-      const entriesChanged =
-        allDirPaths.length !== currentDirPaths.length ||
-        allDirPaths.some((path) => !currentDirPaths.includes(path))
-
-      if (Object.keys(expandedDirs).length === 0 || entriesChanged) {
-        setExpandedDirs(initialExpandedState)
-      }
-    }
-  }, [entries, isLoading])
 
   if (isLoading && entries.length === 0) {
     return (
@@ -535,7 +589,7 @@ export function FileTree({
           No files found
         </div>
       ) : (
-        <FileTreeRecursive
+        <FileList
           items={entries}
           level={0}
           onSelect={onSelect}
