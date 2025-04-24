@@ -2271,6 +2271,10 @@ export type Database = {
         Args: { api_key: string }
         Returns: Json
       }
+      check_api_key_v2: {
+        Args: { api_key: string }
+        Returns: Json
+      }
       create_api_key: {
         Args: {
           user_id: string
@@ -2910,7 +2914,7 @@ export type Database = {
       api_plan: "free" | "pro" | "enterprise"
       demo_hunt_category: "marketing" | "ui" | "seasonal"
       payment_status: "pending" | "paid" | "rejected"
-      submission_status: "on_review" | "featured" | "posted"
+      submission_status: "on_review" | "featured" | "posted" | "rejected"
       user_role:
         | "designer"
         | "frontend_developer"
@@ -3066,7 +3070,7 @@ export const Constants = {
       api_plan: ["free", "pro", "enterprise"],
       demo_hunt_category: ["marketing", "ui", "seasonal"],
       payment_status: ["pending", "paid", "rejected"],
-      submission_status: ["on_review", "featured", "posted"],
+      submission_status: ["on_review", "featured", "posted", "rejected"],
       user_role: [
         "designer",
         "frontend_developer",
