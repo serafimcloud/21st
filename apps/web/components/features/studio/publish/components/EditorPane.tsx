@@ -188,11 +188,18 @@ function EditorPaneOriginal({
       value={code}
       onChange={(value) => onCodeChange(value || "")}
       theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
+      className="oveflow-hidden"
       options={{
         minimap: { enabled: false },
         fontSize: 14,
         wordWrap: "on",
         automaticLayout: true,
+        scrollbar: {
+          verticalScrollbarSize: 5,
+        },
+        overviewRulerLanes: 5,
+        hideCursorInOverviewRuler: true,
+        overviewRulerBorder: false,
       }}
       onMount={handleEditorMount}
       loading={

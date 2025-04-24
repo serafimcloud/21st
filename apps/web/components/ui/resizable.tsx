@@ -1,90 +1,44 @@
 "use client"
+import * as ResizablePrimitive from "react-resizable-panels"
 
-import React, { createContext, useContext, useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
+import { DragHandleDots2Icon } from "@radix-ui/react-icons"
 
-interface ResizablePanelGroupProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  direction: "horizontal" | "vertical"
-  children: React.ReactNode
-}
-
-interface ResizablePanelProps extends React.HTMLAttributes<HTMLDivElement> {
-  defaultSize?: number
-  minSize?: number
-  children: React.ReactNode
-}
-
-const ResizableContext = createContext<{
-  direction: "horizontal" | "vertical"
-}>({
-  direction: "horizontal",
-})
-
-export function ResizablePanelGroup({
-  direction,
+const ResizablePanelGroup = ({
   className,
-  children,
   ...props
-}: ResizablePanelGroupProps) {
-  return (
-    <ResizableContext.Provider value={{ direction }}>
-      <div
-        className={cn(
-          "flex",
-          direction === "horizontal" ? "flex-row" : "flex-col",
-          className,
-        )}
-        {...props}
-      >
-        {children}
+}: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) => (
+  <ResizablePrimitive.PanelGroup
+    className={cn(
+      "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
+      className
+    )}
+    {...props}
+  />
+)
+
+const ResizablePanel = ResizablePrimitive.Panel
+
+const ResizableHandle = ({
+  withHandle,
+  className,
+  ...props
+}: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
+  withHandle?: boolean
+}) => (
+  <ResizablePrimitive.PanelResizeHandle
+    className={cn(
+      "relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0 [&[data-panel-group-direction=vertical]>div]:rotate-90",
+      className
+    )}
+    {...props}
+  >
+    {withHandle && (
+      <div className="z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border">
+        <DragHandleDots2Icon className="h-2.5 w-2.5" />
       </div>
-    </ResizableContext.Provider>
-  )
-}
+    )}
+  </ResizablePrimitive.PanelResizeHandle>
+)
 
-export function ResizablePanel({
-  defaultSize = 50,
-  minSize = 10,
-  className,
-  children,
-  ...props
-}: ResizablePanelProps) {
-  const { direction } = useContext(ResizableContext)
-  const [size, setSize] = useState(defaultSize)
-
-  return (
-    <div
-      className={cn("relative", className)}
-      style={{
-        [direction === "horizontal" ? "width" : "height"]: `${size}%`,
-        [direction === "horizontal" ? "minWidth" : "minHeight"]: `${minSize}%`,
-      }}
-      {...props}
-    >
-      {children}
-    </div>
-  )
-}
-
-export function ResizableHandle() {
-  const { direction } = useContext(ResizableContext)
-
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-center bg-border",
-        direction === "horizontal"
-          ? "w-[6px] cursor-col-resize h-full"
-          : "h-[6px] cursor-row-resize w-full",
-      )}
-    >
-      <div
-        className={cn(
-          "bg-muted-foreground rounded-full",
-          direction === "horizontal" ? "w-1 h-12" : "h-1 w-12",
-        )}
-      />
-    </div>
-  )
-}
+export { ResizablePanelGroup, ResizablePanel, ResizableHandle }

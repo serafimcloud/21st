@@ -8,7 +8,6 @@ import {
   ResizablePanel,
 } from "@/components/ui/resizable"
 import { FileExplorer } from "@/components/features/studio/publish/components/FileExplorer"
-import { EditorPane } from "@/components/features/studio/publish/components/EditorPane"
 import { PreviewPane } from "@/components/features/studio/publish/components/PreviewPane"
 import { PublishHeader } from "@/components/features/studio/publish/components/PublishHeader"
 import { Loader2Icon } from "lucide-react"
