@@ -11,7 +11,12 @@ const EXCLUDED_NAMES = [
   "public",
   "pnpm-lock.yaml",
   "index.html",
-  "package.json",
+  // "package.json",
+  "README.md",
+  "vite.config.ts",
+  "tsconfig.json",
+  "tsconfig.node.json",
+  "main.tsx",
 ]
 
 export interface FileEntry {
@@ -138,6 +143,21 @@ export const useFileSystem = (sandbox: SandboxSession | null) => {
     [sandbox, loadRootDirectory],
   )
 
+  const createDirectory = useCallback(
+    async (dirPath: string) => {
+      if (!sandbox) throw new Error("Sandbox not available")
+      try {
+        await sandbox.fs.mkdir(normalizePath(dirPath))
+        await loadRootDirectory()
+      } catch (error) {
+        console.error(`Failed to create directory ${dirPath}:`, error)
+        toast.error(`Failed to create directory ${dirPath.split("/").pop()}`)
+        throw error
+      }
+    },
+    [sandbox, loadRootDirectory],
+  )
+
   const deleteEntry = useCallback(
     async (entryPath: string) => {
       if (!sandbox) throw new Error("Sandbox not available")
@@ -169,6 +189,7 @@ export const useFileSystem = (sandbox: SandboxSession | null) => {
     loadFileContent,
     saveFileContent,
     createFile,
+    createDirectory,
     deleteEntry,
   }
 }

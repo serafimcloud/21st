@@ -43,6 +43,7 @@ function PublishPageContent() {
     saveFileContent,
     createFile,
     deleteEntry,
+    createDirectory,
   } = useFileSystem(sandbox)
 
   useEffect(() => {
@@ -154,6 +155,7 @@ function PublishPageContent() {
             selectedPath={selectedEntry?.path || null}
             onDelete={handleDeleteEntry}
             onCreateFile={handleCreateFile}
+            onCreateDirectory={createDirectory}
             onRefresh={loadRootDirectory}
             isLoading={isTreeLoading}
           />

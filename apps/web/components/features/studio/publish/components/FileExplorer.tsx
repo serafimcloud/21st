@@ -4,6 +4,8 @@ import { useState } from "react"
 // Define or import the correct FileEntry type if not globally available
 // Assuming FileEntry is defined in page.tsx or a shared types file
 // If not, define it here:
+// Remove the local definition if FileEntry is imported from useFileSystem
+/*
 interface FileEntry {
   name: string
   type: "file" | "dir"
@@ -11,7 +13,14 @@ interface FileEntry {
   isSymlink: boolean
   children?: FileEntry[]
 }
-import { PlusIcon, RefreshCwIcon, Loader2Icon } from "lucide-react"
+*/
+import { FileEntry } from "../hooks/useFileSystem"
+import {
+  PlusIcon,
+  RefreshCwIcon,
+  Loader2Icon,
+  FolderPlusIcon,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -23,6 +32,7 @@ interface FileExplorerProps {
   selectedPath: string | null
   onDelete: (filePath: string) => void
   onCreateFile: (fileName: string) => void
+  onCreateDirectory: (dirName: string) => void
   onRefresh: () => void
   isLoading: boolean
 }
@@ -33,11 +43,14 @@ export function FileExplorer({
   selectedPath,
   onDelete,
   onCreateFile,
+  onCreateDirectory,
   onRefresh,
   isLoading,
 }: FileExplorerProps) {
   const [isCreatingFile, setIsCreatingFile] = useState(false)
   const [newFileName, setNewFileName] = useState("")
+  const [isCreatingDirectory, setIsCreatingDirectory] = useState(false)
+  const [newDirectoryName, setNewDirectoryName] = useState("")
 
   const handleCreateFile = () => {
     if (newFileName) {
@@ -45,6 +58,21 @@ export function FileExplorer({
       setNewFileName("")
       setIsCreatingFile(false)
     }
+  }
+
+  const handleCreateDirectory = () => {
+    if (newDirectoryName) {
+      onCreateDirectory(newDirectoryName)
+      setNewDirectoryName("")
+      setIsCreatingDirectory(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setIsCreatingFile(false)
+    setNewFileName("")
+    setIsCreatingDirectory(false)
+    setNewDirectoryName("")
   }
 
   return (
@@ -59,6 +87,14 @@ export function FileExplorer({
             disabled={isLoading}
           >
             <PlusIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setIsCreatingDirectory(true)}
+            disabled={isLoading}
+          >
+            <FolderPlusIcon className="h-4 w-4" />
           </Button>
           <Button
             size="icon"
@@ -84,10 +120,7 @@ export function FileExplorer({
               onChange={(e) => setNewFileName(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleCreateFile()
-                if (e.key === "Escape") {
-                  setIsCreatingFile(false)
-                  setNewFileName("")
-                }
+                if (e.key === "Escape") handleCancel()
               }}
               autoFocus
             />
@@ -102,6 +135,30 @@ export function FileExplorer({
         </div>
       )}
 
+      {isCreatingDirectory && (
+        <div className="p-2 border-b">
+          <div className="flex gap-2">
+            <Input
+              placeholder="folder-name"
+              value={newDirectoryName}
+              onChange={(e) => setNewDirectoryName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreateDirectory()
+                if (e.key === "Escape") handleCancel()
+              }}
+              autoFocus
+            />
+            <Button
+              size="sm"
+              onClick={handleCreateDirectory}
+              disabled={!newDirectoryName}
+            >
+              Create
+            </Button>
+          </div>
+        </div>
+      )}
+
       <CardContent className="p-0 overflow-y-auto flex-1">
         <FileTree
           entries={entries}
@@ -109,6 +166,8 @@ export function FileExplorer({
           selectedPath={selectedPath}
           onDelete={onDelete}
           isLoading={isLoading}
+          onCreateFile={onCreateFile}
+          onCreateDirectory={onCreateDirectory}
         />
       </CardContent>
     </Card>
