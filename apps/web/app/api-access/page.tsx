@@ -9,6 +9,8 @@ import { ApiDocs } from "@/components/features/api/api-docs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Header } from "@/components/ui/header.client"
 import { Footer } from "@/components/ui/footer"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertTriangleIcon } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "API Access - 21st.dev",
@@ -85,6 +87,28 @@ export default async function ApiAccessPage() {
                 </div>
               </div>
             </div>
+
+            <Alert variant="destructive">
+              <AlertTriangleIcon className="h-4 w-4" />
+              <AlertTitle>API Access Shutdown Notice</AlertTitle>
+              <AlertDescription>
+                We are shutting down public API access on 24/04/2025. For
+                emergency cases, please contact Serafim{" "}
+                <a
+                  href="https://twitter.com/serafimcloud"
+                  className="underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  on Twitter
+                </a>{" "}
+                or email our support at{" "}
+                <a href="mailto:support@21st.dev" className="underline">
+                  support@21st.dev
+                </a>
+                .
+              </AlertDescription>
+            </Alert>
 
             <Suspense fallback={<ApiDocsLoading />}>
               <ApiDocs />

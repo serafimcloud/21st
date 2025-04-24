@@ -2271,6 +2271,10 @@ export type Database = {
         Args: { api_key: string }
         Returns: Json
       }
+      check_api_key_v2: {
+        Args: { api_key: string }
+        Returns: Json
+      }
       create_api_key: {
         Args: {
           user_id: string
@@ -2462,6 +2466,32 @@ export type Database = {
           view_count: number
           bookmarks_count: number
           bundle_url: Json
+        }[]
+      }
+      get_demos_submissions: {
+        Args: {
+          p_sort_by: string
+          p_offset: number
+          p_limit: number
+          p_tag_slug?: string
+          p_include_private?: boolean
+        }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          total_count: number
+          view_count: number
+          bookmarks_count: number
+          bundle_url: Json
+          submission_status: string
+          moderators_feedback: string
         }[]
       }
       get_hunt_demos_list: {
@@ -2851,9 +2881,25 @@ export type Database = {
             }
         Returns: undefined
       }
+      update_demo_info_as_admin: {
+        Args: {
+          p_component_id: number
+          p_demo_name: string
+          p_demo_slug: string
+        }
+        Returns: Json
+      }
       update_demo_tags: {
         Args: { p_demo_id: number; p_tags: Json }
         Returns: undefined
+      }
+      update_submission_as_admin: {
+        Args: {
+          p_component_id: number
+          p_status: Database["public"]["Enums"]["submission_status"]
+          p_feedback: string
+        }
+        Returns: Json
       }
       update_template_tags: {
         Args: { p_template_id: number; p_tags: Json }
