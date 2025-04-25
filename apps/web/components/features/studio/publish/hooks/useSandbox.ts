@@ -15,12 +15,86 @@ export const useSandbox = ({
   const [sandboxConnectionHash, setSandboxConnectionHash] = useState<
     string | null
   >(null)
+  const [shellConnectionHash, setShellConnectionHash] = useState<string>("")
   const [previewURL, setPreviewURL] = useState<string | null>(null)
   const [isSandboxLoading, setIsSandboxLoading] = useState(true)
   const [missingDependencyInfo, setMissingDependencyInfo] = useState<{
     packageName: string
     latestVersion: string
   } | null>(null)
+
+  const initShellSubsciption = async () => {
+    if (!sandboxRef.current) {
+      return
+    }
+
+    // setInterval(async () => {
+    //   const shells = await sandboxRef.current?.shells.getShells()
+
+    //   const runningShells = shells?.filter(
+    //     (shell) =>
+    //       shell.name === "pnpm run install-and-dev" &&
+    //       shell.status === "RUNNING",
+    //   )
+
+    //   console.log(
+    //     "shells",
+    //     runningShells?.map((shell) => {
+    //       return {
+    //         id: shell.id,
+    //         name: shell.name,
+    //         status: shell.status,
+    //       }
+    //     }),
+    //   )
+    // }, 1000 * 5)
+
+    const shells = await sandboxRef.current?.shells.getShells()
+
+    const runningShells = shells?.filter(
+      (shell) =>
+        shell.name === "pnpm run install-and-dev" && shell.status === "RUNNING",
+    )
+
+    if (!runningShells?.length) {
+      return
+    }
+
+    const openedRunningShells = await Promise.all(
+      shells.map(async (shell) => {
+        return await sandboxRef.current?.shells.open(shell.id)
+      }),
+    )
+
+    setShellConnectionHash(
+      Math.random().toString(36).substring(2) + Date.now().toString(36),
+    )
+
+    openedRunningShells.forEach((shell) => {
+      shell!.onOutput(async (data) => {
+        console.log("data", data)
+        const latestPackageVersion =
+          await getLatestPackageVersionFromError(data)
+        if (latestPackageVersion) {
+          setMissingDependencyInfo(latestPackageVersion)
+        }
+      })
+
+      // shell!.onWillDispose(() => {
+      //   console.log("openedRunningShell disposed")
+      //   setTimeout(() => {
+      //     initShellSubsciption()
+      //   }, 1000 * 10)
+      // })
+    })
+  }
+
+  // PLAN B => with more checks it will work actually
+  // useEffect(() => {
+  //   setInterval(async () => {
+  //     await initShellSubsciption()
+  //   }, 1000 * 5)
+  // }, [])
 
   const initialize = async (isReconnecting = false) => {
     if (!isReconnecting) {
@@ -34,47 +108,11 @@ export const useSandbox = ({
       const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
       sandboxRef.current = connectedSandbox
 
-      const shells = await connectedSandbox.shells.getShells()
-      // console.log("ALL SHELS", shells.map((s) => s.name))
-
-      shells.forEach((shell) => {
-        console.log(shell.name, "shell output", shell.status)
-      })
-
-      const runningShell = shells.find(
-        (shell) =>
-          shell.name === "pnpm run install-and-dev" &&
-          shell.status === "RUNNING",
-      )
-
-      const openedRunningShell = await connectedSandbox.shells.open(
-        runningShell!.id,
-      )
-
-      openedRunningShell.onOutput(async (data) => {
-        console.log("data", data)
-        const latestPackageVersion =
-          await getLatestPackageVersionFromError(data)
-        if (latestPackageVersion) {
-          setMissingDependencyInfo(latestPackageVersion)
-        }
-      })
-
-      console.log("openedRunningShell", openedRunningShell)
-
-      console.log("runningShell", runningShell)
-
-      // setInterval(() => {
-      //   const newPreviewURL = sandboxRef.current?.ports.getPreviewUrl(5173)
-      //   console.log("newPreviewURL", newPreviewURL)
-      //   setPreviewURL(newPreviewURL || null)
-      // }, 1000 * 5)
-
+      await initShellSubsciption()
       setPreviewURL(newPreviewURL || null)
-
-      setSandboxConnectionHash(
-        Math.random().toString(36).substring(2) + Date.now().toString(36),
-      )
+      // setSandboxConnectionHash(
+      //   Math.random().toString(36).substring(2) + Date.now().toString(36),
+      // )
       setSandboxId(newSandboxId)
     } catch (error) {
       console.error("Failed to initialize sandbox in hook:", error)
@@ -109,7 +147,10 @@ export const useSandbox = ({
     isSandboxLoading,
     sandboxConnectionHash,
     reconnectSandbox,
+    // dependencies
     missingDependencyInfo,
     clearMissingDependencyInfo,
+    // unique hash of a shell connection
+    shellConnectionHash,
   }
 }

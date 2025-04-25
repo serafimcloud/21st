@@ -16,6 +16,7 @@ interface PreviewPaneProps {
   code?: string
   onCodeChange?: (value: string) => void
   isFileLoading?: boolean
+  shellConnectionHash?: string
 }
 
 export function PreviewPane({
@@ -25,6 +26,7 @@ export function PreviewPane({
   code = "",
   onCodeChange = () => {},
   isFileLoading = false,
+  shellConnectionHash = "",
 }: PreviewPaneProps) {
   const [iframeKey, setIframeKey] = useState<number>(0)
   const [showPreview, setShowPreview] = useState<boolean>(isPreviewVisible)
@@ -62,7 +64,7 @@ export function PreviewPane({
                   </div>
                 ) : (
                   <iframe
-                    key={iframeKey}
+                    key={`${iframeKey}-${shellConnectionHash}`}
                     src={previewURL}
                     className="w-full h-full border rounded-b"
                   />

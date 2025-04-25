@@ -42,6 +42,7 @@ function PublishPageContent() {
     // dependencies
     missingDependencyInfo,
     clearMissingDependencyInfo,
+    shellConnectionHash,
   } = useSandbox({
     defaultSandboxId: searchParams.get("sandboxId"),
   })
@@ -212,6 +213,7 @@ function PublishPageContent() {
         <ResizableHandle />
         <ResizablePanel defaultSize={80} minSize={20}>
           <PreviewPane
+            shellConnectionHash={shellConnectionHash}
             previewURL={previewURL}
             selectedFile={selectedEntry}
             code={code}
