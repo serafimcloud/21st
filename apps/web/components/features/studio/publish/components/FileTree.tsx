@@ -230,7 +230,7 @@ function FileItem({
             {entry.name}
           </button>
 
-          <TreeItemActions
+          {/* <TreeItemActions
             showActions={showActions}
             onRename={() =>
               startRename({ stopPropagation: () => {} } as React.MouseEvent)
@@ -238,7 +238,7 @@ function FileItem({
             onDelete={() => onDelete(entry.path)}
             itemType="file"
             itemName={entry.name}
-          />
+          /> */}
         </div>
       )}
     </li>
@@ -388,7 +388,7 @@ function DirectoryItem({
               </span>
             </div>
 
-            <TreeItemActions
+            {/* <TreeItemActions
               showActions={showActions}
               onRename={() =>
                 startRename({
@@ -411,7 +411,7 @@ function DirectoryItem({
               onDelete={() => onDelete(entry.path)}
               itemType="dir"
               itemName={entry.name}
-            />
+            /> */}
           </summary>
         )}
 

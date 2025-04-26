@@ -95,7 +95,7 @@ export function FileExplorer({
       <div className="flex items-center justify-between p-2 border-b">
         <span className="font-medium">Files</span>
         <div className="flex gap-1">
-          <Button
+          {/* <Button
             size="icon"
             variant="ghost"
             onClick={() => setIsCreatingFile(true)}
@@ -110,7 +110,7 @@ export function FileExplorer({
             disabled={isLoading}
           >
             <FolderPlusIcon className="h-4 w-4" />
-          </Button>
+          </Button> */}
           {/* <Button
             size="icon"
             variant="ghost"
