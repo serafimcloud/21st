@@ -5,6 +5,7 @@ import { unstable_cache } from "next/cache"
 import { getUserData } from "@/lib/queries"
 import { StudioUsernameClient } from "./page.client"
 import { transformDemoResult } from "@/lib/utils/transformData"
+import ShortUUID from "short-uuid"
 
 // Get user data by username
 const getCachedUser = unstable_cache(
@@ -83,6 +84,16 @@ export default async function StudioUsernamePage({
     redirect("/studio")
   }
 
+  const sandboxesPre = await supabaseWithAdminAccess
+    .from("sandboxes")
+    .select("*")
+    .eq("user_id", user.id)
+
+  const sandboxes = sandboxesPre.data?.map((sandbox) => ({
+    ...sandbox,
+    id: ShortUUID().fromUUID(sandbox.id),
+  }))
+
   // Verify logged in user has access to this user's components
   // Admin can access any user's components, users can only access their own
   const { data: currentUser } = await supabaseWithAdminAccess
@@ -106,6 +117,7 @@ export default async function StudioUsernamePage({
     <StudioUsernameClient
       user={user}
       demos={demos}
+      sandboxes={sandboxes}
       isAdmin={isAdmin}
       isOwnProfile={isOwnProfile}
     />

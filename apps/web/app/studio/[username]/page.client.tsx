@@ -3,17 +3,19 @@
 import { User, DemoWithComponent } from "@/types/global"
 import { StudioLayout } from "@/components/features/studio/studio-layout"
 import { DemosTable } from "@/components/features/studio/ui/components-table"
-import { ComponentPublishDialog as ComponentPublishDialogOld } from "@/components/features/studio/editor/component-publish-dialog"
+import { SandboxesTable } from "@/components/features/studio/ui/sandboxes-table"
 import Link from "next/link"
 import { ArrowLeft, PlusCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
 import { createNewSandbox } from "@/components/features/studio/publish/api"
 import { useState } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface StudioUsernameClientProps {
   user: User
   demos: DemoWithComponent[]
+  sandboxes: any[]
   isAdmin: boolean
   isOwnProfile: boolean
 }
@@ -21,6 +23,7 @@ interface StudioUsernameClientProps {
 export function StudioUsernameClient({
   user,
   demos,
+  sandboxes,
   isAdmin,
   isOwnProfile,
 }: StudioUsernameClientProps) {
@@ -40,6 +43,10 @@ export function StudioUsernameClient({
     }
   }
 
+  const handleOpenSandbox = (sandbox: any) => {
+    router.push(`${pathname}/sandbox/${sandbox.id}`)
+  }
+
   return (
     <StudioLayout user={user}>
       <div className="space-y-6">
@@ -51,25 +58,33 @@ export function StudioUsernameClient({
             >
               <ArrowLeft className="h-4 w-4" />
             </Link>
-            <h1 className="text-xl font-bold">Components</h1>
+            <h1 className="text-xl font-bold">Studio</h1>
           </div>
 
           {(isOwnProfile || isAdmin) && (
-            <>
-              <Button onClick={handleCreateNewSandbox} disabled={isCreating}>
-                {isCreating ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                )}
-                Create new component
-              </Button>
-              {/* <ComponentPublishDialogOld userId={user.id} /> */}
-            </>
+            <Button onClick={handleCreateNewSandbox} disabled={isCreating}>
+              {isCreating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <PlusCircle className="mr-2 h-4 w-4" />
+              )}
+              Create new component
+            </Button>
           )}
         </div>
 
-        <DemosTable demos={demos} />
+        <Tabs defaultValue="components">
+          <TabsList>
+            <TabsTrigger value="components">Components</TabsTrigger>
+            <TabsTrigger value="sandboxes">Sandboxes</TabsTrigger>
+          </TabsList>
+          <TabsContent value="components" className="mt-4">
+            <DemosTable demos={demos} />
+          </TabsContent>
+          <TabsContent value="sandboxes" className="mt-4">
+            <SandboxesTable sandboxes={sandboxes} onOpen={handleOpenSandbox} />
+          </TabsContent>
+        </Tabs>
       </div>
     </StudioLayout>
   )
