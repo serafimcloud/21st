@@ -10,91 +10,17 @@ export const useSandbox = ({
   defaultSandboxId: string | null
 }) => {
   const sandboxRef = useRef<SandboxSession | null>(null)
-  const shellRef = useRef(null)
   const [sandboxId, setSandboxId] = useState<string | null>(defaultSandboxId)
   const [sandboxConnectionHash, setSandboxConnectionHash] = useState<
     string | null
   >(null)
-  const [shellConnectionHash, setShellConnectionHash] = useState<string>("")
+  const [connectedShellId, setConnectedShellId] = useState<string>("")
   const [previewURL, setPreviewURL] = useState<string | null>(null)
   const [isSandboxLoading, setIsSandboxLoading] = useState(true)
   const [missingDependencyInfo, setMissingDependencyInfo] = useState<{
     packageName: string
     latestVersion: string
   } | null>(null)
-
-  const initShellSubsciption = async () => {
-    if (!sandboxRef.current) {
-      return
-    }
-
-    // setInterval(async () => {
-    //   const shells = await sandboxRef.current?.shells.getShells()
-
-    //   const runningShells = shells?.filter(
-    //     (shell) =>
-    //       shell.name === "pnpm run install-and-dev" &&
-    //       shell.status === "RUNNING",
-    //   )
-
-    //   console.log(
-    //     "shells",
-    //     runningShells?.map((shell) => {
-    //       return {
-    //         id: shell.id,
-    //         name: shell.name,
-    //         status: shell.status,
-    //       }
-    //     }),
-    //   )
-    // }, 1000 * 5)
-
-    const shells = await sandboxRef.current?.shells.getShells()
-
-    const runningShells = shells?.filter(
-      (shell) =>
-        shell.name === "pnpm run install-and-dev" && shell.status === "RUNNING",
-    )
-
-    if (!runningShells?.length) {
-      return
-    }
-
-    const openedRunningShells = await Promise.all(
-      shells.map(async (shell) => {
-        return await sandboxRef.current?.shells.open(shell.id)
-      }),
-    )
-
-    setShellConnectionHash(
-      Math.random().toString(36).substring(2) + Date.now().toString(36),
-    )
-
-    openedRunningShells.forEach((shell) => {
-      shell!.onOutput(async (data) => {
-        console.log("data", data)
-        const latestPackageVersion =
-          await getLatestPackageVersionFromError(data)
-        if (latestPackageVersion) {
-          setMissingDependencyInfo(latestPackageVersion)
-        }
-      })
-
-      // shell!.onWillDispose(() => {
-      //   console.log("openedRunningShell disposed")
-      //   setTimeout(() => {
-      //     initShellSubsciption()
-      //   }, 1000 * 10)
-      // })
-    })
-  }
-
-  // PLAN B => with more checks it will work actually
-  // useEffect(() => {
-  //   setInterval(async () => {
-  //     await initShellSubsciption()
-  //   }, 1000 * 5)
-  // }, [])
 
   const initialize = async (isReconnecting = false) => {
     if (!isReconnecting) {
@@ -104,15 +30,15 @@ export const useSandbox = ({
       const { sandboxId: newSandboxId, startData } =
         await connectToServerSandbox(sandboxId)
 
+      console.log("startData", startData)
       const connectedSandbox = await connectToSandbox(startData)
+
+      console.log("connectedSandbox", connectedSandbox)
       const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
       sandboxRef.current = connectedSandbox
 
-      await initShellSubsciption()
       setPreviewURL(newPreviewURL || null)
-      // setSandboxConnectionHash(
-      //   Math.random().toString(36).substring(2) + Date.now().toString(36),
-      // )
+      checkShells()
       setSandboxId(newSandboxId)
     } catch (error) {
       console.error("Failed to initialize sandbox in hook:", error)
@@ -126,6 +52,67 @@ export const useSandbox = ({
       }
     }
   }
+
+  const subscribedShells = useRef<Set<string>>(new Set())
+
+  const checkShells = async () => {
+    if (!sandboxRef.current) {
+      return
+    }
+
+    const shells = await sandboxRef.current?.shells.getShells()
+
+    console.log("shells", shells)
+    const allRunningShells = shells?.filter(
+      (shell) =>
+        shell.name === "pnpm run install-and-dev" && shell.status === "RUNNING",
+    )
+
+    const newRunningShells = allRunningShells?.filter(
+      (shell) => !subscribedShells.current.has(shell.id),
+    )
+    const shellsToShutdown = allRunningShells?.filter((shell) =>
+      subscribedShells.current.has(shell.id),
+    )
+
+    if (!newRunningShells?.length) {
+      return
+    }
+
+    const openedRunningShells = await Promise.all(
+      newRunningShells.map(async (shell) => {
+        return await sandboxRef.current?.shells.open(shell.id)
+      }),
+    )
+
+    shellsToShutdown.forEach((shell) => {
+      shell!.dispose()
+    })
+
+    openedRunningShells.forEach((shell) => {
+      shell!.onOutput(async (data) => {
+        console.log("SHELL", shell!.id, "OUTPUT", data)
+
+        const latestPackageVersion =
+          await getLatestPackageVersionFromError(data)
+        if (latestPackageVersion) {
+          setMissingDependencyInfo(latestPackageVersion)
+        }
+      })
+
+      subscribedShells.current.add(shell!.id)
+      setConnectedShellId(shell!.id)
+    })
+  }
+
+  // subscribe to shells to read output & remount iframe when new shell is created
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      await checkShells()
+    }, 1000 * 5)
+
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     initialize()
@@ -151,6 +138,6 @@ export const useSandbox = ({
     missingDependencyInfo,
     clearMissingDependencyInfo,
     // unique hash of a shell connection
-    shellConnectionHash,
+    connectedShellId,
   }
 }

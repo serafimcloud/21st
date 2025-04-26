@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { RefreshCw, PanelRightOpen, PanelRightClose } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +16,7 @@ interface PreviewPaneProps {
   code?: string
   onCodeChange?: (value: string) => void
   isFileLoading?: boolean
-  shellConnectionHash?: string
+  connectedShellId?: string
 }
 
 export function PreviewPane({
@@ -26,10 +26,26 @@ export function PreviewPane({
   code = "",
   onCodeChange = () => {},
   isFileLoading = false,
-  shellConnectionHash = "",
+  connectedShellId = "",
 }: PreviewPaneProps) {
   const [iframeKey, setIframeKey] = useState<number>(0)
   const [showPreview, setShowPreview] = useState<boolean>(isPreviewVisible)
+
+  const [previousConnectedShellId, setPreviousConnectedShellId] = useState<
+    string | null
+  >(connectedShellId)
+
+  //  takes time to complile need to reload iframe, will be fixed at codesandbox SDK team side
+  useEffect(() => {
+    if (
+      previousConnectedShellId !== connectedShellId &&
+      previousConnectedShellId !== ""
+    ) {
+      setTimeout(() => {
+        setIframeKey((prev) => prev + 1)
+      }, 1000 * 8)
+    }
+  }, [connectedShellId])
 
   const handleRefresh = () => {
     setIframeKey((prev) => prev + 1)
@@ -64,7 +80,7 @@ export function PreviewPane({
                   </div>
                 ) : (
                   <iframe
-                    key={`${iframeKey}-${shellConnectionHash}`}
+                    key={`${iframeKey}-${connectedShellId}`}
                     src={previewURL}
                     className="w-full h-full border rounded-b"
                   />
