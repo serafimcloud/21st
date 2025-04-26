@@ -38,6 +38,8 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
       const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
       sandboxRef.current = connectedSandbox
 
+      const hash = Math.random().toString(36).substring(2, 15)
+      setSandboxConnectionHash(hash)
       setPreviewURL(newPreviewURL || null)
       checkShells()
     } catch (error) {
