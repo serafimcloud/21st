@@ -1,39 +1,43 @@
-const API_BASE_URL = "http://localhost:8080"
-
-export interface ProjectResponse {
-  sandboxId: string
-  startData: any
-}
-
-const fetchJSON = async (url: string, opts: RequestInit = {}) => {
-  const res = await fetch(API_BASE_URL + url, opts)
-  if (!res.ok) throw new Error(await res.text())
-
-  return await res.json()
-}
-
-export const connectToServerSandbox = async (
-  sandboxId?: string | null,
-): Promise<ProjectResponse> => {
-  if (sandboxId) {
+export const connectToSandbox = async (
+  shortSandboxId: string,
+): Promise<{ startData: any } | null> => {
+  let retries = 3
+  while (retries > 0) {
     try {
-      const startData = await fetchJSON(`/codesandbox/connect/${sandboxId}`, {
+      const res = await fetch(`/api/sandbox/connect`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ shortSandboxId }),
       })
 
-      return { sandboxId, startData }
+      if (!res.ok) throw new Error(await res.text())
+      const response = await res.json()
+
+      return { startData: response.startData }
     } catch (error) {
-      console.error("Failed to load existing sandbox:", error)
-      return createNewSandbox()
+      console.error(
+        `Failed to load existing sandbox (${retries} retries left):`,
+        error,
+      )
+      retries--
+      if (retries === 0) return null
+      await new Promise((resolve) => setTimeout(resolve, 1000))
     }
   }
-  return createNewSandbox()
+  return null
 }
 
-const createNewSandbox = async (): Promise<ProjectResponse> => {
-  const { sandboxId, startData } = await fetchJSON("/codesandbox/create", {
+export const createNewSandbox = async (): Promise<{
+  sandboxId: string
+}> => {
+  const res = await fetch("/api/sandbox/new", {
     method: "POST",
   })
 
-  return { sandboxId, startData }
+  if (!res.ok) throw new Error(await res.text())
+  const response = await res.json()
+
+  return { sandboxId: response.shortSandboxId }
 }

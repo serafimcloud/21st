@@ -17,7 +17,8 @@
     "CLOUDFLARE_ZONE_ID",
     "INTERNAL_API_SECRET",
     "STRIPE_SECRET_KEY",
-    "STRIPE_WEBHOOK_SECRET"
+    "STRIPE_WEBHOOK_SECRET",
+    "CSB_API_KEY"
   ],
   "tasks": {
     "build": {

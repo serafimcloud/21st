@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, Suspense } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams, useRouter, useParams } from "next/navigation"
 import {
   ResizableHandle,
   ResizablePanelGroup,
@@ -25,6 +25,8 @@ const DEFAULT_FILE_ENTRY: FileEntry = {
 }
 
 function PublishPageContent() {
+  const params = useParams()
+  const sandboxId = params.sandboxId as string
   const searchParams = useSearchParams()
   const router = useRouter()
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(
@@ -34,17 +36,15 @@ function PublishPageContent() {
 
   const {
     sandboxRef,
-    sandboxId,
     previewURL,
     isSandboxLoading,
     sandboxConnectionHash,
     reconnectSandbox,
-    // dependencies
     missingDependencyInfo,
     clearMissingDependencyInfo,
     connectedShellId,
   } = useSandbox({
-    defaultSandboxId: searchParams.get("sandboxId"),
+    sandboxId,
   })
 
   const {
@@ -76,14 +76,6 @@ function PublishPageContent() {
       clearMissingDependencyInfo()
     }
   }, [missingDependencyInfo])
-
-  useEffect(() => {
-    if (sandboxId && sandboxId !== searchParams.get("sandboxId")) {
-      router.push(`${window.location.pathname}?sandboxId=${sandboxId}`, {
-        scroll: false,
-      })
-    }
-  }, [sandboxId, router, searchParams])
 
   useEffect(() => {
     if (

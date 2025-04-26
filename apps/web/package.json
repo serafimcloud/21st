@@ -92,6 +92,7 @@
     "react-resizable-panels": "^2.1.8",
     "resend": "^4.1.2",
     "shiki": "^3.0.0",
+    "short-uuid": "^5.2.0",
     "sonner": "^1.5.0",
     "stripe": "^17.6.0",
     "svix": "^1.37.0",

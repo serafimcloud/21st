@@ -1,16 +1,11 @@
 import { SandboxSession } from "@codesandbox/sdk"
-import { connectToSandbox } from "@codesandbox/sdk/browser"
+import { connectToSandbox as connectToCodeSandboxSDK } from "@codesandbox/sdk/browser"
 import { useEffect, useRef, useState } from "react"
-import { connectToServerSandbox } from "../api"
+import { connectToSandbox } from "../api"
 import { getLatestPackageVersionFromError } from "../utils/dependencies"
 
-export const useSandbox = ({
-  defaultSandboxId,
-}: {
-  defaultSandboxId: string | null
-}) => {
+export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
   const sandboxRef = useRef<SandboxSession | null>(null)
-  const [sandboxId, setSandboxId] = useState<string | null>(defaultSandboxId)
   const [sandboxConnectionHash, setSandboxConnectionHash] = useState<
     string | null
   >(null)
@@ -27,11 +22,17 @@ export const useSandbox = ({
       setIsSandboxLoading(true)
     }
     try {
-      const { sandboxId: newSandboxId, startData } =
-        await connectToServerSandbox(sandboxId)
+      const response = await connectToSandbox(sandboxId)
+
+      if (!response) {
+        // Implement failed logic; redirect to studio page
+        throw new Error("Failed to connect to sandbox")
+      }
+
+      const { startData } = response
 
       console.log("startData", startData)
-      const connectedSandbox = await connectToSandbox(startData)
+      const connectedSandbox = await connectToCodeSandboxSDK(startData)
 
       console.log("connectedSandbox", connectedSandbox)
       const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
@@ -39,11 +40,9 @@ export const useSandbox = ({
 
       setPreviewURL(newPreviewURL || null)
       checkShells()
-      setSandboxId(newSandboxId)
     } catch (error) {
       console.error("Failed to initialize sandbox in hook:", error)
       sandboxRef.current = null
-      setSandboxId(null)
       setSandboxConnectionHash(null)
       setPreviewURL(null)
     } finally {
@@ -105,7 +104,7 @@ export const useSandbox = ({
     })
   }
 
-  // subscribe to shells to read output & remount iframe when new shell is created
+  // Subscribe to shells to read output & remount iframe when new shell is created
   useEffect(() => {
     const interval = setInterval(async () => {
       await checkShells()
@@ -116,7 +115,7 @@ export const useSandbox = ({
 
   useEffect(() => {
     initialize()
-  }, [defaultSandboxId])
+  }, [sandboxId])
 
   const reconnectSandbox = async () => {
     if (!sandboxId) return
