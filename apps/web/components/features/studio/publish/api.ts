@@ -41,3 +41,20 @@ export const createNewSandbox = async (): Promise<{
 
   return { sandboxId: response.shortSandboxId }
 }
+
+export const publishSandbox = async (
+  shortSandboxId: string,
+): Promise<{ success: boolean }> => {
+  const res = await fetch("/api/sandbox/publish", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ shortSandboxId }),
+  })
+
+  if (!res.ok) throw new Error(await res.text())
+  const response = await res.json()
+
+  return { success: response.success }
+}

@@ -16,6 +16,7 @@ import {
   useFileSystem,
   type FileEntry,
 } from "@/components/features/studio/publish/hooks/useFileSystem"
+import { publishSandbox } from "@/components/features/studio/publish/api"
 
 const DEFAULT_FILE_ENTRY: FileEntry = {
   name: "component.tsx",
@@ -27,8 +28,6 @@ const DEFAULT_FILE_ENTRY: FileEntry = {
 function PublishPageContent() {
   const params = useParams()
   const sandboxId = params.sandboxId as string
-  const searchParams = useSearchParams()
-  const router = useRouter()
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(
     DEFAULT_FILE_ENTRY,
   )
