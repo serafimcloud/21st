@@ -349,8 +349,7 @@ export function MainSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-      
-        {/*
+
         <SidebarGroup>
           <SidebarGroupLabel className="text-sm font-semibold text-foreground">
             <TextShimmer
@@ -391,8 +390,7 @@ export function MainSidebar() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup> 
-        */}
+        </SidebarGroup>
 
         {/* Add You section */}
         <SidebarGroup>
