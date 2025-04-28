@@ -13,8 +13,69 @@ import {
 import { Button } from "@/components/ui/button"
 import { Trophy } from "lucide-react"
 import { Header } from "@/components/ui/header.client"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
 
-export default function Page() {
+interface Round {
+  id: number
+  week_number: number
+  start_at: string
+  end_at: string
+  seasonal_tag_id: number | null
+  created_at: string
+}
+
+interface Tag {
+  id: string
+  name: string
+}
+
+async function getUpcomingRoundsWithTags(): Promise<{
+  rounds: (Round & { seasonalTag: Tag | null })[]
+}> {
+  const now = new Date().toISOString()
+  const { data: rounds } = await supabaseWithAdminAccess
+    .from("component_hunt_rounds")
+    .select("*")
+    .gte("end_at", now)
+    .order("start_at", { ascending: true })
+    .limit(3)
+
+  const roundsWithTags = await Promise.all(
+    (rounds || []).map(async (round) => {
+      let seasonalTag: Tag | null = null
+      if (round.seasonal_tag_id) {
+        const { data: tag } = await supabaseWithAdminAccess
+          .from("tags")
+          .select("id, name")
+          .eq("id", round.seasonal_tag_id)
+          .single()
+        if (tag) {
+          seasonalTag = { id: tag.id.toString(), name: tag.name }
+        }
+      }
+      return { ...round, created_at: round.created_at ?? "", seasonalTag }
+    }),
+  )
+  return { rounds: roundsWithTags }
+}
+
+function formatDateRange(start: string, end: string): string {
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  const startMonth = startDate.toLocaleString("en-US", { month: "long" })
+  const endMonth = endDate.toLocaleString("en-US", { month: "long" })
+  const startDay = startDate.getDate()
+  const endDay = endDate.getDate()
+  if (startMonth === endMonth) {
+    return `${startMonth} ${startDay} – ${endDay}`
+  } else {
+    return `${startMonth} ${startDay} – ${endMonth} ${endDay}`
+  }
+}
+
+export default async function Page() {
+  const { rounds } = await getUpcomingRoundsWithTags()
+  const safeRounds = rounds ?? []
   return (
     <div className="min-h-screen">
       <div className="min-h-screen flex flex-col">
@@ -151,8 +212,10 @@ export default function Page() {
                   dashboards, charts, complex form elements
                 </li>
                 <li>
-                  <span className="font-semibold">Seasonal Category</span> –
-                  rotates each week (see roadmap below)
+                  <span className="font-semibold">
+                    Bonus Category (Extra Prizes)
+                  </span>{" "}
+                  – rotates each week (see roadmap below)
                 </li>
               </ol>
             </section>
@@ -213,7 +276,7 @@ export default function Page() {
 
               <div className="flex justify-center pt-2">
                 <Button asChild variant="outline" className="gap-2">
-                  <Link href="/contest/leaderboard">
+                  <Link href="/hunt/leaderboard">
                     <Trophy className="h-4 w-4" />
                     View Current Leaderboard
                   </Link>
@@ -225,7 +288,7 @@ export default function Page() {
 
             <section className="space-y-4">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
-                🌱 Seasonal Category Roadmap (First 3 Weeks)
+                🎁 Bonus Category Roadmap (Extra Prizes)
               </h2>
               <div className="rounded-lg border border-border">
                 <Table>
@@ -233,37 +296,35 @@ export default function Page() {
                     <TableRow className="bg-muted/50">
                       <TableHead>Week</TableHead>
                       <TableHead>Dates (PT)</TableHead>
-                      <TableHead>Theme</TableHead>
+                      <TableHead>Bonus Component Theme</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">1</TableCell>
-                      <TableCell>April 21 – April 28</TableCell>
-                      <TableCell className="font-medium">
-                        Hero Sections
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">2</TableCell>
-                      <TableCell>April 28 – May 5</TableCell>
-                      <TableCell className="font-medium">
-                        AI Chat Widgets
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">3</TableCell>
-                      <TableCell>May 5 – May 12</TableCell>
-                      <TableCell className="font-medium">
-                        Login / Auth Pages
-                      </TableCell>
-                    </TableRow>
+                    {safeRounds.map((round) => (
+                      <TableRow key={round.id}>
+                        <TableCell className="font-medium">
+                          {round.week_number}
+                        </TableCell>
+                        <TableCell>
+                          {round.start_at && round.end_at
+                            ? formatDateRange(round.start_at, round.end_at)
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {round.seasonalTag?.name || "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
               <p className="text-base">
-                A new three-week roadmap will be announced on the Monday of Week
-                3.
+                A new three-week roadmap will be announced on the Monday of Week{" "}
+                {safeRounds.length > 0 &&
+                safeRounds[safeRounds.length - 1]?.week_number
+                  ? safeRounds[safeRounds.length - 1]?.week_number
+                  : "..."}
+                .
               </p>
             </section>
 
@@ -304,7 +365,7 @@ export default function Page() {
 
               <div className="flex justify-center pt-4">
                 <Button asChild variant="outline" className="gap-2">
-                  <Link href="/contest/leaderboard">
+                  <Link href="/hunt/leaderboard">
                     <Trophy className="h-4 w-4" />
                     See The Leaderboard
                   </Link>

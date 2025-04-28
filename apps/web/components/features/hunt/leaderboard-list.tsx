@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation"
 import { ComponentPreviewDialog } from "@/components/features/component-page/preview-dialog"
 import { LeaderboardCard } from "./leaderboard-card"
 import { UseMutationResult } from "@tanstack/react-query"
+import { Trophy } from "lucide-react"
+import { LeaderboardCardSkeleton } from "@/components/ui/skeletons"
 
 export type Category = "global" | "marketing" | "ui" | "seasonal"
 
@@ -14,12 +16,18 @@ interface LeaderboardListProps {
   submissions: any[]
   roundId: number
   toggleVote: UseMutationResult<boolean, Error, { demoId: number }, unknown>
+  category: Category
+  seasonalTheme?: string
+  isLoading?: boolean
 }
 
 export function LeaderboardList({
   submissions = [],
   roundId,
   toggleVote,
+  category,
+  seasonalTheme,
+  isLoading = false,
 }: LeaderboardListProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -127,18 +135,31 @@ export function LeaderboardList({
     }
   }
 
-  if (!Array.isArray(optimisticSubmissions)) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8 text-muted-foreground">
-        Loading...
+      <div className="space-y-2">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <LeaderboardCardSkeleton key={index} />
+        ))}
       </div>
     )
   }
 
   if (optimisticSubmissions.length === 0) {
+    let categoryDisplay = "components"
+    if (category === "seasonal" && seasonalTheme) {
+      categoryDisplay = `${seasonalTheme.toLowerCase()} components`
+    } else if (category !== "global") {
+      categoryDisplay = `${category.toLowerCase()} components`
+    }
     return (
-      <div className="flex items-center justify-center p-8 text-muted-foreground">
-        No submissions found
+      <div className="flex flex-col items-center justify-center py-12 text-center gap-2">
+        <div className="rounded-full bg-muted p-2 mb-1">
+          <Trophy className="h-5 w-5 text-primary/60" />
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {`No ${categoryDisplay} submitted for this round yet.`}
+        </div>
       </div>
     )
   }
