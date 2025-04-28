@@ -22,8 +22,8 @@ const TIERS = [
     name: PLAN_LIMITS.pro.displayName,
     type: "pro" as PlanType,
     price: {
-      monthly: PLAN_LIMITS.pro.monthlyPrice || 10,
-      yearly: PLAN_LIMITS.pro.yearlyPrice || 96,
+      monthly: PLAN_LIMITS.pro.monthlyPrice || 20,
+      yearly: PLAN_LIMITS.pro.yearlyPrice || 192,
     },
     tokenPrice: {
       monthly: PLAN_LIMITS.pro.tokenPricing.pricePerToken.monthly,
@@ -40,8 +40,8 @@ const TIERS = [
     name: PLAN_LIMITS.pro_plus.displayName,
     type: "pro_plus" as PlanType,
     price: {
-      monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 30,
-      yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 288,
+      monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 40,
+      yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 384,
     },
     tokenPrice: {
       monthly: PLAN_LIMITS.pro_plus.tokenPricing.pricePerToken.monthly,

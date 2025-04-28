@@ -86,11 +86,11 @@ export async function getAllPlans(forceRefresh = false): Promise<Plan[]> {
   }
 
   const environment = "live"
-
   const { data, error } = await supabaseWithAdminAccess
     .from("plans")
     .select("*")
     .eq("env", environment)
+    .order("created_at", { ascending: false })
 
   if (error) {
     console.error("Error fetching plans:", error)

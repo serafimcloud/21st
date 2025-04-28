@@ -286,10 +286,9 @@ export function PlanComparisonTable({
                 </div>
                 {plan.tokens && (
                   <div className="text-sm text-muted-foreground">
-                    {plan.type === "free" 
+                    {plan.type === "free"
                       ? `${plan.tokens} tokens included`
-                      : `${plan.tokens} tokens included ($${tokenPriceFormatted}/token)`
-                    }
+                      : `${plan.tokens} tokens included ($${tokenPriceFormatted}/token)`}
                   </div>
                 )}
               </div>
