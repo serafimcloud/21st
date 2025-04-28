@@ -1240,8 +1240,10 @@ export async function getHuntDemosList(
 
   return data
 }
+
 export const useRoundSubmissions = (roundId: number | null) => {
   const supabase = useClerkSupabaseClient()
+  const { user } = useUser()
 
   const {
     data: submissions,
@@ -1249,7 +1251,7 @@ export const useRoundSubmissions = (roundId: number | null) => {
     error,
     ...rest
   } = useQuery({
-    queryKey: ["demo-hunt-submissions", roundId],
+    queryKey: ["demo-hunt-submissions", roundId, user?.id],
     queryFn: async () => {
       if (!roundId) return []
 
@@ -1278,6 +1280,14 @@ export const useRoundSubmissions = (roundId: number | null) => {
           registry: componentData.registry || null,
         }
 
+        // Add has_voted flag based on user's votes
+        if (user?.id) {
+          result.has_voted =
+            result.votes?.some((vote: any) => vote.user_id === user.id) || false
+        } else {
+          result.has_voted = false
+        }
+
         return result
       })
     },
@@ -1285,19 +1295,66 @@ export const useRoundSubmissions = (roundId: number | null) => {
   })
 
   const uiSlugs = [
-    "accordion", "ai-chat", "alert", "avatar", "badge", "button", "calendar",
-    "card", "carousel", "checkbox", "date-picker", "modal-dialog", "dropdown",
-    "empty-state", "file-tree", "upload-download", "form", "icons", "input",
-    "link", "menu", "notification", "number", "pagination", "popover",
-    "radio-group", "sidebar", "sign-in", "registration-signup", "select",
-    "slider", "spinner-loader", "table", "chip-tag", "tabs", "textarea",
-    "toast", "toggle", "tooltip"
+    "accordion",
+    "ai-chat",
+    "alert",
+    "avatar",
+    "badge",
+    "button",
+    "calendar",
+    "card",
+    "carousel",
+    "checkbox",
+    "date-picker",
+    "modal-dialog",
+    "dropdown",
+    "empty-state",
+    "file-tree",
+    "upload-download",
+    "form",
+    "icons",
+    "input",
+    "link",
+    "menu",
+    "notification",
+    "number",
+    "pagination",
+    "popover",
+    "radio-group",
+    "sidebar",
+    "sign-in",
+    "registration-signup",
+    "select",
+    "slider",
+    "spinner-loader",
+    "table",
+    "chip-tag",
+    "tabs",
+    "textarea",
+    "toast",
+    "toggle",
+    "tooltip",
   ]
   const marketingSlugs = [
-    "announcement", "background", "border", "call-to-action", "clients",
-    "comparison", "dock", "features", "footer", "hero", "hook", "image",
-    "map", "navbar-navigation", "pricing-section", "scroll-area",
-    "testimonials", "text", "video"
+    "announcement",
+    "background",
+    "border",
+    "call-to-action",
+    "clients",
+    "comparison",
+    "dock",
+    "features",
+    "footer",
+    "hero",
+    "hook",
+    "image",
+    "map",
+    "navbar-navigation",
+    "pricing-section",
+    "scroll-area",
+    "testimonials",
+    "text",
+    "video",
   ]
 
   const getFilteredSubmissions = useCallback(
