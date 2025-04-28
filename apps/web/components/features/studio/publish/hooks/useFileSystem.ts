@@ -19,6 +19,8 @@ const ALWAYS_HIDDEN_FILES = [
   "README.md",
   "components.json",
   "app.tsx",
+  "scripts",
+  "registry.json",
 ]
 const ADVANCED_VIEW_HIDDEN_FILES = [
   "package.json",
@@ -104,6 +106,7 @@ export const useFileSystem = ({
   const [files, setFiles] = useState<FileEntry[]>([])
   const [isTreeLoading, setIsTreeLoading] = useState(false)
   const [isFileLoading, setIsFileLoading] = useState(false)
+  const [isCompiling, setIsCompiling] = useState(false)
   const [advancedView, setAdvancedView] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -281,10 +284,56 @@ export const useFileSystem = ({
     setAdvancedView((prev) => !prev)
   }
 
+  // Function to compile the project into a shadcn registry
+  const generateRegistry = async () => {
+    const task = await sandboxRef.current?.tasks.runTask("generate:registry")
+
+    const getContentOfRegistryJson = async () => {
+      const registryJsonPath = normalizePath("public/r/component.json")
+      const content = await fsWrapper((sandbox) =>
+        sandbox.fs.readTextFile(registryJsonPath),
+      )
+      return content
+    }
+
+    let counter = 0
+    const interval = setInterval(async () => {
+      const shells = await sandboxRef.current?.shells.getShells()
+      const shell = shells?.find((shell) => shell.id === task?.shellId)
+
+      if (!shell) {
+        return
+      }
+
+      const connectedShell = await sandboxRef.current?.shells.open(shell.id)
+
+      if (connectedShell) {
+        clearInterval(interval)
+        console.log("CONNECTED SHELL", connectedShell)
+        connectedShell?.onOutput(async (data) => {
+          if (data.includes("FINISH")) {
+            console.log("FINISH")
+            setIsCompiling(false)
+            const content = await getContentOfRegistryJson()
+            console.log("CONTENT OF REGISTRY JSON", content)
+            toast.success("Registry generated successfully")
+            connectedShell.dispose()
+          }
+        })
+      }
+
+      counter++
+      if (counter > 35) {
+        clearInterval(interval)
+      }
+    }, 1000)
+  }
+
   return {
     files,
     isTreeLoading,
     isFileLoading,
+    isCompiling,
     advancedView,
     toggleAdvancedView,
     loadRootDirectory,
@@ -295,5 +344,6 @@ export const useFileSystem = ({
     deleteEntry,
     renameEntry,
     addDependencyToPackageJson,
+    generateRegistry,
   }
 }

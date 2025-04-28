@@ -9,6 +9,7 @@ import {
   CheckIcon,
   XIcon,
   ArrowLeftIcon,
+  ArchiveIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
@@ -17,12 +18,15 @@ interface PublishHeaderProps {
   sandboxId: string | null
   sandboxName?: string
   username?: string
+  onGenerateRegistry?: () => void
+  isRegenerating?: boolean
 }
 
 export function PublishHeader({
   sandboxId,
-  sandboxName = "Untitled KEK",
-  username,
+  sandboxName = "Untitled",
+  onGenerateRegistry,
+  isRegenerating = false,
 }: PublishHeaderProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -136,6 +140,18 @@ export function PublishHeader({
           </div>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            onClick={onGenerateRegistry}
+            disabled={isRegenerating}
+            className="gap-2"
+          >
+            {isRegenerating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArchiveIcon className="h-4 w-4" />
+            )}
+            {isRegenerating ? "Generating registry..." : "Generate registry"}
+          </Button>
           <Button
             size="sm"
             onClick={handlePublish}

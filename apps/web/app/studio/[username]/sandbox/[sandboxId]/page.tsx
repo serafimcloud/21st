@@ -16,6 +16,7 @@ import {
   useFileSystem,
   type FileEntry,
 } from "@/components/features/studio/publish/hooks/useFileSystem"
+import { toast } from "sonner"
 
 const DEFAULT_FILE_ENTRY: FileEntry = {
   name: "component.tsx",
@@ -31,6 +32,7 @@ function PublishPageContent() {
     DEFAULT_FILE_ENTRY,
   )
   const [code, setCode] = useState<string>("")
+  const [isRegenerating, setIsRegenerating] = useState(false)
 
   const {
     sandboxRef,
@@ -50,6 +52,7 @@ function PublishPageContent() {
     files,
     isTreeLoading,
     isFileLoading,
+    isCompiling,
     advancedView,
     toggleAdvancedView,
     loadRootDirectory,
@@ -60,6 +63,7 @@ function PublishPageContent() {
     createDirectory,
     renameEntry,
     addDependencyToPackageJson,
+    generateRegistry,
   } = useFileSystem({
     sandboxRef,
     reconnectSandbox,
@@ -155,6 +159,12 @@ function PublishPageContent() {
     }
   }
 
+  const handleGenerateRegistry = async () => {
+    console.log("Starting registry generation...")
+    // setIsRegenerating(true)
+    generateRegistry()
+  }
+
   const handleReset = () => {
     window.location.reload()
   }
@@ -183,7 +193,12 @@ function PublishPageContent() {
 
   return (
     <div className="h-screen w-full flex flex-col">
-      <PublishHeader sandboxId={sandboxId} sandboxName={serverSandbox?.name} />
+      <PublishHeader
+        onGenerateRegistry={handleGenerateRegistry}
+        isRegenerating={isRegenerating || isCompiling}
+        sandboxId={sandboxId}
+        sandboxName={serverSandbox?.name}
+      />
 
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         <ResizablePanel defaultSize={20} minSize={15} className="border-r">
