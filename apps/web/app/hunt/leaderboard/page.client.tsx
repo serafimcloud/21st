@@ -8,7 +8,6 @@ import {
 } from "@/components/features/hunt/leaderboard-list"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Header } from "@/components/ui/header.client"
-import { Loader2 } from "lucide-react"
 
 interface Tag {
   id: string
@@ -36,14 +35,6 @@ export function LeaderboardClient({
 
   const filteredRows = getFilteredSubmissions(selectedCategory)
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="flex items-center justify-center p-8 text-destructive">
@@ -53,7 +44,7 @@ export function LeaderboardClient({
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="h-full">
       <Header />
       <div className="space-y-8">
         <div className="space-y-6">
@@ -109,37 +100,8 @@ export function LeaderboardClient({
             seasonalTheme={
               selectedCategory === "seasonal" ? seasonalTag?.name : undefined
             }
+            isLoading={isLoading}
           />
-        </div>
-
-        <div className="mt-8 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b">
-            <h3 className="font-medium">How Scoring Works</h3>
-          </div>
-          <div className="bg-background rounded-lg border border-border overflow-hidden">
-            <div className="p-4">
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-start gap-2">
-                  <span className="font-medium min-w-[70px]">Votes:</span>
-                  <span className="text-muted-foreground">
-                    Direct upvotes from the community
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-medium min-w-[70px]">Installs:</span>
-                  <span className="text-muted-foreground">
-                    Times component was downloaded or used
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-medium min-w-[70px]">Views:</span>
-                  <span className="text-muted-foreground">
-                    Traffic to component detail page
-                  </span>
-                </li>
-              </ul>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -98,7 +98,7 @@ export default async function LeaderboardPage() {
       <div className="min-h-screen flex flex-col">
         <Logo className="z-50" />
         <div className="flex-1 mt-[11vh] max-w-[640px] mx-auto w-full px-4">
-          <div className="min-h-screen w-full bg-background antialiased mt-14">
+          <div className="w-full bg-background antialiased mt-14">
             <div className="p-3 sm:p-6">
               <div className="space-y-6">
                 {/* Rules and Submit Section */}
@@ -135,11 +135,15 @@ export default async function LeaderboardPage() {
                 </div>
 
                 {/* Dynamic Content - Client Rendered */}
-                {currentRound && (
+                {currentRound ? (
                   <LeaderboardClient
                     currentRound={currentRound}
                     seasonalTag={seasonalTag}
                   />
+                ) : (
+                  <div className="flex items-center justify-center p-8 text-muted-foreground">
+                    No active rounds found
+                  </div>
                 )}
               </div>
             </div>

@@ -8,6 +8,7 @@ import { ComponentPreviewDialog } from "@/components/features/component-page/pre
 import { LeaderboardCard } from "./leaderboard-card"
 import { UseMutationResult } from "@tanstack/react-query"
 import { Trophy } from "lucide-react"
+import { LeaderboardCardSkeleton } from "@/components/ui/skeletons"
 
 export type Category = "global" | "marketing" | "ui" | "seasonal"
 
@@ -17,6 +18,7 @@ interface LeaderboardListProps {
   toggleVote: UseMutationResult<boolean, Error, { demoId: number }, unknown>
   category: Category
   seasonalTheme?: string
+  isLoading?: boolean
 }
 
 export function LeaderboardList({
@@ -25,6 +27,7 @@ export function LeaderboardList({
   toggleVote,
   category,
   seasonalTheme,
+  isLoading = false,
 }: LeaderboardListProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -132,10 +135,12 @@ export function LeaderboardList({
     }
   }
 
-  if (!Array.isArray(optimisticSubmissions)) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8 text-muted-foreground">
-        Loading...
+      <div className="space-y-2">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <LeaderboardCardSkeleton key={index} />
+        ))}
       </div>
     )
   }
