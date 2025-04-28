@@ -1281,12 +1281,12 @@ export const useRoundSubmissions = (roundId: number | null) => {
         }
 
         // Add has_voted flag based on user's votes
-        if (user?.id) {
-          result.has_voted =
-            result.votes?.some((vote: any) => vote.user_id === user.id) || false
-        } else {
-          result.has_voted = false
-        }
+        // if (user?.id) {
+        //   result.has_voted =
+        //     result.votes?.some((vote: any) => vote.user_id === user.id) || false
+        // } else {
+        //   result.has_voted = false
+        // }
 
         return result
       })
