@@ -19,9 +19,7 @@ export default function Page() {
     <div className="min-h-screen">
       <div className="min-h-screen flex flex-col">
         <Logo className="z-50" />
-        <Suspense>
-          <Header />
-        </Suspense>
+        <Header />
         <div className="flex-1 my-[11vh] max-w-[800px] mx-auto w-full px-4">
           <div className="space-y-8 text-foreground">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

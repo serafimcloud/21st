@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, Suspense } from "react"
 
 import { ClerkProvider } from "@clerk/nextjs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -33,7 +33,9 @@ export function AppProviders({
     <QueryClientProvider client={queryClient}>
       <ClerkProvider>
         <SidebarProvider defaultOpen={open} open={open} onOpenChange={setOpen}>
-          {shouldShowSidebar && <MainSidebar />}
+          <Suspense fallback={null}>
+            {shouldShowSidebar && <MainSidebar />}
+          </Suspense>
           <MainLayout>
             <CommandMenu />
             {children}

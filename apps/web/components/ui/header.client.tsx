@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
@@ -91,19 +91,21 @@ interface UserStateResponse {
 
 export const searchQueryAtom = atom("")
 
-export function Header({
+function HeaderContent({
   text,
   variant = "default",
+  shouldRender,
 }: {
   text?: string
   variant?: "default" | "publish"
+  shouldRender: boolean
 }) {
+  if (!shouldRender) return null
+
   const inputRef = React.useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
   const { signOut } = useClerk()
   const [showEditProfile, setShowEditProfile] = useState(false)
-  const searchParams = useSearchParams()
-  const step = searchParams.get("step")
   const controls = useAnimation()
   const router = useRouter()
   const [open, setSidebarOpen] = useAtom(sidebarOpenAtom)
@@ -194,10 +196,6 @@ export function Header({
     } else if (clerkUser?.externalAccounts?.[0]?.username) {
       router.push(`/${userState.profile?.username}?tab=bookmarks`)
     }
-  }
-
-  if (variant === "publish" && step) {
-    return null
   }
 
   return (
@@ -559,29 +557,29 @@ export function Header({
 
           <SignedOut>
             {!isMobile && (
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
-            >
-              <Link
-                href="/pricing"
-                onClick={() =>
-                  trackAttribution(
-                    ATTRIBUTION_SOURCE.HEADER,
-                    SOURCE_DETAIL.HEADER_GET_PRO_LINK,
-                  )
-                }
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
               >
-                <TextShimmer
-                  className="font-medium [--base-color:hsl(var(--primary-gradient-start))] [--base-gradient-color:hsl(var(--primary-gradient-end))] dark:[--base-color:hsl(var(--primary-gradient-start))] dark:[--base-gradient-color:hsl(var(--primary-gradient-end))]"
-                  duration={1.2}
-                  spread={2}
+                <Link
+                  href="/pricing"
+                  onClick={() =>
+                    trackAttribution(
+                      ATTRIBUTION_SOURCE.HEADER,
+                      SOURCE_DETAIL.HEADER_GET_PRO_LINK,
+                    )
+                  }
                 >
-                  Get Pro
-                </TextShimmer>
-              </Link>
+                  <TextShimmer
+                    className="font-medium [--base-color:hsl(var(--primary-gradient-start))] [--base-gradient-color:hsl(var(--primary-gradient-end))] dark:[--base-color:hsl(var(--primary-gradient-start))] dark:[--base-gradient-color:hsl(var(--primary-gradient-end))]"
+                    duration={1.2}
+                    spread={2}
+                  >
+                    Get Pro
+                  </TextShimmer>
+                </Link>
               </Button>
             )}
             <Button
@@ -625,6 +623,37 @@ export function Header({
         />
       )}
     </>
+  )
+}
+
+function HeaderWithParams({
+  text,
+  variant = "default",
+}: {
+  text?: string
+  variant?: "default" | "publish"
+}) {
+  const searchParams = useSearchParams()
+  const step = searchParams.get("step")
+
+  const shouldRender = !(variant === "publish" && step)
+
+  return (
+    <HeaderContent text={text} variant={variant} shouldRender={shouldRender} />
+  )
+}
+
+export function Header({
+  text,
+  variant = "default",
+}: {
+  text?: string
+  variant?: "default" | "publish"
+}) {
+  return (
+    <Suspense fallback={null}>
+      <HeaderWithParams text={text} variant={variant} />
+    </Suspense>
   )
 }
 
