@@ -76,6 +76,20 @@ async function getCurrentRoundWithTag(): Promise<{
   return { round, seasonalTag }
 }
 
+function formatDateRange(start: string, end: string): string {
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  const startMonth = startDate.toLocaleString("en-US", { month: "long" })
+  const endMonth = endDate.toLocaleString("en-US", { month: "long" })
+  const startDay = startDate.getDate()
+  const endDay = endDate.getDate()
+  if (startMonth === endMonth) {
+    return `${startMonth} ${startDay} – ${endDay}`
+  } else {
+    return `${startMonth} ${startDay} – ${endMonth} ${endDay}`
+  }
+}
+
 export default async function LeaderboardPage() {
   const { round: currentRound, seasonalTag } = await getCurrentRoundWithTag()
 
@@ -110,8 +124,10 @@ export default async function LeaderboardPage() {
                             Week #{currentRound.week_number}
                           </span>{" "}
                           -{" "}
-                          {new Date(currentRound.start_at).toLocaleDateString()}{" "}
-                          – {new Date(currentRound.end_at).toLocaleDateString()}
+                          {formatDateRange(
+                            currentRound.start_at,
+                            currentRound.end_at,
+                          )}
                         </div>
                       </div>
                     )}
