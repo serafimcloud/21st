@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, Suspense } from "react"
-import { useSearchParams, useRouter, useParams } from "next/navigation"
+import { useParams } from "next/navigation"
 import {
   ResizableHandle,
   ResizablePanelGroup,
@@ -16,7 +16,6 @@ import {
   useFileSystem,
   type FileEntry,
 } from "@/components/features/studio/publish/hooks/useFileSystem"
-import { publishSandbox } from "@/components/features/studio/publish/api"
 
 const DEFAULT_FILE_ENTRY: FileEntry = {
   name: "component.tsx",
