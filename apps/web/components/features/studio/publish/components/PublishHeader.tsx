@@ -1,20 +1,42 @@
 import { Button } from "@/components/ui/button"
 import { useParams, useRouter } from "next/navigation"
-import { publishSandbox } from "../api"
-import { useState } from "react"
-import { RocketIcon, Loader2 } from "lucide-react"
+import { publishSandbox, editSandbox } from "../api"
+import { useEffect, useState } from "react"
+import {
+  RocketIcon,
+  Loader2,
+  PenIcon,
+  CheckIcon,
+  XIcon,
+  ArrowLeftIcon,
+} from "lucide-react"
 import { toast } from "sonner"
+import { Input } from "@/components/ui/input"
 
 interface PublishHeaderProps {
   sandboxId: string | null
-  onReset: () => void
+  sandboxName?: string
+  username?: string
 }
 
-export function PublishHeader({ sandboxId, onReset }: PublishHeaderProps) {
+export function PublishHeader({
+  sandboxId,
+  sandboxName = "Untitled KEK",
+  username,
+}: PublishHeaderProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [name, setName] = useState(sandboxName)
+
+  useEffect(() => {
+    setName(sandboxName)
+  }, [sandboxName])
+
+  const [editLoading, setEditLoading] = useState(false)
 
   const params = useParams()
   const router = useRouter()
+
   const handlePublish = async () => {
     if (!sandboxId) return
     setIsLoading(true)
@@ -28,27 +50,112 @@ export function PublishHeader({ sandboxId, onReset }: PublishHeaderProps) {
       setIsLoading(false)
     }
   }
+
+  const handleEditName = async () => {
+    if (!sandboxId || name === sandboxName) {
+      setIsEditing(false)
+      return
+    }
+
+    setEditLoading(true)
+    try {
+      const { success } = await editSandbox(sandboxId, { name })
+      if (success) {
+        toast.success("Sandbox name updated")
+        setIsEditing(false)
+      }
+    } catch (error) {
+      toast.error("Failed to update sandbox name")
+      setName(sandboxName)
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setName(sandboxName)
+    setIsEditing(false)
+  }
+
+  const handleBackToStudio = () => {
+    router.push(`/studio/${params.username}`)
+  }
+
   return (
-    <header className="flex items-center gap-2 p-4 border-b">
-      <h1 className="text-2xl font-bold">Publish Your Sandbox</h1>
-      {sandboxId && (
-        <span className="text-xs text-muted-foreground ml-2">{sandboxId}</span>
-      )}
-      <div className="ml-auto flex items-center gap-2">
+    <header className="flex flex-col p-4 border-b">
+      <div className="flex items-center">
         <Button
-          size="sm"
-          onClick={handlePublish}
-          disabled={isLoading}
-          className="gap-2"
+          size="icon"
+          variant="outline"
+          onClick={handleBackToStudio}
+          className="mr-2"
         >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RocketIcon className="h-4 w-4" />
-          )}
-          Publish
+          <ArrowLeftIcon className="h-4 w-4" />
         </Button>
+
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="text-xl font-bold h-9 w-[300px]"
+              autoFocus
+            />
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleEditName}
+              disabled={editLoading}
+            >
+              {editLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckIcon className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleCancel}
+              disabled={editLoading}
+            >
+              <XIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">{name}</h1>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setIsEditing(true)}
+              className="h-8 w-8"
+            >
+              <PenIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={handlePublish}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RocketIcon className="h-4 w-4" />
+            )}
+            Publish
+          </Button>
+        </div>
       </div>
+      {params.username && (
+        <p className="ml-10 text-sm text-muted-foreground mt-1">
+          By {params.username}
+        </p>
+      )}
     </header>
   )
 }

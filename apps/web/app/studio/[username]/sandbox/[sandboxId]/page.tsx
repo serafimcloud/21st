@@ -20,7 +20,7 @@ import { publishSandbox } from "@/components/features/studio/publish/api"
 
 const DEFAULT_FILE_ENTRY: FileEntry = {
   name: "component.tsx",
-  path: "/src/component.tsx",
+  path: "/src/components/ui/component.tsx",
   type: "file",
   isSymlink: false,
 }
@@ -36,6 +36,7 @@ function PublishPageContent() {
   const {
     sandboxRef,
     previewURL,
+    serverSandbox,
     isSandboxLoading,
     sandboxConnectionHash,
     reconnectSandbox,
@@ -183,7 +184,7 @@ function PublishPageContent() {
 
   return (
     <div className="h-screen w-full flex flex-col">
-      <PublishHeader sandboxId={sandboxId} onReset={handleReset} />
+      <PublishHeader sandboxId={sandboxId} sandboxName={serverSandbox?.name} />
 
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         <ResizablePanel defaultSize={20} minSize={15} className="border-r">

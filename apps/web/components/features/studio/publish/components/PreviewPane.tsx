@@ -37,6 +37,7 @@ export function PreviewPane({
 
   //  takes time to complile need to reload iframe, will be fixed at codesandbox SDK team side
   useEffect(() => {
+    setPreviousConnectedShellId(connectedShellId)
     if (
       previousConnectedShellId !== connectedShellId &&
       previousConnectedShellId !== ""

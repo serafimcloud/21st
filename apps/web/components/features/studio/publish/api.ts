@@ -1,6 +1,6 @@
 export const connectToSandbox = async (
   shortSandboxId: string,
-): Promise<{ startData: any } | null> => {
+): Promise<{ startData: any; sandbox: any } | null> => {
   let retries = 3
   while (retries > 0) {
     try {
@@ -13,9 +13,7 @@ export const connectToSandbox = async (
       })
 
       if (!res.ok) throw new Error(await res.text())
-      const response = await res.json()
-
-      return { startData: response.startData }
+      return await res.json()
     } catch (error) {
       console.error(
         `Failed to load existing sandbox (${retries} retries left):`,
@@ -51,6 +49,24 @@ export const publishSandbox = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ shortSandboxId }),
+  })
+
+  if (!res.ok) throw new Error(await res.text())
+  const response = await res.json()
+
+  return { success: response.success }
+}
+
+export const editSandbox = async (
+  shortSandboxId: string,
+  updateData: Record<string, any>,
+): Promise<{ success: boolean }> => {
+  const res = await fetch("/api/sandbox/edit", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ shortSandboxId, ...updateData }),
   })
 
   if (!res.ok) throw new Error(await res.text())

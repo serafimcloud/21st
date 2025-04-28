@@ -18,12 +18,13 @@ const ALWAYS_HIDDEN_FILES = [
   "main.tsx",
   "README.md",
   "components.json",
+  "app.tsx",
 ]
 const ADVANCED_VIEW_HIDDEN_FILES = [
   "package.json",
   "app.tsx",
   "lib",
-  "components",
+  // "components",
 ]
 
 export interface FileEntry {

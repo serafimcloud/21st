@@ -1,30 +1,36 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { codesandboxSdk } from "@/lib/codesandbox-sdk"
 import ShortUUID from "short-uuid"
 
-export async function POST(request: Request) {
+export async function PUT(request: Request) {
   try {
     const { userId } = await auth()
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { shortSandboxId } = await request.json()
+    const { shortSandboxId, ...updateData } = await request.json()
 
-    const sandboxId = ShortUUID().toUUID(shortSandboxId)
-
-    if (!sandboxId) {
+    if (!shortSandboxId) {
       return NextResponse.json(
         { error: "Sandbox ID is required" },
         { status: 400 },
       )
     }
 
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: "No update data provided" },
+        { status: 400 },
+      )
+    }
+
+    const sandboxId = ShortUUID().toUUID(shortSandboxId)
+
     const { data: sandbox, error } = await supabaseWithAdminAccess
       .from("sandboxes")
-      .select("codesandbox_id, name")
+      .select("id")
       .eq("id", sandboxId)
       .eq("user_id", userId)
       .single()
@@ -36,11 +42,22 @@ export async function POST(request: Request) {
       )
     }
 
-    const startData = await codesandboxSdk.sandbox.start(sandbox.codesandbox_id)
+    const { error: updateError } = await supabaseWithAdminAccess
+      .from("sandboxes")
+      .update(updateData)
+      .eq("id", sandboxId)
+      .eq("user_id", userId)
 
-    return NextResponse.json({ success: true, startData, sandbox })
+    if (updateError) {
+      return NextResponse.json(
+        { error: "Failed to update sandbox" },
+        { status: 500 },
+      )
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error connecting to sandbox:", error)
+    console.error("Error updating sandbox:", error)
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

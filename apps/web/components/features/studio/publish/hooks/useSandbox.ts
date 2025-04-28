@@ -9,6 +9,7 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
   const [sandboxConnectionHash, setSandboxConnectionHash] = useState<
     string | null
   >(null)
+  const [serverSandbox, setServerSandbox] = useState<any>(null)
   const [connectedShellId, setConnectedShellId] = useState<string>("")
   const [previewURL, setPreviewURL] = useState<string | null>(null)
   const [isSandboxLoading, setIsSandboxLoading] = useState(true)
@@ -29,7 +30,11 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
         throw new Error("Failed to connect to sandbox")
       }
 
-      const { startData } = response
+      const { startData, sandbox: serverSandbox } = response
+
+      console.log("serverSandbox", serverSandbox)
+
+      setServerSandbox(serverSandbox)
 
       console.log("startData", startData)
       const connectedSandbox = await connectToCodeSandboxSDK(startData)
@@ -140,5 +145,8 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
     clearMissingDependencyInfo,
     // unique hash of a shell connection
     connectedShellId,
+
+    // sandbox from the server containing metadata
+    serverSandbox,
   }
 }
