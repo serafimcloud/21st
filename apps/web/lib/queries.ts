@@ -1229,7 +1229,7 @@ export async function getHuntDemosList(
   supabase: SupabaseClient<Database>,
   roundId: number,
 ) {
-  const { data, error } = await supabase.rpc("get_hunt_demos_list", {
+  const { data, error } = await supabase.rpc("get_hunt_demos_list_v2", {
     p_round_id: roundId,
   })
 

@@ -1470,6 +1470,51 @@ export type Database = {
           },
         ]
       }
+      sandboxes: {
+        Row: {
+          codesandbox_id: string | null
+          created_at: string
+          id: string
+          name: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          codesandbox_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          codesandbox_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sandbox_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "sandbox_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submissions: {
         Row: {
           component_id: number
@@ -2518,6 +2563,30 @@ export type Database = {
           has_voted: boolean
         }[]
       }
+      get_hunt_demos_list_v2: {
+        Args: { p_round_id: number }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          total_count: number
+          view_count: number
+          bookmarks_count: number
+          bundle_url: Json
+          votes: number
+          installs: number
+          final_score: number
+          global_rank: number
+          tags: Json
+          has_voted: boolean
+        }[]
+      }
       get_liked_components: {
         Args: { p_user_id: string }
         Returns: Json[]
@@ -2891,6 +2960,10 @@ export type Database = {
       }
       update_demo_tags: {
         Args: { p_demo_id: number; p_tags: Json }
+        Returns: undefined
+      }
+      update_hunt_demos_metrics: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       update_submission_as_admin: {
