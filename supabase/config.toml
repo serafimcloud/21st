@@ -132,3 +132,14 @@ port = 54327
 vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
+
+[functions.search_demos_ai_oai_extended]
+enabled = true
+verify_jwt = true
+import_map = "./functions/search_demos_ai_oai_extended/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/search_demos_ai_oai_extended/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/search_demos_ai_oai_extended/*.html" ]

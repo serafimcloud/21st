@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@clerk/nextjs/server"
-import stripe, { getIdBySubscriptionPlanDetails } from "@/lib/stripe"
+import stripe, { stripeV2, getIdBySubscriptionPlanDetails } from "@/lib/stripe"
 import { z } from "zod"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
@@ -53,7 +53,9 @@ export async function POST(request: NextRequest) {
 
     let priceId: string
     try {
-      priceId = await getIdBySubscriptionPlanDetails(planId, period)
+      // Always use version 2 for new checkouts
+      priceId = await getIdBySubscriptionPlanDetails(planId, period, 2)
+      // priceId = "price_1RBCVXGClBhopEwDdb3OTKtZ"
     } catch (error) {
       return NextResponse.json(
         { error: "Invalid subscription plan configuration" },
@@ -64,6 +66,7 @@ export async function POST(request: NextRequest) {
     try {
       if (isUpgrade && currentPlanId !== "free" && subscriptionId) {
         try {
+          // For existing subscriptions, use the fallback proxy which will try V2 then V1
           const subscription =
             await stripe.subscriptions.retrieve(subscriptionId)
 
@@ -90,6 +93,7 @@ export async function POST(request: NextRequest) {
             updatedMetadata.upgraded_to = planId
             updatedMetadata.upgraded_at = new Date().toISOString()
 
+            // For updates, use the fallback proxy which will try V2 then V1
             const updatedSubscription = await stripe.subscriptions.update(
               subscription.id,
               {
@@ -114,7 +118,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const session = await stripe.checkout.sessions.create({
+      // For new checkout sessions, always use V2
+      const session = await stripeV2.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
           {
@@ -129,6 +134,9 @@ export async function POST(request: NextRequest) {
         },
         ...(user?.email && { customer_email: user.email }),
         allow_promotion_codes: true,
+        tax_id_collection: {
+          enabled: true,
+        },
         success_url: successUrl,
         cancel_url: cancelUrl,
         subscription_data: {

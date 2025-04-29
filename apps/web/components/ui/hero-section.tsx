@@ -57,9 +57,7 @@ export function HeroSection() {
           >
             <div className="flex items-center gap-3">
               <div className="h-6 w-6 rounded-full bg-foreground" />
-              <span className="font-semibold text-foreground">
-                21st.dev
-              </span>
+              <span className="font-semibold text-foreground">21st.dev</span>
             </div>
 
             <div className="h-4 w-[1px] bg-border/60" />
@@ -112,13 +110,12 @@ export function HeroSection() {
             className="flex flex-col max-w-[300px] md:max-w-[800px] sm:max-w-[450px] text-center"
           >
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 md:mb-8 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent leading-[1.2] pb-1">
-              Discover, share, and craft perfect UI components with top design
-              engineers
+              Discover, share & remix the best UI components
             </h1>
 
-            <p className="text-base sm:text-lg md:text-xl leading-relaxed mb-8 md:mb-12 bg-gradient-to-b from-muted-foreground to-muted-foreground/70 bg-clip-text text-transparent max-w-[600px] mx-auto">
-              Built by design engineers, for design engineers.
-            </p>
+            <h2 className="text-base sm:text-lg md:text-xl leading-relaxed mb-8 md:mb-12 bg-gradient-to-b from-muted-foreground to-muted-foreground/70 bg-clip-text text-transparent max-w-[600px] mx-auto">
+              Built by design engineers, loved by vibe coders.
+            </h2>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 justify-center mb-20">
               <Button onClick={onEnterWebsite}>
@@ -149,8 +146,8 @@ export function HeroSection() {
               transition={{ delay: 0.6, duration: 0.8 }}
               className="text-center"
             >
-              <p className="text-muted-foreground mb-2">Optimized for</p>
-              <div className="flex flex-col gap-8">
+              <p className="text-muted-foreground mb-4">Optimized for</p>
+              <div className="flex flex-col gap-2">
                 {/* IDE Logos */}
                 <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 md:gap-12 text-foreground max-w-[350px] md:max-w-[800px] mx-auto">
                   <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all duration-200 basis-[30%] sm:basis-auto justify-center">

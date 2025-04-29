@@ -1,12 +1,19 @@
-import { Component, Demo, Tag, User } from "@/types/global"
+import {
+  Component,
+  Demo,
+  Tag,
+  User,
+  DemoWithComponent,
+  SortOption,
+} from "@/types/global"
 import {
   UseMutationResult,
   useMutation,
   useQueryClient,
   useQuery,
 } from "@tanstack/react-query"
-import { makeSlugFromName } from "@/components/features/publish-old/hooks/use-is-check-slug-available"
-import { SupabaseClient, createClient } from "@supabase/supabase-js"
+import { makeSlugFromName } from "@/components/features/publish/hooks/use-is-check-slug-available"
+import { SupabaseClient } from "@supabase/supabase-js"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { useUser } from "@clerk/nextjs"
 import { Database } from "@/types/supabase"
@@ -21,6 +28,8 @@ import {
 import { Json } from "@/types/supabase"
 import { PurchaseComponentError } from "@/app/api/components/purchase/route"
 import { useAuth } from "@clerk/nextjs"
+import { categories } from "@/lib/navigation"
+import { useCallback } from "react"
 
 export const componentReadableDbFields = `
   *,
@@ -279,7 +288,6 @@ export async function getComponentDemos(
     return { data: null, error }
   }
 
-  // Transform the data to match DemoWithTags type
   const transformedData = data?.map((demo: any) => ({
     ...demo,
     tags: demo.tags.map((tagRelation: any) => tagRelation.tag),
@@ -298,7 +306,6 @@ export async function getComponentWithDemo(
   slug: string,
   demo_slug: string,
 ) {
-  // First get the user
   const { data: user, error: userError } = await supabase
     .from("users")
     .select("*")
@@ -310,7 +317,6 @@ export async function getComponentWithDemo(
     return { data: null, error: new Error(userError.message) }
   }
 
-  // Then get the component for this user
   const { data: component, error: componentError } = await supabase
     .from("components")
     .select(
@@ -420,7 +426,6 @@ export async function getComponentWithDemoForOG(
   slug: string,
   demo_slug: string,
 ) {
-  // First get the user
   const { data: user, error: userError } = await supabase
     .from("users")
     .select("*")
@@ -432,7 +437,6 @@ export async function getComponentWithDemoForOG(
     return { data: null, error: new Error(userError.message) }
   }
 
-  // Then get the component for this user
   const { data: component, error: componentError } = await supabase
     .from("components")
     .select(
@@ -870,4 +874,548 @@ export async function hasUserPurchasedComponent(
     .single()
 
   return !!data
+}
+
+// Hook for featured, popular and latest demos
+export function useFeaturedDemos() {
+  const supabase = useClerkSupabaseClient()
+  const adminUserIds = [
+    "user_2nA0HITg0H7hvozIDNdxvzinpei",
+    "user_2nElBLvklOKlAURm6W1PTu6yYFh",
+  ]
+  const adminLikedItemsLimit = 24 // Fetch more items for the slider
+
+  return useQuery({
+    queryKey: ["featured-demos"] as const,
+    queryFn: async () => {
+      // Fetch liked demos for all admin users
+      const likedResults = await Promise.all(
+        adminUserIds.map((userId) =>
+          supabase.rpc("get_admin_liked_demos_v1", {
+            p_user_id: userId,
+            p_limit: adminLikedItemsLimit,
+          }),
+        ),
+      )
+
+      // Process Liked Demos
+      let combinedLikedDemosRaw: AdminLikedDemo[] = []
+      likedResults.forEach((result) => {
+        if (result.error) {
+          console.error(
+            `Error fetching admin liked demos for one user:`,
+            result.error,
+          )
+        } else if (result.data) {
+          combinedLikedDemosRaw = combinedLikedDemosRaw.concat(
+            result.data as AdminLikedDemo[],
+          )
+        }
+      })
+
+      // Deduplicate liked demos using a Map, preserving first occurrence
+      const uniqueLikedDemosMap = new Map<number, AdminLikedDemo>()
+      combinedLikedDemosRaw.forEach((demo) => {
+        // Ensure demo and demo.id are valid before using the map
+        if (
+          demo &&
+          typeof demo.id === "number" &&
+          !uniqueLikedDemosMap.has(demo.id)
+        ) {
+          uniqueLikedDemosMap.set(demo.id, demo)
+        }
+      })
+
+      // Transform and Sort unique liked demos by updated_at desc as proxy for bookmarked_at
+      const uniqueLikedDemosTransformed = Array.from(
+        uniqueLikedDemosMap.values(),
+      )
+        .map(transformDemoResult) // Transform first
+        .sort((a, b) => {
+          // Then sort
+          // Handle potential null or undefined dates gracefully
+          const dateA = a.updated_at ? new Date(a.updated_at).getTime() : 0
+          const dateB = b.updated_at ? new Date(b.updated_at).getTime() : 0
+          return dateB - dateA // Descending order
+        })
+
+      return {
+        data: uniqueLikedDemosTransformed as DemoWithComponent[],
+        ids: new Set(uniqueLikedDemosTransformed.map((d) => d.id)),
+      }
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
+  })
+}
+
+// Hook to get popular demos - independent of featured demos
+export function useMainDemosExcludingFeatured() {
+  const supabase = useClerkSupabaseClient()
+
+  return useQuery({
+    queryKey: ["popular-demos"] as const,
+    queryFn: async () => {
+      const { data: filteredData, error } = await supabase.rpc(
+        "get_demos_list_v2",
+        {
+          p_sort_by: "downloads",
+          p_offset: 0,
+          p_limit: 24,
+          p_tag_slug: undefined,
+          p_include_private: false,
+        },
+      )
+
+      if (error) {
+        console.error("Error fetching popular demos:", error)
+        throw error
+      }
+
+      const transformedData = (filteredData || []).map(transformDemoResult)
+      return transformedData as DemoWithComponent[]
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
+  })
+}
+
+// Hook to get latest demos
+export function useLatestDemos() {
+  const supabase = useClerkSupabaseClient()
+
+  return useQuery({
+    queryKey: ["latest-demos"] as const,
+    queryFn: async () => {
+      const { data: filteredData, error } = await supabase.rpc(
+        "get_demos_list_v2",
+        {
+          p_sort_by: "date",
+          p_offset: 0,
+          p_limit: 24,
+          p_tag_slug: undefined,
+          p_include_private: false,
+        },
+      )
+
+      if (error) {
+        console.error("Error fetching latest demos:", error)
+        throw error
+      }
+
+      const transformedData = (filteredData || []).map(transformDemoResult)
+      return transformedData
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
+  })
+}
+
+// Define type for admin liked demo
+type AdminLikedDemo =
+  Database["public"]["Functions"]["get_admin_liked_demos_v1"]["Returns"][number]
+
+// Hook to get demos by tag
+export function useTagDemos(
+  tagSlug: string,
+  sortBy: SortOption,
+  initialData?: DemoWithComponent[],
+  limit: number = 1000,
+) {
+  const supabase = useClerkSupabaseClient()
+  return useQuery({
+    queryKey: ["tag-filtered-demos", tagSlug, sortBy, limit] as const,
+    queryFn: async () => {
+      const { data: filteredData, error } = await supabase.rpc(
+        "get_demos_list_v2",
+        {
+          p_sort_by: sortBy,
+          p_offset: 0,
+          p_limit: limit,
+          p_tag_slug: tagSlug,
+          p_include_private: false,
+        },
+      )
+
+      if (error) throw error
+      const transformedData = (filteredData || []).map(transformDemoResult)
+      return {
+        data: transformedData,
+        total_count: filteredData?.[0]?.total_count ?? 0,
+      }
+    },
+    initialData: initialData
+      ? {
+          data: initialData as DemoWithComponent[],
+          total_count: initialData.length,
+        }
+      : undefined,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+  })
+}
+
+// Function to get demos count from navigation data
+export function getTagDemosCount(tagSlug: string): number {
+  const allItems = categories.flatMap((category) => category.items)
+  const item = allItems.find((item) => item.href === `/s/${tagSlug}`)
+  return item?.demosCount ?? 0
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  TYPES
+// ─────────────────────────────────────────────────────────────────────────
+export type Round = {
+  id: number
+  week_number: number
+  start_at: string
+  end_at: string
+  seasonal_tag_id: number | null
+  created_at: string
+}
+
+export type Submission = {
+  component_id: number
+  name: string
+  preview_url: string | null
+  description: string | null
+  category: string
+  final_score: number
+  rank: number
+  has_voted?: boolean
+  votes_count?: number
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  ROUNDS
+// ─────────────────────────────────────────────────────────────────────────
+export async function getContestRounds(supabase: SupabaseClient<Database>) {
+  console.log("[getContestRounds] Fetching contest rounds...")
+  const { data, error } = await supabase
+    .from("component_hunt_rounds")
+    .select("*")
+    .order("start_at", { ascending: false })
+
+  if (error) {
+    console.error("[getContestRounds] Error:", error)
+    throw error
+  }
+  console.log("[getContestRounds] Found", data?.length, "rounds")
+  return data as Round[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+//  VOTING
+// ─────────────────────────────────────────────────────────────────────────
+export function useToggleVote(roundId: number | null) {
+  const supabase = useClerkSupabaseClient()
+  const queryClient = useQueryClient()
+  const { user } = useUser()
+
+  return useMutation({
+    mutationFn: async ({ demoId }: { demoId: number }) => {
+      if (!roundId) throw new Error("No round selected")
+      if (!user) throw new Error("Must be logged in to vote")
+
+      const { data, error } = await supabase.rpc("hunt_toggle_demo_vote", {
+        p_round_id: roundId,
+        p_demo_id: demoId,
+      })
+
+      if (error) throw error
+
+      return data as boolean // true if vote was added, false if removed
+    },
+    onSuccess: (added, { demoId }) => {
+      // Show success toast using sonner
+      import("sonner").then(({ toast }) => {
+        toast.success(added ? "Upvoted!" : "Vote removed")
+      })
+
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({
+        queryKey: ["demo-hunt-submissions", roundId],
+      })
+    },
+    onError: (error) => {
+      // Show error toast using sonner
+      import("sonner").then(({ toast }) => {
+        toast.error(error.message)
+      })
+    },
+  })
+}
+
+export type DemoHuntLeaderboardRow = {
+  id: number
+  name: string
+  final_score: number | null
+  global_rank: number | null
+  votes: number | null
+  installs: number | null
+  view_count: number | null
+  bookmarks_count: number | null
+  has_voted: boolean
+  user_data: {
+    username: string
+    display_image_url: string | null
+  }
+  component_data: {
+    name: string
+  }
+  tags: {
+    slug: string
+  }[]
+}
+type DemoHuntCategoryLeaderboardRow =
+  Database["public"]["Views"]["demo_hunt_leaderboard"]["Row"]
+
+export async function getRoundSubmissions(
+  supabase: SupabaseClient<Database>,
+  roundId: number,
+) {
+  const { data, error } = await supabase
+    .from("demo_hunt_leaderboard")
+    .select("*")
+    .eq("round_id", roundId)
+    .returns<DemoHuntCategoryLeaderboardRow[]>()
+
+  if (error) throw error
+
+  console.log(
+    "Raw data from DB:",
+    data?.map((d) => ({ id: d.id, tags: d.tags })),
+  )
+
+  return (data || []).map(
+    (row: DemoHuntCategoryLeaderboardRow): DemoHuntLeaderboardRow => {
+      const rawTags = (row.tags as any) || []
+      const normalizedTags = Array.isArray(rawTags)
+        ? rawTags.map((tag: any) => ({
+            slug: (typeof tag === "string"
+              ? tag
+              : tag.slug || ""
+            ).toLowerCase(),
+          }))
+        : []
+
+      console.log(`Row ${row.id} normalized tags:`, normalizedTags)
+
+      return {
+        id: row.id!,
+        name: row.demo_slug || "",
+        final_score: row.final_score,
+        global_rank: row.global_rank,
+        votes: row.votes,
+        installs: row.installs,
+        view_count: row.view_count,
+        bookmarks_count: row.bookmarks_count,
+        has_voted: row.has_voted || false,
+        user_data: {
+          username: (row.component_user_data as any)?.username || "",
+          display_image_url:
+            (row.component_user_data as any)?.display_image_url || null,
+        },
+        component_data: {
+          name: (row.component_data as any)?.name || "",
+        },
+        tags: normalizedTags,
+      }
+    },
+  )
+}
+
+export async function getHuntDemosList(
+  supabase: SupabaseClient<Database>,
+  roundId: number,
+) {
+  const { data, error } = await supabase.rpc("get_hunt_demos_list_v2", {
+    p_round_id: roundId,
+  })
+
+  if (error) {
+    console.error("Error fetching hunt demos:", error)
+    throw error
+  }
+
+  return data
+}
+
+export const useRoundSubmissions = (roundId: number | null) => {
+  const supabase = useClerkSupabaseClient()
+  const { user } = useUser()
+
+  const {
+    data: submissions,
+    isLoading,
+    error,
+    ...rest
+  } = useQuery({
+    queryKey: ["demo-hunt-submissions", roundId, user?.id],
+    queryFn: async () => {
+      if (!roundId) return []
+
+      const data = await getHuntDemosList(supabase, roundId)
+
+      return (data || []).map((submission: any) => {
+        const componentData =
+          typeof submission.component_data === "object"
+            ? submission.component_data || {}
+            : {}
+
+        const result = submission as any
+
+        result.component = {
+          id: componentData.id || 0,
+          name: componentData.name || "",
+          component_slug: componentData.component_slug || "",
+          user_id: componentData.user_id || "",
+          is_paid: !!componentData.is_paid,
+          is_public: !!componentData.is_public,
+          price: componentData.price || null,
+          user: result.component_user_data || {},
+          downloads_count: componentData.downloads_count || 0,
+          likes_count: componentData.likes_count || 0,
+          license: componentData.license || null,
+          registry: componentData.registry || null,
+        }
+
+        return result
+      })
+    },
+    enabled: !!roundId,
+  })
+
+  // Get the current round to check the seasonal tag
+  const { data: roundData } = useQuery({
+    queryKey: ["demo-hunt-seasonal-tag", roundId],
+    queryFn: async () => {
+      if (!roundId) return null
+
+      const { data, error } = await supabase
+        .from("component_hunt_rounds")
+        .select("*,tags!component_hunt_rounds_seasonal_tag_id_fkey(slug,name)")
+        .eq("id", roundId as number)
+        .single()
+
+      if (error) {
+        console.error("Error fetching seasonal tag:", error)
+        return null
+      }
+
+      return data
+    },
+    enabled: !!roundId,
+  })
+
+  const seasonalTagSlug = roundData?.tags?.slug?.toLowerCase() || ""
+
+  const uiSlugs = [
+    "accordion",
+    "ai-chat",
+    "alert",
+    "avatar",
+    "badge",
+    "button",
+    "calendar",
+    "card",
+    "carousel",
+    "checkbox",
+    "date-picker",
+    "modal-dialog",
+    "dropdown",
+    "empty-state",
+    "file-tree",
+    "upload-download",
+    "form",
+    "icons",
+    "input",
+    "link",
+    "menu",
+    "notification",
+    "number",
+    "pagination",
+    "popover",
+    "radio-group",
+    "sidebar",
+    "sign-in",
+    "registration-signup",
+    "select",
+    "slider",
+    "spinner-loader",
+    "table",
+    "chip-tag",
+    "tabs",
+    "textarea",
+    "toast",
+    "toggle",
+    "tooltip",
+  ]
+  const marketingSlugs = [
+    "announcement",
+    "background",
+    "border",
+    "call-to-action",
+    "clients",
+    "comparison",
+    "dock",
+    "features",
+    "footer",
+    "hero",
+    "hook",
+    "image",
+    "map",
+    "navbar-navigation",
+    "pricing-section",
+    "scroll-area",
+    "testimonials",
+    "text",
+    "video",
+  ]
+
+  const getFilteredSubmissions = useCallback(
+    (category: string) => {
+      if (!submissions) return []
+      if (category === "global") return submissions
+
+      return submissions.filter((submission: any) => {
+        const submissionTags = Array.isArray(submission.tags)
+          ? submission.tags
+          : []
+        const submissionSlugs = submissionTags.map((tag: any) => {
+          return typeof tag === "string" ? tag : tag?.slug || ""
+        })
+
+        if (category === "ui") {
+          return submissionSlugs.some((slug: string) => uiSlugs.includes(slug))
+        } else if (category === "marketing") {
+          return submissionSlugs.some((slug: string) =>
+            marketingSlugs.includes(slug),
+          )
+        } else if (category === "seasonal" && seasonalTagSlug) {
+          return submissionSlugs.some(
+            (slug: string) => slug.toLowerCase() === seasonalTagSlug,
+          )
+        }
+        return false
+      })
+    },
+    [submissions, seasonalTagSlug],
+  )
+
+  return {
+    submissions,
+    getFilteredSubmissions,
+    isLoading,
+    error,
+    ...rest,
+  }
+}
+
+export function useContestRounds() {
+  const supabase = useClerkSupabaseClient()
+  return useQuery({
+    queryKey: ["demo-hunt-rounds"],
+    queryFn: () => getContestRounds(supabase),
+  })
 }

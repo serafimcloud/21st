@@ -5,7 +5,7 @@ import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { redirect } from "next/navigation"
 import { Footer } from "@/components/ui/footer"
 import { unstable_cache } from "next/cache"
-
+import { SITE_NAME, SITE_SLOGAN, BASE_KEYWORDS } from "@/lib/constants"
 const getCachedUser = unstable_cache(
   async (username: string) => {
     const { data: user } = await getUserData(supabaseWithAdminAccess, username)
@@ -39,11 +39,13 @@ export const generateMetadata = async (
   const ogImageUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${user.display_username || user.username}/opengraph-image`
 
   return {
-    metadataBase: new URL("https://21st.dev"),
-    title: `${user.display_name || user.name || user.username} | 21st.dev - The NPM for Design Engineers`,
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    ),
+    title: `${user.display_name || user.name || user.username} | ${SITE_NAME} - ${SITE_SLOGAN}`,
     description: `Collection of free open source shadcn/ui React Tailwind components by ${user.display_name || user.name || user.username}.`,
     openGraph: {
-      title: `${user.display_name || user.name || user.username}'s Components | 21st.dev - The NPM for Design Engineers`,
+      title: `${user.display_name || user.name || user.username}'s Components | ${SITE_NAME} - ${SITE_SLOGAN}`,
       description: `Browse ${user.display_name || user.name || user.username}'s collection of React Tailwind components inspired by shadcn/ui.`,
       images: [
         {
@@ -56,18 +58,15 @@ export const generateMetadata = async (
     },
     twitter: {
       card: "summary_large_image",
-      title: `${user.display_name || user.name || user.username}'s Components | 21st.dev - The NPM for Design Engineers`,
+      title: `${user.display_name || user.name || user.username}'s Components | ${SITE_NAME} - ${SITE_SLOGAN}`,
       description: `Browse ${user.display_name || user.name || user.username}'s collection of React Tailwind components inspired by shadcn/ui.`,
       images: [ogImageUrl],
     },
     keywords: [
-      "react components",
-      "tailwind css",
-      "ui components",
-      "shadcn/ui",
-      "shadcn",
-      "open source",
+      ...BASE_KEYWORDS,
       `${user.display_username || user.username} components`,
+      `${user.display_username}`,
+      `${user.username}`,
     ],
   }
 }

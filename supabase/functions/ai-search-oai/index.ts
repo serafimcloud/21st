@@ -1,6 +1,6 @@
 import { createClient } from "jsr:@supabase/supabase-js@2"
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import OpenAI from "https://deno.land/x/openai@v4.69.0/mod.ts";
+import OpenAI from "https://deno.land/x/openai@v4.69.0/mod.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,8 +34,8 @@ Deno.serve(async (req) => {
     model: "text-embedding-3-small",
     input: search,
     encoding_format: "float",
-  });
-  const output = embeddingResponse.data[0].embedding;
+  })
+  const output = embeddingResponse.data[0].embedding
   console.log("Embedding output:", output)
 
   const supabase = createClient(
@@ -47,13 +47,17 @@ Deno.serve(async (req) => {
   )
   console.log("Supabase client initialized")
 
-  const { data: searchResults, error } = await supabase.rpc("search_demos_ai_oai", {
-    search_query: search,
-    query_embedding: JSON.stringify(output),
-    match_threshold: match_threshold ?? 0.33,
-  })
+  const { data: searchResults, error } = await supabase.rpc(
+    "search_demos_ai_oai_extended",
+    {
+      search_query: search,
+      query_embedding: JSON.stringify(output),
+      match_threshold: match_threshold ?? 0.33,
+    },
+  )
 
   if (error) {
+    console.error("Search error:", error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

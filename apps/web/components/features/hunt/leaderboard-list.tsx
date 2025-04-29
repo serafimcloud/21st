@@ -1,0 +1,219 @@
+"use client"
+
+import React, { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
+import { useUser } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
+import { ComponentPreviewDialog } from "@/components/features/component-page/preview-dialog"
+import { LeaderboardCard } from "./leaderboard-card"
+import { UseMutationResult } from "@tanstack/react-query"
+import { Trophy } from "lucide-react"
+import { LeaderboardCardSkeleton } from "@/components/ui/skeletons"
+
+export type Category = "global" | "marketing" | "ui" | "seasonal"
+
+interface LeaderboardListProps {
+  submissions: any[]
+  roundId: number
+  toggleVote: UseMutationResult<boolean, Error, { demoId: number }, unknown>
+  category: Category
+  seasonalTheme?: string
+  isLoading?: boolean
+}
+
+export function LeaderboardList({
+  submissions = [],
+  roundId,
+  toggleVote,
+  category,
+  seasonalTheme,
+  isLoading = false,
+}: LeaderboardListProps) {
+  const router = useRouter()
+  const { toast } = useToast()
+  const { user } = useUser()
+  const [isVoting, setIsVoting] = useState<number | null>(null)
+  const [selectedDemo, setSelectedDemo] = useState<any | null>(null)
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
+  const [optimisticSubmissions, setOptimisticSubmissions] = useState<any[]>([])
+
+  // Initialize optimisticSubmissions with the original submissions
+  React.useEffect(() => {
+    setOptimisticSubmissions(submissions)
+  }, [submissions])
+
+  const prepareDemo = (demo: any) => {
+    if (!demo) return null
+
+    const result = { ...demo }
+
+    if (!result.bundle_url || typeof result.bundle_url !== "object") {
+      result.bundle_url = { html: "about:blank" }
+    }
+
+    if (!result.component || typeof result.component !== "object") {
+      const componentData =
+        typeof result.component_data === "object"
+          ? result.component_data || {}
+          : {}
+
+      result.component = {
+        id: componentData.id || 0,
+        name: componentData.name || result.name || "",
+        component_slug: componentData.component_slug || "",
+        user_id: "",
+        is_paid: false,
+        is_public: true,
+        user: {
+          id: "",
+          username: result.user_data?.username || "",
+          display_username: result.user_data?.username || "",
+          display_image_url: result.user_data?.display_image_url || null,
+          display_name: result.user_data?.username || "",
+        },
+      }
+    }
+
+    if (!result.user || typeof result.user !== "object") {
+      result.user = {
+        id: "",
+        username: result.user_data?.username || "",
+        display_username: result.user_data?.username || "",
+        display_image_url: result.user_data?.display_image_url || null,
+        display_name: result.user_data?.username || "",
+      }
+    }
+
+    return result
+  }
+
+  const handleVote = async (e: React.MouseEvent, demoId: number) => {
+    e.stopPropagation()
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to vote",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Mark this specific submission as in voting state
+      setIsVoting(demoId)
+
+      // Apply optimistic update
+      setOptimisticSubmissions((current) =>
+        current.map((sub) => {
+          if (sub.id === demoId) {
+            const hasVoted = !sub.has_voted
+            return {
+              ...sub,
+              has_voted: hasVoted,
+              votes: hasVoted
+                ? (sub.votes || 0) + 1
+                : Math.max((sub.votes || 0) - 1, 0),
+            }
+          }
+          return sub
+        }),
+      )
+
+      // Execute the actual mutation
+      await toggleVote.mutateAsync({ demoId })
+    } catch (error) {
+      // In case of error, revert to original data
+      setOptimisticSubmissions(submissions)
+      console.error("Error voting:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update vote. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsVoting(null)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <LeaderboardCardSkeleton key={index} />
+        ))}
+      </div>
+    )
+  }
+
+  if (optimisticSubmissions.length === 0) {
+    let categoryDisplay = "components"
+    if (category === "seasonal" && seasonalTheme) {
+      categoryDisplay = `${seasonalTheme.toLowerCase()} components`
+    } else if (category !== "global") {
+      categoryDisplay = `${category.toLowerCase()} components`
+    }
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center gap-2">
+        <div className="rounded-full bg-muted p-2 mb-1">
+          <Trophy className="h-5 w-5 text-primary/60" />
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {`No ${categoryDisplay} submitted for this round yet.`}
+        </div>
+      </div>
+    )
+  }
+
+  const handleDemoClick = (submission: any) => {
+    if (!submission.bundle_url || typeof submission.bundle_url !== "object") {
+      if (
+        submission.user_data?.username &&
+        submission.component_data?.component_slug &&
+        submission.demo_slug
+      ) {
+        router.push(
+          `/${submission.user_data.username}/${submission.component_data.component_slug}/${submission.demo_slug}`,
+        )
+        return
+      }
+    }
+
+    const prepared = prepareDemo(submission)
+    setSelectedDemo(prepared)
+    setIsPreviewDialogOpen(true)
+  }
+
+  const handleCloseDialog = () => {
+    setIsPreviewDialogOpen(false)
+    setTimeout(() => {
+      setSelectedDemo(null)
+    }, 300)
+  }
+
+  return (
+    <>
+      <div className="space-y-2">
+        {optimisticSubmissions.map((submission, index) => (
+          <LeaderboardCard
+            key={submission.id}
+            submission={submission}
+            index={index}
+            isVoting={isVoting === submission.id}
+            handleVote={handleVote}
+            handleDemoClick={handleDemoClick}
+          />
+        ))}
+      </div>
+
+      {selectedDemo && isPreviewDialogOpen && (
+        <ComponentPreviewDialog
+          key={`preview-${selectedDemo.id}`}
+          isOpen={true}
+          onClose={handleCloseDialog}
+          demo={selectedDemo}
+          hasPurchased={false}
+        />
+      )}
+    </>
+  )
+}

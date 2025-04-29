@@ -5,6 +5,7 @@ import { Check, LoaderCircle } from "lucide-react"
 import { ApiKey } from "@/types/global"
 import { useEffect, useState } from "react"
 import { Icons } from "@/components/icons"
+import { Spinner } from "@/components/icons/spinner"
 import { toast } from "sonner"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
 import { CircleProgress } from "@/components/ui/circle-progress"
@@ -22,6 +23,7 @@ interface UpgradeProStepProps {
 export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
   const currentPlan = (apiKey?.plan || "free") as PlanType
   const [isUpgradeLoading, setIsUpgradeLoading] = useState(false)
+  const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false)
 
   // Determine which plan to show as upgrade
   let upgradePlan: PlanType | null = null
@@ -36,7 +38,7 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
         e.preventDefault()
-        onComplete()
+        handleCompleteOnboarding()
       } else if (e.key === "u" || e.key === "U") {
         e.preventDefault()
         // Navigate to billing page if there's an upgrade option
@@ -49,6 +51,12 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [onComplete, upgradePlan])
+
+  const handleCompleteOnboarding = () => {
+    if (isCompletingOnboarding) return
+    setIsCompletingOnboarding(true)
+    onComplete()
+  }
 
   const handleUpgradePlan = async (planId: PlanType) => {
     // Track attribution when upgrading from onboarding
@@ -260,11 +268,23 @@ export function UpgradeProStep({ apiKey, onComplete }: UpgradeProStepProps) {
       </div>
 
       <div className="flex justify-center w-full mt-8">
-        <Button onClick={onComplete}>
-          Complete Onboarding
-          <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100 flex">
-            <Icons.enter className="h-2.5 w-2.5" />
-          </kbd>
+        <Button
+          onClick={handleCompleteOnboarding}
+          disabled={isCompletingOnboarding}
+        >
+          {isCompletingOnboarding ? (
+            <div className="flex items-center">
+              <Spinner size={16} color="#fff" />
+              <span className="ml-2">Complete Onboarding</span>
+            </div>
+          ) : (
+            <>
+              Complete Onboarding
+              <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100 flex">
+                <Icons.enter className="h-2.5 w-2.5" />
+              </kbd>
+            </>
+          )}
         </Button>
       </div>
     </div>

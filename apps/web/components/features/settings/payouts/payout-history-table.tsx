@@ -93,7 +93,6 @@ export function PayoutHistoryTable({
   )
 }
 
-// Компонент скелетона для строки таблицы выплат
 function PayoutRowSkeleton() {
   return (
     <TableRow>

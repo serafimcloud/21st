@@ -33,11 +33,13 @@ export function ComponentCard({
   isLoading,
   hideUser,
   onClick,
+  onCtrlClick,
 }: {
   demo?: DemoWithComponent | (Component & { user: User })
   isLoading?: boolean
   hideUser?: boolean
   onClick?: () => void
+  onCtrlClick?: (url: string) => void
 }) {
   if (isLoading || !demo) {
     return <ComponentCardSkeleton />
@@ -171,13 +173,17 @@ export function ComponentCard({
         <div
           className="block"
           onClick={(e) => {
-            if (onClick) {
+            if (e.metaKey || e.ctrlKey) {
+              e.preventDefault()
+              if (onCtrlClick) {
+                onCtrlClick(componentUrl)
+              } else {
+                window.open(componentUrl, "_blank")
+                toast.success(`${componentName} was opened in a new tab`)
+              }
+            } else if (onClick) {
               e.preventDefault()
               onClick()
-            } else if (e.metaKey || e.ctrlKey) {
-              e.preventDefault()
-              window.open(componentUrl, "_blank")
-              toast.success(`${componentName} was opened in a new tab`)
             } else {
               window.location.href = componentUrl
             }

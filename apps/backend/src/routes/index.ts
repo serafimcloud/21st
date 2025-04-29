@@ -12,7 +12,11 @@ export const setupRoutes = (req: Request) => {
   const url = new URL(req.url)
   const origin = req.headers.get("origin")
 
-  const staticAllowedOrigins = ["http://localhost:3000", "https://21st.dev"]
+  const staticAllowedOrigins = [
+    "http://localhost:3000",
+    "https://21st.dev",
+    "https://mcp-logs-123.up.railway.app", // Temporary
+  ]
 
   const isAllowedOrigin =
     origin && (staticAllowedOrigins.includes(origin) || isLocalDomain(origin))

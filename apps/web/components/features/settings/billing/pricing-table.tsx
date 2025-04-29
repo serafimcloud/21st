@@ -341,11 +341,11 @@ function getFeatureValue(
 
     // Handle dynamic pricing for AI Generation
     if (feature.name === "AI Generation") {
-      if (planLevel === "free") return "$0.20 per generation"
+      if (planLevel === "free") return "$0.32 per generation"
       if (planLevel === "pro")
-        return isYearly ? "$0.16 per generation" : "$0.20 per generation"
+        return isYearly ? "$0.32 per generation" : "$0.40 per generation"
       if (planLevel === "pro_plus")
-        return isYearly ? "$0.12 per generation" : "$0.15 per generation"
+        return isYearly ? "$0.16 per generation" : "$0.20 per generation"
     }
 
     // Handle dynamic pricing for Premium Component

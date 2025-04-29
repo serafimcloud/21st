@@ -15,7 +15,7 @@ export default function TermsOfService() {
           </h1>
 
           <div className="text-sm text-muted-foreground mb-12">
-            Last updated: 12/25/2024
+            Last updated: 04/24/2025
           </div>
 
           <div className="space-y-16">
@@ -25,8 +25,7 @@ export default function TermsOfService() {
               </h2>
               <p className="text-muted-foreground leading-7">
                 These Terms of Service ("Terms") govern your access to and use
-                of 21st.dev ("we", "our", or "us"), operated by Serafim
-                Korablev. By accessing or using 21st.dev, you agree to be bound
+                of 21st.dev ("we", "our", or "us"), operated by 21st Labs Inc. By accessing or using 21st.dev, you agree to be bound
                 by these Terms.
               </p>
             </section>
@@ -37,8 +36,7 @@ export default function TermsOfService() {
               </h2>
               <p className="text-muted-foreground leading-7">
                 All code, content, and materials published on 21st.dev,
-                including but not limited to components, documentation, and
-                related assets, are the sole and exclusive property of their
+                including but not limited to components, documentation, metadata (such as names and descriptions), and all associated media assets (such as images, videos, and thumbnails), are the sole and exclusive property of their
                 respective authors and 21st.dev. Users are granted access to
                 view and use the content solely through the official 21st.dev
                 platform in accordance with these Terms.
@@ -75,6 +73,12 @@ export default function TermsOfService() {
                   <span className="leading-7">
                     Redistributing, selling, or licensing any content from
                     21st.dev without authorization
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3 text-primary">•</span>
+                  <span className="leading-7">
+                    Republishing or reusing media assets (such as images, GIFs, and video previews) or structured metadata (titles, descriptions, tags) from 21st.dev, including manual or automated means, without explicit written permission
                   </span>
                 </li>
                 <li className="flex items-start">
@@ -146,15 +150,17 @@ export default function TermsOfService() {
               <p className="text-muted-foreground leading-7">
                 For any questions regarding these Terms, please contact:
                 <br />
-                Serafim Korablev
+                21st Labs Inc.
                 <br />
-                28 Coates Way
+                1111b S Governors Ave
                 <br />
-                Watford
+                STE 28395
                 <br />
-                WD259NS
+                Dover, DE 19904
                 <br />
-                United Kingdom
+                United States
+                <br />
+                Phone: (628) 227-7780
                 <br />
                 Email: support@21st.dev
               </p>

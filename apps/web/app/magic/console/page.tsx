@@ -180,7 +180,7 @@ export default async function ConsolePage() {
   return (
     <div className="min-h-screen">
       <div className="min-h-screen flex flex-col">
-        <Logo />
+        <Logo className="z-50" />
         <Header />
         <div className="flex-1 mt-[11vh] max-w-[640px] mx-auto w-full px-4">
           <ConsoleClient subscription={subscription} apiKey={apiKey} />

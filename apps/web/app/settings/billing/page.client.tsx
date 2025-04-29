@@ -500,7 +500,7 @@ export function BillingSettingsClient({
             <div className="p-4 grid grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium">
-                  ${upgradePlanId === "pro" ? "10" : "30"} per month
+                  ${upgradePlanId === "pro" ? "20" : "40"} per month
                 </h4>
                 <p className="text-xs text-muted-foreground mt-1">
                   {PLAN_LIMITS[upgradePlanId].description}

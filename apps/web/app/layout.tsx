@@ -10,22 +10,24 @@ import { cn } from "@/lib/utils"
 import { AppProviders } from "./providers"
 
 import "./globals.css"
+import { SITE_NAME, SITE_SLOGAN, BASE_KEYWORDS } from "@/lib/constants"
 
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   ),
   title: {
-    default: "21st.dev - The NPM for Design Engineers",
-    template: "%s | 21st",
+    default: `${SITE_NAME} - ${SITE_SLOGAN}`,
+    template: "%s | 21st.dev",
   },
   description:
-    "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui. Built by design engineers, for design engineers.",
+    "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui.",
   openGraph: {
-    title: "21st.dev - The NPM for Design Engineers",
+    title: `${SITE_NAME} - ${SITE_SLOGAN}`,
     description:
-      "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui. Built by design engineers, for design engineers.",
+      "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui.",
   },
+  keywords: BASE_KEYWORDS,
 }
 
 export default function RootLayout({

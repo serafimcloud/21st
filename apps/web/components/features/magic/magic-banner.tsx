@@ -2,12 +2,13 @@
 
 import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
-import { Wand2, X } from "lucide-react"
+import { X } from "lucide-react"
 import { useAtom } from "jotai"
 import { useRouter } from "next/navigation"
 import { memo } from "react"
 import { atomWithStorage } from "jotai/utils"
 import { sidebarOpenAtom } from "../main-page/main-layout"
+import { Logo } from "@/components/ui/logo"
 
 export const magicBannerVisibleAtom = atomWithStorage(
   "magic-banner-visible",
@@ -26,7 +27,7 @@ const MagicBannerContent = memo(function MagicBannerContent() {
     <div
       className="fixed top-14 z-50 border-b border-border bg-muted transition-[left] duration-200 ease-in-out"
       style={{
-        left: isSidebarOpen ? "calc(var(--sidebar-width, 0px) - 24px)" : "0",
+        left: isSidebarOpen ? "var(--sidebar-width, 0px)" : "0",
         right: "0",
       }}
     >
@@ -37,7 +38,11 @@ const MagicBannerContent = memo(function MagicBannerContent() {
               className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 max-md:mt-0.5"
               aria-hidden="true"
             >
-              <Wand2 className="opacity-80" size={16} strokeWidth={2} />
+              <Logo
+                hasLink={false}
+                position="flex"
+                className="opacity-80 w-7 h-7"
+              />
             </div>
             <div className="flex grow flex-col justify-between gap-3 md:flex-row md:items-center">
               <div className="space-y-0.5">

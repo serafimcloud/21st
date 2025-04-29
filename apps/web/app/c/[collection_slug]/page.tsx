@@ -10,6 +10,7 @@ import { cookies } from "next/headers"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import { unstable_cache } from "next/cache"
 import { Logo } from "@/components/ui/logo"
+import { SITE_NAME, SITE_SLOGAN, BASE_KEYWORDS } from "@/lib/constants"
 
 interface CollectionPageProps {
   params: Promise<{
@@ -88,7 +89,7 @@ export default async function CollectionPage(props: CollectionPageProps) {
 
     return (
       <div className="min-h-screen flex flex-col">
-        <Logo />
+        <Logo className="z-50" />
         <Header />
         <div className="flex-1">
           <CollectionPageContent
@@ -118,7 +119,7 @@ export async function generateMetadata(
     const jsonLd = {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      name: `${collectionInfo.name} | 21st.dev - The NPM for Design Engineers`,
+      name: `${collectionInfo.name} | ${SITE_NAME} - ${SITE_SLOGAN}`,
       description:
         collectionInfo.description ||
         `A collection of React components by ${collectionInfo.user_data.name}`,
@@ -130,24 +131,17 @@ export async function generateMetadata(
     }
 
     return {
-      title: `${collectionInfo.name} | 21st.dev - The NPM for Design Engineers`,
+      title: `${collectionInfo.name} | ${SITE_NAME} - ${SITE_SLOGAN}`,
       description:
         collectionInfo.description ||
         `A collection of React components by ${collectionInfo.user_data.name}`,
       openGraph: {
-        title: `${collectionInfo.name} | 21st.dev - The NPM for Design Engineers`,
+        title: `${collectionInfo.name} | ${SITE_NAME} - ${SITE_SLOGAN}`,
         description:
           collectionInfo.description ||
           `A collection of React components by ${collectionInfo.user_data.name}`,
       },
-      keywords: [
-        "react components",
-        "design engineers",
-        "component library",
-        "tailwind components",
-        "ui components",
-        "component collection",
-      ],
+      keywords: [...BASE_KEYWORDS, collectionInfo.name],
       other: {
         "script:ld+json": JSON.stringify(jsonLd),
       },

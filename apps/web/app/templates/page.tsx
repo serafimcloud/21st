@@ -3,19 +3,27 @@ import { Metadata } from "next"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { TemplatesListSEO } from "@/components/features/templates/templates-list-seo"
+import { BASE_KEYWORDS, SITE_NAME, SITE_SLOGAN } from "@/lib/constants"
 
 export const metadata: Metadata = {
-  title: "shadcn/ui Templates Collection | 21st.dev",
+  title: `shadcn/ui Templates Collection | ${SITE_NAME} - ${SITE_SLOGAN}`,
   description:
     "Collection of crafted website templates built with shadcn/ui components, Framer Motion animations and Tailwind CSS by design engineers.",
   openGraph: {
-    title: "shadcn/ui Templates Collection | 21st.dev",
+    title: `shadcn/ui Templates Collection | ${SITE_NAME} - ${SITE_SLOGAN}`,
     description:
       "Collection of crafted website templates built with shadcn/ui components, Framer Motion animations and Tailwind CSS by design engineers.",
     type: "website",
   },
-  keywords:
-    "website templates, shadcn/ui, Framer Motion, Tailwind CSS, React components",
+  keywords: [
+    ...BASE_KEYWORDS,
+    "website templates",
+    "shadcn templates",
+    "shadcn/ui templates",
+    "shadcn/ui",
+    "Framer Motion",
+    "Tailwind CSS",
+    "React components"],
 }
 
 export default function TemplatesPage() {

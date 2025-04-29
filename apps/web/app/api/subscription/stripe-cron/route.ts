@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { isAfter } from "date-fns"
-import stripe, { getAllPlans } from "@/lib/stripe"
+import { stripeV1, stripeV2, getAllPlans } from "@/lib/stripe"
 
 // Define types for our meta object
 interface SubscriptionMeta {
@@ -48,7 +48,21 @@ async function updateSubscriptionStatuses() {
     // Get all active subscriptions
     const { data: activeSubscriptions, error } = await supabaseWithAdminAccess
       .from("users_to_plans")
-      .select("*")
+      .select(
+        `
+        *,
+        plans:plan_id (
+          id,
+          stripe_plan_id,
+          price,
+          env,
+          period,
+          type,
+          add_usage,
+          version
+        )
+      `,
+      )
       .eq("status", "active")
 
     if (error) {
@@ -72,6 +86,11 @@ async function updateSubscriptionStatuses() {
 
         // Skip if no period_end (shouldn't happen for valid subscriptions)
         if (!periodEnd) continue
+
+        // Get plan version and determine which Stripe instance to use
+        const plansData = subscription.plans as any
+        const planVersion = plansData?.version || 1
+        const stripeInstance = planVersion === 1 ? stripeV1 : stripeV2
 
         // Check if subscription period has ended
         if (isAfter(now, periodEnd)) {
@@ -99,9 +118,10 @@ async function updateSubscriptionStatuses() {
             // Verify with Stripe that subscription is still active
             try {
               if (meta.stripe_subscription_id) {
-                const stripeSubscription = await stripe.subscriptions.retrieve(
-                  meta.stripe_subscription_id,
-                )
+                const stripeSubscription =
+                  await stripeInstance.subscriptions.retrieve(
+                    meta.stripe_subscription_id,
+                  )
 
                 // If subscription is still active in Stripe, update the period_end locally
                 if (stripeSubscription.status === "active") {

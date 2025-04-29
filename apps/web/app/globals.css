@@ -211,6 +211,8 @@ iframe {
     --primary-foreground: 0 0% 98%;
     --primary-gradient-start: 210 83% 53%;
     --primary-gradient-end: 217 77% 49%;
+    --mono-gradient-start: 0 0% 0%;
+    --mono-gradient-end: 0 0% 45%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
@@ -252,6 +254,8 @@ iframe {
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
     --primary-foreground: 240 5.9% 10%;
+    --mono-gradient-start: 0 0% 100%;
+    --mono-gradient-end: 0 0% 60%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 5.9% 10%;

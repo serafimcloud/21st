@@ -25,8 +25,8 @@ const TIERS = [
   {
     name: "Pro",
     price: {
-      monthly: 10,
-      yearly: 96,
+      monthly: 20,
+      yearly: 192,
     },
     description: "For professional developers",
     features: [
@@ -44,8 +44,8 @@ const TIERS = [
   {
     name: "Pro Plus",
     price: {
-      monthly: 30,
-      yearly: 288,
+      monthly: 40,
+      yearly: 384,
     },
     description: "For power users",
     features: [

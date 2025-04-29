@@ -857,7 +857,11 @@ export default function PublishComponentForm({
         `/${existingComponent.user.username}/${existingComponent.component_slug}/${createdDemoSlug}`,
       )
     } else {
-      router.push(`/${user?.username}/${form.getValues().component_slug}`)
+      const formValues = form.getValues()
+      const firstDemo = formValues.demos?.[0]
+      router.push(
+        `/${user?.username}/${formValues.component_slug}/${firstDemo?.demo_slug || "default"}`,
+      )
     }
   }, [
     isAddDemoMode,

@@ -4,13 +4,69 @@ import { Database } from "@/types/supabase"
 
 type Plan = Database["public"]["Tables"]["plans"]["Row"]
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+const stripeSecretKeyV1 = process.env.STRIPE_SECRET_KEY_V1
+const stripeSecretKeyV2 = process.env.STRIPE_SECRET_KEY_V2
 
-if (!stripeSecretKey) {
+if (!stripeSecretKeyV1 || !stripeSecretKeyV2) {
   throw new Error("Stripe secret key is not set")
 }
 
-const stripe = new Stripe(stripeSecretKey)
+export const stripeV1 = new Stripe(stripeSecretKeyV1)
+export const stripeV2 = new Stripe(stripeSecretKeyV2)
+
+function createFallbackProxy(primary: any, fallback: any): any {
+  return new Proxy(
+    {},
+    {
+      get(_, prop) {
+        const primaryValue = primary[prop]
+        const fallbackValue = fallback[prop]
+
+        // If the property is a function, return a function that wraps calls.
+        if (
+          typeof primaryValue === "function" ||
+          typeof fallbackValue === "function"
+        ) {
+          return async (...args: any[]) => {
+            if (typeof primaryValue === "function") {
+              try {
+                return await primaryValue.apply(primary, args)
+              } catch (error) {
+                console.error(
+                  `Primary method ${String(prop)} failed, falling back`,
+                  error,
+                )
+                if (typeof fallbackValue === "function") {
+                  return await fallbackValue.apply(fallback, args)
+                }
+                throw error
+              }
+            } else if (typeof fallbackValue === "function") {
+              return await fallbackValue.apply(fallback, args)
+            }
+          }
+        }
+        // If it's an object, recursively wrap it.
+        if (primaryValue && typeof primaryValue === "object") {
+          return createFallbackProxy(primaryValue, fallbackValue || {})
+        }
+        // Return primary if exists; otherwise fallback.
+        return primaryValue !== undefined ? primaryValue : fallbackValue
+      },
+    },
+  )
+}
+
+/**
+ * The exported `stripe` variable acts like a regular Stripe instance.
+ * Under the hood, it calls methods on stripeV2 first.
+ * If the call fails, it falls back to stripeV1.
+ *
+ * For example:
+ *   stripe.subscriptions.retrieve(subscriptionId)
+ */
+const stripe = createFallbackProxy(stripeV2, stripeV1) as Stripe
+export default stripe
 
 // Cache for plans
 let plansCache: Plan[] | null = null
@@ -29,12 +85,12 @@ export async function getAllPlans(forceRefresh = false): Promise<Plan[]> {
     return plansCache
   }
 
-  const environment = process.env.NODE_ENV === "development" ? "test" : "live"
-
+  const environment = "live"
   const { data, error } = await supabaseWithAdminAccess
     .from("plans")
     .select("*")
     .eq("env", environment)
+    .order("created_at", { ascending: false })
 
   if (error) {
     console.error("Error fetching plans:", error)
@@ -83,12 +139,17 @@ export async function getPlanByStripeId(stripePlanId: string): Promise<Plan> {
 export async function getIdBySubscriptionPlanDetails(
   type: string,
   period: string,
+  version: 1 | 2,
 ): Promise<string> {
   const plans = await getAllPlans()
-  const environment = process.env.NODE_ENV === "development" ? "test" : "live"
+  const environment = "live"
 
   const plan = plans.find(
-    (p) => p.type === type && p.period === period && p.env === environment,
+    (p) =>
+      p.type === type &&
+      p.period === period &&
+      p.env === environment &&
+      p.version === version,
   )
 
   if (!plan) {
@@ -97,10 +158,10 @@ export async function getIdBySubscriptionPlanDetails(
 
   // Ensure stripe_plan_id is not null before returning
   if (!plan.stripe_plan_id) {
-    throw new Error(`Plan found but has no Stripe ID for type: ${type} and period: ${period}`)
+    throw new Error(
+      `Plan found but has no Stripe ID for type: ${type} and period: ${period}`,
+    )
   }
 
   return plan.stripe_plan_id
 }
-
-export default stripe

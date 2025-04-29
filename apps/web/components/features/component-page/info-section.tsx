@@ -467,28 +467,6 @@ export const ComponentPageInfo = ({
           </div>
         )}
 
-        {license && (
-          <div className="flex flex-col gap-2">
-            <span className="text-muted-foreground">License</span>
-            <HoverCard>
-              <HoverCardTrigger className="cursor-help">
-                {license.label}
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80">
-                <div className="flex items-start space-x-4">
-                  <div className="flex items-center">
-                    <Scale size={18} className="mt-[2px]" />
-                  </div>
-                  <div>
-                    <h4 className="text-[14px] font-medium">{license.label}</h4>
-                    <p className="text-[12px] mt-1">{license.description}</p>
-                  </div>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
-          </div>
-        )}
-
         {component.tags && component.tags.length > 0 && (
           <div className="flex flex-col gap-2">
             <span className="text-muted-foreground">Tags</span>

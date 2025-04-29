@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import stripe, { getPlanByStripeId } from "@/lib/stripe"
+import { stripeV1, getPlanByStripeId } from "@/lib/stripe"
 
-const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET_V1
 
 async function getSubscriptionPlanDetailsById(planId: string) {
   const plan = await getPlanByStripeId(planId)
@@ -212,17 +212,17 @@ async function handleFraudWarning(event: Stripe.Event) {
     throw new Error("No payment intent found in the event")
   }
 
-  const refund = await stripe.refunds.create({
+  const refund = await stripeV1.refunds.create({
     payment_intent: paymentIntentId as string,
   })
   console.log(`Refund created: ${refund.id}`)
 
-  const paymentIntent = await stripe.paymentIntents.retrieve(
+  const paymentIntent = await stripeV1.paymentIntents.retrieve(
     paymentIntentId as string,
   )
 
   if (paymentIntent.customer) {
-    const deletedCustomer = await stripe.customers.del(
+    const deletedCustomer = await stripeV1.customers.del(
       paymentIntent.customer as string,
     )
     console.log(
@@ -245,7 +245,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(body, sig, stripeWebhookSecret!)
+    event = stripeV1.webhooks.constructEvent(body, sig, stripeWebhookSecret!)
   } catch (err: any) {
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },

@@ -14,7 +14,7 @@ import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
 import ComponentPage from "./page.client"
 import { auth } from "@clerk/nextjs/server"
-
+import { SITE_NAME, SITE_SLOGAN, BASE_KEYWORDS } from "@/lib/constants"
 export const generateMetadata = async (props: {
   params: Promise<{ username: string; component_slug: string }>
 }) => {
@@ -55,25 +55,22 @@ export const generateMetadata = async (props: {
   }
 
   return {
-    metadataBase: new URL("https://21st.dev"),
-    title: `${component.name} | 21st.dev - The NPM for Design Engineers`,
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    ),
+    title: `${component.name} | ${SITE_NAME} - ${SITE_SLOGAN}`,
     description:
       component.description ||
       `A React component by ${user.display_name || user.name || user.username}. Ship polished UIs faster with ready-to-use Tailwind components inspired by shadcn/ui.`,
     keywords: [
-      "react components",
-      "design engineers",
-      "tailwind css",
-      "ui components",
-      "shadcn/ui",
-      "component library",
+      ...BASE_KEYWORDS,
       `${component.name.toLowerCase()} component`,
       `${component.name.toLowerCase()} shadcn/ui`,
       ...(component.tags?.map((tag) => tag.name.toLowerCase()) || []),
       `${user.display_username || user.username} components`,
     ],
     openGraph: {
-      title: `${component.name} | 21st.dev - The NPM for Design Engineers`,
+      title: `${component.name} | ${SITE_NAME} - ${SITE_SLOGAN}`,
       description:
         component.description ||
         `A React component by ${user.display_name || user.name || user.username}. Ship polished UIs faster with ready-to-use Tailwind components inspired by shadcn/ui.`,
@@ -88,7 +85,7 @@ export const generateMetadata = async (props: {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${component.name} | 21st.dev - The NPM for Design Engineers`,
+      title: `${component.name} | ${SITE_NAME} - ${SITE_SLOGAN}`,
       description:
         component.description ||
         `A React component by ${user.display_name || user.name || user.username}. Ship polished UIs faster with ready-to-use Tailwind components inspired by shadcn/ui.`,

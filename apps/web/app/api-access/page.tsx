@@ -9,6 +9,8 @@ import { ApiDocs } from "@/components/features/api/api-docs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Header } from "@/components/ui/header.client"
 import { Footer } from "@/components/ui/footer"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertTriangleIcon } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "API Access - 21st.dev",
@@ -85,6 +87,27 @@ export default async function ApiAccessPage() {
                 </div>
               </div>
             </div>
+
+            <Alert>
+              <AlertTriangleIcon className="h-4 w-4" />
+              <AlertTitle>Important Notice</AlertTitle>
+              <AlertDescription>
+                To help us better understand how you're using our API and provide better support, please reach out to us! Contact Serafim{" "}
+                <a
+                  href="https://twitter.com/serafimcloud"
+                  className="underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  on Twitter
+                </a>{" "}
+                or email our support at{" "}
+                <a href="mailto:support@21st.dev" className="underline">
+                  support@21st.dev
+                </a>
+                . We'd love to learn about your project and ensure you have the best possible experience with our API.
+              </AlertDescription>
+            </Alert>
 
             <Suspense fallback={<ApiDocsLoading />}>
               <ApiDocs />

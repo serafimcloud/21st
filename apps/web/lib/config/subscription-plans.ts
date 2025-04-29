@@ -62,12 +62,12 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
       "Unlimited SVG Logo Search",
       "Priority support",
     ],
-    monthlyPrice: 10,
-    yearlyPrice: 96,
+    monthlyPrice: 20,
+    yearlyPrice: 192,
     tokenPricing: {
       pricePerToken: {
-        monthly: 0.2,
-        yearly: 0.16,
+        monthly: 0.4,
+        yearly: 0.32,
       },
       componentCost: 5,
       generationCost: 1,
@@ -86,12 +86,12 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
       "Unlimited SVG Logo Search",
       "Priority support + Private Discord channel",
     ],
-    monthlyPrice: 30,
-    yearlyPrice: 288,
+    monthlyPrice: 40,
+    yearlyPrice: 384,
     tokenPricing: {
       pricePerToken: {
-        monthly: 0.15,
-        yearly: 0.12,
+        monthly: 0.2,
+        yearly: 0.16,
       },
       componentCost: 5,
       generationCost: 1,
@@ -132,8 +132,8 @@ export const COMPARISON_PLANS: Plan[] = [
     name: PLAN_LIMITS.pro.displayName,
     type: "pro",
     price: {
-      monthly: PLAN_LIMITS.pro.monthlyPrice || 10,
-      yearly: PLAN_LIMITS.pro.yearlyPrice || 96,
+      monthly: PLAN_LIMITS.pro.monthlyPrice || 20,
+      yearly: PLAN_LIMITS.pro.yearlyPrice || 192,
     },
     tokenPrice: PLAN_LIMITS.pro.tokenPricing.pricePerToken,
     tokens: PLAN_LIMITS.pro.generationsPerMonth,
@@ -145,8 +145,8 @@ export const COMPARISON_PLANS: Plan[] = [
     name: PLAN_LIMITS.pro_plus.displayName,
     type: "pro_plus",
     price: {
-      monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 30,
-      yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 288,
+      monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 40,
+      yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 384,
     },
     tokenPrice: PLAN_LIMITS.pro_plus.tokenPricing.pricePerToken,
     tokens: PLAN_LIMITS.pro_plus.generationsPerMonth,
@@ -202,12 +202,12 @@ export const COMPARISON_FEATURES: ComparisonFeature[] = [
     values: {
       free: "$0.20 per generation",
       pro: {
-        monthly: "$0.20 per generation",
-        yearly: "$0.16 per generation",
+        monthly: "$0.40 per generation",
+        yearly: "$0.32 per generation",
       },
       pro_plus: {
-        monthly: "$0.15 per generation",
-        yearly: "$0.12 per generation",
+        monthly: "$0.20 per generation",
+        yearly: "$0.16 per generation",
       },
     },
   },
@@ -322,8 +322,8 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: PLAN_LIMITS.pro.displayName,
     level: "pro",
     price: {
-      monthly: PLAN_LIMITS.pro.monthlyPrice || 10,
-      yearly: PLAN_LIMITS.pro.yearlyPrice || 96,
+      monthly: PLAN_LIMITS.pro.monthlyPrice || 20,
+      yearly: PLAN_LIMITS.pro.yearlyPrice || 192,
     },
     popular: true,
   },
@@ -331,8 +331,8 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: PLAN_LIMITS.pro_plus.displayName,
     level: "pro_plus",
     price: {
-      monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 30,
-      yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 288,
+      monthly: PLAN_LIMITS.pro_plus.monthlyPrice || 40,
+      yearly: PLAN_LIMITS.pro_plus.yearlyPrice || 384,
     },
   },
 ]

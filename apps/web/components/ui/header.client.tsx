@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
@@ -42,6 +42,7 @@ import {
   ATTRIBUTION_SOURCE,
   SOURCE_DETAIL,
 } from "@/lib/attribution-tracking"
+import { Logo } from "./logo"
 
 interface UserProfile {
   id: string
@@ -90,19 +91,21 @@ interface UserStateResponse {
 
 export const searchQueryAtom = atom("")
 
-export function Header({
+function HeaderContent({
   text,
   variant = "default",
+  shouldRender,
 }: {
   text?: string
   variant?: "default" | "publish"
+  shouldRender: boolean
 }) {
+  if (!shouldRender) return null
+
   const inputRef = React.useRef<HTMLInputElement>(null)
   const isMobile = useIsMobile()
   const { signOut } = useClerk()
   const [showEditProfile, setShowEditProfile] = useState(false)
-  const searchParams = useSearchParams()
-  const step = searchParams.get("step")
   const controls = useAnimation()
   const router = useRouter()
   const [open, setSidebarOpen] = useAtom(sidebarOpenAtom)
@@ -195,10 +198,6 @@ export function Header({
     }
   }
 
-  if (variant === "publish" && step) {
-    return null
-  }
-
   return (
     <>
       <header
@@ -210,12 +209,12 @@ export function Header({
         )}
       >
         <div
-          className={cn("flex items-center flex-1", open ? "ml-64 pl-3" : "")}
+          className={cn(
+            "flex items-center flex-1",
+            open ? "md:ml-64 md:pl-3" : "",
+          )}
         >
-          <Link
-            href="/"
-            className="absolute left-4 top-3 h-8 w-8 bg-foreground rounded-full"
-          />
+          <Logo />
           {text && !isMobile && (
             <div className="flex items-center gap-2">
               <Icons.slash className="text-border w-[22px] h-[22px]" />
@@ -225,7 +224,7 @@ export function Header({
 
           <div
             className={cn(
-              "w-[400px]",
+              "hidden md:block w-[400px]",
               open ? "ml-4" : "absolute left-1/2 -translate-x-1/2",
             )}
           >
@@ -253,136 +252,134 @@ export function Header({
 
         <div className="flex items-center gap-1">
           <SignedIn>
-            {!isMobile && variant !== "publish" && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleBookmarksClick}
-                  className="mr-2"
-                  aria-label="Saved components"
-                >
-                  <Bookmark size={18} />
-                </Button>
-                {!open &&
-                  !userState.isSubscriptionLoading &&
-                  !userState.subscription && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      asChild
-                      className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
-                    >
-                      <Link
-                        href="/pricing"
-                        onClick={() =>
-                          trackAttribution(
-                            ATTRIBUTION_SOURCE.HEADER,
-                            SOURCE_DETAIL.HEADER_GET_PRO_LINK,
-                          )
-                        }
-                        className="bg-gradient-to-r from-[hsl(var(--primary-gradient-start))] to-[hsl(var(--primary-gradient-end))] bg-clip-text text-transparent"
-                      >
-                        <span className="font-medium">Get Pro</span>
-                      </Link>
-                    </Button>
-                  )}
-                <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse">
+            <div className="flex items-center">
+              {!isMobile && variant !== "publish" && (
+                <>
                   <Button
-                    asChild
-                    className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleBookmarksClick}
+                    className="mr-2"
+                    aria-label="Saved components"
                   >
-                    <Link
-                      href={
-                        userState.profile?.display_username
-                          ? `/studio/${userState.profile.display_username}`
-                          : userState.profile?.username
-                            ? `/studio/${userState.profile.username}`
-                            : "/studio"
-                      }
-                    >
-                      Add new
-                    </Link>
+                    <Bookmark size={18} />
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                  {!open &&
+                    !userState.isSubscriptionLoading &&
+                    !userState.subscription && (
                       <Button
-                        className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10 !border !border-[hsl(var(--primary-gradient-start))] hover:!border-[hsl(var(--primary-gradient-start))] hover:opacity-90 hover:text-accent"
-                        size="icon"
-                        aria-label="Component options"
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
                       >
-                        <ChevronDown
-                          size={16}
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className="w-64"
-                      side="bottom"
-                      sideOffset={4}
-                      align="end"
-                    >
-                      <DropdownMenuItem asChild>
                         <Link
-                          href={
-                            userState.profile?.display_username
-                              ? `/studio/${userState.profile.display_username}`
-                              : userState.profile?.username
-                                ? `/studio/${userState.profile.username}`
-                                : "/studio"
+                          href="/pricing"
+                          onClick={() =>
+                            trackAttribution(
+                              ATTRIBUTION_SOURCE.HEADER,
+                              SOURCE_DETAIL.HEADER_GET_PRO_LINK,
+                            )
                           }
-                          className="cursor-pointer"
+                          className="bg-gradient-to-r from-[hsl(var(--primary-gradient-start))] to-[hsl(var(--primary-gradient-end))] bg-clip-text text-transparent"
                         >
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium">
-                              Publish component
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Create and publish a new component to the registry
-                            </span>
-                          </div>
+                          <span className="font-medium">Get Pro</span>
                         </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/publish/template"
-                          className="cursor-pointer"
+                      </Button>
+                    )}
+                  <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse">
+                    <Button
+                      asChild
+                      className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
+                    >
+                      <Link href="/publish">Add new</Link>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10 !border !border-[hsl(var(--primary-gradient-start))] hover:!border-[hsl(var(--primary-gradient-start))] hover:opacity-90 hover:text-accent"
+                          size="icon"
+                          aria-label="Component options"
                         >
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium">
-                              Publish template
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Create and publish a new website template
-                            </span>
-                          </div>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/import" className="cursor-pointer">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium flex items-center gap-1">
-                              Import from registry
-                              <Badge
-                                variant="secondary"
-                                className="h-5 text-[11px] tracking-wide font-medium uppercase px-1.5 py-0 leading-none"
-                              >
-                                beta
-                              </Badge>
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Import an existing component from shadcn registry
-                            </span>
-                          </div>
-                        </Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </>
-            )}
+                          <ChevronDown
+                            size={16}
+                            strokeWidth={2}
+                            aria-hidden="true"
+                          />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        className="w-64"
+                        side="bottom"
+                        sideOffset={4}
+                        align="end"
+                      >
+                        <DropdownMenuItem asChild>
+                          <Link href="/publish" className="cursor-pointer">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium">
+                                Publish component
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Create and publish a new component to the
+                                registry
+                              </span>
+                            </div>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/publish/template"
+                            className="cursor-pointer"
+                          >
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium">
+                                Publish template
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Create and publish a new website template
+                              </span>
+                            </div>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/import" className="cursor-pointer">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium flex items-center gap-1">
+                                Import from registry
+                                <Badge
+                                  variant="secondary"
+                                  className="h-5 text-[11px] tracking-wide font-medium uppercase px-1.5 py-0 leading-none"
+                                >
+                                  beta
+                                </Badge>
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Import an existing component from shadcn
+                                registry
+                              </span>
+                            </div>
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden mr-2"
+              onClick={() =>
+                document.dispatchEvent(
+                  new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+                )
+              }
+              aria-label="Search"
+            >
+              <Icons.search className="h-6 w-6" />
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer rounded-full ml-2">
                 <UserAvatar
@@ -576,33 +573,50 @@ export function Header({
           </SignedIn>
 
           <SignedOut>
+            {!isMobile && (
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
+              >
+                <Link
+                  href="/pricing"
+                  onClick={() =>
+                    trackAttribution(
+                      ATTRIBUTION_SOURCE.HEADER,
+                      SOURCE_DETAIL.HEADER_GET_PRO_LINK,
+                    )
+                  }
+                >
+                  <TextShimmer
+                    className="font-medium [--base-color:hsl(var(--primary-gradient-start))] [--base-gradient-color:hsl(var(--primary-gradient-end))] dark:[--base-color:hsl(var(--primary-gradient-start))] dark:[--base-gradient-color:hsl(var(--primary-gradient-end))]"
+                    duration={1.2}
+                    spread={2}
+                  >
+                    Get Pro
+                  </TextShimmer>
+                </Link>
+              </Button>
+            )}
             <Button
               variant="ghost"
-              size="sm"
-              asChild
-              className="gap-1.5 relative cursor-pointer space-x-2 font-regular ease-out duration-200 outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-transparent"
+              size="icon"
+              className="md:hidden mr-2"
+              onClick={() =>
+                document.dispatchEvent(
+                  new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+                )
+              }
+              aria-label="Search"
             >
-              <Link
-                href="/pricing"
-                onClick={() =>
-                  trackAttribution(
-                    ATTRIBUTION_SOURCE.HEADER,
-                    SOURCE_DETAIL.HEADER_GET_PRO_LINK,
-                  )
-                }
-              >
-                <TextShimmer
-                  className="font-medium [--base-color:hsl(var(--primary-gradient-start))] [--base-gradient-color:hsl(var(--primary-gradient-end))] dark:[--base-color:hsl(var(--primary-gradient-start))] dark:[--base-gradient-color:hsl(var(--primary-gradient-end))]"
-                  duration={1.2}
-                  spread={2}
-                >
-                  Get Pro
-                </TextShimmer>
-              </Link>
+              <Icons.search className="h-6 w-6" />
             </Button>
-            <SignInButton>
-              <Button className="ml-2">Sign up</Button>
-            </SignInButton>
+            {!isMobile && (
+              <SignInButton>
+                <Button>Sign up</Button>
+              </SignInButton>
+            )}
           </SignedOut>
         </div>
       </header>
@@ -626,6 +640,37 @@ export function Header({
         />
       )}
     </>
+  )
+}
+
+function HeaderWithParams({
+  text,
+  variant = "default",
+}: {
+  text?: string
+  variant?: "default" | "publish"
+}) {
+  const searchParams = useSearchParams()
+  const step = searchParams.get("step")
+
+  const shouldRender = !(variant === "publish" && step)
+
+  return (
+    <HeaderContent text={text} variant={variant} shouldRender={shouldRender} />
+  )
+}
+
+export function Header({
+  text,
+  variant = "default",
+}: {
+  text?: string
+  variant?: "default" | "publish"
+}) {
+  return (
+    <Suspense fallback={null}>
+      <HeaderWithParams text={text} variant={variant} />
+    </Suspense>
   )
 }
 

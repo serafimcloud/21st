@@ -2,14 +2,12 @@
 
 import React, { useEffect, useState } from "react"
 import { useAtom } from "jotai"
-import { useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "motion/react"
-import { useSearchParams, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 
-import { SortOption, SORT_OPTIONS } from "@/types/global"
-import { sortByAtom } from "@/components/features/main-page/main-page-header"
+import { SortOption } from "@/types/global"
 import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
+import { magicBannerVisibleAtom } from "@/components/features/magic/magic-banner"
 import { ComponentsList } from "@/components/ui/items-list"
 import { CategoriesList } from "@/components/features/categories/category-list"
 import { ComponentsHeader } from "@/components/features/main-page/main-page-header"
@@ -17,84 +15,38 @@ import { FilterChips } from "@/components/features/main-page/filter-chips"
 import { DesignEngineersList } from "@/components/features/design-engineers/design-engineers-list"
 import { ProList } from "@/components/features/pro/pro-list"
 import { TemplatesContainer } from "@/components/features/templates/templates-list"
-import {
-  MagicBanner,
-  magicBannerVisibleAtom,
-} from "@/components/features/magic/magic-banner"
+import { MagicBanner } from "@/components/features/magic/magic-banner"
 import { CollectionsContainer } from "@/components/features/collections/collections-list"
+import { HomeTabLayout } from "@/components/features/home/home-layout"
+import { useNavigation } from "@/hooks/use-navigation"
+import { useIsMobile } from "@/hooks/use-mobile"
+import type { AppSection } from "@/lib/atoms"
 
 const MainContent = React.memo(function MainContent({
   activeTab,
-  selectedFilter,
-  setSelectedFilter,
-  sortBy,
-  sidebarOpen,
   prevSidebarState,
+  sidebarOpen,
+  sortBy,
   handleTabChange,
 }: {
-  activeTab:
-    | "categories"
-    | "components"
-    | "authors"
-    | "pro"
-    | "templates"
-    | "collections"
-  selectedFilter: string
-  setSelectedFilter: (filter: string) => void
-  sortBy: SortOption
-  sidebarOpen: boolean
+  activeTab: Exclude<AppSection, "magic"> | "home"
   prevSidebarState: boolean
-  handleTabChange: (
-    tab:
-      | "categories"
-      | "components"
-      | "authors"
-      | "pro"
-      | "templates"
-      | "collections",
-  ) => void
+  sidebarOpen: boolean
+  sortBy: SortOption
+  handleTabChange: (tab: Exclude<AppSection, "magic"> | "home") => void
 }) {
+  const [selectedFilter, setSelectedFilter] = useState<string>("all")
+  const isMobile = useIsMobile()
+
   const renderContent = () => {
     switch (activeTab) {
+      case "home":
+        return <HomeTabLayout sortBy={sortBy} />
       case "categories":
-        return (
-          <>
-            <FilterChips
-              activeTab={activeTab}
-              selectedFilter={selectedFilter}
-              onFilterChange={setSelectedFilter}
-            />
-            <CategoriesList filter={selectedFilter} />
-          </>
-        )
+        return <CategoriesList />
       case "components":
         return (
           <>
-            <AnimatePresence mode="popLayout">
-              {!sidebarOpen && (
-                <motion.div
-                  initial={
-                    prevSidebarState !== sidebarOpen
-                      ? { opacity: 0, height: 0, marginBottom: 0 }
-                      : false
-                  }
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{
-                    duration: 0.2,
-                    height: {
-                      duration: 0.2,
-                    },
-                  }}
-                >
-                  <FilterChips
-                    activeTab={activeTab}
-                    selectedFilter={selectedFilter}
-                    onFilterChange={setSelectedFilter}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
             <motion.div
               layout={prevSidebarState !== sidebarOpen}
               initial={
@@ -140,39 +92,26 @@ const MainContent = React.memo(function MainContent({
   }
 
   return (
-    <div className="flex flex-col">
-      <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
+    <div className="flex flex-col pb-4 pt-20">
+      {(activeTab !== "home" || isMobile) && (
+        <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
+      )}
       {renderContent()}
     </div>
   )
 })
 
 export function HomePageClient() {
-  const [sortBy, setSortBy] = useAtom(sortByAtom)
   const [sidebarOpen] = useAtom(sidebarOpenAtom)
   const [isBannerVisible] = useAtom(magicBannerVisibleAtom)
   const [shouldShowBanner, setShouldShowBanner] = useState(false)
   const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
-  const queryClient = useQueryClient()
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState<
-    | "categories"
-    | "components"
-    | "authors"
-    | "pro"
-    | "templates"
-    | "collections"
-  >(
-    (searchParams.get("tab") as
-      | "categories"
-      | "components"
-      | "authors"
-      | "pro"
-      | "templates"
-      | "collections") || "components",
-  )
-  const [selectedFilter, setSelectedFilter] = useState<string>("all")
+
+  const { activeTab, sortBy, navigateToTab } = useNavigation()
+
+  useEffect(() => {
+    setPrevSidebarState(sidebarOpen)
+  }, [sidebarOpen])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -181,93 +120,30 @@ export function HomePageClient() {
     return () => clearTimeout(timer)
   }, [])
 
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("tab", activeTab)
-    if (activeTab === "components" && sortBy) {
-      params.set("sort", sortBy)
-    } else {
-      params.delete("sort")
-    }
-    router.push(`?${params.toString()}`, { scroll: false })
-  }, [activeTab, sortBy, router, searchParams])
-
-  useEffect(() => {
-    const sortFromUrl = searchParams.get("sort") as SortOption
-    if (sortFromUrl && Object.keys(SORT_OPTIONS).includes(sortFromUrl)) {
-      setSortBy(sortFromUrl)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (sortBy !== undefined) {
-      queryClient.invalidateQueries({
-        queryKey: ["filtered-demos", sortBy],
-      })
-    }
-  }, [sortBy, queryClient])
-
-  useEffect(() => {
-    setPrevSidebarState(sidebarOpen)
-  }, [sidebarOpen])
-
-  const handleTabChange = (
-    newTab:
-      | "categories"
-      | "components"
-      | "authors"
-      | "pro"
-      | "templates"
-      | "collections",
-  ) => {
-    setActiveTab(newTab)
-    setSelectedFilter("all")
+  const handleTabChange = (tab: Exclude<AppSection, "magic"> | "home") => {
+    navigateToTab(tab)
   }
 
   return (
-    <>
-      <AnimatePresence mode="popLayout" key="main-content">
-        <AnimatePresence key="magic-banner">
-          {shouldShowBanner && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-              transition={{
-                duration: 0.2,
-                height: {
-                  duration: 0.2,
-                },
-              }}
-              className="hidden md:block"
-              style={
-                {
-                  "--sidebar-width": sidebarOpen ? "280px" : "0px",
-                } as React.CSSProperties
-              }
-            >
-              <MagicBanner />
-            </motion.div>
-          )}
+    <main
+      className={cn(
+        "flex flex-1 flex-col",
+        isBannerVisible && shouldShowBanner && "mt-3 md:mt-4",
+      )}
+    >
+      <div className="container">
+        <AnimatePresence>
+          {isBannerVisible && shouldShowBanner && <MagicBanner />}
         </AnimatePresence>
-        <div
-          className={cn(
-            "container mx-auto px-[var(--container-x-padding)] max-w-[3680px] [--container-x-padding:20px] min-720:[--container-x-padding:24px] min-1280:[--container-x-padding:32px] min-1536:[--container-x-padding:80px] transition-[margin] duration-200 ease-in-out",
-            "mt-20",
-            shouldShowBanner && isBannerVisible ? "md:mt-[144px]" : "",
-          )}
-        >
-          <MainContent
-            activeTab={activeTab}
-            selectedFilter={selectedFilter}
-            setSelectedFilter={setSelectedFilter}
-            sortBy={sortBy}
-            sidebarOpen={sidebarOpen}
-            prevSidebarState={prevSidebarState}
-            handleTabChange={handleTabChange}
-          />
-        </div>
-      </AnimatePresence>
-    </>
+
+        <MainContent
+          activeTab={activeTab}
+          prevSidebarState={prevSidebarState}
+          sidebarOpen={sidebarOpen}
+          sortBy={sortBy}
+          handleTabChange={handleTabChange}
+        />
+      </div>
+    </main>
   )
 }
