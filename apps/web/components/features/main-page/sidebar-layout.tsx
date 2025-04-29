@@ -359,6 +359,9 @@ export function MainSidebar() {
             >
               $2000 Weekly Contest
             </TextShimmer>
+            <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none font-normal text-[#000000]">
+              New
+            </span>
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
