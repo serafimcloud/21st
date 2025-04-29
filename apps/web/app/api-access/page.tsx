@@ -88,12 +88,11 @@ export default async function ApiAccessPage() {
               </div>
             </div>
 
-            <Alert variant="destructive">
+            <Alert>
               <AlertTriangleIcon className="h-4 w-4" />
-              <AlertTitle>API Access Shutdown Notice</AlertTitle>
+              <AlertTitle>Important Notice</AlertTitle>
               <AlertDescription>
-                We are shutting down public API access on 24/04/2025. For
-                emergency cases, please contact Serafim{" "}
+                To help us better understand how you're using our API and provide better support, please reach out to us! Contact Serafim{" "}
                 <a
                   href="https://twitter.com/serafimcloud"
                   className="underline"
@@ -106,7 +105,7 @@ export default async function ApiAccessPage() {
                 <a href="mailto:support@21st.dev" className="underline">
                   support@21st.dev
                 </a>
-                .
+                . We'd love to learn about your project and ensure you have the best possible experience with our API.
               </AlertDescription>
             </Alert>
 
