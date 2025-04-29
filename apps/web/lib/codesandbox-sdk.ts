@@ -8,4 +8,4 @@ export const TEMPLATES = {
   "21st-vite": "672j5x",
 }
 
-export const DEFAULT_HIBERNATION_TIMEOUT = 60 * 1000 // 1 minute
+export const DEFAULT_HIBERNATION_TIMEOUT = 60

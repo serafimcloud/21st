@@ -13,6 +13,8 @@ export async function POST() {
   try {
     const { userId } = await auth()
 
+    console.log("userId", userId)
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

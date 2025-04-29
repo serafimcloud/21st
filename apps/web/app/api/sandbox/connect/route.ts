@@ -1,7 +1,10 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { codesandboxSdk } from "@/lib/codesandbox-sdk"
+import {
+  codesandboxSdk,
+  DEFAULT_HIBERNATION_TIMEOUT,
+} from "@/lib/codesandbox-sdk"
 import ShortUUID from "short-uuid"
 
 export async function POST(request: Request) {
@@ -36,7 +39,12 @@ export async function POST(request: Request) {
       )
     }
 
-    const startData = await codesandboxSdk.sandbox.start(sandbox.codesandbox_id)
+    const startData = await codesandboxSdk.sandbox.start(
+      sandbox.codesandbox_id,
+      {
+        hibernationTimeoutSeconds: DEFAULT_HIBERNATION_TIMEOUT,
+      },
+    )
 
     return NextResponse.json({ success: true, startData, sandbox })
   } catch (error) {
