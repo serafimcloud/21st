@@ -1280,19 +1280,35 @@ export const useRoundSubmissions = (roundId: number | null) => {
           registry: componentData.registry || null,
         }
 
-        // Add has_voted flag based on user's votes
-        // if (user?.id) {
-        //   result.has_voted =
-        //     result.votes?.some((vote: any) => vote.user_id === user.id) || false
-        // } else {
-        //   result.has_voted = false
-        // }
-
         return result
       })
     },
     enabled: !!roundId,
   })
+
+  // Get the current round to check the seasonal tag
+  const { data: roundData } = useQuery({
+    queryKey: ["demo-hunt-seasonal-tag", roundId],
+    queryFn: async () => {
+      if (!roundId) return null
+
+      const { data, error } = await supabase
+        .from("component_hunt_rounds")
+        .select("*,tags!component_hunt_rounds_seasonal_tag_id_fkey(slug,name)")
+        .eq("id", roundId as number)
+        .single()
+
+      if (error) {
+        console.error("Error fetching seasonal tag:", error)
+        return null
+      }
+
+      return data
+    },
+    enabled: !!roundId,
+  })
+
+  const seasonalTagSlug = roundData?.tags?.slug?.toLowerCase() || ""
 
   const uiSlugs = [
     "accordion",
@@ -1376,11 +1392,15 @@ export const useRoundSubmissions = (roundId: number | null) => {
           return submissionSlugs.some((slug: string) =>
             marketingSlugs.includes(slug),
           )
+        } else if (category === "seasonal" && seasonalTagSlug) {
+          return submissionSlugs.some(
+            (slug: string) => slug.toLowerCase() === seasonalTagSlug,
+          )
         }
         return false
       })
     },
-    [submissions],
+    [submissions, seasonalTagSlug],
   )
 
   return {
