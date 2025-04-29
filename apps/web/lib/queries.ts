@@ -1419,3 +1419,138 @@ export function useContestRounds() {
     queryFn: () => getContestRounds(supabase),
   })
 }
+
+export function useLeaderboardDemosForHome() {
+  const supabase = useClerkSupabaseClient()
+  const { user } = useUser()
+
+  // First get the current active round or most recent past round
+  const roundQuery = useQuery({
+    queryKey: ["current-hunt-round"],
+    queryFn: async () => {
+      const now = new Date().toISOString()
+
+      // First try to get active round
+      const { data: activeRound } = await supabase
+        .from("component_hunt_rounds")
+        .select("*")
+        .lte("start_at", now)
+        .gte("end_at", now)
+        .single()
+
+      if (activeRound) {
+        return activeRound as Round
+      }
+
+      // If no active round, get the most recent past round
+      const { data: pastRound } = await supabase
+        .from("component_hunt_rounds")
+        .select("*")
+        .lte("start_at", now)
+        .order("start_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      return pastRound as Round
+    },
+  })
+
+  // When we have the round, fetch the submissions
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["leaderboard-demos-home", roundQuery.data?.id, user?.id],
+    queryFn: async () => {
+      if (!roundQuery.data?.id) return []
+
+      // Get data using the same function as the leaderboard
+      const data = await getHuntDemosList(supabase, roundQuery.data.id)
+
+      // First, ensure we have consistent sorting by rank or votes, exactly as in the global leaderboard
+      // Use the same sort order: global_rank first (if available), then votes, then view_count
+      const sortedData = [...(data || [])].sort((a: any, b: any) => {
+        // First, try to sort by global_rank if available (and valid)
+        if (a.global_rank && b.global_rank && a.global_rank !== b.global_rank) {
+          return (a.global_rank || Infinity) - (b.global_rank || Infinity)
+        }
+
+        // If ranks are equal or not available, sort by votes
+        if ((a.votes || 0) !== (b.votes || 0)) {
+          return (b.votes || 0) - (a.votes || 0)
+        }
+
+        // If votes are equal, sort by view count
+        if ((a.view_count || 0) !== (b.view_count || 0)) {
+          return (b.view_count || 0) - (a.view_count || 0)
+        }
+
+        // Last resort, sort by ID
+        return a.id - b.id
+      })
+
+      // Limit to top 10 for the slider
+      return sortedData.slice(0, 10).map((submission: any, index: number) => {
+        // Create a transformed version that matches DemoWithComponent format
+        const componentData =
+          typeof submission.component_data === "object"
+            ? submission.component_data || {}
+            : {}
+
+        // Create a partial transformation with required fields
+        const transformedDemo = {
+          id: submission.id,
+          name: submission.demo_slug || submission.name || "",
+          demo_slug: submission.demo_slug || "default",
+          description: componentData.description || "",
+          preview_url: submission.preview_url || null,
+          created_at: submission.created_at || new Date().toISOString(),
+          updated_at: submission.updated_at || new Date().toISOString(),
+          component_id: componentData.id || null,
+          downloads_count: componentData.downloads_count || 0,
+          likes_count: componentData.likes_count || 0,
+          bookmarks_count: submission.bookmarks_count || 0,
+          view_count: submission.view_count || 0,
+          votes_count: submission.votes || 0,
+          is_paid: false,
+          bundle_url: submission.bundle_url || null,
+          global_rank: submission.global_rank || null,
+          compiled_css: null,
+          compiled_js: null,
+          video_url: submission.video_url || null,
+          user: {
+            id: submission.user_data?.id || "",
+            username: submission.user_data?.username || "",
+            display_username: submission.user_data?.username || "",
+            display_image_url: submission.user_data?.display_image_url || null,
+            display_name: submission.user_data?.username || "",
+          },
+          component: {
+            id: componentData.id || 0,
+            name: componentData.name || submission.name || "",
+            component_slug: componentData.component_slug || "",
+            user_id: componentData.user_id || "",
+            is_paid: false,
+            is_public: true,
+            user: {
+              id: submission.user_data?.id || "",
+              username: submission.user_data?.username || "",
+              display_username: submission.user_data?.username || "",
+              display_image_url:
+                submission.user_data?.display_image_url || null,
+              display_name: submission.user_data?.username || "",
+            },
+          },
+        }
+
+        return transformedDemo as unknown as DemoWithComponent
+      })
+    },
+    enabled: !!roundQuery.data?.id,
+  })
+
+  return {
+    data,
+    isLoading: isLoading || roundQuery.isLoading,
+    error,
+    roundId: roundQuery.data?.id,
+    weekNumber: roundQuery.data?.week_number,
+  }
+}

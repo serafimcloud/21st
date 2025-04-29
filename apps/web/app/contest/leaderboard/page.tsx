@@ -8,9 +8,9 @@ import { Footer } from "@/components/ui/footer"
 import { Logo } from "@/components/ui/logo"
 
 export const metadata: Metadata = {
-  title: "Weekly Component Hunt Leaderboard - 21st.dev",
+  title: "Weekly Component Contest Leaderboard - 21st.dev",
   description:
-    "Vote for your favorite components and see who's leading the weekly component hunt.",
+    "Vote for your favorite components and see who's leading the weekly component contest.",
 }
 
 interface Round {
@@ -76,20 +76,6 @@ async function getCurrentRoundWithTag(): Promise<{
   return { round, seasonalTag }
 }
 
-function formatDateRange(start: string, end: string): string {
-  const startDate = new Date(start)
-  const endDate = new Date(end)
-  const startMonth = startDate.toLocaleString("en-US", { month: "long" })
-  const endMonth = endDate.toLocaleString("en-US", { month: "long" })
-  const startDay = startDate.getDate()
-  const endDay = endDate.getDate()
-  if (startMonth === endMonth) {
-    return `${startMonth} ${startDay} – ${endDay}`
-  } else {
-    return `${startMonth} ${startDay} – ${endMonth} ${endDay}`
-  }
-}
-
 export default async function LeaderboardPage() {
   const { round: currentRound, seasonalTag } = await getCurrentRoundWithTag()
 
@@ -99,41 +85,8 @@ export default async function LeaderboardPage() {
         <Logo className="z-50" />
         <div className="flex-1 mt-[11vh] max-w-[640px] mx-auto w-full px-4">
           <div className="w-full bg-background antialiased mt-14">
-            <div className="p-3 sm:p-6">
+            <div className="p-3 sm:p-6 mb-[20vh]">
               <div className="space-y-6">
-                {/* Rules and Submit Section */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between pb-3 border-b mb-4">
-                    <h3 className="font-medium">Component Hunt Rules</h3>
-                    <Button asChild>
-                      <Link href="/publish">Submit Your Component</Link>
-                    </Button>
-                  </div>
-                  <div className="bg-background rounded-lg border border-border overflow-hidden">
-                    <div className="p-4">
-                      <p className="text-sm text-muted-foreground">
-                        Share your best UI components and vote for your
-                        favorites. The most upvoted components each week win
-                        prizes and get featured in our library.
-                      </p>
-                    </div>
-                    {currentRound && (
-                      <div className="bg-muted p-3 rounded-b-lg border-t">
-                        <div className="text-sm">
-                          <span className="font-medium">
-                            Week #{currentRound.week_number}
-                          </span>{" "}
-                          -{" "}
-                          {formatDateRange(
-                            currentRound.start_at,
-                            currentRound.end_at,
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {/* Dynamic Content - Client Rendered */}
                 {currentRound ? (
                   <LeaderboardClient

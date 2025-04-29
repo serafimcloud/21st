@@ -17,9 +17,11 @@ interface HorizontalSliderProps {
   items: DemoWithComponent[]
   isLoading?: boolean
   viewAllLink?: string
+  viewAllUrl?: string
   onViewAll?: () => void
   className?: string
   totalCount?: number
+  isLeaderboard?: boolean
 }
 
 export function HorizontalSlider({
@@ -27,9 +29,11 @@ export function HorizontalSlider({
   items,
   isLoading = false,
   viewAllLink,
+  viewAllUrl,
   onViewAll,
   className,
   totalCount,
+  isLeaderboard = false,
 }: HorizontalSliderProps) {
   const router = useRouter()
   const [showLeftButton, setShowLeftButton] = useState(false)
@@ -104,6 +108,8 @@ export function HorizontalSlider({
 
     if (onViewAll) {
       onViewAll()
+    } else if (viewAllUrl) {
+      router.push(viewAllUrl)
     }
   }
 
@@ -127,16 +133,16 @@ export function HorizontalSlider({
     <div className={cn("flex flex-col space-y-4", className)}>
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">{title}</h2>
-        {(viewAllLink || onViewAll) && (
+        {(viewAllLink || onViewAll || viewAllUrl) && (
           <Button
             variant="link"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors p-0 h-auto cursor-pointer"
-            asChild={!onViewAll}
+            asChild={!onViewAll && !viewAllUrl}
             onClick={handleViewAllClick}
           >
-            {onViewAll ? (
+            {onViewAll || viewAllUrl ? (
               <span className="cursor-pointer flex items-center group">
-                View all
+                {isLeaderboard ? "View Leaderboard" : "View all"}
                 {totalCount !== undefined && (
                   <span className="ml-1 text-muted-foreground group-hover:text-foreground">
                     ({totalCount})
@@ -149,7 +155,7 @@ export function HorizontalSlider({
                 href={viewAllLink}
                 className="flex items-center gap-1 group"
               >
-                View all
+                {isLeaderboard ? "View Leaderboard" : "View all"}
                 {totalCount !== undefined && (
                   <span className="ml-1 text-muted-foreground group-hover:text-foreground">
                     ({totalCount})

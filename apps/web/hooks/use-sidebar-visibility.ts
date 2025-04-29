@@ -21,7 +21,7 @@ export function useSidebarVisibility() {
     pathname.startsWith("/c/") ||
     pathname.startsWith("/magic/get-started") ||
     pathname.startsWith("/magic/console") ||
-    pathname.startsWith("/hunt")
+    pathname.startsWith("/contest")
 
   return shouldShowSidebar
 }

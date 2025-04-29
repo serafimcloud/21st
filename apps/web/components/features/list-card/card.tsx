@@ -2,7 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
-import { Video, Eye, Bookmark, X } from "lucide-react"
+import { Video, Eye, Bookmark, X, ThumbsUp, Trophy } from "lucide-react"
 import { toast } from "sonner"
 import {
   ContextMenu,
@@ -27,6 +27,12 @@ import { useClerkSupabaseClient } from "@/lib/clerk"
 import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
 import { Button } from "@/components/ui/button"
 import { bookmarkDemo } from "@/lib/queries"
+
+// Extended type to include leaderboard fields
+type LeaderboardDemoWithComponent = DemoWithComponent & {
+  global_rank?: number
+  votes_count?: number
+}
 
 export function ComponentCard({
   demo,
@@ -67,6 +73,9 @@ export function ComponentCard({
 
   const isDemoWithComponent = isDemo && "component" in demo
 
+  // Check if it's a leaderboard component
+  const isLeaderboardComponent = isDemo && "global_rank" in demo
+
   const componentUrl = `/${username}/${componentSlug}/${isDemo ? demo.demo_slug || "default" : "default"}`
 
   const videoUrl = isDemo ? demo.video_url : null
@@ -74,6 +83,12 @@ export function ComponentCard({
   const bookmarksCount = isDemo ? demo.bookmarks_count || 0 : 0
 
   const viewCount = isDemo ? demo.view_count || 0 : 0
+
+  // Safely access votes_count if it exists
+  const votesCount =
+    isDemo && "votes_count" in demo
+      ? (demo as LeaderboardDemoWithComponent).votes_count || 0
+      : 0
 
   const formatNumber = (num: number) => {
     if (num >= 1000) {
@@ -226,6 +241,17 @@ export function ComponentCard({
                 </span>
               </div>
             )}
+            {/* Add Top of Week badge for top 3 leaderboard components */}
+            {isLeaderboardComponent && typeof demo.global_rank === 'number' && demo.global_rank <= 3 && (
+              <div className="absolute top-2 right-2 z-20">
+                <div className="flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-1 rounded-md"> 
+                  <span className="text-xs font-medium">
+                    #{demo.global_rank} of
+                    Week
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex space-x-3 items-center">
             {!hideUser && (
@@ -249,14 +275,15 @@ export function ComponentCard({
                   <h2 className="text-sm font-medium text-foreground truncate">
                     {isDemo ? demo.component?.name : demo.name}
                   </h2>
-                  {demo.name !== "Default" && (
-                    <p className="text-sm text-muted-foreground truncate">
-                      {demo.name}
-                    </p>
-                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3">
+                {votesCount > 0 && (
+                  <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
+                    <ThumbsUp size={14} className="text-primary" />
+                    <span>{formatNumber(votesCount)}</span>
+                  </div>
+                )}
                 {viewCount > 0 && (
                   <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
                     <Eye size={14} />

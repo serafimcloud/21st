@@ -81,25 +81,17 @@ export default async function Page() {
       <div className="min-h-screen flex flex-col">
         <Logo className="z-50" />
         <Header />
-        <div className="flex-1 my-[11vh] max-w-[800px] mx-auto w-full px-4">
-          <div className="space-y-8 text-foreground">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h1 className="text-3xl font-bold tracking-tight">
-                Component Hunt Overview
-              </h1>
-
-              <Button asChild className="gap-2">
-                <Link href="/hunt/leaderboard">
-                  <Trophy className="h-4 w-4" />
-                  View Current Leaderboard
-                </Link>
-              </Button>
-            </div>
-
-            <section className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
-                📌 Quick Summary
-              </h2>
+        <div className="flex-1 mt-[11vh] max-w-[640px] mx-auto w-full px-4">
+          <div className="space-y-8 text-foreground p-3 sm:p-6 mb-[20vh]">
+            <section className="space-y-4 w-full bg-background antialiased mt-14">
+              <div className="flex justify-between items-center">
+                <h2 className="font-medium flex items-center gap-2">
+                  $2000 Weekly Contest
+                </h2>
+                <Button asChild className="gap-2">
+                  <Link href="/contest/leaderboard">View Leaderboard</Link>
+                </Button>
+              </div>
               <p className="text-base leading-7">
                 A fast-paced, week-long contest that rewards the best
                 open-source components published on{" "}
@@ -114,7 +106,7 @@ export default async function Page() {
             <div className="h-px bg-border" />
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
+              <h2 className="font-medium flex items-center gap-2">
                 📜 Eligibility
               </h2>
               <ul className="list-disc pl-6 space-y-2">
@@ -136,7 +128,7 @@ export default async function Page() {
             <div className="h-px bg-border" />
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
+              <h2 className="font-medium flex items-center gap-2">
                 🗓️ Weekly Cycle
               </h2>
               <div className="rounded-lg border border-border">
@@ -199,7 +191,7 @@ export default async function Page() {
             <div className="h-px bg-border" />
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
+              <h2 className="font-medium flex items-center gap-2">
                 🏷️ Categories
               </h2>
               <ol className="list-decimal pl-6 space-y-2">
@@ -223,7 +215,7 @@ export default async function Page() {
             <div className="h-px bg-border" />
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
+              <h2 className="font-medium flex items-center gap-2">
                 💰 Awards & Budget ($2 000 / week)
               </h2>
               <div className="rounded-lg border border-border">
@@ -276,7 +268,7 @@ export default async function Page() {
 
               <div className="flex justify-center pt-2">
                 <Button asChild variant="outline" className="gap-2">
-                  <Link href="/hunt/leaderboard">
+                  <Link href="/contest/leaderboard">
                     <Trophy className="h-4 w-4" />
                     View Current Leaderboard
                   </Link>
@@ -287,7 +279,7 @@ export default async function Page() {
             <div className="h-px bg-border" />
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
+              <h2 className="font-medium flex items-center gap-2">
                 🎁 Bonus Category Roadmap (Extra Prizes)
               </h2>
               <div className="rounded-lg border border-border">
@@ -331,7 +323,7 @@ export default async function Page() {
             <div className="h-px bg-border" />
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
+              <h2 className="font-medium flex items-center gap-2">
                 📊 How We Rank Components
               </h2>
               <p className="text-base leading-7">
@@ -365,7 +357,7 @@ export default async function Page() {
 
               <div className="flex justify-center pt-4">
                 <Button asChild variant="outline" className="gap-2">
-                  <Link href="/hunt/leaderboard">
+                  <Link href="/contest/leaderboard">
                     <Trophy className="h-4 w-4" />
                     See The Leaderboard
                   </Link>
@@ -374,7 +366,7 @@ export default async function Page() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-semibold flex items-center gap-2">
+              <h2 className="font-medium flex items-center gap-2">
                 💬 Join the conversation
               </h2>
               <p className="text-base leading-7">

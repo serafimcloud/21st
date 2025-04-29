@@ -6,6 +6,7 @@ import {
   useLatestDemos,
   useTagDemos,
   getTagDemosCount,
+  useLeaderboardDemosForHome,
 } from "@/lib/queries"
 import { HorizontalSlider } from "./horizontal-slider"
 import { SortOption } from "@/types/global"
@@ -27,12 +28,15 @@ interface SliderGroup {
   targetSort?: string
   tagSlug?: string
   totalCount?: number
+  viewAllUrl?: string
+  isLeaderboard?: boolean
 }
 
 export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
   const featuredDemosQuery = useFeaturedDemos()
   const popularDemosQuery = useMainDemosExcludingFeatured()
   const latestDemosQuery = useLatestDemos()
+  const leaderboardDemosQuery = useLeaderboardDemosForHome()
 
   const tagCategories = useMemo(
     () => [
@@ -69,6 +73,16 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
 
   const sliderGroups = useMemo(() => {
     const groups: SliderGroup[] = [
+      {
+        id: "leaderboard",
+        title: leaderboardDemosQuery.weekNumber
+          ? `Leaderboard (Week #${leaderboardDemosQuery.weekNumber})`
+          : "Leaderboard (Week # )",
+        items: leaderboardDemosQuery.data || [],
+        isLoading: leaderboardDemosQuery.isLoading,
+        viewAllUrl: "/contest/leaderboard",
+        isLeaderboard: true,
+      },
       {
         id: "featured",
         title: "Featured",
@@ -119,10 +133,15 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
     latestDemosQuery.isLoading,
     tagCategories,
     tagQueries,
+    leaderboardDemosQuery.data,
+    leaderboardDemosQuery.isLoading,
+    leaderboardDemosQuery.weekNumber,
   ])
 
   const handleViewAll = (group: SliderGroup) => {
-    if (group.tagSlug) {
+    if (group.viewAllUrl) {
+      router.push(group.viewAllUrl)
+    } else if (group.tagSlug) {
       router.push(`/s/${group.tagSlug}`)
     } else if (group.targetTab && group.targetSort) {
       handleSortChange(group.targetSort)
@@ -140,6 +159,8 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
           isLoading={group.isLoading}
           onViewAll={() => handleViewAll(group)}
           totalCount={group.totalCount}
+          viewAllUrl={group.viewAllUrl}
+          isLeaderboard={group.isLeaderboard}
         />
       ))}
     </div>
