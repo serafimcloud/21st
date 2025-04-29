@@ -296,7 +296,7 @@ export function ComponentPagePreview({
     },
     ...({ fileLabels: customFileLabels } as any),
   }
-  console.log(demo?.bundle_hash)
+
   return (
     <motion.div
       layout
@@ -409,7 +409,7 @@ export function ComponentPagePreview({
                                 </TabsList>
                                 <div className="">
                                   <SandpackCodeViewer
-                                    wrapContent={true}
+                                    wrapContent
                                     showTabs={false}
                                   />
                                 </div>
