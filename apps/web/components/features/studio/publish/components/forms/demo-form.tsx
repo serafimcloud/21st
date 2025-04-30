@@ -370,7 +370,7 @@ export const DemoDetailsForm = ({
           </p>
         </div>
 
-        <Collapsible>
+        {/* <Collapsible>
           <CollapsibleTrigger asChild>
             <Button
               variant="ghost"
@@ -450,7 +450,7 @@ export const DemoDetailsForm = ({
               </p>
             </div>
           </CollapsibleContent>
-        </Collapsible>
+        </Collapsible> */}
       </div>
     </div>
   )
