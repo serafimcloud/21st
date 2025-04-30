@@ -80,7 +80,6 @@ export const ComponentForm = ({
   const slugId = useId()
   const descriptionId = useId()
   const registryId = useId()
-  const websiteId = useId()
   const defaultRows = 2
 
   const handleTextareaInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -102,40 +101,6 @@ export const ComponentForm = ({
     rules: { required: true },
   })
 
-  const { field } = useController({
-    name: "website_url",
-    control: form.control,
-    defaultValue: "",
-    rules: {
-      onChange: (e) => {
-        const rawValue = e.target.value
-
-        // Remove any protocols from input
-        const cleanUrl = rawValue
-          .trim()
-          .replace(/^(https?:\/\/)+(www\.)?/, "")
-          .replace(/\/$/, "")
-
-        // Simple URL validation
-        const urlRegex =
-          /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](\.[a-zA-Z]{2,})+([/?].*)?$/
-        const isValid = urlRegex.test(cleanUrl)
-
-        if (cleanUrl && !isValid) {
-          form.setError("website_url", {
-            type: "manual",
-            message: "Please enter a valid URL",
-          })
-        } else {
-          form.clearErrors("website_url")
-        }
-
-        // Store with https:// in form
-        const formValue = cleanUrl ? `https://${cleanUrl}` : ""
-        return formValue
-      },
-    },
-  })
   return (
     <div className="flex flex-col gap-4 w-full">
       <div className="grid grid-cols-2 gap-4">
@@ -400,7 +365,7 @@ export const ComponentForm = ({
             </div>
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor={websiteId}>Website URL</Label>
             <div className="relative">
               <Input
@@ -434,7 +399,7 @@ export const ComponentForm = ({
                 Link to your component's documentation or demo
               </p>
             )}
-          </div>
+          </div> */}
         </div>
       )}
     </div>
