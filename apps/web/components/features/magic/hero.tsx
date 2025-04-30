@@ -182,9 +182,13 @@ export function Hero() {
       router.push("/magic/get-started")
     }, 800)
   }
-
   return (
-    <div className="relative min-h-screen bg-black/[0.96] antialiased bg-grid-purple/[0.02] overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1, delay: 0.5 }}
+      className="relative min-h-screen bg-[url('/hero.webp')] bg-cover bg-top bg-center bg-no-repeat antialiased overflow-hidden sm:bg-contain sm:bg-repeat-x"
+    >
       <Spotlight />
 
       <div className="relative z-10">
@@ -197,7 +201,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="font-instrument-sans mb-6 mt-0 text-center text-sm sm:text-base uppercase tracking-[0.51em] text-neutral-100"
+            className="font-instrument-sans mb-6 mt-0 text-center text-sm sm:text-base uppercase tracking-[0.51em] text-black"
           >
             Introducing Magic
           </motion.p>
@@ -206,7 +210,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="max-w-4xl text-center text-4xl font-bold tracking-tight sm:text-7xl bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400"
+            className="max-w-4xl text-center text-4xl font-bold tracking-tight sm:text-7xl bg-clip-text text-transparent bg-gradient-to-b from-neutral-950 to-neutral-800"
           >
             The AI Agent That Builds Beautiful UI Components
           </motion.h1>
@@ -215,7 +219,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-6 max-w-2xl text-center text-xl leading-8 text-neutral-300"
+            className="mt-6 max-w-2xl text-center text-xl leading-8 text-black"
           >
             Empower your IDE with an AI extension that creates stunning,
             production-ready components inspired by{" "}
@@ -261,18 +265,18 @@ export function Hero() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2 px-2.5 text-sm font-medium text-neutral-200 hover:text-neutral-50"
+                className="gap-2 px-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-800/10 hover:text-neutral-800"
                 asChild
               >
                 <a
-                  href="https://github.com/21st-dev/magic-mcp"
+                  href="https://github.com/21st-dev/magic-mcp" 
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   <Icons.gitHub className="h-4 w-4" />
                   <GitHubStarsBasic
                     repo="21st-dev/magic-mcp"
-                    className="text-neutral-200"
+                    className="text-neutral-800" 
                   />
                 </a>
               </Button>
@@ -297,7 +301,7 @@ export function Hero() {
                     </AvatarFallback>
                   </Avatar>
                 </div>
-                <span className="text-sm text-neutral-300">
+                <span className="text-sm text-neutral-800">
                   <NumberFlow value={count} />+ people using Magic
                 </span>
               </div>
@@ -351,6 +355,6 @@ export function Hero() {
           </motion.div>
         </section>
       </div>
-    </div>
+    </motion.div>
   )
 }

@@ -75,7 +75,7 @@ export default function MagicPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2 px-2.5 text-sm font-medium text-white hover:text-gray-300 hover:bg-accent/10"
+            className="gap-2 px-2.5 text-sm font-medium text-white hover:bg-neutral-800/10 hover:text-white"
             asChild
           >
             <a
