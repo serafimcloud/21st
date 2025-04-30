@@ -405,7 +405,7 @@ export const ComponentForm = ({
               </p>
             </div>
 
-            {/* <div className="space-y-2">
+            <div className="space-y-2">
               <Label htmlFor={licenseId}>
                 License <span className="text-destructive">*</span>
               </Label>
@@ -442,7 +442,7 @@ export const ComponentForm = ({
                   ? "Paid components must use the Mozilla Public License 2.0"
                   : "Choose how others can use your component"}
               </p>
-            </div> */}
+            </div>
           </div>
 
           <div className="space-y-2">
