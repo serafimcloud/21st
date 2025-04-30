@@ -98,10 +98,12 @@ export const useFileSystem = ({
   sandboxRef,
   reconnectSandbox,
   sandboxConnectionHash,
+  connectedShellId,
 }: {
   sandboxRef: RefObject<SandboxSession | null>
   reconnectSandbox: () => Promise<void>
   sandboxConnectionHash: string | null
+  connectedShellId: string | null
 }) => {
   const [files, setFiles] = useState<FileEntry[]>([])
   const [isTreeLoading, setIsTreeLoading] = useState(false)
@@ -289,8 +291,24 @@ export const useFileSystem = ({
     componentRegistryJSON: string
     demoRegistryJSON: string
   }> => {
-    console.log("Generating registry...")
+    if (!connectedShellId) {
+      return new Promise((resolve, reject) => {
+        let counter = 0
+        const interval = setInterval(() => {
+          if (connectedShellId) {
+            clearInterval(interval)
+            generateRegistry().then(resolve).catch(reject)
+          }
+          counter++
+          if (counter > 50) {
+            clearInterval(interval)
+            reject(new Error("Timeout waiting for shell connection"))
+          }
+        }, 1000)
+      })
+    }
 
+    console.log("Generating registry...")
     const task = await sbWrapper((sandbox) =>
       sandbox.tasks.runTask("generate:registry"),
     )
