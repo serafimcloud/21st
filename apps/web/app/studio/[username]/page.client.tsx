@@ -8,7 +8,7 @@ import Link from "next/link"
 import { ArrowLeft, PlusCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
-import { createNewSandbox } from "@/components/features/studio/publish/api"
+import { createNewSandbox } from "@/components/features/studio/sandbox/api"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 

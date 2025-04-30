@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import { publishSandbox, editSandbox } from "../api"
 import { useEffect, useState } from "react"
 import {
@@ -31,6 +31,8 @@ export function PublishHeader({
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [name, setName] = useState(sandboxName)
+
+  const pathname = usePathname()
 
   useEffect(() => {
     setName(sandboxName)
@@ -83,6 +85,10 @@ export function PublishHeader({
 
   const handleBackToStudio = () => {
     router.push(`/studio/${params.username}`)
+  }
+
+  const handleNextStep = () => {
+    router.push(`${pathname}/publish`)
   }
 
   return (
@@ -140,6 +146,7 @@ export function PublishHeader({
           </div>
         )}
         <div className="ml-auto flex items-center gap-2">
+          <Button onClick={handleNextStep}>Next step</Button>
           <Button
             onClick={onGenerateRegistry}
             disabled={isRegenerating}

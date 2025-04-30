@@ -1,22 +1,21 @@
 "use client"
 
 import { useEffect, useState, Suspense } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import {
   ResizableHandle,
   ResizablePanelGroup,
   ResizablePanel,
 } from "@/components/ui/resizable"
-import { FileExplorer } from "@/components/features/studio/publish/components/FileExplorer"
-import { PreviewPane } from "@/components/features/studio/publish/components/PreviewPane"
-import { PublishHeader } from "@/components/features/studio/publish/components/PublishHeader"
+import { FileExplorer } from "@/components/features/studio/sandbox/components/FileExplorer"
+import { PreviewPane } from "@/components/features/studio/sandbox/components/PreviewPane"
+import { PublishHeader } from "@/components/features/studio/sandbox/components/PublishHeader"
 import { Loader2Icon } from "lucide-react"
-import { useSandbox } from "@/components/features/studio/publish/hooks/useSandbox"
+import { useSandbox } from "@/components/features/studio/sandbox/hooks/useSandbox"
 import {
   useFileSystem,
   type FileEntry,
-} from "@/components/features/studio/publish/hooks/useFileSystem"
-import { toast } from "sonner"
+} from "@/components/features/studio/sandbox/hooks/useFileSystem"
 
 const DEFAULT_FILE_ENTRY: FileEntry = {
   name: "component.tsx",
