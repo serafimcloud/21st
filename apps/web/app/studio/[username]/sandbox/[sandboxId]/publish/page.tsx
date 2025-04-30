@@ -25,8 +25,8 @@ import { FormData } from "@/components/features/studio/publish/config/utils"
 import { useSubmitComponent } from "@/components/features/studio/publish/hooks/use-submit-component"
 
 import { cn } from "@/lib/utils"
-import { useSandbox } from "@/components/features/studio/sandbox/hooks/useSandbox"
-import { useFileSystem } from "@/components/features/studio/sandbox/hooks/useFileSystem"
+import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
+import { useFileSystem } from "@/components/features/studio/sandbox/hooks/use-file-system"
 import { usePublishAs } from "@/components/features/publish-old/hooks/use-publish-as"
 
 type FormStep = "detailedForm"

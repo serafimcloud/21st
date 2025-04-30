@@ -11,11 +11,11 @@ import { FileExplorer } from "@/components/features/studio/sandbox/components/Fi
 import { PreviewPane } from "@/components/features/studio/sandbox/components/PreviewPane"
 import { PublishHeader } from "@/components/features/studio/sandbox/components/PublishHeader"
 import { Loader2Icon } from "lucide-react"
-import { useSandbox } from "@/components/features/studio/sandbox/hooks/useSandbox"
+import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import {
   useFileSystem,
   type FileEntry,
-} from "@/components/features/studio/sandbox/hooks/useFileSystem"
+} from "@/components/features/studio/sandbox/hooks/use-file-system"
 
 const DEFAULT_FILE_ENTRY: FileEntry = {
   name: "component.tsx",

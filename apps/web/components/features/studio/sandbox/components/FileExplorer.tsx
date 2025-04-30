@@ -14,7 +14,7 @@ interface FileEntry {
   children?: FileEntry[]
 }
 */
-import { FileEntry } from "../hooks/useFileSystem"
+import { FileEntry } from "../hooks/use-file-system"
 import {
   PlusIcon,
   RefreshCwIcon,
