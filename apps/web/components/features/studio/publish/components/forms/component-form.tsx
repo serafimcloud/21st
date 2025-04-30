@@ -11,7 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { FormData } from "../../config/utils"
-import { licenses } from "@/lib/licenses"
 import { useSubmitFormHotkeys } from "../../hooks/use-hooks"
 import { Input } from "@/components/ui/input"
 import { useUser } from "@clerk/nextjs"
@@ -81,7 +80,6 @@ export const ComponentForm = ({
   const slugId = useId()
   const descriptionId = useId()
   const registryId = useId()
-  const licenseId = useId()
   const websiteId = useId()
   const defaultRows = 2
 
@@ -307,10 +305,6 @@ export const ComponentForm = ({
                     form.setValue("price", checked ? 5 : 0, {
                       shouldValidate: true,
                     })
-                    // Set MPL-2.0 license for paid components, MIT for free
-                    form.setValue("license", checked ? "mpl-2.0" : "mit", {
-                      shouldValidate: true,
-                    })
                   }}
                   className="order-1 h-4 w-6 after:absolute after:inset-0 [&_span]:size-3 data-[state=checked]:[&_span]:translate-x-2 data-[state=checked]:[&_span]:rtl:-translate-x-2"
                 />
@@ -402,45 +396,6 @@ export const ComponentForm = ({
                 aria-live="polite"
               >
                 The category your component belongs to
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor={licenseId}>
-                License <span className="text-destructive">*</span>
-              </Label>
-              <FormField
-                control={form.control}
-                name="license"
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    required
-                    disabled={form.watch("is_paid")}
-                  >
-                    <SelectTrigger id={licenseId}>
-                      <SelectValue placeholder="Select a license" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(licenses).map(([key, license]) => (
-                        <SelectItem key={key} value={license.value}>
-                          {license.label}
-                          {form.watch("is_paid") && license.value === "mpl-2.0"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              <p
-                className="text-xs text-muted-foreground"
-                role="region"
-                aria-live="polite"
-              >
-                {form.watch("is_paid")
-                  ? "Paid components must use the Mozilla Public License 2.0"
-                  : "Choose how others can use your component"}
               </p>
             </div>
           </div>
