@@ -126,7 +126,7 @@ const PublishPage = () => {
     createdDemoSlug,
     submitComponent,
     setIsSuccessDialogOpen,
-  } = useSubmitComponent({ generateRegistry })
+  } = useSubmitComponent()
 
   const handleAccordionChange = useCallback((value: string[]) => {
     setOpenAccordion(value)
@@ -145,9 +145,13 @@ const PublishPage = () => {
       )
       return
     }
-    submitComponent(data, {
-      id: publishAsUser.id,
-      username: publishAsUser.username || undefined,
+    submitComponent({
+      data,
+      publishAsUser: {
+        id: publishAsUser.id,
+        username: publishAsUser.username || undefined,
+      },
+      generateRegistry,
     })
   }
 

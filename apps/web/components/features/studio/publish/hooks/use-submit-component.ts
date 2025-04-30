@@ -18,14 +18,7 @@ type ParsedCodeData = {
   demoDependencies?: Record<string, string>
 }
 
-export const useSubmitComponent = ({
-  generateRegistry,
-}: {
-  generateRegistry: () => Promise<{
-    componentRegistryJSON: string
-    demoRegistryJSON: string
-  }>
-}) => {
+export const useSubmitComponent = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoadingDialogOpen, setIsLoadingDialogOpen] = useState(false)
   const [publishProgress, setPublishProgress] = useState("")
@@ -34,7 +27,12 @@ export const useSubmitComponent = ({
   const client = useClerkSupabaseClient()
   const { upload: uploadToR2ClientSide } = useR2Upload()
 
-  const getParsedCode = async () => {
+  const getParsedCode = async (
+    generateRegistry: () => Promise<{
+      componentRegistryJSON: string
+      demoRegistryJSON: string
+    }>,
+  ) => {
     const { componentRegistryJSON, demoRegistryJSON } = await generateRegistry()
 
     const componentRegistry = JSON.parse(componentRegistryJSON)
@@ -64,11 +62,19 @@ export const useSubmitComponent = ({
     }
   }
 
-  const submitComponent = async (
-    data: FormData,
-    publishAsUser: { id: string; username?: string },
-  ) => {
-    const parsedCode = await getParsedCode()
+  const submitComponent = async ({
+    data,
+    publishAsUser,
+    generateRegistry,
+  }: {
+    data: FormData
+    publishAsUser: { id: string; username?: string }
+    generateRegistry: () => Promise<{
+      componentRegistryJSON: string
+      demoRegistryJSON: string
+    }>
+  }) => {
+    const parsedCode = await getParsedCode(generateRegistry)
     const { componentCode, demoCode, componentNames, dependencies } = parsedCode
 
     console.log("componentCode", componentCode)
@@ -197,20 +203,45 @@ export const useSubmitComponent = ({
       }
 
       // Mock Supabase Component Insert
-      console.log("Mock Inserting Component:", componentData)
-      const insertedComponent = {
-        id: `mock-component-id-${Date.now()}`,
-        ...componentData,
+      // console.log("Mock Inserting Component:", componentData)
+      // const insertedComponent = {
+      //   id: `mock-component-id-${Date.now()}`,
+      //   ...componentData,
+      // }
+      // await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate network delay
+      const { data: insertedComponent, error: componentError } = await client
+        .from("components")
+        .insert(componentData)
+        .select()
+        .single()
+
+      if (componentError) {
+        console.error("Error inserting component:", componentError)
+        throw componentError
       }
-      await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate network delay
+      if (!insertedComponent) {
+        throw new Error("Failed to insert component, no data returned.")
+      }
 
       if (!data.is_public) {
         setPublishProgress("Creating submission entry...")
-        console.log(
-          "Mock Inserting Submission for component:",
-          insertedComponent.id,
-        )
-        await new Promise((resolve) => setTimeout(resolve, 200))
+        // console.log(
+        //   "Mock Inserting Submission for component:",
+        //   insertedComponent.id,
+        // )
+        // await new Promise((resolve) => setTimeout(resolve, 200))
+        const { error: submissionError } = await client
+          .from("submissions")
+          .insert({
+            component_id: insertedComponent.id,
+            status: "on_review",
+          })
+        if (submissionError) {
+          console.error("Error inserting submission:", submissionError)
+          // Decide if this should be a fatal error - potentially rollback or just log?
+          // For now, we throw to indicate failure.
+          throw submissionError
+        }
       }
 
       setPublishProgress("Creating demo entry...")
@@ -219,15 +250,15 @@ export const useSubmitComponent = ({
         (await generateDemoSlug(
           client,
           demo.name || "Default",
-          typeof insertedComponent.id === "string"
-            ? parseInt(insertedComponent.id.split("-").pop() || "0")
-            : insertedComponent.id,
+          insertedComponent.id, // Use the actual ID
           publishAsUser.id,
         ))
       setCreatedDemoSlug(demoSlug)
 
       const demoData: Omit<
         Tables<"demos">,
+        // Keep the omissions consistent with your original type definition if needed
+        // For simplicity, only omitting ID and audit stamps here, adjust as per your exact schema/type
         | "id"
         | "created_at"
         | "updated_at"
@@ -236,10 +267,7 @@ export const useSubmitComponent = ({
         | "fts"
         | "bookmarks_count"
       > = {
-        component_id:
-          typeof insertedComponent.id === "string"
-            ? parseInt(insertedComponent.id.split("-").pop() || "0")
-            : insertedComponent.id,
+        component_id: insertedComponent.id, // Use the actual ID
         demo_code: addVersionToUrl(demoCodeUrl) || "",
         demo_dependencies: demo.demo_dependencies || {},
         preview_url: addVersionToUrl(previewImageR2Url),
@@ -253,18 +281,51 @@ export const useSubmitComponent = ({
         demo_slug: demoSlug,
       }
 
-      console.log("Mock Inserting Demo:", demoData)
-      const insertedDemo = { id: `mock-demo-id-${Date.now()}`, ...demoData }
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      // Mock Inserting Demo
+      // console.log("Mock Inserting Demo:", demoData)
+      // const insertedDemo = { id: `mock-demo-id-${Date.now()}`, ...demoData }
+      // await new Promise((resolve) => setTimeout(resolve, 500))
+      const { data: insertedDemo, error: demoError } = await client
+        .from("demos")
+        .insert(demoData)
+        .select()
+        .single()
+
+      if (demoError) {
+        console.error("Error inserting demo:", demoError)
+        // Consider rollback logic if component insert succeeded but demo failed
+        throw demoError
+      }
+      if (!insertedDemo) {
+        throw new Error("Failed to insert demo, no data returned.")
+      }
 
       if (demo.tags?.length > 0) {
         setPublishProgress("Adding tags...")
-        console.log("Mock Adding Tags:", demo.tags, "to demo:", insertedDemo.id)
-        await new Promise((resolve) => setTimeout(resolve, 200))
+        // console.log("Mock Adding Tags:", demo.tags, "to demo:", insertedDemo.id)
+        // await new Promise((resolve) => setTimeout(resolve, 200))
+        await addTagsToDemo(
+          client,
+          insertedDemo.id, // Use the actual ID
+          demo.tags.filter((tag): tag is Tag => !!tag && !!tag.slug) as Tag[], // Ensure tags are valid
+        )
+        // addTagsToDemo likely has its own error handling, but you might want to add more here
       }
 
       setPublishProgress("Done!")
       setIsSuccessDialogOpen(true)
+
+      // Log newly inserted/updated rows
+      console.log("Newly inserted component:", insertedComponent)
+      console.log("Newly inserted demo:", insertedDemo)
+      if (!data.is_public) {
+        const { data: submission } = await client
+          .from("submissions")
+          .select()
+          .eq("component_id", insertedComponent.id)
+          .single()
+        console.log("Newly inserted submission:", submission)
+      }
     } catch (error) {
       console.error("Error submitting component:", error)
       toast.error(

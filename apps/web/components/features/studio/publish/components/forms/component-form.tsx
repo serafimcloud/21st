@@ -1,4 +1,4 @@
-import { useState, useId, ChangeEvent } from "react"
+import { useState, useId, ChangeEvent, useEffect } from "react"
 import { UseFormReturn, useController } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -100,6 +100,13 @@ export const ComponentForm = ({
     control: form.control,
     rules: { required: true },
   })
+
+  useEffect(() => {
+    if (!isSlugManuallyEdited && nameField.value) {
+      const newSlug = makeSlugFromName(nameField.value)
+      form.setValue("component_slug", newSlug)
+    }
+  }, [nameField.value, isSlugManuallyEdited, form])
 
   return (
     <div className="flex flex-col gap-4 w-full">
