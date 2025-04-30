@@ -464,29 +464,14 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 1.0, ease: [0.25, 1, 0.5, 1] }}
             className="mt-20 w-full sm:max-w-[90%] mx-auto relative"
           >
-            <MockupFrame className="w-full backdrop-blur">
+            <MockupFrame className="w-full max-w-[1400px] mx-auto backdrop-blur">
               <Mockup
                 type="responsive"
                 className="w-full aspect-[16/10] cursor-pointer"
               >
                 <div className="relative w-full h-full group">
-                  <div className="absolute inset-0 flex items-center justify-center z-20">
-                    <a
-                      href="https://screen.studio/share/2mcsIlwF"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-20 h-20 rounded-full bg-neutral-200/30 backdrop-blur-sm flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
-                    >
-                      <svg
-                        className="w-12 h-12 text-white fill-current"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </a>
-                  </div>
                   <img
-                    src="https://vucvdpamtrjkzmubwlts.supabase.co/storage/v1/object/public/images//screenshot_magic.png"
+                    src="/magic-preview.png"
                     alt="Magic Agent Demo"
                     className="object-cover object-center"
                   />
