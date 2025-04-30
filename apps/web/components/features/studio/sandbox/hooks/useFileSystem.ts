@@ -110,7 +110,7 @@ export const useFileSystem = ({
   const [advancedView, setAdvancedView] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
-  const fsWrapper = async <T>(
+  const sbWrapper = async <T>(
     operation: (sandbox: SandboxSession) => Promise<T>,
   ): Promise<T | undefined> => {
     if (!sandboxRef.current) return
@@ -132,7 +132,7 @@ export const useFileSystem = ({
   const loadRootDirectory = async () => {
     setIsTreeLoading(true)
     try {
-      const rootEntries = await fsWrapper((sandbox) =>
+      const rootEntries = await sbWrapper((sandbox) =>
         loadDirectoryRecursively(sandbox, ROOT_PATH, advancedView),
       )
       if (rootEntries) setFiles(rootEntries)
@@ -152,7 +152,7 @@ export const useFileSystem = ({
   const loadFileContent = async (filePath: string): Promise<string> => {
     setIsFileLoading(true)
     try {
-      const content = await fsWrapper((sandbox) =>
+      const content = await sbWrapper((sandbox) =>
         sandbox.fs.readTextFile(normalizePath(filePath)),
       )
       if (!content) throw new Error("Failed to load file content")
@@ -171,7 +171,7 @@ export const useFileSystem = ({
 
     debounceRef.current = setTimeout(async () => {
       try {
-        await fsWrapper((sandbox) =>
+        await sbWrapper((sandbox) =>
           sandbox.fs.writeTextFile(normalizePath(filePath), value),
         )
       } catch (error) {
@@ -183,7 +183,7 @@ export const useFileSystem = ({
 
   const createFile = async (filePath: string) => {
     try {
-      await fsWrapper((sandbox) =>
+      await sbWrapper((sandbox) =>
         sandbox.fs.writeTextFile(normalizePath(filePath), "// TODO: Add code"),
       )
       await loadRootDirectory()
@@ -196,7 +196,7 @@ export const useFileSystem = ({
 
   const createDirectory = async (dirPath: string) => {
     try {
-      await fsWrapper((sandbox) => sandbox.fs.mkdir(normalizePath(dirPath)))
+      await sbWrapper((sandbox) => sandbox.fs.mkdir(normalizePath(dirPath)))
       await loadRootDirectory()
     } catch (error) {
       console.error(`Failed to create directory ${dirPath}:`, error)
@@ -207,7 +207,7 @@ export const useFileSystem = ({
 
   const deleteEntry = async (entryPath: string) => {
     try {
-      await fsWrapper(async (sandbox) => {
+      await sbWrapper(async (sandbox) => {
         let isDir = false
         try {
           const statResult = await sandbox.fs.stat(normalizePath(entryPath))
@@ -232,7 +232,7 @@ export const useFileSystem = ({
       const parentPath = pathParts.slice(0, -1).join("/")
       const newPath = `${parentPath ? parentPath + "/" : ""}${newName}`
 
-      await fsWrapper((sandbox) =>
+      await sbWrapper((sandbox) =>
         sandbox.fs.rename(normalizePath(oldPath), normalizePath(newPath)),
       )
 
@@ -251,7 +251,7 @@ export const useFileSystem = ({
   ) => {
     try {
       const packageJsonPath = normalizePath("/package.json")
-      const content = await fsWrapper((sandbox) =>
+      const content = await sbWrapper((sandbox) =>
         sandbox.fs.readTextFile(packageJsonPath),
       )
 
@@ -264,7 +264,7 @@ export const useFileSystem = ({
 
       packageJson.dependencies[packageName] = `^${version}`
 
-      await fsWrapper((sandbox) =>
+      await sbWrapper((sandbox) =>
         sandbox.fs.writeTextFile(
           packageJsonPath,
           JSON.stringify(packageJson, null, 2),
@@ -285,48 +285,83 @@ export const useFileSystem = ({
   }
 
   // Function to compile the project into a shadcn registry
-  const generateRegistry = async () => {
-    const task = await sandboxRef.current?.tasks.runTask("generate:registry")
+  const generateRegistry = async (): Promise<{
+    componentRegistryJSON: string
+    demoRegistryJSON: string
+  }> => {
+    console.log("Generating registry...")
 
-    const getContentOfRegistryJson = async () => {
-      const registryJsonPath = normalizePath("public/r/component.json")
-      const content = await fsWrapper((sandbox) =>
-        sandbox.fs.readTextFile(registryJsonPath),
-      )
-      return content
-    }
+    const task = await sbWrapper((sandbox) =>
+      sandbox.tasks.runTask("generate:registry"),
+    )
+    setIsCompiling(true)
 
-    let counter = 0
-    const interval = setInterval(async () => {
-      const shells = await sandboxRef.current?.shells.getShells()
-      const shell = shells?.find((shell) => shell.id === task?.shellId)
+    console.log("Task:", task)
 
-      if (!shell) {
-        return
-      }
+    return new Promise<{
+      componentRegistryJSON: string
+      demoRegistryJSON: string
+    }>((resolve, reject) => {
+      let counter = 0
+      const interval = setInterval(async () => {
+        const shells = await sandboxRef.current?.shells.getShells()
+        const shell = shells?.find((shell) => shell.id === task?.shellId)
 
-      const connectedShell = await sandboxRef.current?.shells.open(shell.id)
-
-      if (connectedShell) {
-        clearInterval(interval)
-        console.log("CONNECTED SHELL", connectedShell)
-        connectedShell?.onOutput(async (data) => {
-          if (data.includes("FINISH")) {
-            console.log("FINISH")
-            setIsCompiling(false)
-            const content = await getContentOfRegistryJson()
-            console.log("CONTENT OF REGISTRY JSON", content)
-            toast.success("Registry generated successfully")
-            connectedShell.dispose()
+        if (!shell) {
+          counter++
+          if (counter > 35) {
+            clearInterval(interval)
+            reject(new Error("Shell not found"))
           }
-        })
-      }
+          return
+        }
 
-      counter++
-      if (counter > 35) {
-        clearInterval(interval)
-      }
-    }, 1000)
+        const connectedShell = await sandboxRef.current?.shells.open(shell.id)
+
+        if (connectedShell) {
+          clearInterval(interval)
+          connectedShell.onOutput(async (data) => {
+            if (data.includes("FINISH")) {
+              setIsCompiling(false)
+              try {
+                const componentRegistryJSON =
+                  await getContentOfComponentRegistryJSON()
+                const demoRegistryJSON = await getContentOfDemoRegistryJSON()
+                connectedShell.dispose()
+                if (!componentRegistryJSON || !demoRegistryJSON) {
+                  throw new Error("Failed to generate registry")
+                }
+                resolve({ componentRegistryJSON, demoRegistryJSON })
+              } catch (error) {
+                reject(error)
+              }
+            }
+          })
+        }
+
+        counter++
+        if (counter > 50) {
+          clearInterval(interval)
+          reject(new Error("Timeout"))
+        }
+      }, 1000)
+    })
+  }
+
+  const getContentOfComponentRegistryJSON = async () => {
+    const registryJsonPath = normalizePath("public/r/component.json")
+    const content = await sbWrapper((sandbox) =>
+      sandbox.fs.readTextFile(registryJsonPath),
+    )
+    return content
+  }
+
+  const getContentOfDemoRegistryJSON = async () => {
+    const registryJsonPath = normalizePath("public/r/demo.json")
+    const content = await sbWrapper((sandbox) =>
+      sandbox.fs.readTextFile(registryJsonPath),
+    )
+    return content
   }
 
   return {
@@ -344,6 +379,9 @@ export const useFileSystem = ({
     deleteEntry,
     renameEntry,
     addDependencyToPackageJson,
+    // registry
     generateRegistry,
+    // getContentOfComponentRegistryJSON,
+    // getContentOfDemoRegistryJSON,
   }
 }

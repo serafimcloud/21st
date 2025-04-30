@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useEffect } from "react"
 import { useTheme } from "next-themes"
 import { useParams } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -22,6 +22,7 @@ import { DemoDetailsForm } from "@/components/features/studio/publish/components
 
 import { cn } from "@/lib/utils"
 import { useSandbox } from "@/components/features/studio/sandbox/hooks/useSandbox"
+import { useFileSystem } from "@/components/features/studio/sandbox/hooks/useFileSystem"
 
 // Define types needed for the form
 type FormStep =
@@ -58,9 +59,45 @@ type ParsedCodeData = {
 const PublishPage = () => {
   const params = useParams()
   const sandboxId = params.sandboxId as string
-  const { previewURL } = useSandbox({
+  const {
+    previewURL,
+    sandboxRef,
+    reconnectSandbox,
+    connectedShellId,
+    sandboxConnectionHash,
+  } = useSandbox({
     sandboxId,
   })
+  const { generateRegistry } = useFileSystem({
+    sandboxRef: sandboxRef,
+    reconnectSandbox: reconnectSandbox,
+    sandboxConnectionHash: sandboxConnectionHash,
+  })
+
+  useEffect(() => {
+    if (!connectedShellId) {
+      return
+    }
+
+    const fetchRegistryJSON = async () => {
+      console.log("Generating registry...")
+      const { componentRegistryJSON, demoRegistryJSON } =
+        await generateRegistry()
+      console.log("componentRegistryJSON", componentRegistryJSON)
+      console.log("demoRegistryJSON", demoRegistryJSON)
+    }
+    fetchRegistryJSON()
+  }, [connectedShellId])
+
+  // useEffect(() => {
+  //   const fetchRegistryJSON = async () => {
+  //     const componentRegistryJSON = await getComponentRegistryJSON()
+  //     const demoRegistryJSON = await getDemoRegistryJSON()
+  //     console.log("componentRegistryJSON", componentRegistryJSON)
+  //     console.log("demoRegistryJSON", demoRegistryJSON)
+  //   }
+  //   fetchRegistryJSON()
+  // }, [])
 
   // Theme state
   const { resolvedTheme } = useTheme()
@@ -68,7 +105,10 @@ const PublishPage = () => {
 
   // UI states
   const [formStep, setFormStep] = useState<FormStep>("detailedForm")
-  const [openAccordion, setOpenAccordion] = useState("component-info")
+  const [openAccordion, setOpenAccordion] = useState([
+    "component-info",
+    "demo-0",
+  ])
   const [currentDemoIndex, setCurrentDemoIndex] = useState(0)
   const [isEditingFromCard, setIsEditingFromCard] = useState(false)
   const [isAddingNewDemo, setIsAddingNewDemo] = useState(false)
@@ -122,8 +162,8 @@ const PublishPage = () => {
     }
   }
 
-  const handleAccordionChange = useCallback((value: string) => {
-    setOpenAccordion(value || "")
+  const handleAccordionChange = useCallback((value: string[]) => {
+    setOpenAccordion(value)
   }, [])
 
   const handleAddNewDemo = () => {
@@ -146,7 +186,7 @@ const PublishPage = () => {
     setCurrentDemoIndex(newDemoIndex)
     setIsAddingNewDemo(true)
     handleStepChange("demoCode")
-    setOpenAccordion(`demo-${newDemoIndex}`)
+    setOpenAccordion([`demo-${newDemoIndex}`, "component-info"])
   }
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -175,70 +215,74 @@ const PublishPage = () => {
   }
 
   return (
-    <Form {...form}>
-      {formStep !== "nameSlugForm" && (
-        <div className="flex flex-col h-screen w-full">
-          {(formStep === "demoCode" ||
-            formStep === "demoDetails" ||
-            formStep === "detailedForm") && (
-            <>
-              <div className="flex h-[calc(100vh-3.5rem)]">
-                <div
-                  className={cn(
-                    "border-r pointer-events-auto transition-[width] duration-300 max-h-screen overflow-y-auto",
-                    formStep === "demoCode" ? "w-1/2" : "w-1/3",
-                    formStep === "demoCode" && "!w-1/2",
-                  )}
-                >
-                  {formStep === "detailedForm" && (
-                    <div className="w-full flex flex-col gap-4 overflow-y-auto p-4">
-                      <div className="space-y-4 p-[2px]">
-                        <Accordion
-                          type="single"
-                          value={openAccordion}
-                          onValueChange={handleAccordionChange}
-                          collapsible
-                          className="w-full"
-                        >
-                          <AccordionItem value="component-info">
-                            <AccordionTrigger className="py-2 text-[15px] leading-6 hover:no-underline hover:bg-muted/50 rounded-md data-[state=open]:rounded-b-none transition-all duration-200 ease-in-out -mx-2 px-2">
-                              <div className="flex items-center gap-2">
-                                Component info
-                                <Badge
-                                  variant="outline"
-                                  className={cn(
-                                    "gap-1.5 text-xs font-medium",
-                                    isComponentInfoComplete()
-                                      ? "border-emerald-500/20"
-                                      : "border-amber-500/20",
-                                  )}
-                                >
-                                  <span
+    <>
+      <div className="flex justify-between items-center">
+        <Button variant="outline"> {"< "} Back to edit</Button>
+        <Button onClick={handleSubmit}> Send to review</Button>
+      </div>
+      <Form {...form}>
+        {formStep !== "nameSlugForm" && (
+          <div className="flex flex-col h-screen w-full">
+            {(formStep === "demoCode" ||
+              formStep === "demoDetails" ||
+              formStep === "detailedForm") && (
+              <>
+                <div className="flex h-[calc(100vh-3.5rem)]">
+                  <div
+                    className={cn(
+                      "border-r pointer-events-auto transition-[width] duration-300 max-h-screen overflow-y-auto",
+                      formStep === "demoCode" ? "w-1/2" : "w-1/3",
+                      formStep === "demoCode" && "!w-1/2",
+                    )}
+                  >
+                    {formStep === "detailedForm" && (
+                      <div className="w-full flex flex-col gap-4 overflow-y-auto p-4">
+                        <div className="space-y-4 p-[2px]">
+                          <Accordion
+                            type="multiple"
+                            value={openAccordion}
+                            onValueChange={handleAccordionChange}
+                            className="w-full"
+                          >
+                            <AccordionItem value="component-info">
+                              <AccordionTrigger className="py-2 text-[15px] leading-6 hover:no-underline hover:bg-muted/50 rounded-md data-[state=open]:rounded-b-none transition-all duration-200 ease-in-out -mx-2 px-2">
+                                <div className="flex items-center gap-2">
+                                  Component info
+                                  <Badge
+                                    variant="outline"
                                     className={cn(
-                                      "size-1.5 rounded-full",
+                                      "gap-1.5 text-xs font-medium",
                                       isComponentInfoComplete()
-                                        ? "bg-emerald-500"
-                                        : "bg-amber-500",
+                                        ? "border-emerald-500/20"
+                                        : "border-amber-500/20",
                                     )}
-                                    aria-hidden="true"
+                                  >
+                                    <span
+                                      className={cn(
+                                        "size-1.5 rounded-full",
+                                        isComponentInfoComplete()
+                                          ? "bg-emerald-500"
+                                          : "bg-amber-500",
+                                      )}
+                                      aria-hidden="true"
+                                    />
+                                    {isComponentInfoComplete()
+                                      ? "Complete"
+                                      : "Required"}
+                                  </Badge>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent className="text-muted-foreground">
+                                <div className="text-foreground">
+                                  <ComponentForm
+                                    form={form}
+                                    handleSubmit={handleSubmit}
+                                    isSubmitting={isSubmitting}
+                                    hotkeysEnabled={!isSuccessDialogOpen}
                                   />
-                                  {isComponentInfoComplete()
-                                    ? "Complete"
-                                    : "Required"}
-                                </Badge>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="text-muted-foreground">
-                              <div className="text-foreground">
-                                <ComponentForm
-                                  form={form}
-                                  handleSubmit={handleSubmit}
-                                  isSubmitting={isSubmitting}
-                                  hotkeysEnabled={!isSuccessDialogOpen}
-                                />
 
-                                <div className="space-y-3 mt-6">
-                                  {/* <EditCodeFileCard
+                                  <div className="space-y-3 mt-6">
+                                    {/* <EditCodeFileCard
                                     iconSrc={
                                       isDarkTheme
                                         ? "/tsx-file-dark.svg"
@@ -255,7 +299,7 @@ const PublishPage = () => {
                                       setIsEditingFromCard(true)
                                     }}
                                   /> */}
-                                  {/* <EditCodeFileCard
+                                    {/* <EditCodeFileCard
                                     iconSrc={
                                       isDarkTheme
                                         ? "/css-file-dark.svg"
@@ -268,70 +312,70 @@ const PublishPage = () => {
                                       setIsEditingFromCard(true)
                                     }}
                                   /> */}
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          {demos?.map((demo, index) => (
-                            <AccordionItem
-                              key={index}
-                              value={`demo-${index}`}
-                              className="bg-background border-none group"
-                            >
-                              <AccordionTrigger className="py-2 text-[15px] leading-6 hover:no-underline hover:bg-muted/50 rounded-md data-[state=open]:rounded-b-none transition-all duration-200 ease-in-out -mx-2 px-2">
-                                <div className="flex items-center gap-2 w-full">
-                                  <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                                    <div className="truncate flex-shrink min-w-0">
-                                      {demo.name || `Demo ${index + 1}`}
-                                    </div>
-                                    <Badge
-                                      variant="outline"
-                                      className={cn(
-                                        "gap-1.5 text-xs font-medium shrink-0",
-                                        isDemoComplete(index)
-                                          ? "border-emerald-500/20"
-                                          : "border-amber-500/20",
-                                      )}
-                                    >
-                                      <span
-                                        className={cn(
-                                          "size-1.5 rounded-full",
-                                          isDemoComplete(index)
-                                            ? "bg-emerald-500"
-                                            : "bg-amber-500",
-                                        )}
-                                        aria-hidden="true"
-                                      />
-                                      {isDemoComplete(index)
-                                        ? "Complete"
-                                        : "Required"}
-                                    </Badge>
                                   </div>
-                                  {demos.length > 1 && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 ml-auto mr-1 shrink-0"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        // Handle demo deletion here
-                                        console.log("Delete demo:", index)
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
-                                    </Button>
-                                  )}
                                 </div>
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className="text-foreground space-y-4">
-                                  <DemoDetailsForm
-                                    form={form}
-                                    demoIndex={index}
-                                    mode={mode}
-                                  />
-                                  {/* <EditCodeFileCard
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            {demos?.map((demo, index) => (
+                              <AccordionItem
+                                key={index}
+                                value={`demo-${index}`}
+                                className="bg-background border-none group"
+                              >
+                                <AccordionTrigger className="py-2 text-[15px] leading-6 hover:no-underline hover:bg-muted/50 rounded-md data-[state=open]:rounded-b-none transition-all duration-200 ease-in-out -mx-2 px-2">
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                                      <div className="truncate flex-shrink min-w-0">
+                                        {demo.name || `Demo ${index + 1}`}
+                                      </div>
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          "gap-1.5 text-xs font-medium shrink-0",
+                                          isDemoComplete(index)
+                                            ? "border-emerald-500/20"
+                                            : "border-amber-500/20",
+                                        )}
+                                      >
+                                        <span
+                                          className={cn(
+                                            "size-1.5 rounded-full",
+                                            isDemoComplete(index)
+                                              ? "bg-emerald-500"
+                                              : "bg-amber-500",
+                                          )}
+                                          aria-hidden="true"
+                                        />
+                                        {isDemoComplete(index)
+                                          ? "Complete"
+                                          : "Required"}
+                                      </Badge>
+                                    </div>
+                                    {demos.length > 1 && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 ml-auto mr-1 shrink-0"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          // Handle demo deletion here
+                                          console.log("Delete demo:", index)
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                  <div className="text-foreground space-y-4">
+                                    <DemoDetailsForm
+                                      form={form}
+                                      demoIndex={index}
+                                      mode={mode}
+                                    />
+                                    {/* <EditCodeFileCard
                                     iconSrc={
                                       isDarkTheme
                                         ? "/demo-file-dark.svg"
@@ -344,23 +388,24 @@ const PublishPage = () => {
                                       setCurrentDemoIndex(index)
                                     }}
                                   /> */}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          ))}
-                        </Accordion>
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            ))}
+                          </Accordion>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                <iframe src={previewURL || ""} className="w-2/3" />
-              </div>
-            </>
-          )}
-        </div>
-      )}
-    </Form>
+                  <iframe src={previewURL || ""} className="w-2/3" />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </Form>
+    </>
   )
 }
 
