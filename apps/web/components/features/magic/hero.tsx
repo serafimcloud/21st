@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion } from "motion/react"
+import { useState, useEffect, useLayoutEffect, useRef } from "react"
+import { motion, AnimatePresence } from "motion/react"
 import NumberFlow from "@number-flow/react"
 import { Button } from "@/components/ui/button"
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Mockup, MockupFrame } from "@/components/ui/mockup"
 import { GitHubStarsBasic } from "@/components/ui/github-stars-number"
 import Link from "next/link"
@@ -146,6 +146,106 @@ const Spotlight = ({
   )
 }
 
+const rotatingWords = [
+  "UI Components",
+  "Landing Pages",
+  "Login Forms",
+  "Dashboards",
+  "Image Galleries",
+  "Hero Sections",
+]
+
+function RotatingText() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isVisible, setIsVisible] = useState(true)
+  const [calculatedWidth, setCalculatedWidth] = useState<number | string>(
+    "auto",
+  )
+
+  // Measure the width of the current word using useLayoutEffect to prevent flicker
+  useLayoutEffect(() => {
+    // Prevent measuring if index is invalid
+    if (currentIndex < 0 || currentIndex >= rotatingWords.length) return
+
+    const measureSpan = document.createElement("span")
+    measureSpan.style.position = "absolute"
+    measureSpan.style.visibility = "hidden"
+    measureSpan.style.whiteSpace = "nowrap"
+    // Apply similar font styles for accurate measurement
+    // Assuming the parent h1 has these classes: text-4xl font-bold tracking-tight sm:text-7xl
+    measureSpan.className = "text-3xl font-bold tracking-tight sm:text-7xl"
+    measureSpan.textContent = rotatingWords[currentIndex] ?? ""
+
+    document.body.appendChild(measureSpan)
+    const width = measureSpan.offsetWidth
+    document.body.removeChild(measureSpan)
+
+    setCalculatedWidth(width > 0 ? width : "auto") // Set width or 'auto' if measurement fails
+  }, [currentIndex])
+
+  // Effect for cycling words
+  useEffect(() => {
+    // Start the interval after the initial word has been displayed for 1 second
+    const cycleTimeout = setTimeout(() => {
+      const interval = setInterval(() => {
+        setIsVisible(false) // Start fading out
+        setTimeout(() => {
+          // Wait for fade out before changing word
+          setCurrentIndex((prev) => (prev + 1) % rotatingWords.length)
+          setIsVisible(true) // Start fading in the new word
+        }, 400) // Exit animation duration (matches transition duration)
+      }, 4000) // Time each word is displayed
+
+      // Cleanup function for the interval
+      return () => clearInterval(interval)
+    }, 1000) // Delay before starting the *first* cycle - reduced to 1000ms
+
+    // Cleanup function for the initial timeout
+    return () => clearTimeout(cycleTimeout)
+  }, []) // Empty dependency array means this runs once on mount
+
+  // Define transitions
+  const widthTransition = { duration: 0.6, ease: [0.32, 0.72, 0, 1] }
+
+  return (
+    // Use simple div for flex layout, change items-center to items-baseline
+    <div className="flex items-baseline justify-center gap-3 relative">
+      {/* Static text - simple div */}
+      <div className="relative whitespace-nowrap  bg-clip-text text-transparent bg-gradient-to-b from-neutral-800/90 to-neutral-700/90">
+        Beautiful
+      </div>
+
+      {/* Width-animated container */}
+      <motion.div
+        className="relative h-[28px] sm:h-[61px]"
+        animate={{ width: calculatedWidth }}
+        transition={widthTransition}
+      >
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={currentIndex}
+            className="absolute overflow-y-visible top-0 left-0 whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-b from-neutral-800/90 to-neutral-700/90 pb-1"
+            initial={{ opacity: 0, y: -20, filter: "blur(4px)" }}
+            animate={{
+              opacity: isVisible ? 1 : 0,
+              y: isVisible ? 0 : 0,
+              filter: isVisible ? "blur(0px)" : "blur(4px)",
+            }}
+            exit={{ opacity: 0, y: 20, filter: "blur(4px)" }}
+            transition={{
+              opacity: { duration: 0.3 },
+              y: { duration: 0.4 },
+              filter: { duration: 0.3 },
+            }}
+          >
+            {rotatingWords[currentIndex]}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  )
+}
+
 export function Hero() {
   const [count, setCount] = useState(20114)
   const [isLoading, setIsLoading] = useState(false)
@@ -198,28 +298,33 @@ export function Hero() {
           className="flex min-h-screen flex-col items-center justify-center px-4 pt-20 pb-10 lg:py-40"
         >
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="font-instrument-sans mb-6 mt-0 text-center text-sm sm:text-base uppercase tracking-[0.51em] text-black"
+            initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 1, 0.5, 1] }}
+            className="font-instrument-sans mb-6 mt-0 text-center text-[12px] sm:text-base uppercase tracking-[0.51em] text-black"
           >
             Introducing Magic
           </motion.p>
 
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="max-w-4xl text-center text-4xl font-bold tracking-tight sm:text-7xl bg-clip-text text-transparent bg-gradient-to-b from-neutral-950 to-neutral-800"
+            initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 1, 0.5, 1] }}
+            className="max-w-4xl text-center text-3xl font-bold tracking-tight sm:text-7xl"
           >
-            The AI Agent That Builds Beautiful UI Components
+            <div className="flex flex-col items-center gap-2">
+              <span className="bg-clip-text text-transparent bg-gradient-to-b from-neutral-950/90 to-neutral-800/90 backdrop-blur-xl pb-1">
+                AI Agent That Builds
+              </span>
+              <RotatingText />
+            </div>
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-6 max-w-2xl text-center text-xl leading-8 text-black"
+            initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.8, delay: 0.6, ease: [0.25, 1, 0.5, 1] }}
+            className="mt-6 max-w-2xl text-center sm:text-xl leading-8 text-black"
           >
             Empower your IDE with an AI extension that creates stunning,
             production-ready components inspired by{" "}
@@ -234,9 +339,9 @@ export function Hero() {
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.8, delay: 0.8, ease: [0.25, 1, 0.5, 1] }}
             className="mt-10 w-full max-w-md"
           >
             <div className="flex justify-center items-center gap-2">
@@ -269,50 +374,94 @@ export function Hero() {
                 asChild
               >
                 <a
-                  href="https://github.com/21st-dev/magic-mcp" 
+                  href="https://github.com/21st-dev/magic-mcp"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   <Icons.gitHub className="h-4 w-4" />
                   <GitHubStarsBasic
                     repo="21st-dev/magic-mcp"
-                    className="text-neutral-800" 
+                    className="text-neutral-800"
                   />
                 </a>
               </Button>
             </div>
 
-            <div className="flex items-center justify-center mt-4 px-2">
-              <div className="flex items-center gap-4">
+            {/* Updated Avatar Section - Real images with hover effect */}
+            <motion.div
+              initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{
+                duration: 0.8,
+                delay: 0.9,
+                ease: [0.25, 1, 0.5, 1],
+              }}
+              className="mt-6 flex justify-center"
+            >
+              <div className="flex items-center gap-4 p-2">
                 <div className="flex -space-x-3">
-                  <Avatar className="h-8 w-8 border border-black">
-                    <AvatarFallback className="bg-slate-900 text-sm font-medium text-neutral-200">
-                      JD
-                    </AvatarFallback>
-                  </Avatar>
-                  <Avatar className="h-8 w-8 border border-black">
-                    <AvatarFallback className="bg-gray-900 text-sm font-medium text-neutral-200">
-                      AS
-                    </AvatarFallback>
-                  </Avatar>
-                  <Avatar className="h-8 w-8 border border-black">
-                    <AvatarFallback className="bg-zinc-900 text-sm font-medium text-neutral-200">
-                      MK
-                    </AvatarFallback>
-                  </Avatar>
+                  {[
+                    {
+                      src: "https://pbs.twimg.com/profile_images/1836541543857164289/VhzOa4y0_400x400.jpg",
+                      alt: "Yoko Li",
+                      href: "https://x.com/stuffyokodraws",
+                      fallback: "YL",
+                    },
+                    {
+                      src: "https://pbs.twimg.com/profile_images/1833137601207009280/gGSDe5DF_400x400.jpg",
+                      alt: "Melvin Vivas",
+                      href: "https://x.com/donvito",
+                      fallback: "MV",
+                    },
+                    {
+                      src: "https://pbs.twimg.com/profile_images/1916508496117346304/7nXjRvdN_400x400.jpg",
+                      alt: "Gil",
+                      href: "https://x.com/gilgNYC",
+                      fallback: "G",
+                    },
+                  ].map((avatar, index) => (
+                    <motion.a
+                      key={avatar.alt}
+                      href={avatar.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative group overflow-hidden backdrop-blur-[1px] rounded-full"
+                      whileHover={{ scale: 1.05, zIndex: 10 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 10,
+                      }}
+                    >
+                      <Avatar className="h-8 w-8 border  border-black/10 backdrop-blur-xl transition-transform duration-150 ease-in-out group-hover:scale-110">
+                        <AvatarImage src={avatar.src} alt={avatar.alt} />
+                        <AvatarFallback className={`text-white/80 text-sm ${
+                          index === 0 ? "bg-neutral-700" :
+                          index === 1 ? "bg-neutral-600" :
+                          "bg-neutral-500"
+                        }`}>
+                          {avatar.fallback}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Tooltip */}
+                      <span className="absolute bottom-full left-1/2 z-20 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded bg-neutral-800/90 px-2 py-0.5 text-[10px] font-medium text-neutral-100 opacity-0 transition-opacity duration-200 group-hover:opacity-100 invisible group-hover:visible">
+                        {avatar.alt}
+                      </span>
+                    </motion.a>
+                  ))}
                 </div>
                 <span className="text-sm text-neutral-800">
                   <NumberFlow value={count} />+ people using Magic
                 </span>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Mockup Section */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
+            initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.8, delay: 1.0, ease: [0.25, 1, 0.5, 1] }}
             className="mt-20 w-full sm:max-w-[90%] mx-auto relative"
           >
             <MockupFrame className="w-full backdrop-blur">
