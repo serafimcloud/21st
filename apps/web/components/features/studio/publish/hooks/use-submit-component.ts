@@ -66,6 +66,7 @@ export const useSubmitComponent = () => {
     generateRegistry,
     bundleDemo,
     sandboxId,
+    onSuccess,
   }: {
     data: FormData
     publishAsUser: { id: string; username?: string }
@@ -78,6 +79,7 @@ export const useSubmitComponent = () => {
     >
     bundleDemo: () => Promise<string | undefined>
     sandboxId: string
+    onSuccess: () => void
   }) => {
     setIsSubmitting(true)
     setIsLoadingDialogOpen(true)
@@ -512,6 +514,7 @@ export const useSubmitComponent = () => {
       setPublishProgress("Submission failed")
     } finally {
       setIsSubmitting(false)
+      onSuccess()
       setTimeout(() => setIsLoadingDialogOpen(false), 1500)
     }
   }

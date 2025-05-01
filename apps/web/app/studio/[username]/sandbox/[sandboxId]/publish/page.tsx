@@ -184,6 +184,9 @@ const PublishPage = () => {
       generateRegistry,
       bundleDemo,
       sandboxId: serverSandbox!.id,
+      onSuccess: () => {
+        reconnectSandbox()
+      },
     })
   }
 

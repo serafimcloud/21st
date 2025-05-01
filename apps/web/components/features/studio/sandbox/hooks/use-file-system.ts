@@ -362,7 +362,9 @@ export const useFileSystem = ({
 
           connectedShell.onOutput(async (data) => {
             console.log(`${taskName} Output:`, data)
-            if (data.includes(completionOutput)) {
+            // listening for finsih word and not echo (to prevent return from first stateng)
+            //  eg: npm run build && echo "FINISH"
+            if (data.includes(completionOutput) && !data.includes("echo")) {
               console.log(
                 `${taskName} finished, executing onComplete callback...`,
               )
