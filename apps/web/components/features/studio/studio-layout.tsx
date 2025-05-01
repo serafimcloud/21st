@@ -14,8 +14,7 @@ interface StudioLayoutProps {
 export function StudioLayout({ user, children }: StudioLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-      <div className="flex-1 pt-14">
+      <div className="flex-1">
         <SidebarProvider defaultOpen={true}>
           <StudioSidebar user={user} />
           <SidebarInset className="p-8">{children}</SidebarInset>

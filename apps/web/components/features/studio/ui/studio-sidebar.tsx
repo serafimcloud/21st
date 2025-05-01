@@ -5,7 +5,14 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/ui/user-avatar"
 import { User } from "@/types/global"
-import { BarChartBig, CreditCard, Layers } from "lucide-react"
+import {
+  BarChartBig,
+  CreditCard,
+  Layers,
+  Home,
+  Settings,
+  ArrowLeft,
+} from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -109,9 +116,17 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
       <SidebarFooter className="border-t">
         <Link
           href="/settings/profile"
-          className="flex w-full items-center gap-2 p-3 text-sm text-muted-foreground hover:text-foreground rounded-md hover:bg-muted"
+          className="flex w-full items-center gap-2 h-9 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md"
         >
+          <Settings className="h-4 w-4" />
           <span>Settings</span>
+        </Link>
+        <Link
+          href="/"
+          className="flex w-full items-center gap-2 h-9 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to 21st.dev</span>
         </Link>
       </SidebarFooter>
     </Sidebar>
