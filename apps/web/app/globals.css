@@ -342,6 +342,16 @@ iframe {
     -webkit-mask-image: radial-gradient(circle at top, black 30%, transparent 70%);
     z-index: 0;
   }
+
+  .bg-grid-white {
+    background-size: 50px 50px;
+    background-image: linear-gradient(to right, rgb(255 255 255 / 0.075) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.075) 1px, transparent 1px);
+    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    transform: translateX(-10px);
+    z-index: 0;
+  }
 }
 
 

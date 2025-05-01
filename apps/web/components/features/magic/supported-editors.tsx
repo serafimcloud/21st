@@ -6,7 +6,7 @@ export function SupportedEditors() {
   return (
     <div className="pt-0 pb-20">
       <div className="text-center mb-8">
-        <h2 className="mt-2 text-3xl font-bold tracking-tight text-neutral-200 sm:text-4xl">
+        <h2 className="text-5xl sm:text-[3.9rem]/16 pb-2 font-bold tracking-tighter text-pretty bg-clip-text text-transparent bg-gradient-to-t from-gray-300/70 to-white sm:text-balance">
           Supported IDEs
         </h2>
         <p className="mt-4 text-lg text-neutral-300">

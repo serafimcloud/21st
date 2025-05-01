@@ -27,7 +27,7 @@ export function HowItWorks() {
   return (
     <section className="pt-10 pb-10 lg:pb-24 overflow-hidden">
       <div className="text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-neutral-200 sm:text-4xl">
+        <h2 className="text-5xl sm:text-[3.9rem]/16 pb-2 font-bold tracking-tighter text-pretty bg-clip-text text-transparent bg-gradient-to-t from-gray-300/70 to-white sm:text-balance">
           How It Works
         </h2>
         <p className="mt-4 text-lg text-neutral-300">
