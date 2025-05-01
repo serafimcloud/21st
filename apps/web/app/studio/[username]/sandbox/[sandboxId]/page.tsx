@@ -55,7 +55,6 @@ function PublishPageContent() {
     files,
     isTreeLoading,
     isFileLoading,
-    isCompiling,
     advancedView,
     toggleAdvancedView,
     loadRootDirectory,
@@ -71,6 +70,7 @@ function PublishPageContent() {
     sandboxRef,
     reconnectSandbox,
     sandboxConnectionHash,
+    connectedShellId,
   })
 
   useEffect(() => {
@@ -226,7 +226,7 @@ function PublishPageContent() {
     <div className="h-screen w-full flex flex-col">
       <PublishHeader
         onGenerateRegistry={handleGenerateRegistry}
-        isRegenerating={isRegenerating || isCompiling}
+        isRegenerating={isRegenerating}
         sandboxId={sandboxId}
         sandboxName={serverSandbox?.name}
       />

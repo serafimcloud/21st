@@ -197,6 +197,7 @@ export function ComponentPagePreview({
     [dependencies, demoDependencies, npmDependenciesOfRegistryDependencies],
   )
   const [previewError, setPreviewError] = useState(false)
+
   const { bundle, error } = useBundleDemo(
     bundleFiles,
     allDependencies,
@@ -208,6 +209,9 @@ export function ComponentPagePreview({
   )
 
   useEffect(() => {
+    if (demo.bundle_html_url) {
+      return
+    }
     if (error) {
       setPreviewError(true)
     }

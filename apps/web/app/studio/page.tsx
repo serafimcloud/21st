@@ -1,6 +1,6 @@
 import { Footer } from "@/components/ui/footer"
 import { redirect } from "next/navigation"
-import { auth } from "@clerk/nextjs/server"
+import { useAuth } from "@clerk/nextjs"
 import Link from "next/link"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
@@ -11,7 +11,7 @@ export const metadata = {
 }
 
 export default async function StudioPage() {
-  const { userId } = await auth()
+  const { userId } = useAuth()
 
   if (!userId) {
     redirect("/sign-in")
