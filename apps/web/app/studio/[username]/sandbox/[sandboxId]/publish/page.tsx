@@ -17,12 +17,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { LoadingDialog } from "@/components/ui/loading-dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import { ComponentForm } from "@/components/features/studio/publish/components/forms/component-form"
 import { DemoDetailsForm } from "@/components/features/studio/publish/components/forms/demo-form"
 import { SuccessDialog } from "@/components/features/publish-old/components/success-dialog"
 import { FormData } from "@/components/features/studio/publish/config/utils"
 import { useSubmitComponent } from "@/components/features/studio/publish/hooks/use-submit-component"
+import { useComponentData } from "@/components/features/studio/publish/hooks/use-component-data"
 
 import { cn } from "@/lib/utils"
 import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
@@ -46,9 +48,15 @@ const PublishPage = () => {
     reconnectSandbox,
     connectedShellId,
     sandboxConnectionHash,
+    serverSandbox,
   } = useSandbox({
     sandboxId,
   })
+
+  // Fetch component data if sandbox is linked to a component
+  const { isLoading: isComponentDataLoading, formData: componentFormData } =
+    useComponentData(serverSandbox?.component_id)
+
   const { generateRegistry, bundleDemo } = useFileSystem({
     sandboxRef: sandboxRef,
     reconnectSandbox: reconnectSandbox,
@@ -56,6 +64,8 @@ const PublishPage = () => {
     connectedShellId,
   })
   const { user } = useUser()
+
+  console.log("serverSandbox", serverSandbox)
 
   // useEffect(() => {
   //   if (!connectedShellId) return
@@ -83,7 +93,7 @@ const PublishPage = () => {
       description: "",
       license: "mit",
       website_url: "",
-      is_public: true,
+      is_public: false,
       publish_as_username: user?.username ?? undefined,
       is_paid: false,
       price: 0,
@@ -106,6 +116,26 @@ const PublishPage = () => {
       ],
     },
   })
+
+  // Update form with component data when available
+  useEffect(() => {
+    if (componentFormData && !isComponentDataLoading) {
+      form.reset({
+        ...componentFormData,
+        publish_as_username:
+          user?.username ?? componentFormData.publish_as_username,
+      })
+
+      // Open all demo accordions
+      if (componentFormData.demos.length > 0) {
+        const newOpenAccordion = ["component-info"]
+        componentFormData.demos.forEach((_, index) => {
+          newOpenAccordion.push(`demo-${index}`)
+        })
+        setOpenAccordion(newOpenAccordion)
+      }
+    }
+  }, [componentFormData, isComponentDataLoading, form, user?.username])
 
   const publishAsUsername = form.watch("publish_as_username")
   const { user: publishAsUser } = usePublishAs({
@@ -153,6 +183,7 @@ const PublishPage = () => {
       },
       generateRegistry,
       bundleDemo,
+      sandboxId: serverSandbox!.id,
     })
   }
 
@@ -182,128 +213,156 @@ const PublishPage = () => {
     setOpenAccordion(["component-info", "demo-0"])
   }
 
+  if (!serverSandbox?.id) {
+    return (
+      <div>
+        <h1>Loader lol</h1>
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="flex justify-between items-center p-4 border-b">
         <Button variant="outline"> {"< "} Back to edit</Button>
-        <Button onClick={() => handleSubmit()} disabled={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Send to review"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {serverSandbox?.component_id ? (
+            <Badge variant="outline" className="mr-2">
+              Editing existing component
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="mr-2">
+              Creating new component
+            </Badge>
+          )}
+          <Button onClick={() => handleSubmit()} disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Send to review"}
+          </Button>
+        </div>
       </div>
       <Form {...form}>
         <div className="flex flex-col h-screen w-full">
           <div className="flex h-[calc(100vh-3.5rem)]">
             <div className="border-r pointer-events-auto transition-[width] duration-300 max-h-screen overflow-y-auto w-1/3">
               <div className="w-full flex flex-col gap-4 overflow-y-auto p-4">
-                <div className="space-y-4 p-[2px]">
-                  <Accordion
-                    type="multiple"
-                    value={openAccordion}
-                    onValueChange={handleAccordionChange}
-                    className="w-full"
-                  >
-                    <AccordionItem value="component-info">
-                      <AccordionTrigger className="py-2 text-[15px] leading-6 hover:no-underline hover:bg-muted/50 rounded-md data-[state=open]:rounded-b-none transition-all duration-200 ease-in-out -mx-2 px-2">
-                        <div className="flex items-center gap-2">
-                          Component info
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "gap-1.5 text-xs font-medium",
-                              isComponentInfoComplete()
-                                ? "border-emerald-500/20"
-                                : "border-amber-500/20",
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                "size-1.5 rounded-full",
-                                isComponentInfoComplete()
-                                  ? "bg-emerald-500"
-                                  : "bg-amber-500",
-                              )}
-                              aria-hidden="true"
-                            />
-                            {isComponentInfoComplete()
-                              ? "Complete"
-                              : "Required"}
-                          </Badge>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="text-muted-foreground pt-4">
-                        <div className="text-foreground">
-                          <ComponentForm
-                            form={form as any}
-                            handleSubmit={handleSubmit}
-                            isSubmitting={isSubmitting}
-                            hotkeysEnabled={!isSuccessDialogOpen}
-                          />
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    {form.getValues().demos?.map((demo, index) => (
-                      <AccordionItem
-                        key={index}
-                        value={`demo-${index}`}
-                        className="bg-background border-none group"
-                      >
+                {isComponentDataLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                  </div>
+                ) : (
+                  <div className="space-y-4 p-[2px]">
+                    <Accordion
+                      type="multiple"
+                      value={openAccordion}
+                      onValueChange={handleAccordionChange}
+                      className="w-full"
+                    >
+                      <AccordionItem value="component-info">
                         <AccordionTrigger className="py-2 text-[15px] leading-6 hover:no-underline hover:bg-muted/50 rounded-md data-[state=open]:rounded-b-none transition-all duration-200 ease-in-out -mx-2 px-2">
-                          <div className="flex items-center gap-2 w-full">
-                            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-                              <div className="truncate flex-shrink min-w-0">
-                                {demo.name || `Demo ${index + 1}`}
-                              </div>
-                              <Badge
-                                variant="outline"
+                          <div className="flex items-center gap-2">
+                            Component info
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "gap-1.5 text-xs font-medium",
+                                isComponentInfoComplete()
+                                  ? "border-emerald-500/20"
+                                  : "border-amber-500/20",
+                              )}
+                            >
+                              <span
                                 className={cn(
-                                  "gap-1.5 text-xs font-medium shrink-0",
-                                  demo.name && demo.demo_code
-                                    ? "border-emerald-500/20"
-                                    : "border-amber-500/20",
+                                  "size-1.5 rounded-full",
+                                  isComponentInfoComplete()
+                                    ? "bg-emerald-500"
+                                    : "bg-amber-500",
                                 )}
-                              >
-                                <span
-                                  className={cn(
-                                    "size-1.5 rounded-full",
-                                    demo.name && demo.demo_code
-                                      ? "bg-emerald-500"
-                                      : "bg-amber-500",
-                                  )}
-                                  aria-hidden="true"
-                                />
-                                {demo.name && demo.demo_code
-                                  ? "Complete"
-                                  : "Required"}
-                              </Badge>
-                            </div>
-                            {form.getValues().demos.length > 1 && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 ml-auto mr-1 shrink-0"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  console.log("Delete demo:", index)
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
-                              </Button>
-                            )}
+                                aria-hidden="true"
+                              />
+                              {isComponentInfoComplete()
+                                ? "Complete"
+                                : "Required"}
+                            </Badge>
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="pt-4">
-                          <div className="text-foreground space-y-4">
-                            <DemoDetailsForm
+                        <AccordionContent className="text-muted-foreground pt-4">
+                          <div className="text-foreground">
+                            <ComponentForm
                               form={form as any}
-                              demoIndex={index}
+                              handleSubmit={handleSubmit}
+                              isSubmitting={isSubmitting}
+                              hotkeysEnabled={!isSuccessDialogOpen}
                             />
                           </div>
                         </AccordionContent>
                       </AccordionItem>
-                    ))}
-                  </Accordion>
-                </div>
+
+                      {form.getValues().demos?.map((demo, index) => (
+                        <AccordionItem
+                          key={index}
+                          value={`demo-${index}`}
+                          className="bg-background border-none group"
+                        >
+                          <AccordionTrigger className="py-2 text-[15px] leading-6 hover:no-underline hover:bg-muted/50 rounded-md data-[state=open]:rounded-b-none transition-all duration-200 ease-in-out -mx-2 px-2">
+                            <div className="flex items-center gap-2 w-full">
+                              <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
+                                <div className="truncate flex-shrink min-w-0">
+                                  {demo.name || `Demo ${index + 1}`}
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "gap-1.5 text-xs font-medium shrink-0",
+                                    demo.name && demo.demo_code
+                                      ? "border-emerald-500/20"
+                                      : "border-amber-500/20",
+                                  )}
+                                >
+                                  <span
+                                    className={cn(
+                                      "size-1.5 rounded-full",
+                                      demo.name && demo.demo_code
+                                        ? "bg-emerald-500"
+                                        : "bg-amber-500",
+                                    )}
+                                    aria-hidden="true"
+                                  />
+                                  {demo.name && demo.demo_code
+                                    ? "Complete"
+                                    : "Required"}
+                                </Badge>
+                              </div>
+                              {form.getValues().demos.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 ml-auto mr-1 shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    console.log("Delete demo:", index)
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
+                                </Button>
+                              )}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-4">
+                            <div className="text-foreground space-y-4">
+                              <DemoDetailsForm
+                                form={form as any}
+                                demoIndex={index}
+                              />
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+                )}
               </div>
             </div>
 

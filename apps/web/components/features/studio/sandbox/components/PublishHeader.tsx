@@ -147,7 +147,7 @@ export function PublishHeader({
         )}
         <div className="ml-auto flex items-center gap-2">
           <Button onClick={handleNextStep}>Next step</Button>
-          <Button
+          {/* <Button
             onClick={onGenerateRegistry}
             disabled={isRegenerating}
             className="gap-2"
@@ -158,8 +158,8 @@ export function PublishHeader({
               <ArchiveIcon className="h-4 w-4" />
             )}
             {isRegenerating ? "Generating registry..." : "Generate registry"}
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             size="sm"
             onClick={handlePublish}
             disabled={isLoading}
@@ -171,7 +171,7 @@ export function PublishHeader({
               <RocketIcon className="h-4 w-4" />
             )}
             Publish
-          </Button>
+          </Button> */}
         </div>
       </div>
       {params.username && (

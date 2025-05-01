@@ -65,6 +65,7 @@ export const useSubmitComponent = () => {
     publishAsUser,
     generateRegistry,
     bundleDemo,
+    sandboxId,
   }: {
     data: FormData
     publishAsUser: { id: string; username?: string }
@@ -76,7 +77,11 @@ export const useSubmitComponent = () => {
       | undefined
     >
     bundleDemo: () => Promise<string | undefined>
+    sandboxId: string
   }) => {
+    setIsSubmitting(true)
+    setIsLoadingDialogOpen(true)
+    setPublishProgress("Bundling component...")
     const resultOfGenerateRegistry = await generateRegistry()
     if (!resultOfGenerateRegistry) {
       toast.error("Failed to bundle component; Please try again.")
@@ -97,15 +102,17 @@ export const useSubmitComponent = () => {
     console.log("componentNames", componentNames)
     console.log("dependencies", dependencies)
 
-    setIsSubmitting(true)
-    setIsLoadingDialogOpen(true)
-    setPublishProgress("Starting submission...")
+    let componentIdToUse: string | null = null
+    let existingDemoId: string | null = null
 
     try {
       if (!publishAsUser?.id) {
         throw new Error(
           "Cannot determine user to publish as. Please ensure you are logged in.",
         )
+      }
+      if (!sandboxId) {
+        throw new Error("Sandbox ID is required.")
       }
       if (!data.component_slug) {
         throw new Error("Component slug is required.")
@@ -114,6 +121,48 @@ export const useSubmitComponent = () => {
         throw new Error("At least one demo is required.")
       }
       const demo = data.demos[0]!
+
+      console.log("BEFORE DATA sandboxId", sandboxId)
+
+      // 1. Check if sandbox is already linked to a component
+      setPublishProgress("Checking sandbox status...")
+      const { data: sandboxData, error: sandboxError } = await client
+        .from("sandboxes")
+        .select("component_id")
+        .eq("id", sandboxId)
+        .maybeSingle()
+
+      if (sandboxError) {
+        console.error("Error fetching sandbox:", sandboxError)
+        throw new Error(
+          `Failed to fetch sandbox details: ${sandboxError.message}`,
+        )
+      }
+
+      if (sandboxData?.component_id) {
+        componentIdToUse = sandboxData.component_id
+        setPublishProgress("Found existing component link. Preparing update...")
+        // Optionally fetch the existing demo ID if needed for update logic
+        const { data: existingDemoData, error: demoFetchError } = await client
+          .from("demos")
+          .select("id")
+          .eq("component_id", componentIdToUse)
+          .order("created_at", { ascending: true }) // Get the first demo
+          .limit(1)
+          .single()
+
+        if (demoFetchError && demoFetchError.code !== "PGRST116") {
+          // Ignore 'not found' error
+          console.error("Error fetching existing demo:", demoFetchError)
+          // Decide how to handle this - fail, or proceed to create a new demo?
+          // For now, let's proceed assuming we might create a new one if needed, or update logic handles null demoId
+        }
+        existingDemoId = existingDemoData?.id ?? null
+      } else {
+        setPublishProgress(
+          "No existing component link found. Preparing creation...",
+        )
+      }
 
       setPublishProgress("Uploading component files...")
       const baseFolder = `${publishAsUser.username}/${data.component_slug}`
@@ -190,7 +239,11 @@ export const useSubmitComponent = () => {
         bundleHtmlUrl,
       })
 
-      setPublishProgress("Creating component entry...")
+      setPublishProgress(
+        componentIdToUse
+          ? "Updating component entry..."
+          : "Creating component entry...",
+      )
       const componentData: Omit<
         Tables<"components">,
         | "id"
@@ -231,65 +284,135 @@ export const useSubmitComponent = () => {
         is_public: data.is_public,
         is_paid: data.is_paid || false,
         price: data.is_paid ? data.price || 5 : 0,
+        sandbox_id: sandboxId,
       }
 
-      // Mock Supabase Component Insert
-      // console.log("Mock Inserting Component:", componentData)
-      // const insertedComponent = {
-      //   id: `mock-component-id-${Date.now()}`,
-      //   ...componentData,
-      // }
-      // await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate network delay
-      const { data: insertedComponent, error: componentError } = await client
-        .from("components")
-        .insert(componentData)
-        .select()
-        .single()
+      let finalComponent: Tables<"components"> | null = null
 
-      if (componentError) {
-        console.error("Error inserting component:", componentError)
-        throw componentError
-      }
-      if (!insertedComponent) {
-        throw new Error("Failed to insert component, no data returned.")
+      if (componentIdToUse) {
+        // Update existing component
+        const { data: updatedComponent, error: updateComponentError } =
+          await client
+            .from("components")
+            .update(componentData)
+            .eq("id", componentIdToUse)
+            .select()
+            .single()
+
+        if (updateComponentError) {
+          console.error("Error updating component:", updateComponentError)
+          throw updateComponentError
+        }
+        if (!updatedComponent) {
+          throw new Error("Failed to update component, no data returned.")
+        }
+        finalComponent = updatedComponent
+        console.log("Successfully updated component:", finalComponent)
+      } else {
+        // Insert new component
+        const { data: insertedComponent, error: insertComponentError } =
+          await client
+            .from("components")
+            .insert(componentData)
+            .select()
+            .single()
+
+        if (insertComponentError) {
+          console.error("Error inserting component:", insertComponentError)
+          throw insertComponentError
+        }
+        if (!insertedComponent) {
+          throw new Error("Failed to insert component, no data returned.")
+        }
+        finalComponent = insertedComponent
+        componentIdToUse = String(finalComponent!.id) // Convert number to string and assert non-null
+        console.log("Successfully created component:", finalComponent)
+
+        // Link sandbox to the new component
+        setPublishProgress("Linking sandbox to new component...")
+        const { error: updateSandboxError } = await client
+          .from("sandboxes")
+          .update({ component_id: componentIdToUse })
+          .eq("id", sandboxId)
+
+        if (updateSandboxError) {
+          console.error("Error updating sandbox link:", updateSandboxError)
+          // Non-fatal? Log error and continue? Or throw?
+          // Let's log and continue for now, but this might need review
+          toast.warning("Failed to link sandbox to the new component.")
+        } else {
+          console.log(
+            `Sandbox ${sandboxId} linked to component ${componentIdToUse}`,
+          )
+        }
+
+        // Handle submission entry only for new, non-public components
+        if (!data.is_public) {
+          setPublishProgress("Creating submission entry...")
+          const { error: submissionError } = await client
+            .from("submissions")
+            .insert({
+              component_id: componentIdToUse,
+              status: "on_review",
+            })
+          if (submissionError) {
+            console.error("Error inserting submission:", submissionError)
+            throw submissionError // Throw as this seems critical for review process
+          }
+          console.log(
+            "Submission entry created for component:",
+            componentIdToUse,
+          )
+        }
+      } // End of create/update component block
+
+      // Ensure we have a component ID before proceeding to demo
+      if (!componentIdToUse) {
+        throw new Error("Component ID is missing after create/update.")
       }
 
-      if (!data.is_public) {
-        setPublishProgress("Creating submission entry...")
-        // console.log(
-        //   "Mock Inserting Submission for component:",
-        //   insertedComponent.id,
-        // )
-        // await new Promise((resolve) => setTimeout(resolve, 200))
-        const { error: submissionError } = await client
-          .from("submissions")
-          .insert({
-            component_id: insertedComponent.id,
-            status: "on_review",
-          })
-        if (submissionError) {
-          console.error("Error inserting submission:", submissionError)
-          // Decide if this should be a fatal error - potentially rollback or just log?
-          // For now, we throw to indicate failure.
-          throw submissionError
+      console.log("-------------")
+      console.log("-------------")
+      console.log("-------------")
+      console.log("-------------")
+      console.log("------WURUP-------")
+      console.log("sandboxData", sandboxData)
+      console.log("componentIdToUse", componentIdToUse)
+
+      // Ensure the sandbox is linked to the component
+      if (!sandboxData?.component_id) {
+        setPublishProgress("Updating sandbox link...")
+        const { error: updateSandboxError } = await client
+          .from("sandboxes")
+          .update({ component_id: componentIdToUse })
+          .eq("id", sandboxId)
+
+        if (updateSandboxError) {
+          console.error("Error updating sandbox link:", updateSandboxError)
+          toast.warning("Failed to update sandbox component link.")
+        } else {
+          console.log(
+            `Sandbox ${sandboxId} link updated with component ${componentIdToUse}`,
+          )
         }
       }
 
-      setPublishProgress("Creating demo entry...")
+      // Prepare Demo Data (common for create/update)
+      setPublishProgress(
+        existingDemoId ? "Updating demo entry..." : "Creating demo entry...",
+      )
       const demoSlug =
         demo.demo_slug ||
         (await generateDemoSlug(
           client,
           demo.name || "Default",
-          insertedComponent.id, // Use the actual ID
+          Number(componentIdToUse), // Convert string to number for generateDemoSlug
           publishAsUser.id,
         ))
       setCreatedDemoSlug(demoSlug)
 
       const demoData: Omit<
         Tables<"demos">,
-        // Keep the omissions consistent with your original type definition if needed
-        // For simplicity, only omitting ID and audit stamps here, adjust as per your exact schema/type
         | "id"
         | "created_at"
         | "updated_at"
@@ -298,7 +421,7 @@ export const useSubmitComponent = () => {
         | "fts"
         | "bookmarks_count"
       > = {
-        component_id: insertedComponent.id, // Use the actual ID
+        component_id: Number(componentIdToUse), // Convert string to number for demoData
         demo_code: addVersionToUrl(demoCodeUrl) || "",
         demo_dependencies: demo.demo_dependencies || {},
         preview_url: addVersionToUrl(previewImageR2Url),
@@ -313,48 +436,71 @@ export const useSubmitComponent = () => {
         bundle_html_url: bundleHtmlUrl,
       }
 
-      // Mock Inserting Demo
-      // console.log("Mock Inserting Demo:", demoData)
-      // const insertedDemo = { id: `mock-demo-id-${Date.now()}`, ...demoData }
-      // await new Promise((resolve) => setTimeout(resolve, 500))
-      const { data: insertedDemo, error: demoError } = await client
-        .from("demos")
-        .insert(demoData)
-        .select()
-        .single()
+      let finalDemo: Tables<"demos"> | null = null
 
-      if (demoError) {
-        console.error("Error inserting demo:", demoError)
-        // Consider rollback logic if component insert succeeded but demo failed
-        throw demoError
+      if (existingDemoId) {
+        // Update existing demo
+        const { data: updatedDemo, error: updateDemoError } = await client
+          .from("demos")
+          .update(demoData)
+          .eq("id", existingDemoId)
+          .select()
+          .single()
+
+        if (updateDemoError) {
+          console.error("Error updating demo:", updateDemoError)
+          throw updateDemoError
+        }
+        if (!updatedDemo) {
+          throw new Error("Failed to update demo, no data returned.")
+        }
+        finalDemo = updatedDemo
+        console.log("Successfully updated demo:", finalDemo)
+      } else {
+        // Insert new demo
+        const { data: insertedDemo, error: insertDemoError } = await client
+          .from("demos")
+          .insert(demoData)
+          .select()
+          .single()
+
+        if (insertDemoError) {
+          console.error("Error inserting demo:", insertDemoError)
+          throw insertDemoError
+        }
+        if (!insertedDemo) {
+          throw new Error("Failed to insert demo, no data returned.")
+        }
+        finalDemo = insertedDemo
+        console.log("Successfully created demo:", finalDemo)
       }
-      if (!insertedDemo) {
-        throw new Error("Failed to insert demo, no data returned.")
+
+      if (!finalDemo) {
+        throw new Error("Demo operation failed.") // Should not happen if errors above are thrown
       }
 
       if (demo.tags?.length > 0) {
-        setPublishProgress("Adding tags...")
-        // console.log("Mock Adding Tags:", demo.tags, "to demo:", insertedDemo.id)
-        // await new Promise((resolve) => setTimeout(resolve, 200))
+        setPublishProgress("Updating tags...")
         await addTagsToDemo(
           client,
-          insertedDemo.id, // Use the actual ID
+          finalDemo.id, // Use the final demo ID
           demo.tags.filter((tag): tag is Tag => !!tag && !!tag.slug) as Tag[], // Ensure tags are valid
         )
-        // addTagsToDemo likely has its own error handling, but you might want to add more here
+        console.log("Tags updated for demo:", finalDemo.id)
       }
 
       setPublishProgress("Done!")
       setIsSuccessDialogOpen(true)
 
-      // Log newly inserted/updated rows
-      console.log("Newly inserted component:", insertedComponent)
-      console.log("Newly inserted demo:", insertedDemo)
-      if (!data.is_public) {
+      // Log final state
+      console.log("Final component state:", finalComponent!)
+      console.log("Final demo state:", finalDemo!)
+      if (!data.is_public && !existingDemoId) {
+        // Only log submission if it was newly created
         const { data: submission } = await client
           .from("submissions")
           .select()
-          .eq("component_id", insertedComponent.id)
+          .eq("component_id", componentIdToUse)
           .single()
         console.log("Newly inserted submission:", submission)
       }

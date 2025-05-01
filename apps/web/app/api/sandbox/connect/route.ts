@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     const { data: sandbox, error } = await supabaseWithAdminAccess
       .from("sandboxes")
-      .select("codesandbox_id, name")
+      .select("codesandbox_id, name, id, component_id")
       .eq("id", sandboxId)
       .eq("user_id", userId)
       .single()

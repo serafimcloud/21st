@@ -3,13 +3,19 @@ import { connectToSandbox as connectToCodeSandboxSDK } from "@codesandbox/sdk/br
 import { useEffect, useRef, useState } from "react"
 import { connectToSandbox } from "../api"
 import { getLatestPackageVersionFromError } from "../utils/dependencies"
+import { Tables } from "@/types/supabase"
+
+type ServerSandbox = Pick<
+  Tables<"sandboxes">,
+  "codesandbox_id" | "name" | "id" | "component_id"
+> | null
 
 export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
   const sandboxRef = useRef<SandboxSession | null>(null)
   const [sandboxConnectionHash, setSandboxConnectionHash] = useState<
     string | null
   >(null)
-  const [serverSandbox, setServerSandbox] = useState<any>(null)
+  const [serverSandbox, setServerSandbox] = useState<ServerSandbox>(null)
   const [connectedShellId, setConnectedShellId] = useState<string>("")
   const [previewURL, setPreviewURL] = useState<string | null>(null)
   const [isSandboxLoading, setIsSandboxLoading] = useState(true)
