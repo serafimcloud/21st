@@ -67,9 +67,6 @@ export function StudioUsernameClient({
                   Sandboxes
                 </TabsTrigger>
               </TabsList>
-              {isCreating && (
-                <Spinner size={16} color="hsl(var(--foreground))" />
-              )}
             </div>
 
             {(isOwnProfile || isAdmin) && (
