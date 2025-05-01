@@ -10,12 +10,15 @@ import {
 import { FileExplorer } from "@/components/features/studio/sandbox/components/FileExplorer"
 import { PreviewPane } from "@/components/features/studio/sandbox/components/PreviewPane"
 import { PublishHeader } from "@/components/features/studio/sandbox/components/PublishHeader"
-import { Loader2Icon } from "lucide-react"
+import { Spinner } from "@/components/icons/spinner"
 import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import {
   useFileSystem,
   type FileEntry,
 } from "@/components/features/studio/sandbox/hooks/use-file-system"
+import { Button } from "@/components/ui/button"
+import { Icons } from "@/components/icons"
+import { XCircle } from "lucide-react"
 
 const DEFAULT_FILE_ENTRY: FileEntry = {
   name: "component.tsx",
@@ -26,6 +29,7 @@ const DEFAULT_FILE_ENTRY: FileEntry = {
 
 function PublishPageContent() {
   const params = useParams()
+  const router = useRouter()
   const sandboxId = params.sandboxId as string
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(
     DEFAULT_FILE_ENTRY,
@@ -168,12 +172,26 @@ function PublishPageContent() {
     window.location.reload()
   }
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!sandboxRef.current) {
+        if (e.key === "Escape") {
+          router.back()
+        } else if (e.key === "Enter") {
+          handleReset()
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [router, sandboxRef])
+
   if (isSandboxLoading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center">
+      <div className="h-screen w-full flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <Loader2Icon className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-lg">Initializing sandbox...</p>
+          <Spinner color="hsl(var(--foreground))" />
+          <p className="text-muted-foreground">Initializing sandbox</p>
         </div>
       </div>
     )
@@ -182,9 +200,23 @@ function PublishPageContent() {
   if (!sandboxRef.current) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-destructive">
-          <p className="text-lg">Failed to initialize sandbox.</p>
-          <button onClick={handleReset}>Retry</button>
+        <div className="flex flex-col items-center gap-4">
+          <XCircle className="h-6 w-6 text-muted-foreground" />
+          <p className="text-base">Failed to initialize sandbox</p>
+          <div className="flex gap-3">
+            <Button onClick={() => router.back()} variant="outline">
+              Go Back
+              <kbd className="pointer-events-none hidden md:inline-flex h-5 select-none items-center rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100">
+                ESC
+              </kbd>
+            </Button>
+            <Button onClick={handleReset}>
+              Try Again
+              <kbd className="pointer-events-none hidden md:inline-flex h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100">
+                <Icons.enter className="h-2.5 w-2.5" />
+              </kbd>
+            </Button>
+          </div>
         </div>
       </div>
     )
