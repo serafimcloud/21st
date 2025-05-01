@@ -122,6 +122,16 @@ export function extractNPMDependencies(code: string): Record<string, string> {
       )
     }
 
+    const getRootPackageName = (packageName: string) => {
+      const parts = packageName.split("/")
+      
+      if (parts.length > 1) {
+        return parts[0]
+      }
+      
+      return packageName;
+    }
+
     traverse(ast, {
       ImportDeclaration({ node }) {
         const importDeclaration = node as t.ImportDeclaration
@@ -132,10 +142,8 @@ export function extractNPMDependencies(code: string): Record<string, string> {
           !source.startsWith("/") &&
           !source.startsWith("@/")
         ) {
-          let packageName = source
-          if (packageName === "motion/react") {
-            packageName = "motion"
-          }
+          const packageName = getRootPackageName(source)
+
           if (shouldAddDependency(packageName)) {
             dependencies[packageName] = "latest"
           }
@@ -156,10 +164,8 @@ export function extractNPMDependencies(code: string): Record<string, string> {
             !source.startsWith("/") &&
             !source.startsWith("@/")
           ) {
-            let packageName = source
-            if (packageName === "motion/react") {
-              packageName = "motion"
-            }
+            const packageName = getRootPackageName(source)
+
             if (shouldAddDependency(packageName)) {
               dependencies[packageName] = "latest"
             }
