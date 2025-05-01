@@ -7,9 +7,9 @@ import {
   ResizablePanelGroup,
   ResizablePanel,
 } from "@/components/ui/resizable"
-import { FileExplorer } from "@/components/features/studio/sandbox/components/FileExplorer"
-import { PreviewPane } from "@/components/features/studio/sandbox/components/PreviewPane"
-import { PublishHeader } from "@/components/features/studio/sandbox/components/PublishHeader"
+import { FileExplorer } from "@/components/features/studio/sandbox/components/file-explorer"
+import { PreviewPane } from "@/components/features/studio/sandbox/components/preview-pane"
+import { PublishHeader } from "@/components/features/studio/sandbox/components/publish-header"
 import { Spinner } from "@/components/icons/spinner"
 import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import {

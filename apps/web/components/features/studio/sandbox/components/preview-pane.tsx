@@ -6,7 +6,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { EditorPane } from "./EditorPane"
+import { EditorPane } from "./editor-pane"
 import { cn } from "@/lib/utils"
 
 interface PreviewPaneProps {

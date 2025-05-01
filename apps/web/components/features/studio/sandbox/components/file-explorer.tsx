@@ -26,7 +26,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { FileTree } from "./FileTree"
+import { FileTree } from "./file-tree"
 import { cn } from "@/lib/utils"
 import {
   Tooltip,

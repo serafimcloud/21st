@@ -54,38 +54,47 @@ export function StudioUsernameClient({
           <div className="flex items-center">
             <h1 className="text-xl font-bold">Components</h1>
           </div>
-
-          {(isOwnProfile || isAdmin) && (
-            <Button
-              onClick={handleCreateNewSandbox}
-              disabled={isCreating}
-              className={cn(
-                "transition-[width] duration-200",
-                isCreating ? "w-[120px]" : "w-[80px]",
-              )}
-            >
-              <div className="flex items-center gap-2 justify-center w-full">
-                {isCreating ? (
-                  <>
-                    <Spinner size={16} color="white" />
-                    <span>Creating...</span>
-                  </>
-                ) : (
-                  <span>Create</span>
-                )}
-              </div>
-            </Button>
-          )}
         </div>
+
         <Tabs defaultValue="components" className="w-full">
-          <TabsList className="grid grid-cols-2 mb-4 rounded-md h-7 p-0.5 w-[200px]">
-            <TabsTrigger className="text-xs h-6" value="components">
-              Components
-            </TabsTrigger>
-            <TabsTrigger className="text-xs h-6" value="sandboxes">
-              Sandboxes
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex flex-row items-center justify-between">
+            <div className="flex items-center justify-between">
+              <TabsList className="grid grid-cols-2 mb-4 rounded-md h-7 p-0.5 w-[200px]">
+                <TabsTrigger className="text-xs h-6" value="components">
+                  Components
+                </TabsTrigger>
+                <TabsTrigger className="text-xs h-6" value="sandboxes">
+                  Sandboxes
+                </TabsTrigger>
+              </TabsList>
+              {isCreating && (
+                <Spinner size={16} color="hsl(var(--foreground))" />
+              )}
+            </div>
+
+            {(isOwnProfile || isAdmin) && (
+              <Button
+                onClick={handleCreateNewSandbox}
+                disabled={isCreating}
+                className={cn(
+                  "transition-[width] duration-200",
+                  isCreating ? "w-[120px]" : "w-[80px]",
+                )}
+              >
+                <div className="flex items-center gap-2 justify-center w-full">
+                  {isCreating ? (
+                    <>
+                      <Spinner size={16} color="white" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <span>Create</span>
+                  )}
+                </div>
+              </Button>
+            )}
+          </div>
+
           <TabsContent value="components" className="mt-4">
             <DemosTable demos={demos} />
           </TabsContent>
