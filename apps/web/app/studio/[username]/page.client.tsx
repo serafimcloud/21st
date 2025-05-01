@@ -11,6 +11,8 @@ import { useRouter, usePathname } from "next/navigation"
 import { createNewSandbox } from "@/components/features/studio/sandbox/api"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Spinner } from "@/components/icons/spinner"
+import { cn } from "@/lib/utils"
 
 interface StudioUsernameClientProps {
   user: User
@@ -56,13 +58,24 @@ export function StudioUsernameClient({
           </div>
 
           {(isOwnProfile || isAdmin) && (
-            <Button onClick={handleCreateNewSandbox} disabled={isCreating}>
-              {isCreating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <PlusCircle className="mr-2 h-4 w-4" />
+            <Button
+              onClick={handleCreateNewSandbox}
+              disabled={isCreating}
+              className={cn(
+                "transition-[width] duration-200",
+                isCreating ? "w-[120px]" : "w-[80px]",
               )}
-              Create new component
+            >
+              <div className="flex items-center gap-2 justify-center w-full">
+                {isCreating ? (
+                  <>
+                    <Spinner size={16} color="white" />
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <span>Create</span>
+                )}
+              </div>
             </Button>
           )}
         </div>

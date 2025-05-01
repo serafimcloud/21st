@@ -10,7 +10,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Pagination,
   PaginationContent,
@@ -120,28 +119,6 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
   ])
 
   const columns: ColumnDef<ExtendedDemoWithComponent>[] = [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
-      size: 28,
-      enableSorting: false,
-    },
     {
       header: "Component",
       accessorKey: "name",
@@ -466,10 +443,7 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
+                <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
@@ -499,7 +473,9 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
         <div className="flex items-center justify-between gap-8">
           {/* Results per page */}
           <div className="flex items-center gap-3">
-            <Label htmlFor={id} className="max-sm:sr-only whitespace-nowrap">Rows per page</Label>
+            <Label htmlFor={id} className="max-sm:sr-only whitespace-nowrap">
+              Rows per page
+            </Label>
             <Select
               value={table.getState().pagination.pageSize.toString()}
               onValueChange={(value) => {
