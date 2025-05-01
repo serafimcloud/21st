@@ -57,7 +57,7 @@ export function StudioUsernameClient({
         </div>
 
         <Tabs defaultValue="components" className="w-full">
-          <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-row items-end justify-between">
             <div className="flex items-center justify-between">
               <TabsList className="grid grid-cols-2 mb-4 rounded-md h-7 p-0.5 w-[200px]">
                 <TabsTrigger className="text-xs h-6" value="components">

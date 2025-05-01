@@ -5,7 +5,6 @@ import { useEffect, useState, useRef } from "react"
 import {
   RocketIcon,
   Loader2,
-  PenIcon,
   CheckIcon,
   XIcon,
   ArrowLeftIcon,
@@ -178,16 +177,7 @@ export function PublishHeader({
               >
                 {name}
               </h1>
-              <div className="absolute -right-7 opacity-0 group-hover:opacity-70 transition-opacity">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setIsEditing(true)}
-                  className="h-7 w-7"
-                >
-                  <PenIcon className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              
             </>
           )}
         </div>
