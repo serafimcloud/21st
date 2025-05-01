@@ -27,13 +27,11 @@ export const useSubmitComponent = () => {
   const client = useClerkSupabaseClient()
   const { upload: uploadToR2ClientSide } = useR2Upload()
 
-  const getParsedCode = async (
-    generateRegistry: () => Promise<{
-      componentRegistryJSON: string
-      demoRegistryJSON: string
-    }>,
-  ) => {
-    const { componentRegistryJSON, demoRegistryJSON } = await generateRegistry()
+  const getParsedCode = async (registryResult: {
+    componentRegistryJSON: string
+    demoRegistryJSON: string
+  }) => {
+    const { componentRegistryJSON, demoRegistryJSON } = registryResult
 
     const componentRegistry = JSON.parse(componentRegistryJSON)
     const demoRegistry = JSON.parse(demoRegistryJSON)
@@ -66,16 +64,33 @@ export const useSubmitComponent = () => {
     data,
     publishAsUser,
     generateRegistry,
+    bundleDemo,
   }: {
     data: FormData
     publishAsUser: { id: string; username?: string }
-    generateRegistry: () => Promise<{
-      componentRegistryJSON: string
-      demoRegistryJSON: string
-    }>
+    generateRegistry: () => Promise<
+      | {
+          componentRegistryJSON: string
+          demoRegistryJSON: string
+        }
+      | undefined
+    >
+    bundleDemo: () => Promise<string | undefined>
   }) => {
-    const parsedCode = await getParsedCode(generateRegistry)
+    const resultOfGenerateRegistry = await generateRegistry()
+    if (!resultOfGenerateRegistry) {
+      toast.error("Failed to bundle component; Please try again.")
+      return
+    }
+    const parsedCode = await getParsedCode(resultOfGenerateRegistry)
     const { componentCode, demoCode, componentNames, dependencies } = parsedCode
+
+    const bundleDemoResult = await bundleDemo()
+    if (!bundleDemoResult) {
+      toast.error("Failed to bundle component; Please try again.")
+      return
+    }
+    const contentOfHtml = bundleDemoResult
 
     console.log("componentCode", componentCode)
     console.log("demoCode", demoCode)
@@ -101,62 +116,78 @@ export const useSubmitComponent = () => {
       const demo = data.demos[0]!
 
       setPublishProgress("Uploading component files...")
-      const baseFolder = `${publishAsUser.id}/${data.component_slug}`
+      const baseFolder = `${publishAsUser.username}/${data.component_slug}`
 
-      const [codeUrl, demoCodeUrl, previewImageR2Url, videoR2Url] =
-        await Promise.all([
-          uploadToR2({
-            file: {
-              name: "code.tsx",
-              type: "text/plain",
-              textContent: componentCode,
-            },
-            fileKey: `${baseFolder}/code.tsx`,
-            bucketName: "components-code",
-          }),
-          uploadToR2({
-            file: {
-              name: "demo.tsx",
-              type: "text/plain",
-              textContent: demoCode,
-            },
-            fileKey: `${baseFolder}/${demo.demo_slug}/code.demo.tsx`,
-            bucketName: "components-code",
-          }),
-          demo.preview_image_file &&
-          demo.preview_image_file.size > 0 &&
-          demo.preview_image_data_url
-            ? uploadToR2({
-                file: {
-                  name: "preview.png",
-                  type: demo.preview_image_file.type,
-                  encodedContent: demo.preview_image_data_url.replace(
-                    /^data:image\/(png|jpeg|jpg);base64,/,
-                    "",
-                  ),
-                },
-                fileKey: `${baseFolder}/${demo.demo_slug}/preview.png`,
-                bucketName: "components-code",
-                contentType: demo.preview_image_file.type,
-              })
-            : Promise.resolve(null),
-          demo.preview_video_file &&
-          demo.preview_video_file.size > 0 &&
-          demo.preview_video_data_url
-            ? uploadToR2ClientSide({
-                file: demo.preview_video_file,
-                fileKey: `${baseFolder}/${demo.demo_slug}/video.mp4`,
-                bucketName: "components-code",
-                contentType: "video/mp4",
-              })
-            : Promise.resolve(null),
-        ])
+      const [
+        codeUrl,
+        demoCodeUrl,
+        previewImageR2Url,
+        videoR2Url,
+        bundleHtmlUrl,
+      ] = await Promise.all([
+        uploadToR2({
+          file: {
+            name: "code.tsx",
+            type: "text/plain",
+            textContent: componentCode,
+          },
+          fileKey: `${baseFolder}/code.tsx`,
+          bucketName: "components-code",
+        }),
+        uploadToR2({
+          file: {
+            name: "demo.tsx",
+            type: "text/plain",
+            textContent: demoCode,
+          },
+          fileKey: `${baseFolder}/${demo.demo_slug}/code.demo.tsx`,
+          bucketName: "components-code",
+        }),
+        demo.preview_image_file &&
+        demo.preview_image_file.size > 0 &&
+        demo.preview_image_data_url
+          ? uploadToR2({
+              file: {
+                name: "preview.png",
+                type: demo.preview_image_file.type,
+                encodedContent: demo.preview_image_data_url.replace(
+                  /^data:image\/(png|jpeg|jpg);base64,/,
+                  "",
+                ),
+              },
+              fileKey: `${baseFolder}/${demo.demo_slug}/preview.png`,
+              bucketName: "components-code",
+              contentType: demo.preview_image_file.type,
+            })
+          : Promise.resolve(null),
+        demo.preview_video_file &&
+        demo.preview_video_file.size > 0 &&
+        demo.preview_video_data_url
+          ? uploadToR2ClientSide({
+              file: demo.preview_video_file,
+              fileKey: `${baseFolder}/${demo.demo_slug}/video.mp4`,
+              bucketName: "components-code",
+              contentType: "video/mp4",
+            })
+          : Promise.resolve(null),
+        uploadToR2({
+          file: {
+            name: "bundle.html",
+            type: "text/html",
+            textContent: contentOfHtml,
+          },
+          fileKey: `${baseFolder}/${demo.demo_slug}/bundle.html`,
+          bucketName: "components-code",
+          contentType: "text/html",
+        }),
+      ])
 
       console.log("Actual Uploading Results:", {
         codeUrl,
         demoCodeUrl,
         previewImageR2Url,
         videoR2Url,
+        bundleHtmlUrl,
       })
 
       setPublishProgress("Creating component entry...")
@@ -279,6 +310,7 @@ export const useSubmitComponent = () => {
           demo.demo_direct_registry_dependencies || null,
         user_id: publishAsUser.id,
         demo_slug: demoSlug,
+        bundle_html_url: bundleHtmlUrl,
       }
 
       // Mock Inserting Demo

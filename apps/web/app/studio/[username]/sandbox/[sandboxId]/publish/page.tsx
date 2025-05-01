@@ -49,7 +49,7 @@ const PublishPage = () => {
   } = useSandbox({
     sandboxId,
   })
-  const { generateRegistry } = useFileSystem({
+  const { generateRegistry, bundleDemo } = useFileSystem({
     sandboxRef: sandboxRef,
     reconnectSandbox: reconnectSandbox,
     sandboxConnectionHash: sandboxConnectionHash,
@@ -152,6 +152,7 @@ const PublishPage = () => {
         username: publishAsUser.username || undefined,
       },
       generateRegistry,
+      bundleDemo,
     })
   }
 

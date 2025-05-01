@@ -334,9 +334,14 @@ export function ComponentPagePreview({
             <LoadingSpinner text={loadingText} />
           </div>
         )}
-        {bundle?.html && demo?.bundle_hash !== "0" && (
+        {(demo.bundle_html_url ||
+          (bundle?.html && demo?.bundle_hash !== "0")) && (
           <iframe
-            src={isDarkTheme ? `${bundle?.html}?dark=true` : bundle?.html}
+            src={
+              isDarkTheme
+                ? `${demo.bundle_html_url || bundle?.html}?dark=true`
+                : demo.bundle_html_url || bundle?.html
+            }
             className="w-full h-full"
             onLoad={() => {
               setIsLoading(false)

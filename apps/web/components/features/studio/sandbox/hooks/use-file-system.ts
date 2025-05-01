@@ -108,7 +108,6 @@ export const useFileSystem = ({
   const [files, setFiles] = useState<FileEntry[]>([])
   const [isTreeLoading, setIsTreeLoading] = useState(false)
   const [isFileLoading, setIsFileLoading] = useState(false)
-  const [isCompiling, setIsCompiling] = useState(false)
   const [advancedView, setAdvancedView] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -286,99 +285,188 @@ export const useFileSystem = ({
     setAdvancedView((prev) => !prev)
   }
 
-  // Function to compile the project into a shadcn registry
-  const generateRegistry = async (): Promise<{
-    componentRegistryJSON: string
-    demoRegistryJSON: string
-  }> => {
-    if (!connectedShellId) {
+  // Helper function to run a task, wait for specific output, and execute a callback
+  const _runTaskAndWaitForOutput = async <T>(
+    taskName: string,
+    completionOutput: string,
+    onComplete: (shell: any, sandbox: SandboxSession) => Promise<T | undefined>,
+  ): Promise<T | undefined> => {
+    // Guranties that the sandbox is connected
+    if (!sandboxConnectionHash) {
       return new Promise((resolve, reject) => {
         let counter = 0
         const interval = setInterval(() => {
-          if (connectedShellId) {
+          if (sandboxConnectionHash) {
             clearInterval(interval)
-            generateRegistry().then(resolve).catch(reject)
+            _runTaskAndWaitForOutput(taskName, completionOutput, onComplete)
+              .then(resolve)
+              .catch(reject)
           }
           counter++
           if (counter > 50) {
             clearInterval(interval)
-            reject(new Error("Timeout waiting for shell connection"))
+            reject(new Error("Timeout waiting for sandbox connection"))
           }
         }, 1000)
       })
     }
 
-    console.log("Generating registry...")
-    const task = await sbWrapper((sandbox) =>
-      sandbox.tasks.runTask("generate:registry"),
-    )
-    setIsCompiling(true)
+    console.log(`Starting ${taskName} task...`)
+    if (!sandboxRef.current) {
+      throw new Error("Sandbox not available")
+    }
+    const task = await sandboxRef.current.tasks.runTask(taskName)
 
-    console.log("Task:", task)
+    if (!task) {
+      throw new Error(`Failed to start ${taskName} task`)
+    }
 
-    return new Promise<{
-      componentRegistryJSON: string
-      demoRegistryJSON: string
-    }>((resolve, reject) => {
+    console.log(`${taskName} Task:`, task)
+
+    return new Promise<T | undefined>((resolve, reject) => {
       let counter = 0
       const interval = setInterval(async () => {
-        const shells = await sandboxRef.current?.shells.getShells()
-        const shell = shells?.find((shell) => shell.id === task?.shellId)
-
-        if (!shell) {
+        if (!task?.shellId) {
           counter++
-          if (counter > 35) {
+          if (counter > 50) {
             clearInterval(interval)
-            reject(new Error("Shell not found"))
+            reject(new Error(`Timeout waiting for ${taskName} shellId`))
           }
           return
         }
 
-        const connectedShell = await sandboxRef.current?.shells.open(shell.id)
+        let connectedShell
+        try {
+          if (!sandboxRef.current) {
+            throw new Error("Sandbox disconnected while waiting for shell")
+          }
+          connectedShell = await sandboxRef.current.shells.open(task.shellId)
+        } catch (error) {
+          console.error(`Failed to open shell for ${taskName}:`, error)
+          counter++
+          if (counter > 50) {
+            clearInterval(interval)
+            reject(new Error(`Timeout connecting to ${taskName} shell`))
+          }
+          return
+        }
 
         if (connectedShell) {
           clearInterval(interval)
+
+          let outputTimeout: NodeJS.Timeout | null = null
+          const disposeShellAndClearTimeout = () => {
+            if (outputTimeout) clearTimeout(outputTimeout)
+            connectedShell?.dispose()
+          }
+
           connectedShell.onOutput(async (data) => {
-            if (data.includes("FINISH")) {
-              setIsCompiling(false)
+            console.log(`${taskName} Output:`, data)
+            if (data.includes(completionOutput)) {
+              console.log(
+                `${taskName} finished, executing onComplete callback...`,
+              )
               try {
-                const componentRegistryJSON =
-                  await getContentOfComponentRegistryJSON()
-                const demoRegistryJSON = await getContentOfDemoRegistryJSON()
-                connectedShell.dispose()
-                if (!componentRegistryJSON || !demoRegistryJSON) {
-                  throw new Error("Failed to generate registry")
+                if (!sandboxRef.current) {
+                  throw new Error("Sandbox disconnected before onComplete")
                 }
-                resolve({ componentRegistryJSON, demoRegistryJSON })
+                const result = await onComplete(
+                  connectedShell,
+                  sandboxRef.current,
+                )
+                console.log(`${taskName} onComplete finished successfully.`)
+                disposeShellAndClearTimeout()
+                resolve(result)
               } catch (error) {
+                console.error(`Error during ${taskName} onComplete:`, error)
+                disposeShellAndClearTimeout()
                 reject(error)
               }
             }
           })
-        }
 
-        counter++
-        if (counter > 50) {
-          clearInterval(interval)
-          reject(new Error("Timeout"))
+          outputTimeout = setTimeout(() => {
+            console.error(`Timeout waiting for '${completionOutput}' message.`)
+            disposeShellAndClearTimeout()
+            reject(new Error(`${taskName}: Timeout waiting for output`))
+          }, 120000) // Increased timeout to 120 seconds
+
+          // Wrap resolve/reject to clear timeout
+          const originalResolve = resolve
+          resolve = (value) => {
+            disposeShellAndClearTimeout()
+            originalResolve(value)
+          }
+          const originalReject = reject
+          reject = (reason) => {
+            disposeShellAndClearTimeout()
+            originalReject(reason)
+          }
+        } else {
+          counter++
+          if (counter > 50) {
+            clearInterval(interval)
+            reject(new Error(`Timeout connecting to ${taskName} shell`))
+          }
         }
       }, 1000)
     })
   }
 
-  const getContentOfComponentRegistryJSON = async () => {
-    const registryJsonPath = normalizePath("public/r/component.json")
-    const content = await sbWrapper((sandbox) =>
-      sandbox.fs.readTextFile(registryJsonPath),
+  const bundleDemo = async (): Promise<string | undefined> => {
+    return _runTaskAndWaitForOutput<string>(
+      "build",
+      "built in",
+      async (shell, sandbox) => {
+        const content = await getContentOfBundleIndexHTML(sandbox)
+        if (!content) {
+          throw new Error("Failed to read dist/index.html")
+        }
+        return content
+      },
     )
+  }
+
+  // Function to compile the project into a shadcn registry
+  const generateRegistry = async (): Promise<
+    | {
+        componentRegistryJSON: string
+        demoRegistryJSON: string
+      }
+    | undefined
+  > => {
+    return _runTaskAndWaitForOutput<
+      | {
+          componentRegistryJSON: string
+          demoRegistryJSON: string
+        }
+      | undefined
+    >("generate:registry", "FINISH", async (shell, sandbox) => {
+      const componentRegistryJSON =
+        await getContentOfComponentRegistryJSON(sandbox)
+      const demoRegistryJSON = await getContentOfDemoRegistryJSON(sandbox)
+      if (!componentRegistryJSON || !demoRegistryJSON) {
+        throw new Error("Failed to read generated registry files")
+      }
+      return { componentRegistryJSON, demoRegistryJSON }
+    })
+  }
+
+  const getContentOfBundleIndexHTML = async (sandbox: SandboxSession) => {
+    const indexPath = normalizePath("dist/index.html")
+    const content = await sandbox.fs.readTextFile(indexPath)
     return content
   }
 
-  const getContentOfDemoRegistryJSON = async () => {
+  const getContentOfComponentRegistryJSON = async (sandbox: SandboxSession) => {
+    const registryJsonPath = normalizePath("public/r/component.json")
+    const content = await sandbox.fs.readTextFile(registryJsonPath)
+    return content
+  }
+
+  const getContentOfDemoRegistryJSON = async (sandbox: SandboxSession) => {
     const registryJsonPath = normalizePath("public/r/demo.json")
-    const content = await sbWrapper((sandbox) =>
-      sandbox.fs.readTextFile(registryJsonPath),
-    )
+    const content = await sandbox.fs.readTextFile(registryJsonPath)
     return content
   }
 
@@ -386,7 +474,6 @@ export const useFileSystem = ({
     files,
     isTreeLoading,
     isFileLoading,
-    isCompiling,
     advancedView,
     toggleAdvancedView,
     loadRootDirectory,
@@ -399,7 +486,8 @@ export const useFileSystem = ({
     addDependencyToPackageJson,
     // registry
     generateRegistry,
-    // getContentOfComponentRegistryJSON,
+    bundleDemo,
+    // getContentOfComponentRegistryJSON, // Keep these private
     // getContentOfDemoRegistryJSON,
   }
 }
