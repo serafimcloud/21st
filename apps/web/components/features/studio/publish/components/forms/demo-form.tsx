@@ -151,6 +151,11 @@ export const DemoDetailsForm = ({
           >
             A name that describes this demo implementation
           </p>
+          {form.formState.errors.demos?.[demoIndex]?.name && (
+            <p className="text-xs text-destructive mt-1">
+              {form.formState.errors.demos[demoIndex]?.name?.message}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -196,6 +201,11 @@ export const DemoDetailsForm = ({
           >
             Add tags to help others discover your component
           </p>
+          {form.formState.errors.demos?.[demoIndex]?.tags && (
+            <p className="text-xs text-destructive mt-1">
+              {form.formState.errors.demos[demoIndex]?.tags?.message}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -205,7 +215,11 @@ export const DemoDetailsForm = ({
           {!previewImageDataUrl ? (
             <div
               {...getImageRootProps()}
-              className={`flex flex-col !justify-between w-full border border-dashed bg-background rounded-md p-8 text-center cursor-pointer hover:border-gray-400 transition-colors relative`}
+              className={cn(
+                "flex flex-col !justify-between w-full border border-dashed bg-background rounded-md p-8 text-center cursor-pointer hover:border-gray-400 transition-colors relative",
+                form.formState.errors.demos?.[demoIndex]
+                  ?.preview_image_data_url && "border-destructive",
+              )}
             >
               <input {...getImageInputProps()} id={previewImageId} />
               <UploadIcon />
@@ -229,9 +243,12 @@ export const DemoDetailsForm = ({
           ) : (
             <div
               {...getImageRootProps()}
-              className={`w-full border ${
-                isDarkTheme ? "border-gray-600" : "border-gray-300"
-              } rounded-md p-2 flex items-center gap-2 relative`}
+              className={cn(
+                "w-full border rounded-md p-2 flex items-center gap-2 relative",
+                isDarkTheme ? "border-gray-600" : "border-gray-300",
+                form.formState.errors.demos?.[demoIndex]
+                  ?.preview_image_data_url && "border-destructive",
+              )}
             >
               <input {...getImageInputProps()} id={previewImageId} />
               <div className="w-40 h-32 relative">
@@ -291,6 +308,22 @@ export const DemoDetailsForm = ({
             A preview image that represents your component (1200x900
             recommended)
           </p>
+          {form.formState.errors.demos?.[demoIndex]?.preview_image_data_url && (
+            <p className="text-xs text-destructive mt-1">
+              {
+                form.formState.errors.demos[demoIndex]?.preview_image_data_url
+                  ?.message
+              }
+            </p>
+          )}
+          {form.formState.errors.demos?.[demoIndex]?.preview_image_file && (
+            <p className="text-xs text-destructive mt-1">
+              {
+                form.formState.errors.demos[demoIndex]?.preview_image_file
+                  ?.message
+              }
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">

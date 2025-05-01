@@ -132,6 +132,11 @@ export const ComponentForm = ({
           >
             The display name of your component
           </p>
+          {form.formState.errors.name && (
+            <p className="text-xs text-destructive mt-1">
+              {form.formState.errors.name.message}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -159,6 +164,11 @@ export const ComponentForm = ({
           >
             Used in the URL and imports, can't be changed later
           </p>
+          {form.formState.errors.component_slug && (
+            <p className="text-xs text-destructive mt-1">
+              {form.formState.errors.component_slug.message}
+            </p>
+          )}
         </div>
       </div>
 
@@ -203,7 +213,10 @@ export const ComponentForm = ({
                   <Textarea
                     id={descriptionId}
                     placeholder="Add some description to help others discover your component"
-                    className="min-h-[none] resize-none"
+                    className={cn(
+                      "min-h-[none] resize-none",
+                      form.formState.errors.description && "border-destructive",
+                    )}
                     rows={defaultRows}
                     required
                     {...field}
@@ -238,6 +251,11 @@ export const ComponentForm = ({
               >
                 A brief description of what your component does
               </p>
+              {form.formState.errors.description && (
+                <p className="text-xs text-destructive mt-1">
+                  {form.formState.errors.description.message}
+                </p>
+              )}
             </div>
 
             {/* TODO: PRICING FOR BETTER TIMES; NOW IT's FREEEEEEE */}
@@ -361,6 +379,7 @@ export const ComponentForm = ({
                     </SelectContent>
                   </Select>
                 )}
+                rules={{ required: "Component type is required" }}
               />
               <p
                 className="text-xs text-muted-foreground"
@@ -369,6 +388,11 @@ export const ComponentForm = ({
               >
                 The category your component belongs to
               </p>
+              {form.formState.errors.registry && (
+                <p className="text-xs text-destructive mt-1">
+                  {form.formState.errors.registry.message}
+                </p>
+              )}
             </div>
           </div>
 

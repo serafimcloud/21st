@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { Trash2 } from "lucide-react"
 import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 import { Form } from "@/components/ui/form"
 import { Badge } from "@/components/ui/badge"
@@ -22,7 +23,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ComponentForm } from "@/components/features/studio/publish/components/forms/component-form"
 import { DemoDetailsForm } from "@/components/features/studio/publish/components/forms/demo-form"
 import { SuccessDialog } from "@/components/features/publish-old/components/success-dialog"
-import { FormData } from "@/components/features/studio/publish/config/utils"
+import {
+  FormData,
+  formSchema,
+} from "@/components/features/studio/publish/config/utils"
 import { useSubmitComponent } from "@/components/features/studio/publish/hooks/use-submit-component"
 import { useComponentData } from "@/components/features/studio/publish/hooks/use-component-data"
 
@@ -86,6 +90,7 @@ const PublishPage = () => {
   ])
 
   const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       component_slug: "",
@@ -142,6 +147,8 @@ const PublishPage = () => {
     username: publishAsUsername ?? user?.username ?? "",
   })
 
+  console.log("ERRORS", form.formState.errors)
+
   useEffect(() => {
     if (form.getValues("publish_as_username") === undefined && user?.username) {
       form.setValue("publish_as_username", user.username)
@@ -164,30 +171,39 @@ const PublishPage = () => {
 
   const handleSubmit = (event?: React.FormEvent) => {
     event?.preventDefault()
-    const formData = form.getValues()
-    const data = {
-      ...formData,
-      website_url: formData.website_url || "",
-    }
-    if (!publishAsUser?.id) {
-      toast.error(
-        "Cannot determine user to publish as. Please ensure you are logged in.",
-      )
-      return
-    }
-    submitComponent({
-      data,
-      publishAsUser: {
-        id: publishAsUser.id,
-        username: publishAsUser.username || undefined,
+    form.handleSubmit(
+      (formData) => {
+        console.log("Form data is valid:", formData)
+        console.log("Form errors:", form.formState.errors)
+        const data = {
+          ...formData,
+          website_url: formData.website_url || "",
+        }
+        if (!publishAsUser?.id) {
+          toast.error(
+            "Cannot determine user to publish as. Please ensure you are logged in.",
+          )
+          return
+        }
+        submitComponent({
+          data,
+          publishAsUser: {
+            id: publishAsUser.id,
+            username: publishAsUser.username || undefined,
+          },
+          generateRegistry,
+          bundleDemo,
+          sandboxId: serverSandbox!.id,
+          onSuccess: () => {
+            reconnectSandbox()
+          },
+        })
       },
-      generateRegistry,
-      bundleDemo,
-      sandboxId: serverSandbox!.id,
-      onSuccess: () => {
-        reconnectSandbox()
+      (errors) => {
+        console.error("Form validation errors:", errors)
+        toast.error("Please fill all the required fields")
       },
-    })
+    )(event) // Immediately invoke the handler
   }
 
   const isComponentInfoComplete = useCallback(() => {
