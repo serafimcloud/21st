@@ -74,6 +74,14 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
   const sliderGroups = useMemo(() => {
     const groups: SliderGroup[] = [
       {
+        id: "featured",
+        title: "Featured",
+        items: featuredDemosQuery.data?.data || [],
+        isLoading: featuredDemosQuery.isLoading,
+        targetTab: "components",
+        targetSort: "recommended",
+      },
+      {
         id: "leaderboard",
         title: leaderboardDemosQuery.weekNumber
           ? `Leaderboard (Week #${leaderboardDemosQuery.weekNumber})`
@@ -84,28 +92,12 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
         isLeaderboard: true,
       },
       {
-        id: "featured",
-        title: "Featured",
-        items: featuredDemosQuery.data?.data || [],
-        isLoading: featuredDemosQuery.isLoading,
-        targetTab: "components",
-        targetSort: "recommended",
-      },
-      {
         id: "popular",
         title: "Popular",
         items: filteredPopularDemos,
         isLoading: popularDemosQuery.isLoading,
         targetTab: "components",
         targetSort: "downloads",
-      },
-      {
-        id: "latest",
-        title: "New",
-        items: latestDemosQuery.data || [],
-        isLoading: latestDemosQuery.isLoading,
-        targetTab: "components",
-        targetSort: "date",
       },
     ]
 
