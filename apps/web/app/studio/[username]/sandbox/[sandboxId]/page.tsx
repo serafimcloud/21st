@@ -229,6 +229,7 @@ function PublishPageContent() {
         isRegenerating={isRegenerating}
         sandboxId={sandboxId}
         sandboxName={serverSandbox?.name}
+        username={params.username as string}
       />
 
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">

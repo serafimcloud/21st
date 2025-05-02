@@ -13,6 +13,8 @@ import {
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { motion } from "motion/react"
+import { Logo } from "@/components/ui/logo"
+import { UserAvatar } from "@/components/ui/user-avatar"
 
 interface PublishHeaderProps {
   sandboxId: string | null
@@ -25,6 +27,7 @@ interface PublishHeaderProps {
 export function PublishHeader({
   sandboxId,
   sandboxName = "Untitled",
+  username,
   onGenerateRegistry,
   isRegenerating = false,
 }: PublishHeaderProps) {
@@ -122,92 +125,81 @@ export function PublishHeader({
   return (
     <header className="flex flex-col px-4 py-2 border-b">
       <div className="flex items-center">
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={handleBackToStudio}
-          className="mr-2"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <div onClick={handleBackToStudio} className="cursor-pointer">
+            <Logo position="flex" className="w-6 h-6" hasLink={false} />
+          </div>
 
-        <div className="flex items-center gap-2 group relative">
-          {isEditing ? (
-            <>
-              <Input
-                ref={inputRef}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="text-base font-medium bg-transparent border-0 border-b border-primary/50 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none p-0 h-auto"
-                autoFocus
-                onKeyDown={handleKeyDown}
-                onBlur={handleEditName}
+          <div className="text-muted-foreground">/</div>
+
+          {username && (
+            <div className="flex items-center gap-1">
+              <UserAvatar
+                src={null}
+                alt={username}
+                size={24}
+                className="mr-1"
               />
-              <div className="flex absolute right-0 top-0 opacity-70 -mr-16">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleEditName}
-                  disabled={editLoading}
-                  className="h-7 w-7"
-                >
-                  {editLoading ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <CheckIcon className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={handleCancel}
-                  disabled={editLoading}
-                  className="h-7 w-7"
-                >
-                  <XIcon className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h1
-                ref={textRef}
-                className="text-base font-medium py-0.5 px-0 cursor-text transition-colors hover:bg-accent/30 rounded"
-                onClick={() => setIsEditing(true)}
-              >
-                {name}
-              </h1>
-              
-            </>
+              <span className="text-sm font-medium">{username}</span>
+              <div className="text-muted-foreground mx-1">/</div>
+            </div>
           )}
+
+          <div className="flex items-center gap-2 group relative">
+            {isEditing ? (
+              <>
+                <Input
+                  ref={inputRef}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="text-sm font-medium bg-transparent border-0 border-b border-primary/50 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none p-0 h-auto"
+                  autoFocus
+                  onKeyDown={handleKeyDown}
+                  onBlur={handleEditName}
+                />
+                <div className="flex absolute right-0 top-1/2 -translate-y-1/2 opacity-70 -mr-16">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleEditName}
+                    disabled={editLoading}
+                    className="h-7 w-7"
+                  >
+                    {editLoading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <CheckIcon className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleCancel}
+                    disabled={editLoading}
+                    className="h-7 w-7"
+                  >
+                    <XIcon className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h1
+                  ref={textRef}
+                  className="text-sm font-medium py-0.5 px-0 cursor-text transition-colors hover:bg-accent/30 rounded"
+                  onClick={() => setIsEditing(true)}
+                >
+                  {name}
+                </h1>
+                <div className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">
+                  Draft
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <Button onClick={handleNextStep}>Continue</Button>
-          {/* <Button
-            onClick={onGenerateRegistry}
-            disabled={isRegenerating}
-            className="gap-2"
-          >
-            {isRegenerating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ArchiveIcon className="h-4 w-4" />
-            )}
-            {isRegenerating ? "Generating registry..." : "Generate registry"}
-          </Button> */}
-          {/* <Button
-            size="sm"
-            onClick={handlePublish}
-            disabled={isLoading}
-            className="gap-2"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RocketIcon className="h-4 w-4" />
-            )}
-            Publish
-          </Button> */}
         </div>
       </div>
     </header>

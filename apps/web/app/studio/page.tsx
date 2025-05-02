@@ -1,35 +1,35 @@
+"use client"
+
 import { Footer } from "@/components/ui/footer"
-import { redirect } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
 import Link from "next/link"
-import { supabaseWithAdminAccess } from "@/lib/supabase"
+import { useEffect, useState } from "react"
+import { useClerkSupabaseClient } from "@/lib/clerk"
 
-export const metadata = {
-  title: "Creator Studio | 21st.dev - The NPM for Design Engineers",
-  description:
-    "Publish and manage your components on 21st.dev - reach thousands of developers and grow your audience",
-}
 
-export default async function StudioPage() {
+export default function StudioPage() {
   const { userId } = useAuth()
+  const [studioUrl, setStudioUrl] = useState("/studio")
 
-  if (!userId) {
-    redirect("/sign-in")
-  }
+  useEffect(() => {
+    
+    const fetchUserData = async () => {
+      const supabase = useClerkSupabaseClient()
+      const { data: userData } = await supabase
+        .from("users")
+        .select("display_username, username")
+        .eq("id", userId)
+        .single()
 
-  // Get the user data from Supabase to determine username
-  const { data: userData } = await supabaseWithAdminAccess
-    .from("users")
-    .select("display_username, username")
-    .eq("id", userId)
-    .single()
+      if (userData?.display_username) {
+        setStudioUrl(`/studio/${userData.display_username}`)
+      } else if (userData?.username) {
+        setStudioUrl(`/studio/${userData.username}`)
+      }
+    }
 
-  // Construct the studio URL using the same logic as header.client.tsx
-  const studioUrl = userData?.display_username
-    ? `/studio/${userData.display_username}`
-    : userData?.username
-      ? `/studio/${userData.username}`
-      : "/studio"
+    fetchUserData()
+  }, [userId])
 
   return (
     <div className="min-h-screen flex flex-col">
