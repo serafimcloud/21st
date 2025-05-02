@@ -206,13 +206,16 @@ const PublishPage = () => {
     )(event) // Immediately invoke the handler
   }
 
+  const watchedComponentFields = form.watch([
+    "description",
+    "name",
+    "component_slug",
+  ])
   const isComponentInfoComplete = useCallback(() => {
-    const { description, license, name, component_slug, registry } =
-      form.getValues()
-    return (
-      !!description && !!license && !!name && !!component_slug && !!registry
-    )
-  }, [form])
+    const [description, name, component_slug] = watchedComponentFields
+    return !!description && !!name && !!component_slug
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedComponentFields])
 
   const handleGoToComponent = useCallback(() => {
     const username = publishAsUser?.username || user?.username
@@ -231,6 +234,9 @@ const PublishPage = () => {
     setIsSuccessDialogOpen(false)
     setOpenAccordion(["component-info", "demo-0"])
   }
+
+  const isDemoComplete = (demo: any) =>
+    demo.name && demo.tags?.length > 0 && demo.preview_image_data_url
 
   if (!serverSandbox?.id) {
     return (
@@ -329,13 +335,15 @@ const PublishPage = () => {
                             <div className="flex items-center gap-2 w-full">
                               <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                                 <div className="truncate flex-shrink min-w-0">
-                                  {demo.name || `Demo ${index + 1}`}
+                                  {index === 0
+                                    ? "Default Demo"
+                                    : demo.name || `Demo ${index + 1}`}
                                 </div>
                                 <Badge
                                   variant="outline"
                                   className={cn(
                                     "gap-1.5 text-xs font-medium shrink-0",
-                                    demo.name && demo.demo_code
+                                    isDemoComplete(demo)
                                       ? "border-emerald-500/20"
                                       : "border-amber-500/20",
                                   )}
@@ -343,13 +351,13 @@ const PublishPage = () => {
                                   <span
                                     className={cn(
                                       "size-1.5 rounded-full",
-                                      demo.name && demo.demo_code
+                                      isDemoComplete(demo)
                                         ? "bg-emerald-500"
                                         : "bg-amber-500",
                                     )}
                                     aria-hidden="true"
                                   />
-                                  {demo.name && demo.demo_code
+                                  {isDemoComplete(demo)
                                     ? "Complete"
                                     : "Required"}
                                 </Badge>

@@ -127,38 +127,6 @@ export const DemoDetailsForm = ({
     <div className="flex flex-col gap-4 w-full">
       <div className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor={demoNameId}>
-            Demo Name <span className="text-destructive">*</span>
-          </Label>
-          <FormField
-            control={form.control}
-            name={`demos.${demoIndex}.name`}
-            render={({ field }) => (
-              <Input
-                id={demoNameId}
-                placeholder="Enter demo name"
-                {...field}
-                onChange={(e) => {
-                  handleDemoNameChange(e.target.value)
-                }}
-              />
-            )}
-          />
-          <p
-            className="text-xs text-muted-foreground"
-            role="region"
-            aria-live="polite"
-          >
-            A name that describes this demo implementation
-          </p>
-          {form.formState.errors.demos?.[demoIndex]?.name && (
-            <p className="text-xs text-destructive mt-1">
-              {form.formState.errors.demos[demoIndex]?.name?.message}
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor={tagsId}>
             Tags <span className="text-destructive">*</span>
           </Label>
