@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import { useForm } from "react-hook-form"
-import { Trash2, ArrowLeftIcon } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -20,8 +20,6 @@ import {
 } from "@/components/ui/accordion"
 import { LoadingDialog } from "@/components/ui/loading-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Logo } from "@/components/ui/logo"
-import { UserAvatar } from "@/components/ui/user-avatar"
 
 import { ComponentForm } from "@/components/features/studio/publish/components/forms/component-form"
 import { DemoDetailsForm } from "@/components/features/studio/publish/components/forms/demo-form"
