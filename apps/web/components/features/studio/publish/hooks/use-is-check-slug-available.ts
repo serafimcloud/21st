@@ -30,7 +30,7 @@ const checkSlugUnique = async (
       .from("components")
       .select("id")
       .eq("component_slug", slug)
-      .eq("user_id", "user_2svxLsschx3lZIQV7naSdI782rt")
+      .eq("user_id", userId)
 
     if (error) {
       console.error("Error checking component slug uniqueness:", error)

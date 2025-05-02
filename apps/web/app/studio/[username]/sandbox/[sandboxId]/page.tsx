@@ -20,20 +20,11 @@ import { Button } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
 import { XCircle } from "lucide-react"
 
-const DEFAULT_FILE_ENTRY: FileEntry = {
-  name: "component.tsx",
-  path: "/src/components/ui/component.tsx",
-  type: "file",
-  isSymlink: false,
-}
-
 function PublishPageContent() {
   const params = useParams()
   const router = useRouter()
   const sandboxId = params.sandboxId as string
-  const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(
-    DEFAULT_FILE_ENTRY,
-  )
+  const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
   const [code, setCode] = useState<string>("")
   const [isRegenerating, setIsRegenerating] = useState(false)
 
@@ -72,6 +63,70 @@ function PublishPageContent() {
     sandboxConnectionHash,
     connectedShellId,
   })
+
+  useEffect(() => {
+    // Renamed function for clarity
+    const findAndSelectFirstUiFile = async () => {
+      console.log("Attempting to find initial UI file...") // Log: Start
+      console.log(
+        "isTreeLoading:",
+        isTreeLoading,
+        "files.length:",
+        files.length,
+        "selectedEntry:",
+        selectedEntry,
+      ) // Log: State check
+      if (!isTreeLoading && files.length > 0 && !selectedEntry) {
+        console.log("Files list:", JSON.stringify(files, null, 2)) // Log: Full file list (can be verbose)
+
+        const findFirstUiFile = (entries: FileEntry[]): FileEntry | null => {
+          for (const entry of entries) {
+            // Check if path starts with /src/components/ui AND is not a directory itself
+            if (entry.path.startsWith("/src/components/ui")) {
+              if (entry.type === "file") {
+                console.log("Found potential UI file:", entry.path) // Log: Potential find
+                return entry
+              } else if (entry.type === "dir" && entry.children) {
+                // Recurse only if it's a directory within the target path
+                const fileInChildren = findFirstUiFile(entry.children)
+                if (fileInChildren) return fileInChildren
+              }
+            }
+            // Also check children even if parent doesn't match, path might be nested deeper
+            else if (entry.type === "dir" && entry.children) {
+              const fileInChildren = findFirstUiFile(entry.children)
+              if (fileInChildren) return fileInChildren
+            }
+          }
+          return null
+        }
+
+        const firstUiFile = findFirstUiFile(files)
+        console.log("Result of findFirstUiFile:", firstUiFile) // Log: Result
+
+        if (firstUiFile) {
+          console.log("Setting selected entry:", firstUiFile.path) // Log: Setting state
+          setSelectedEntry(firstUiFile)
+          // Explicitly load content after setting the entry
+          try {
+            console.log("Calling loadFileContent for:", firstUiFile.path) // Log: Loading content
+            const content = await loadFileContent(firstUiFile.path)
+            console.log("Content loaded successfully.") // Log: Load success
+            setCode(content)
+          } catch (error) {
+            // Handle error if initial load fails
+            console.error("Failed to load initial file content:", error) // Log: Load error
+            setCode("")
+            setSelectedEntry(null)
+          }
+        } else {
+          console.log("No initial UI file found in /src/components/ui") // Log: Not found
+        }
+      }
+    }
+
+    findAndSelectFirstUiFile()
+  }, [files, isTreeLoading, selectedEntry, loadFileContent]) // Add loadFileContent to dependencies
 
   useEffect(() => {
     if (missingDependencyInfo) {
