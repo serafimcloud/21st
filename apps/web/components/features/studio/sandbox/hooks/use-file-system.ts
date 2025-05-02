@@ -289,6 +289,7 @@ export const useFileSystem = ({
   const _runTaskAndWaitForOutput = async <T>(
     taskName: string,
     completionOutput: string,
+    env: Record<string, string> | undefined,
     onComplete: (shell: any, sandbox: SandboxSession) => Promise<T | undefined>,
   ): Promise<T | undefined> => {
     // Guranties that the sandbox is connected
@@ -298,7 +299,12 @@ export const useFileSystem = ({
         const interval = setInterval(() => {
           if (sandboxConnectionHash) {
             clearInterval(interval)
-            _runTaskAndWaitForOutput(taskName, completionOutput, onComplete)
+            _runTaskAndWaitForOutput(
+              taskName,
+              completionOutput,
+              env,
+              onComplete,
+            )
               .then(resolve)
               .catch(reject)
           }
@@ -315,7 +321,7 @@ export const useFileSystem = ({
     if (!sandboxRef.current) {
       throw new Error("Sandbox not available")
     }
-    const task = await sandboxRef.current.tasks.runTask(taskName)
+    const task = await sandboxRef.current.tasks.runTask(taskName, { env })
 
     if (!task) {
       throw new Error(`Failed to start ${taskName} task`)
@@ -419,6 +425,7 @@ export const useFileSystem = ({
     return _runTaskAndWaitForOutput<string>(
       "build",
       "built in",
+      undefined,
       async (shell, sandbox) => {
         const content = await getContentOfBundleIndexHTML(sandbox)
         if (!content) {
@@ -430,7 +437,9 @@ export const useFileSystem = ({
   }
 
   // Function to compile the project into a shadcn registry
-  const generateRegistry = async (): Promise<
+  const generateRegistry = async (
+    slug?: string,
+  ): Promise<
     | {
         componentRegistryJSON: string
         demoRegistryJSON: string
@@ -443,15 +452,22 @@ export const useFileSystem = ({
           demoRegistryJSON: string
         }
       | undefined
-    >("generate:registry", "FINISH", async (shell, sandbox) => {
-      const componentRegistryJSON =
-        await getContentOfComponentRegistryJSON(sandbox)
-      const demoRegistryJSON = await getContentOfDemoRegistryJSON(sandbox)
-      if (!componentRegistryJSON || !demoRegistryJSON) {
-        throw new Error("Failed to read generated registry files")
-      }
-      return { componentRegistryJSON, demoRegistryJSON }
-    })
+    >(
+      "generate:registry",
+      "FINISH",
+      slug ? { COMPONENT_SLUG: slug } : undefined,
+      async (shell, sandbox) => {
+        const componentRegistryJSON = await getContentOfComponentRegistryJSON(
+          sandbox,
+          slug,
+        )
+        const demoRegistryJSON = await getContentOfDemoRegistryJSON(sandbox)
+        if (!componentRegistryJSON || !demoRegistryJSON) {
+          throw new Error("Failed to read generated registry files")
+        }
+        return { componentRegistryJSON, demoRegistryJSON }
+      },
+    )
   }
 
   const getContentOfBundleIndexHTML = async (sandbox: SandboxSession) => {
@@ -460,8 +476,12 @@ export const useFileSystem = ({
     return content
   }
 
-  const getContentOfComponentRegistryJSON = async (sandbox: SandboxSession) => {
-    const registryJsonPath = normalizePath("public/r/component.json")
+  const getContentOfComponentRegistryJSON = async (
+    sandbox: SandboxSession,
+    slug?: string,
+  ) => {
+    const filename = slug ? `${slug}.json` : "component.json"
+    const registryJsonPath = normalizePath(`public/r/${filename}`)
     const content = await sandbox.fs.readTextFile(registryJsonPath)
     return content
   }
@@ -470,6 +490,53 @@ export const useFileSystem = ({
     const registryJsonPath = normalizePath("public/r/demo.json")
     const content = await sandbox.fs.readTextFile(registryJsonPath)
     return content
+  }
+
+  const updateComponentNameAndImport = async (newSlug: string) => {
+    await sbWrapper(async (sandbox) => {
+      const oldComponentPath = normalizePath("src/components/ui/component.tsx")
+      const newComponentPath = normalizePath(`src/components/ui/${newSlug}.tsx`)
+      const demoPath = normalizePath("src/demo.tsx")
+
+      // Rename the component file
+      try {
+        await sandbox.fs.rename(oldComponentPath, newComponentPath)
+        console.log(`Renamed ${oldComponentPath} to ${newComponentPath}`)
+      } catch (error) {
+        console.error(`Failed to rename component file: ${error}`)
+        toast.error(`Failed to rename component file to ${newSlug}.tsx`)
+        // If renaming fails, we might not want to proceed with updating the import
+        throw new Error(`Failed to rename component file to ${newSlug}.tsx`)
+      }
+
+      // Read, update, and write the demo file's import statement
+      try {
+        const demoContent = await sandbox.fs.readTextFile(demoPath)
+        const oldImportPattern =
+          /from\s+(['"])@\/components\/ui\/component(['"])/g
+        const newImportString = `from $1@/components/ui/${newSlug}$2`
+        const updatedDemoContent = demoContent.replace(
+          oldImportPattern,
+          newImportString,
+        )
+
+        if (demoContent !== updatedDemoContent) {
+          await sandbox.fs.writeTextFile(demoPath, updatedDemoContent)
+          console.log(`Updated import in ${demoPath}`)
+        } else {
+          console.warn(`Import pattern not found in ${demoPath}`)
+          // Decide if this is an error or just a warning
+          // toast.warn(`Could not update import path in demo file.`);
+        }
+      } catch (error) {
+        console.error(`Failed to update demo import: ${error}`)
+        toast.error("Failed to update demo import path.")
+        // Consider if this error should halt the process
+        throw new Error("Failed to update demo import.")
+      }
+    })
+    // Reload the file tree to reflect changes
+    await loadRootDirectory()
   }
 
   return {
@@ -486,6 +553,8 @@ export const useFileSystem = ({
     deleteEntry,
     renameEntry,
     addDependencyToPackageJson,
+    // component name update
+    updateComponentNameAndImport,
     // registry
     generateRegistry,
     bundleDemo,

@@ -41,9 +41,9 @@ export const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  // component_slug: z.string().min(2, {
-  //   message: "Slug must be at least 2 characters.",
-  // }),
+  component_slug: z.string().min(2, {
+    message: "Slug must be at least 2 characters.",
+  }),
   code: z.string().min(1, {
     message: "Component code is required.",
   }),

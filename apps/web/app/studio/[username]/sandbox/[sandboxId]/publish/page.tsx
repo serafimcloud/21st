@@ -61,12 +61,13 @@ const PublishPage = () => {
   const { isLoading: isComponentDataLoading, formData: componentFormData } =
     useComponentData(serverSandbox?.component_id)
 
-  const { generateRegistry, bundleDemo } = useFileSystem({
-    sandboxRef: sandboxRef,
-    reconnectSandbox: reconnectSandbox,
-    sandboxConnectionHash: sandboxConnectionHash,
-    connectedShellId,
-  })
+  const { generateRegistry, bundleDemo, updateComponentNameAndImport } =
+    useFileSystem({
+      sandboxRef: sandboxRef,
+      reconnectSandbox: reconnectSandbox,
+      sandboxConnectionHash: sandboxConnectionHash,
+      connectedShellId,
+    })
   const { user } = useUser()
 
   // useEffect(() => {
@@ -170,6 +171,7 @@ const PublishPage = () => {
     form.handleSubmit(
       (formData) => {
         console.log("Form data is valid:", formData)
+
         console.log("Form errors:", form.formState.errors)
         const data = {
           ...formData,
@@ -189,6 +191,7 @@ const PublishPage = () => {
           },
           generateRegistry,
           bundleDemo,
+          updateComponentNameAndImport,
           sandboxId: serverSandbox!.id,
           onSuccess: () => {
             reconnectSandbox()
