@@ -38,6 +38,7 @@ import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandb
 import { useFileSystem } from "@/components/features/studio/sandbox/hooks/use-file-system"
 import { usePublishAs } from "@/components/features/publish-old/hooks/use-publish-as"
 import { editSandbox } from "@/components/features/studio/sandbox/api"
+import { SandboxHeader } from "@/components/features/studio/sandbox/components/sandbox-header"
 
 type FormStep = "detailedForm"
 
@@ -302,62 +303,19 @@ const PublishPage = () => {
 
   return (
     <>
-      <header className="flex flex-col px-4 py-2 border-b">
-        <div className="flex items-center">
-          <div className="flex items-center gap-2">
-            <div
-              onClick={() => window.history.back()}
-              className="cursor-pointer"
-            >
-              <Logo position="flex" className="w-6 h-6" hasLink={false} />
-            </div>
-
-            <div className="text-muted-foreground">/</div>
-
-            {user?.username && (
-              <div className="flex items-center gap-1">
-                <UserAvatar
-                  src={null}
-                  alt={user.username}
-                  size={24}
-                  className="mr-1"
-                />
-                <span className="text-sm font-medium">{user.username}</span>
-                <div className="text-muted-foreground mx-1">/</div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              {/* Только отображение имени без редактирования */}
-              <h1 className="text-sm font-medium py-0.5 px-0">
-                {form.watch("name") || serverSandbox?.name || "Untitled"}
-              </h1>
-              {serverSandbox?.component_id ? (
-                <div className="text-xs bg-yellow-500 text-primary-foreground rounded-full px-2 py-0.5">
-                  Edit
-                </div>
-              ) : (
-                <div className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">
-                  Draft
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => window.history.back()}
-              className="gap-1"
-            >
-              <ArrowLeftIcon className="h-4 w-4" />
-              Back to edit
-            </Button>
-            <Button onClick={() => handleSubmit()} disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Send to review"}
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SandboxHeader
+        sandboxId={serverSandbox.id || ""}
+        sandboxName={form.watch("name") || serverSandbox?.name || "Untitled"}
+        username={params.username as string}
+        status={serverSandbox?.component_id ? "edit" : "draft"}
+        showEditName={false}
+        customBackLabel="Back to edit"
+        customBackUrl={`/studio/${params.username}/sandbox/${sandboxId}`}
+        customNextLabel={isSubmitting ? "Submitting..." : "Send to review"}
+        customNextAction={handleSubmit}
+        hideNext={false}
+        isNextLoading={isSubmitting}
+      />
       <Form {...form}>
         <div className="flex flex-col h-screen w-full">
           <div className="flex h-[calc(100vh-3.5rem)]">

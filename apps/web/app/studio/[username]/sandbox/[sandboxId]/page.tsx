@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, Suspense } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, usePathname } from "next/navigation"
 import {
   ResizableHandle,
   ResizablePanelGroup,
@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/resizable"
 import { FileExplorer } from "@/components/features/studio/sandbox/components/file-explorer"
 import { PreviewPane } from "@/components/features/studio/sandbox/components/preview-pane"
-import { PublishHeader } from "@/components/features/studio/sandbox/components/publish-header"
+import { SandboxHeader } from "@/components/features/studio/sandbox/components/sandbox-header"
 import { Spinner } from "@/components/icons/spinner"
 import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import {
@@ -29,12 +29,14 @@ import { cn } from "@/lib/utils"
 function PublishPageContent() {
   const params = useParams()
   const router = useRouter()
+  const pathname = usePathname()
   const sandboxId = params.sandboxId as string
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
   const [code, setCode] = useState<string>("")
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [showPreview, setShowPreview] = useState<boolean>(true)
   const [iframeKey, setIframeKey] = useState<number>(0)
+  const [isNavigating, setIsNavigating] = useState(false)
 
   const {
     sandboxRef,
@@ -257,6 +259,11 @@ function PublishPageContent() {
     setShowPreview((prev) => !prev)
   }
 
+  const handleNextStep = () => {
+    setIsNavigating(true)
+    router.push(`${pathname}/publish`)
+  }
+
   if (isSandboxLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background">
@@ -295,13 +302,16 @@ function PublishPageContent() {
 
   return (
     <div className="h-screen w-full flex flex-col">
-      <PublishHeader
-        onGenerateRegistry={handleGenerateRegistry}
-        isRegenerating={isRegenerating}
+      <SandboxHeader
         sandboxId={sandboxId}
         sandboxName={serverSandbox?.name}
         username={params.username as string}
-        showPreview={showPreview}
+        onNameChange={(newName) => {
+          // Update the sandbox name in the parent component if needed
+        }}
+        customNextLabel="Continue"
+        customNextAction={handleNextStep}
+        isNextLoading={isNavigating}
       />
 
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
