@@ -425,9 +425,9 @@ const PublishPage = () => {
                             <div className="flex items-center gap-2 w-full">
                               <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                                 <div className="truncate flex-shrink min-w-0">
-                                  {index === 0
-                                    ? "Default"
-                                    : demo.name || `Demo ${index + 1}`}
+                                  {form.getValues().demos.length > 1
+                                    ? `${demo.name || `Demo ${index + 1}`} Details`
+                                    : "Demo Details"}
                                 </div>
                                 <Badge
                                   variant="outline"

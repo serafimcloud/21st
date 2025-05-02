@@ -14,12 +14,6 @@ import MultipleSelector, { Option } from "@/components/ui/multiselect"
 import { Input } from "@/components/ui/input"
 import { FormField } from "@/components/ui/form"
 import { makeSlugFromName } from "../../hooks/use-is-check-slug-available"
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from "@/components/ui/collapsible"
-import { Textarea } from "@/components/ui/textarea"
 
 export const DemoDetailsForm = ({
   form,
