@@ -315,25 +315,37 @@ export const useSubmitComponent = () => {
 
       if (componentIdToUse) {
         // Update existing component
+        console.log(
+          `Attempting to update component with ID: ${componentIdToUse}`,
+        )
         const { data: updatedComponent, error: updateComponentError } =
           await client
             .from("components")
             .update(componentData)
             .eq("id", componentIdToUse)
             .select()
-            .single()
+
+        console.log("Update component result:", {
+          updatedComponent,
+          updateComponentError,
+        })
 
         if (updateComponentError) {
           console.error("Error updating component:", updateComponentError)
           throw updateComponentError
         }
         if (!updatedComponent) {
+          console.error("Update component failed: No data returned.") // Log specific error
           throw new Error("Failed to update component, no data returned.")
         }
         finalComponent = updatedComponent
         console.log("Successfully updated component:", finalComponent)
       } else {
         // Insert new component
+        console.log(
+          "Attempting to insert new component with data:",
+          componentData,
+        )
         const { data: insertedComponent, error: insertComponentError } =
           await client
             .from("components")
@@ -341,11 +353,17 @@ export const useSubmitComponent = () => {
             .select()
             .single()
 
+        console.log("Insert component result:", {
+          insertedComponent,
+          insertComponentError,
+        })
+
         if (insertComponentError) {
           console.error("Error inserting component:", insertComponentError)
           throw insertComponentError
         }
         if (!insertedComponent) {
+          console.error("Insert component failed: No data returned.") // Log specific error
           throw new Error("Failed to insert component, no data returned.")
         }
         finalComponent = insertedComponent
@@ -464,6 +482,7 @@ export const useSubmitComponent = () => {
 
       if (existingDemoId) {
         // Update existing demo
+        console.log(`Attempting to update demo with ID: ${existingDemoId}`)
         const { data: updatedDemo, error: updateDemoError } = await client
           .from("demos")
           .update(demoData)
@@ -471,28 +490,35 @@ export const useSubmitComponent = () => {
           .select()
           .single()
 
+        console.log("Update demo result:", { updatedDemo, updateDemoError })
+
         if (updateDemoError) {
           console.error("Error updating demo:", updateDemoError)
           throw updateDemoError
         }
         if (!updatedDemo) {
+          console.error("Update demo failed: No data returned.") // Log specific error
           throw new Error("Failed to update demo, no data returned.")
         }
         finalDemo = updatedDemo
         console.log("Successfully updated demo:", finalDemo)
       } else {
         // Insert new demo
+        console.log("Attempting to insert new demo with data:", demoData)
         const { data: insertedDemo, error: insertDemoError } = await client
           .from("demos")
           .insert(demoData)
           .select()
           .single()
 
+        console.log("Insert demo result:", { insertedDemo, insertDemoError })
+
         if (insertDemoError) {
           console.error("Error inserting demo:", insertDemoError)
           throw insertDemoError
         }
         if (!insertedDemo) {
+          console.error("Insert demo failed: No data returned.") // Log specific error
           throw new Error("Failed to insert demo, no data returned.")
         }
         finalDemo = insertedDemo
@@ -500,6 +526,7 @@ export const useSubmitComponent = () => {
       }
 
       if (!finalDemo) {
+        console.error("Final demo object is null after create/update attempts.") // Log if somehow finalDemo is still null
         throw new Error("Demo operation failed.") // Should not happen if errors above are thrown
       }
 

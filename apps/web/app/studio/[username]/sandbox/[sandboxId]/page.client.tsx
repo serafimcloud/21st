@@ -24,6 +24,7 @@ import {
   PanelRightClose,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
 
 function PublishClientPageContent() {
   const params = useParams()
@@ -261,11 +262,79 @@ function PublishClientPageContent() {
   }
 
   if (isSandboxLoading) {
+    // Skeleton Loader for Sandbox UI (3-panel layout, no header skeleton)
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Spinner color="hsl(var(--foreground))" />
-          <p className="text-muted-foreground">Initializing sandbox</p>
+      <div className="h-[calc(100vh-56px)] w-full flex flex-col bg-background">
+        {" "}
+        {/* Added top padding for header */}
+        {/* Skeleton Resizable Panel Group - Represents the main content area below the header */}
+        <div className="flex flex-1 min-h-0">
+          {/* Skeleton File Explorer Panel (Left) */}
+          <div className="w-[20%] p-2 space-y-2 overflow-hidden">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-6 w-full" />
+            <div className="pl-4 space-y-2">
+              <Skeleton className="h-6 w-5/6" />
+              <Skeleton className="h-6 w-1/2" />
+            </div>
+            <Skeleton className="h-6 w-2/3" />
+            <Skeleton className="h-6 w-full" />
+          </div>
+
+          {/* Skeleton Resizable Handle 1 */}
+          <div className="w-[1px] bg-border cursor-col-resize flex-shrink-0"></div>
+
+          {/* Skeleton Editor Panel (Middle) */}
+          <div className="w-[40%] flex flex-col overflow-hidden">
+            {/* Skeleton Editor Content */}
+            <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+              {[...Array(15)].map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className="h-4 w-full"
+                  style={{ width: `${Math.random() * 30 + 70}%` }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Skeleton Resizable Handle 2 */}
+          <div className="w-[1px] bg-border cursor-col-resize flex-shrink-0"></div>
+
+          {/* Skeleton Preview Panel (Right) */}
+          <div className="w-[40%] bg-muted/30 flex flex-col justify-center p-6 overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <Skeleton className="h-8 w-32" />
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-6 rounded-full" />
+                <Skeleton className="h-6 w-6 rounded-full" />
+              </div>
+            </div>
+
+            <div className="flex gap-4 mb-6">
+              <Skeleton className="h-24 w-24 rounded-md" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-5 w-1/2" />
+                <Skeleton className="h-5 w-5/6" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <Skeleton className="h-28 w-full rounded-md" />
+              <Skeleton className="h-28 w-full rounded-md" />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Skeleton className="h-9 w-24 rounded-md" />
+              <Skeleton className="h-9 w-24 rounded-md" />
+            </div>
+          </div>
+        </div>
+        {/* Skeleton Bottom Right Controls */}
+        <div className="fixed bottom-4 right-4 flex gap-2 z-10">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <Skeleton className="h-9 w-9 rounded-md" />
         </div>
       </div>
     )
@@ -297,7 +366,7 @@ function PublishClientPageContent() {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col">
+    <div className="h-[calc(100vh-56px)] w-full flex flex-col">
       {/* Header is rendered in page.tsx */}
 
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
