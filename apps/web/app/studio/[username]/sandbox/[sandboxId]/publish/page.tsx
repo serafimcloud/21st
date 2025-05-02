@@ -1,12 +1,13 @@
 "use client"
 
-import React, { useState, useCallback, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import { useForm } from "react-hook-form"
-import { Trash2 } from "lucide-react"
+import { Trash2, ArrowLeftIcon } from "lucide-react"
 import { useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { debounce } from "lodash"
 
 import { Form } from "@/components/ui/form"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +22,6 @@ import { LoadingDialog } from "@/components/ui/loading-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Logo } from "@/components/ui/logo"
 import { UserAvatar } from "@/components/ui/user-avatar"
-import { ArrowLeftIcon } from "lucide-react"
 
 import { ComponentForm } from "@/components/features/studio/publish/components/forms/component-form"
 import { DemoDetailsForm } from "@/components/features/studio/publish/components/forms/demo-form"
@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils"
 import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import { useFileSystem } from "@/components/features/studio/sandbox/hooks/use-file-system"
 import { usePublishAs } from "@/components/features/publish-old/hooks/use-publish-as"
+import { editSandbox } from "@/components/features/studio/sandbox/api"
 
 type FormStep = "detailedForm"
 
@@ -72,28 +73,18 @@ const PublishPage = () => {
   })
   const { user } = useUser()
 
-  // useEffect(() => {
-  //   if (!connectedShellId) return
-
-  //   const fetchRegistryJSON = async () => {
-  //     console.log("Generating registry...")
-
-  //     console.log("componentRegistryJSON", componentRegistryJSON)
-  //     console.log("demoRegistryJSON", demoRegistryJSON)
-  //   }
-  //   fetchRegistryJSON()
-  // }, [connectedShellId, generateRegistry])
-
+  // Declare all state hooks first
   const [formStep] = useState<FormStep>("detailedForm")
   const [openAccordion, setOpenAccordion] = useState([
     "component-info",
     "demo-0",
   ])
 
+  // Form setup
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      name: serverSandbox?.name || "",
       component_slug: "",
       registry: "ui",
       description: "",
@@ -123,26 +114,6 @@ const PublishPage = () => {
     },
   })
 
-  // Update form with component data when available
-  useEffect(() => {
-    if (componentFormData && !isComponentDataLoading) {
-      form.reset({
-        ...componentFormData,
-        publish_as_username:
-          user?.username ?? componentFormData.publish_as_username,
-      })
-
-      // Open all demo accordions
-      if (componentFormData.demos.length > 0) {
-        const newOpenAccordion = ["component-info"]
-        componentFormData.demos.forEach((_, index) => {
-          newOpenAccordion.push(`demo-${index}`)
-        })
-        setOpenAccordion(newOpenAccordion)
-      }
-    }
-  }, [componentFormData, isComponentDataLoading, form, user?.username])
-
   const publishAsUsername = form.watch("publish_as_username")
   const { user: publishAsUser } = usePublishAs({
     username: publishAsUsername ?? user?.username ?? "",
@@ -164,9 +135,103 @@ const PublishPage = () => {
     setIsSuccessDialogOpen,
   } = useSubmitComponent()
 
-  const handleAccordionChange = useCallback((value: string[]) => {
-    setOpenAccordion(value)
-  }, [])
+  const handleGoToComponent = () => {
+    const username = publishAsUser?.username || user?.username
+    const slug = form.getValues("component_slug")
+    const demoSlug = createdDemoSlug || "default"
+    if (username && slug) {
+      console.log(`Redirecting to /${username}/${slug}/${demoSlug}`)
+    } else {
+      console.warn("Could not determine redirect path.")
+    }
+    setIsSuccessDialogOpen(false)
+  }
+
+  // Log form state changes
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      console.log("Form state updated:", value)
+    })
+    return () => subscription.unsubscribe()
+  }, [form])
+
+  // Update form name when serverSandbox name changes
+  useEffect(() => {
+    if (serverSandbox?.name && !componentFormData) {
+      form.setValue("name", serverSandbox.name)
+    }
+  }, [serverSandbox?.name, form, componentFormData])
+
+  // Update form with component data when available
+  useEffect(() => {
+    if (componentFormData && !isComponentDataLoading) {
+      form.reset({
+        ...componentFormData,
+        publish_as_username:
+          user?.username ?? componentFormData.publish_as_username,
+      })
+
+      // Open all demo accordions
+      if (componentFormData.demos.length > 0) {
+        const newOpenAccordion = ["component-info"]
+        componentFormData.demos.forEach((_, index) => {
+          newOpenAccordion.push(`demo-${index}`)
+        })
+        setOpenAccordion(newOpenAccordion)
+      }
+    }
+  }, [componentFormData, isComponentDataLoading, form, user?.username])
+
+  // Предыдущее значение имени для сравнения
+  const prevNameRef = useRef<string>("")
+
+  // Создаем дебаунсированную функцию для обновления имени
+  const debouncedUpdateName = useRef(
+    debounce(async (newName: string) => {
+      if (!sandboxId) return
+
+      try {
+        // Проверяем, что имя действительно изменилось
+        if (newName !== prevNameRef.current) {
+          console.log(
+            `Updating sandbox name from "${prevNameRef.current}" to "${newName}"`,
+          )
+          prevNameRef.current = newName
+
+          const result = await editSandbox(sandboxId, { name: newName })
+          console.log("Updated sandbox name in database:", result)
+        }
+      } catch (error) {
+        console.error("Failed to update sandbox name in database:", error)
+      }
+    }, 800), // задержка 800мс
+  ).current
+
+  // Инициализируем prevNameRef при загрузке формы
+  useEffect(() => {
+    prevNameRef.current = form.getValues("name") || serverSandbox?.name || ""
+  }, [serverSandbox?.name, form])
+
+  // Главное: следим за изменениями поля name в форме и обновляем в базе
+  useEffect(() => {
+    // Используем мутацию формы вместо watch для уменьшения количества срабатываний
+    const subscription = form.watch((value, { name: fieldName }) => {
+      if (fieldName === "name" && value.name) {
+        const newName = value.name as string
+
+        // Запускаем дебаунс только если значение изменилось
+        if (newName !== prevNameRef.current) {
+          console.log(`Name field changed, scheduling update to: "${newName}"`)
+          debouncedUpdateName(newName)
+        }
+      }
+    })
+
+    return () => {
+      debouncedUpdateName.cancel()
+      subscription.unsubscribe()
+    }
+  }, [form, debouncedUpdateName])
 
   const handleSubmit = (event?: React.FormEvent) => {
     event?.preventDefault()
@@ -210,23 +275,10 @@ const PublishPage = () => {
     "name",
     "component_slug",
   ])
-  const isComponentInfoComplete = useCallback(() => {
+  const isComponentInfoComplete = () => {
     const [description, name, component_slug] = watchedComponentFields
     return !!description && !!name && !!component_slug
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedComponentFields])
-
-  const handleGoToComponent = useCallback(() => {
-    const username = publishAsUser?.username || user?.username
-    const slug = form.getValues("component_slug")
-    const demoSlug = createdDemoSlug || "default"
-    if (username && slug) {
-      console.log(`Redirecting to /${username}/${slug}/${demoSlug}`)
-    } else {
-      console.warn("Could not determine redirect path.")
-    }
-    setIsSuccessDialogOpen(false)
-  }, [publishAsUser, user, form, createdDemoSlug])
+  }
 
   const handleAddAnother = () => {
     form.reset()
@@ -273,6 +325,7 @@ const PublishPage = () => {
             )}
 
             <div className="flex items-center gap-2">
+              {/* Только отображение имени без редактирования */}
               <h1 className="text-sm font-medium py-0.5 px-0">
                 {form.watch("name") || serverSandbox?.name || "Untitled"}
               </h1>
@@ -319,7 +372,7 @@ const PublishPage = () => {
                     <Accordion
                       type="multiple"
                       value={openAccordion}
-                      onValueChange={handleAccordionChange}
+                      onValueChange={setOpenAccordion}
                       className="w-full"
                     >
                       <AccordionItem value="component-info">
@@ -373,7 +426,7 @@ const PublishPage = () => {
                               <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                                 <div className="truncate flex-shrink min-w-0">
                                   {index === 0
-                                    ? "Default Demo"
+                                    ? "Default"
                                     : demo.name || `Demo ${index + 1}`}
                                 </div>
                                 <Badge

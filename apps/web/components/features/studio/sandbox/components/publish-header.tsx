@@ -101,16 +101,12 @@ export function PublishHeader({
     try {
       const { success } = await editSandbox(sandboxId, { name })
       if (success) {
-        toast.success("Sandbox name updated")
+        toast.success("Component name updated")
         setIsEditing(false)
-
-        // Notify parent component about the name change
-        if (onNameChange) {
-          onNameChange(name)
-        }
+        onNameChange?.(name)
       }
     } catch (error) {
-      toast.error("Failed to update sandbox name")
+      toast.error("Failed to update component name")
       setName(sandboxName)
     } finally {
       setEditLoading(false)
@@ -137,6 +133,11 @@ export function PublishHeader({
       handleCancel()
     }
   }
+
+  // Update outside components when name changes
+  useEffect(() => {
+    onNameChange?.(name)
+  }, [name, onNameChange])
 
   return (
     <header className="flex flex-col px-4 py-2 border-b">
