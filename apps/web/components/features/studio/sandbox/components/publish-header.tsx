@@ -15,6 +15,13 @@ import { Input } from "@/components/ui/input"
 import { motion } from "motion/react"
 import { Logo } from "@/components/ui/logo"
 import { UserAvatar } from "@/components/ui/user-avatar"
+import { cn } from "@/lib/utils"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface PublishHeaderProps {
   sandboxId: string | null
@@ -22,6 +29,8 @@ interface PublishHeaderProps {
   username?: string
   onGenerateRegistry?: () => void
   isRegenerating?: boolean
+  showPreview?: boolean
+  onNameChange?: (newName: string) => void
 }
 
 export function PublishHeader({
@@ -30,6 +39,8 @@ export function PublishHeader({
   username,
   onGenerateRegistry,
   isRegenerating = false,
+  showPreview = true,
+  onNameChange,
 }: PublishHeaderProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -92,6 +103,11 @@ export function PublishHeader({
       if (success) {
         toast.success("Sandbox name updated")
         setIsEditing(false)
+
+        // Notify parent component about the name change
+        if (onNameChange) {
+          onNameChange(name)
+        }
       }
     } catch (error) {
       toast.error("Failed to update sandbox name")
@@ -184,13 +200,23 @@ export function PublishHeader({
               </>
             ) : (
               <>
-                <h1
-                  ref={textRef}
-                  className="text-sm font-medium py-0.5 px-0 cursor-text transition-colors hover:bg-accent/30 rounded"
-                  onClick={() => setIsEditing(true)}
-                >
-                  {name}
-                </h1>
+                <TooltipProvider>
+                  <Tooltip delayDuration={1}>
+                    <TooltipTrigger asChild>
+                      <h1
+                        ref={textRef}
+                        className="text-sm font-medium py-0.5 px-0 cursor-text transition-colors hover:bg-accent/30 relative after:absolute after:left-0 after:right-0 after:bottom-0 after:h-[1px] after:bg-black after:opacity-0 hover:after:opacity-100 group-hover:after:opacity-100"
+                        onClick={() => setIsEditing(true)}
+                      >
+                        {name}
+                      </h1>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Rename component</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
                 <div className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">
                   Draft
                 </div>

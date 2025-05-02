@@ -19,6 +19,9 @@ import {
 } from "@/components/ui/accordion"
 import { LoadingDialog } from "@/components/ui/loading-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Logo } from "@/components/ui/logo"
+import { UserAvatar } from "@/components/ui/user-avatar"
+import { ArrowLeftIcon } from "lucide-react"
 
 import { ComponentForm } from "@/components/features/studio/publish/components/forms/component-form"
 import { DemoDetailsForm } from "@/components/features/studio/publish/components/forms/demo-form"
@@ -105,7 +108,7 @@ const PublishPage = () => {
       code: `// Mock component code for ${sandboxId}\nexport default function MockComponent() { return <div>Hello</div>; }`,
       demos: [
         {
-          name: "Default Demo",
+          name: "Default",
           demo_code: `// Mock demo code for ${sandboxId}\nimport MockComponent from './component';\nexport default function Demo() { return <MockComponent />; }`,
           demo_slug: "default",
           tags: [],
@@ -244,23 +247,61 @@ const PublishPage = () => {
 
   return (
     <>
-      <div className="flex justify-between items-center p-4 border-b">
-        <Button variant="outline"> {"< "} Back to edit</Button>
-        <div className="flex items-center gap-2">
-          {serverSandbox?.component_id ? (
-            <Badge variant="outline" className="mr-2">
-              Editing existing component
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="mr-2">
-              Creating new component
-            </Badge>
-          )}
-          <Button onClick={() => handleSubmit()} disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Send to review"}
-          </Button>
+      <header className="flex flex-col px-4 py-2 border-b">
+        <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <div
+              onClick={() => window.history.back()}
+              className="cursor-pointer"
+            >
+              <Logo position="flex" className="w-6 h-6" hasLink={false} />
+            </div>
+
+            <div className="text-muted-foreground">/</div>
+
+            {user?.username && (
+              <div className="flex items-center gap-1">
+                <UserAvatar
+                  src={null}
+                  alt={user.username}
+                  size={24}
+                  className="mr-1"
+                />
+                <span className="text-sm font-medium">{user.username}</span>
+                <div className="text-muted-foreground mx-1">/</div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-medium py-0.5 px-0">
+                {form.watch("name") || serverSandbox?.name || "Untitled"}
+              </h1>
+              {serverSandbox?.component_id ? (
+                <div className="text-xs bg-yellow-500 text-primary-foreground rounded-full px-2 py-0.5">
+                  Edit
+                </div>
+              ) : (
+                <div className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">
+                  Draft
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.history.back()}
+              className="gap-1"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              Back to edit
+            </Button>
+            <Button onClick={() => handleSubmit()} disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Send to review"}
+            </Button>
+          </div>
         </div>
-      </div>
+      </header>
       <Form {...form}>
         <div className="flex flex-col h-screen w-full">
           <div className="flex h-[calc(100vh-3.5rem)]">

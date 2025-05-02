@@ -18,7 +18,13 @@ import {
 } from "@/components/features/studio/sandbox/hooks/use-file-system"
 import { Button } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
-import { XCircle } from "lucide-react"
+import {
+  XCircle,
+  RefreshCw,
+  PanelRightOpen,
+  PanelRightClose,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
 
 const DEFAULT_FILE_ENTRY: FileEntry = {
   name: "component.tsx",
@@ -36,6 +42,8 @@ function PublishPageContent() {
   )
   const [code, setCode] = useState<string>("")
   const [isRegenerating, setIsRegenerating] = useState(false)
+  const [showPreview, setShowPreview] = useState<boolean>(true)
+  const [iframeKey, setIframeKey] = useState<number>(0)
 
   const {
     sandboxRef,
@@ -186,6 +194,14 @@ function PublishPageContent() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [router, sandboxRef])
 
+  const handleRefreshPreview = () => {
+    setIframeKey((prev) => prev + 1)
+  }
+
+  const handleTogglePreview = () => {
+    setShowPreview((prev) => !prev)
+  }
+
   if (isSandboxLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background">
@@ -230,10 +246,11 @@ function PublishPageContent() {
         sandboxId={sandboxId}
         sandboxName={serverSandbox?.name}
         username={params.username as string}
+        showPreview={showPreview}
       />
 
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
-        <ResizablePanel defaultSize={20} minSize={15} className="border-r">
+        <ResizablePanel defaultSize={20} minSize={15}>
           <FileExplorer
             entries={files}
             onSelect={setSelectedEntry}
@@ -257,9 +274,43 @@ function PublishPageContent() {
             code={code}
             onCodeChange={handleCodeChange}
             isFileLoading={isFileLoading}
+            showPreview={showPreview}
+            iframeKey={iframeKey}
+            onRefresh={handleRefreshPreview}
           />
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      {/* Bottom right preview controls */}
+      <div className="fixed bottom-4 right-4 flex gap-2 z-10">
+        {showPreview && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefreshPreview}
+            title="Reload preview"
+            className="bg-background/80 backdrop-blur-sm shadow-sm border"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleTogglePreview}
+          title={showPreview ? "Hide Preview" : "Show Preview"}
+          className={cn(
+            "bg-background/80 backdrop-blur-sm shadow-sm border transition-colors",
+            !showPreview && "border-primary text-primary",
+          )}
+        >
+          {showPreview ? (
+            <PanelRightClose className="h-4 w-4" />
+          ) : (
+            <PanelRightOpen className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
     </div>
   )
 }

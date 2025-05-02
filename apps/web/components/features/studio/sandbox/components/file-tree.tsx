@@ -385,7 +385,7 @@ function DirectoryItem({
             style={indentStyle}
           >
             <div className="flex items-center overflow-hidden">
-              <div className="relative h-4 w-4 mr-1 flex-shrink-0 group/folder">
+              <div className="relative h-4 w-4 mr-1 flex-shrink-0">
                 <motion.div
                   className="absolute inset-0 flex items-center justify-center"
                   initial={false}
@@ -402,29 +402,6 @@ function DirectoryItem({
                 >
                   <FolderOpenIcon className="h-4 w-4 text-blue-500" />
                 </motion.div>
-                <div
-                  className="absolute inset-0 opacity-0 transition-all duration-500 transform
-                  group-hover/folder:opacity-100 group-hover/folder:scale-100 origin-center"
-                >
-                  <div className="relative w-full h-full">
-                    <span
-                      className="absolute inset-0 text-[0.75rem] flex items-center justify-center
-                      animate-in zoom-in-95 duration-300"
-                      style={{
-                        animationFillMode: "forwards",
-                        transform: "translateY(-0.5px)",
-                      }}
-                    ></span>
-                    <div
-                      className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping-slow 
-                      group-hover/folder:opacity-100 opacity-0 transition-opacity duration-300"
-                    />
-                    <div
-                      className="absolute inset-0 rounded-full bg-blue-500/10
-                      group-hover/folder:animate-scale-pulse opacity-0 group-hover/folder:opacity-100 transition-opacity duration-300"
-                    />
-                  </div>
-                </div>
               </div>
               <span className="truncate" title={entry.name}>
                 {entry.name}

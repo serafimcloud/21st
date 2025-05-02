@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react"
-import { RefreshCw, PanelRightOpen, PanelRightClose } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { EditorPane } from "./editor-pane"
+import { cn } from "@/lib/utils"
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { EditorPane } from "./editor-pane"
-import { cn } from "@/lib/utils"
 
 interface PreviewPaneProps {
   previewURL: string | null
@@ -17,6 +15,9 @@ interface PreviewPaneProps {
   onCodeChange?: (value: string) => void
   isFileLoading?: boolean
   connectedShellId?: string
+  showPreview: boolean
+  iframeKey: number
+  onRefresh: () => void
 }
 
 export function PreviewPane({
@@ -27,10 +28,10 @@ export function PreviewPane({
   onCodeChange = () => {},
   isFileLoading = false,
   connectedShellId = "",
+  showPreview,
+  iframeKey,
+  onRefresh,
 }: PreviewPaneProps) {
-  const [iframeKey, setIframeKey] = useState<number>(0)
-  const [showPreview, setShowPreview] = useState<boolean>(isPreviewVisible)
-
   const [previousConnectedShellId, setPreviousConnectedShellId] = useState<
     string | null
   >(connectedShellId)
@@ -43,18 +44,10 @@ export function PreviewPane({
       previousConnectedShellId !== ""
     ) {
       setTimeout(() => {
-        setIframeKey((prev) => prev + 1)
+        onRefresh()
       }, 1000 * 8)
     }
-  }, [connectedShellId])
-
-  const handleRefresh = () => {
-    setIframeKey((prev) => prev + 1)
-  }
-
-  const togglePreview = () => {
-    setShowPreview((prev) => !prev)
-  }
+  }, [connectedShellId, onRefresh])
 
   return (
     <div className="relative h-full">
@@ -67,67 +60,37 @@ export function PreviewPane({
             isLoading={isFileLoading}
           />
         </ResizablePanel>
-        {showPreview && (
-          <>
-            <ResizableHandle />
-            <ResizablePanel defaultSize={50} minSize={30}>
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/40">
-                  <div className="text-sm h-7 font-medium mt-2 ">Preview</div>
-                </div>
-                {!previewURL ? (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">
-                    Waiting for dev server...
-                  </div>
-                ) : (
-                  <iframe
-                    key={`${iframeKey}-${connectedShellId}`}
-                    src={previewURL}
-                    className="w-full h-full border rounded-b"
-                  />
-                )}
-              </div>
-            </ResizablePanel>
-          </>
-        )}
-      </ResizablePanelGroup>
-
-      <div className="absolute right-4 top-2 z-10 flex gap-2">
-        {showPreview && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            title="Reload preview"
-            className="bg-background/80 backdrop-blur-sm shadow-sm border"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Reload
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={togglePreview}
-          title={showPreview ? "Hide Preview" : "Show Preview"}
+        <ResizableHandle
           className={cn(
-            "bg-background/80 backdrop-blur-sm shadow-sm border transition-colors",
-            !showPreview && "border-primary text-primary",
+            showPreview ? "opacity-100 scale-100" : "opacity-0 scale-95",
           )}
+        />
+        <ResizablePanel
+          defaultSize={50}
+          minSize={30}
+          style={{
+            maxWidth: showPreview ? "100%" : "0px",
+            minWidth: showPreview ? "30%" : "0px",
+            opacity: showPreview ? 1 : 0,
+            overflow: "hidden",
+            transition: "all 450ms cubic-bezier(0.23, 1, 0.32, 1)",
+          }}
         >
-          {showPreview ? (
-            <>
-              <PanelRightClose className="h-4 w-4 mr-2" />
-              Hide Preview
-            </>
-          ) : (
-            <>
-              <PanelRightOpen className="h-4 w-4 mr-2" />
-              Show Preview
-            </>
-          )}
-        </Button>
-      </div>
+          <div className="flex flex-col h-full">
+            {!previewURL ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                Waiting for dev server...
+              </div>
+            ) : (
+              <iframe
+                key={`${iframeKey}-${connectedShellId}`}
+                src={previewURL}
+                className="w-full h-full rounded-b"
+              />
+            )}
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }
