@@ -15,25 +15,12 @@ interface FileEntry {
 }
 */
 import { FileEntry } from "../hooks/use-file-system"
-import {
-  PlusIcon,
-  RefreshCwIcon,
-  Loader2Icon,
-  FolderPlusIcon,
-  EyeIcon,
-  EyeOffIcon,
-} from "lucide-react"
+import { FolderIcon, FolderOpenIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
 import { FileTree } from "./file-tree"
 import { cn } from "@/lib/utils"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { motion } from "motion/react"
 
 interface FileExplorerProps {
   entries: FileEntry[]
@@ -91,77 +78,7 @@ export function FileExplorer({
   }
 
   return (
-    <Card className="h-full rounded-none flex flex-col">
-      <div className="flex items-center justify-between p-2 border-b">
-        <span className="font-medium">Files</span>
-        <div className="flex gap-1">
-          {/* <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setIsCreatingFile(true)}
-            disabled={isLoading}
-          >
-            <PlusIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setIsCreatingDirectory(true)}
-            disabled={isLoading}
-          >
-            <FolderPlusIcon className="h-4 w-4" />
-          </Button> */}
-          {/* <Button
-            size="icon"
-            variant="ghost"
-            onClick={onRefresh}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2Icon className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCwIcon className="h-4 w-4" />
-            )}
-          </Button> */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onToggleAdvancedView}
-                  className={cn(
-                    "bg-background/80 backdrop-blur-sm shadow-sm border transition-colors",
-                  )}
-                  disabled={isLoading}
-                >
-                  {advancedView ? (
-                    <>
-                      <EyeOffIcon className="h-4 w-4 mr-2" />
-                      Advanced view
-                    </>
-                  ) : (
-                    <>
-                      <EyeIcon className="h-4 w-4 mr-2" />
-                      Simple view
-                    </>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                align="end"
-                className="max-w-[220px]"
-              >
-                {advancedView
-                  ? "Switch to Simple view: only shows files that you need"
-                  : "Switch to Advanced view: shows files that are used under the hood"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
-
+    <div className="h-full flex flex-col relative px-1">
       {isCreatingFile && (
         <div className="p-2 border-b">
           <div className="flex gap-2">
@@ -210,7 +127,7 @@ export function FileExplorer({
         </div>
       )}
 
-      <CardContent className="p-0 overflow-y-auto flex-1">
+      <div className="overflow-y-auto flex-1">
         <FileTree
           entries={entries}
           onSelect={onSelect}
@@ -221,7 +138,63 @@ export function FileExplorer({
           onCreateDirectory={onCreateDirectory}
           onRename={onRename}
         />
-      </CardContent>
-    </Card>
+      </div>
+
+      <motion.div
+        className="absolute bottom-4 left-4 z-10 rounded-full overflow-hidden transition-all duration-200 ease-in-out w-auto"
+        initial={{ opacity: 0.95 }}
+        whileHover={{
+          opacity: 1,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        }}
+        transition={{ duration: 0.15 }}
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onToggleAdvancedView}
+          className={cn(
+            "bg-background/90 backdrop-blur-md shadow-sm border rounded-full pl-1.5 pr-3 h-8",
+            "flex items-center gap-1.5 transition-all duration-200 ease-in-out w-auto",
+            advancedView ? "border-primary/30" : "border-muted-foreground/30",
+          )}
+          disabled={isLoading}
+        >
+          <motion.div
+            initial={false}
+            animate={{
+              rotateY: advancedView ? 180 : 0,
+              backgroundColor: advancedView
+                ? "rgba(var(--primary), 0.1)"
+                : "hsl(var(--muted))",
+            }}
+            transition={{ duration: 0.3 }}
+            className={cn(
+              "rounded-full flex items-center justify-center w-5 h-5",
+              advancedView ? "text-primary" : "text-muted-foreground",
+            )}
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            {advancedView ? (
+              <FolderOpenIcon
+                className="h-3 w-3 absolute transform"
+                style={{
+                  backfaceVisibility: "hidden",
+                  transform: "rotateY(180deg)",
+                }}
+              />
+            ) : (
+              <FolderIcon
+                className="h-3 w-3 absolute transform"
+                style={{ backfaceVisibility: "hidden" }}
+              />
+            )}
+          </motion.div>
+          <span className="text-xs font-medium whitespace-nowrap">
+            {advancedView ? "Hide system files" : "Show all files"}
+          </span>
+        </Button>
+      </motion.div>
+    </div>
   )
 }
