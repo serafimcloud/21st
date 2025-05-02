@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import {
   FolderIcon,
+  FolderOpenIcon,
   FileIcon,
   Loader2Icon,
   TrashIcon,
@@ -16,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { motion } from "motion/react"
 
 interface FileEntry {
   name: string
@@ -204,7 +206,7 @@ function FileItem({
 
   return (
     <li
-      className="py-0.5 group/item"
+      className="py-0.5 group/item relative select-none"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => !isRenaming && setShowActions(false)}
       style={{ paddingLeft: `${level * 1}rem` }}
@@ -220,8 +222,8 @@ function FileItem({
       ) : (
         <div className="flex items-center justify-between">
           <button
-            className={`flex items-center flex-1 text-left px-2 py-1 hover:bg-muted rounded truncate ${
-              selectedPath === entry.path ? "bg-accent font-medium" : ""
+            className={`flex items-center flex-1 text-left px-2 py-1 hover:bg-muted rounded truncate select-none ${
+              selectedPath === entry.path ? "bg-accent" : ""
             }`}
             onClick={() => onSelect(entry)}
             title={entry.path}
@@ -351,10 +353,11 @@ function DirectoryItem({
 
   const indentStyle = { paddingLeft: `${level * 1 + 0.5}rem` }
   const childIndentStyle = { paddingLeft: `${(level + 1) * 1 + 0.5}rem` }
+  const isExpanded = expandedDirs[entry.path]
 
   return (
     <li
-      className="py-0.5 group/item"
+      className="py-0.5 group/item relative select-none"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => {
         if (!isCreatingFile && !isCreatingDirectory && !isRenaming) {
@@ -362,7 +365,7 @@ function DirectoryItem({
         }
       }}
     >
-      <details className="group" open={expandedDirs[entry.path]}>
+      <details className="group select-none" open={isExpanded}>
         {isRenaming ? (
           <div className="flex gap-1 py-1 pl-2" style={indentStyle}>
             <InlineInputForm
@@ -375,15 +378,55 @@ function DirectoryItem({
           </div>
         ) : (
           <summary
-            className={`flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-muted rounded list-none ${
+            className={`flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-muted rounded list-none select-none ${
               selectedPath === entry.path ? "bg-accent" : ""
-            }`}
+            } relative z-10`}
             onClick={toggleExpanded}
             style={indentStyle}
           >
             <div className="flex items-center overflow-hidden">
-              <FolderIcon className="h-4 w-4 mr-1 text-blue-500 flex-shrink-0" />
-              <span className="font-medium truncate" title={entry.name}>
+              <div className="relative h-4 w-4 mr-1 flex-shrink-0 group/folder">
+                <motion.div
+                  className="absolute inset-0 flex items-center justify-center"
+                  initial={false}
+                  animate={{ opacity: isExpanded ? 0 : 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <FolderIcon className="h-4 w-4 text-blue-500" />
+                </motion.div>
+                <motion.div
+                  className="absolute inset-0 flex items-center justify-center"
+                  initial={false}
+                  animate={{ opacity: isExpanded ? 1 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <FolderOpenIcon className="h-4 w-4 text-blue-500" />
+                </motion.div>
+                <div
+                  className="absolute inset-0 opacity-0 transition-all duration-500 transform
+                  group-hover/folder:opacity-100 group-hover/folder:scale-100 origin-center"
+                >
+                  <div className="relative w-full h-full">
+                    <span
+                      className="absolute inset-0 text-[0.75rem] flex items-center justify-center
+                      animate-in zoom-in-95 duration-300"
+                      style={{
+                        animationFillMode: "forwards",
+                        transform: "translateY(-0.5px)",
+                      }}
+                    ></span>
+                    <div
+                      className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping-slow 
+                      group-hover/folder:opacity-100 opacity-0 transition-opacity duration-300"
+                    />
+                    <div
+                      className="absolute inset-0 rounded-full bg-blue-500/10
+                      group-hover/folder:animate-scale-pulse opacity-0 group-hover/folder:opacity-100 transition-opacity duration-300"
+                    />
+                  </div>
+                </div>
+              </div>
+              <span className="truncate" title={entry.name}>
                 {entry.name}
               </span>
             </div>
@@ -439,7 +482,15 @@ function DirectoryItem({
           </div>
         )}
 
-        <div className="mt-0.5">
+        <div className="mt-0.5 relative">
+          {/* Directory connector line */}
+          {isExpanded && entry.children && entry.children.length > 0 && (
+            <div
+              className="absolute left-3 top-0 bottom-0 w-px bg-gray-200/0 dark:bg-gray-700/0 transition-colors duration-200 group-hover:bg-gray-200 group-hover:dark:bg-gray-700"
+              style={{ left: `${level * 16 + 10}px` }}
+            />
+          )}
+
           {entry.children && entry.children.length > 0 ? (
             <FileList
               items={entry.children}
@@ -495,34 +546,52 @@ function FileList({
   setExpandedDirs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
 }) {
   return (
-    <ul className="text-sm py-0.5">
-      {items.map((entry) =>
-        entry.type === "dir" ? (
-          <DirectoryItem
-            key={entry.path}
-            entry={entry}
-            level={level}
-            onSelect={onSelect}
-            selectedPath={selectedPath}
-            onDelete={onDelete}
-            onCreateFile={onCreateFile}
-            onCreateDirectory={onCreateDirectory}
-            onRename={onRename}
-            expandedDirs={expandedDirs}
-            setExpandedDirs={setExpandedDirs}
-          />
-        ) : (
-          <FileItem
-            key={entry.path}
-            entry={entry}
-            level={level}
-            onSelect={onSelect}
-            selectedPath={selectedPath}
-            onDelete={onDelete}
-            onRename={onRename}
-          />
-        ),
-      )}
+    <ul className="text-sm py-0.5 relative group/tree select-none">
+      {items.map((entry, index) => (
+        <div key={entry.path} className="relative">
+          {/* Vertical connector line */}
+          {index < items.length - 1 && level > 0 && (
+            <div
+              className="absolute left-0 top-4 bottom-0 w-px bg-gray-200/0 dark:bg-gray-700/0 transition-colors duration-200 group-hover/tree:bg-gray-200 group-hover/tree:dark:bg-gray-700"
+              style={{ left: `${(level - 1) * 16 + 10}px` }}
+            />
+          )}
+          {/* Horizontal connector line */}
+          {level > 0 && (
+            <div
+              className="absolute w-4 h-px bg-gray-200/0 dark:bg-gray-700/0 transition-colors duration-200 group-hover/tree:bg-gray-200 group-hover/tree:dark:bg-gray-700"
+              style={{
+                left: `${(level - 1) * 16 + 10}px`,
+                top: "14px",
+                zIndex: 0,
+              }}
+            />
+          )}
+          {entry.type === "dir" ? (
+            <DirectoryItem
+              entry={entry}
+              level={level}
+              onSelect={onSelect}
+              selectedPath={selectedPath}
+              onDelete={onDelete}
+              onCreateFile={onCreateFile}
+              onCreateDirectory={onCreateDirectory}
+              onRename={onRename}
+              expandedDirs={expandedDirs}
+              setExpandedDirs={setExpandedDirs}
+            />
+          ) : (
+            <FileItem
+              entry={entry}
+              level={level}
+              onSelect={onSelect}
+              selectedPath={selectedPath}
+              onDelete={onDelete}
+              onRename={onRename}
+            />
+          )}
+        </div>
+      ))}
     </ul>
   )
 }
@@ -576,14 +645,14 @@ export function FileTree({
 
   if (isLoading && entries.length === 0) {
     return (
-      <div className="flex justify-center items-center py-8">
+      <div className="flex justify-center items-center py-8 select-none">
         <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <>
+    <div className="select-none">
       {entries.length === 0 && !isLoading ? (
         <div className="px-2 text-muted-foreground py-4 text-sm">
           No files found
@@ -602,6 +671,6 @@ export function FileTree({
           setExpandedDirs={setExpandedDirs}
         />
       )}
-    </>
+    </div>
   )
 }
