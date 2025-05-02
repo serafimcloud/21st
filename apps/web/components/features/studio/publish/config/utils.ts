@@ -5,9 +5,6 @@ const demoSchema = z.object({
   name: z.string().min(2, {
     message: "Demo name must be at least 2 characters.",
   }),
-  demo_code: z.string().min(1, {
-    message: "Demo code is required.",
-  }),
   demo_slug: z.string().min(1, {
     message: "Demo slug is required.",
   }),
@@ -41,11 +38,8 @@ export const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  // component_slug: z.string().min(2, {
-  //   message: "Slug must be at least 2 characters.",
-  // }),
-  code: z.string().min(1, {
-    message: "Component code is required.",
+  component_slug: z.string().min(2, {
+    message: "Slug must be at least 2 characters.",
   }),
   demos: z.array(demoSchema).default([]),
   description: z.string().min(10, {

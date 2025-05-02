@@ -63,6 +63,7 @@ export const useSubmitComponent = () => {
   const submitComponent = async ({
     data,
     publishAsUser,
+    updateComponentNameAndImport,
     generateRegistry,
     bundleDemo,
     sandboxId,
@@ -70,7 +71,8 @@ export const useSubmitComponent = () => {
   }: {
     data: FormData
     publishAsUser: { id: string; username?: string }
-    generateRegistry: () => Promise<
+    updateComponentNameAndImport: (newSlug: string) => Promise<void>
+    generateRegistry: (slug?: string) => Promise<
       | {
           componentRegistryJSON: string
           demoRegistryJSON: string
@@ -84,30 +86,53 @@ export const useSubmitComponent = () => {
     setIsSubmitting(true)
     setIsLoadingDialogOpen(true)
     setPublishProgress("Bundling component...")
-    const resultOfGenerateRegistry = await generateRegistry()
-    if (!resultOfGenerateRegistry) {
-      toast.error("Failed to bundle component; Please try again.")
+
+    console.log("data", data)
+
+    // Ensure component slug is provided before proceeding
+    if (!data.component_slug) {
+      toast.error("Component slug is required before submitting.")
+      setIsSubmitting(false)
+      setIsLoadingDialogOpen(false)
       return
     }
-    const parsedCode = await getParsedCode(resultOfGenerateRegistry)
-    const { componentCode, demoCode, componentNames, dependencies } = parsedCode
-
-    const bundleDemoResult = await bundleDemo()
-    if (!bundleDemoResult) {
-      toast.error("Failed to bundle component; Please try again.")
-      return
-    }
-    const contentOfHtml = bundleDemoResult
-
-    console.log("componentCode", componentCode)
-    console.log("demoCode", demoCode)
-    console.log("componentNames", componentNames)
-    console.log("dependencies", dependencies)
-
-    let componentIdToUse: string | null = null
-    let existingDemoId: string | null = null
 
     try {
+      // 1. Rename component file and update imports
+      setPublishProgress("Updating component name and imports...")
+      await updateComponentNameAndImport(data.component_slug)
+
+      // 2. Generate registry using the slug
+      setPublishProgress("Bundling component...")
+      const resultOfGenerateRegistry = await generateRegistry(
+        data.component_slug,
+      )
+      if (!resultOfGenerateRegistry) {
+        toast.error("Failed to bundle component; Please try again.")
+        // Potentially revert the rename?
+        throw new Error("Failed to generate registry after renaming.") // Throw to signify failure
+      }
+      const parsedCode = await getParsedCode(resultOfGenerateRegistry)
+      const { componentCode, demoCode, componentNames, dependencies } =
+        parsedCode
+
+      // 3. Bundle the demo
+      const bundleDemoResult = await bundleDemo()
+      if (!bundleDemoResult) {
+        toast.error("Failed to bundle demo; Please try again.")
+        throw new Error("Failed to bundle demo.") // Throw to signify failure
+      }
+      const contentOfHtml = bundleDemoResult
+
+      console.log("componentCode", componentCode)
+      console.log("demoCode", demoCode)
+      console.log("componentNames", componentNames)
+      console.log("dependencies", dependencies)
+
+      let componentIdToUse: string | null = null
+      let existingDemoId: string | null = null
+
+      // Proceed with the rest of the submission logic (checking sandbox, uploading, DB operations)
       if (!publishAsUser?.id) {
         throw new Error(
           "Cannot determine user to publish as. Please ensure you are logged in.",
@@ -115,9 +140,6 @@ export const useSubmitComponent = () => {
       }
       if (!sandboxId) {
         throw new Error("Sandbox ID is required.")
-      }
-      if (!data.component_slug) {
-        throw new Error("Component slug is required.")
       }
       if (!data.demos || data.demos.length === 0) {
         throw new Error("At least one demo is required.")
@@ -167,7 +189,7 @@ export const useSubmitComponent = () => {
       }
 
       setPublishProgress("Uploading component files...")
-      const baseFolder = `${publishAsUser.username}/${data.component_slug}`
+      const baseFolder = `${publishAsUser.username}/${data.slug}`
 
       const [
         codeUrl,
@@ -497,7 +519,7 @@ export const useSubmitComponent = () => {
       // Log final state
       console.log("Final component state:", finalComponent!)
       console.log("Final demo state:", finalDemo!)
-      if (!data.is_public && !existingDemoId) {
+      if (!data.is_public && !componentIdToUse) {
         // Only log submission if it was newly created
         const { data: submission } = await client
           .from("submissions")
@@ -512,9 +534,10 @@ export const useSubmitComponent = () => {
         `Submission failed: ${error instanceof Error ? error.message : String(error)}`,
       )
       setPublishProgress("Submission failed")
+      // Consider adding rollback logic here if needed, e.g., renaming the file back
     } finally {
       setIsSubmitting(false)
-      onSuccess()
+      onSuccess() // Call onSuccess regardless of success/failure?
       setTimeout(() => setIsLoadingDialogOpen(false), 1500)
     }
   }
