@@ -69,8 +69,6 @@ const PublishPage = () => {
   })
   const { user } = useUser()
 
-  console.log("serverSandbox", serverSandbox)
-
   // useEffect(() => {
   //   if (!connectedShellId) return
 
@@ -146,8 +144,6 @@ const PublishPage = () => {
   const { user: publishAsUser } = usePublishAs({
     username: publishAsUsername ?? user?.username ?? "",
   })
-
-  console.log("ERRORS", form.formState.errors)
 
   useEffect(() => {
     if (form.getValues("publish_as_username") === undefined && user?.username) {

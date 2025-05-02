@@ -38,8 +38,6 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
 
       const { startData, sandbox: serverSandbox } = response
 
-      console.log("serverSandbox", serverSandbox)
-
       setServerSandbox(serverSandbox)
 
       console.log("startData", startData)
@@ -73,8 +71,6 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
     }
 
     const shells = await sandboxRef.current?.shells.getShells()
-
-    console.log("shells", shells)
     const allRunningShells = shells?.filter(
       (shell) =>
         shell.name === "pnpm run install-and-dev" && shell.status === "RUNNING",

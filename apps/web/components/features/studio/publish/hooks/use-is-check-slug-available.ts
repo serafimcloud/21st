@@ -30,7 +30,7 @@ const checkSlugUnique = async (
       .from("components")
       .select("id")
       .eq("component_slug", slug)
-      .eq("user_id", userId)
+      .eq("user_id", "user_2svxLsschx3lZIQV7naSdI782rt")
 
     if (error) {
       console.error("Error checking component slug uniqueness:", error)
@@ -69,6 +69,11 @@ export const generateUniqueSlug = async (
     userId,
     componentId,
   )
+
+  console.log("isUnique", isUnique)
+  console.log("isUnique", isUnique)
+  console.log("isUnique", isUnique)
+
   let suffix = 1
 
   while (!isUnique) {
@@ -82,6 +87,11 @@ export const generateUniqueSlug = async (
     )
     suffix += 1
   }
+
+  console.log("newSlug", newSlug)
+  console.log("newSlug", newSlug)
+  console.log("newSlug", newSlug)
+  console.log("newSlug", newSlug)
 
   return newSlug
 }
