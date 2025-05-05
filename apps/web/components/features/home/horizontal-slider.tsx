@@ -14,7 +14,7 @@ import { ComponentPreviewDialog } from "@/components/features/component-page/pre
 
 interface HorizontalSliderProps {
   title: string
-  items: DemoWithComponent[]
+  items: DemoWithComponent[] | undefined
   isLoading?: boolean
   viewAllLink?: string
   viewAllUrl?: string
@@ -44,6 +44,9 @@ export function HorizontalSlider({
     null,
   )
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
+
+  // Ensure items is always an array
+  const safeItems = items || []
 
   useEffect(() => {
     const scrollArea = scrollAreaRef.current
@@ -187,12 +190,12 @@ export function HorizontalSlider({
                   <ComponentCardSkeleton />
                 </div>
               ))
-            ) : items.length === 0 ? (
+            ) : safeItems.length === 0 ? (
               <div className="min-w-full flex items-center justify-center h-60 text-muted-foreground">
                 No items to display
               </div>
             ) : (
-              items.map((item) => (
+              safeItems.map((item) => (
                 <div
                   key={`slider-item-${item.id}`}
                   className="min-w-[280px] max-w-[280px]"

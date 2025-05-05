@@ -242,16 +242,34 @@ export function ComponentCard({
               </div>
             )}
             {/* Add Top of Week badge for top 3 leaderboard components */}
-            {isLeaderboardComponent && typeof demo.global_rank === 'number' && demo.global_rank <= 3 && (
-              <div className="absolute top-2 right-2 z-20">
-                <div className="flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-1 rounded-md"> 
-                  <span className="text-xs font-medium">
-                    #{demo.global_rank} of
-                    Week
-                  </span>
+            {isLeaderboardComponent &&
+              typeof demo.global_rank === "number" &&
+              demo.global_rank <= 3 && (
+                <div className="absolute top-2 right-2 z-20">
+                  {/* Hide badge from Monday to Wednesday midnight */}
+                  {(() => {
+                    const now = new Date()
+                    const day = now.getDay() // 0 is Sunday, 1 is Monday, etc.
+                    const hour = now.getHours()
+
+                    // Hide if it's Monday (1), Tuesday (2), or Wednesday (3) before midnight
+                    const shouldHide =
+                      day >= 1 &&
+                      day <= 3 &&
+                      !(day === 3 && hour >= 0 && hour < 24)
+
+                    return (
+                      !shouldHide && (
+                        <div className="flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-1 rounded-md">
+                          <span className="text-xs font-medium">
+                            #{demo.global_rank} of Week
+                          </span>
+                        </div>
+                      )
+                    )
+                  })()}
                 </div>
-              </div>
-            )}
+              )}
           </div>
           <div className="flex space-x-3 items-center">
             {!hideUser && (

@@ -11,7 +11,7 @@ import {
 import { HorizontalSlider } from "./horizontal-slider"
 import { SortOption } from "@/types/global"
 import { DemoWithComponent } from "@/types/global"
-import { useMemo } from "react"
+import { useMemo, useEffect, useState } from "react"
 import { useNavigation } from "@/hooks/use-navigation"
 import { useRouter } from "next/navigation"
 
@@ -32,11 +32,54 @@ interface SliderGroup {
   isLeaderboard?: boolean
 }
 
+// Helper to check if we need to randomize leaderboard
+const shouldRandomizeLeaderboard = () => {
+  const now = new Date()
+  const day = now.getDay() // 0 is Sunday, 1 is Monday, etc.
+  const hour = now.getHours()
+
+  // Randomize if it's Monday (1), Tuesday (2), or Wednesday (3) before midnight
+  return day >= 1 && day <= 3 && !(day === 3 && hour >= 0 && hour < 24)
+}
+
 export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
   const featuredDemosQuery = useFeaturedDemos()
   const popularDemosQuery = useMainDemosExcludingFeatured()
   const latestDemosQuery = useLatestDemos()
   const leaderboardDemosQuery = useLeaderboardDemosForHome()
+
+  // State to store the already randomized leaderboard items
+  const [randomizedLeaderboardItems, setRandomizedLeaderboardItems] = useState<
+    DemoWithComponent[]
+  >([])
+
+  // Process leaderboard data once when it arrives
+  useEffect(() => {
+    if (
+      !leaderboardDemosQuery.data ||
+      !Array.isArray(leaderboardDemosQuery.data)
+    ) {
+      setRandomizedLeaderboardItems([])
+      return
+    }
+
+    if (shouldRandomizeLeaderboard()) {
+      // Create a new array to avoid mutating the original
+      const shuffled = [...leaderboardDemosQuery.data]
+
+      // Fisher-Yates shuffle algorithm
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = shuffled[i]
+        shuffled[i] = shuffled[j] as DemoWithComponent
+        shuffled[j] = temp as DemoWithComponent
+      }
+
+      setRandomizedLeaderboardItems(shuffled)
+    } else {
+      setRandomizedLeaderboardItems(leaderboardDemosQuery.data)
+    }
+  }, [leaderboardDemosQuery.data])
 
   const tagCategories = useMemo(
     () => [
@@ -83,10 +126,8 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
       },
       {
         id: "leaderboard",
-        title: leaderboardDemosQuery.weekNumber
-          ? `Leaderboard (Week #${leaderboardDemosQuery.weekNumber})`
-          : "Leaderboard (Week # )",
-        items: leaderboardDemosQuery.data || [],
+        title: "Weekly Leaderboard",
+        items: randomizedLeaderboardItems,
         isLoading: leaderboardDemosQuery.isLoading,
         viewAllUrl: "/contest/leaderboard",
         isLeaderboard: true,
@@ -125,9 +166,8 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
     latestDemosQuery.isLoading,
     tagCategories,
     tagQueries,
-    leaderboardDemosQuery.data,
+    randomizedLeaderboardItems,
     leaderboardDemosQuery.isLoading,
-    leaderboardDemosQuery.weekNumber,
   ])
 
   const handleViewAll = (group: SliderGroup) => {

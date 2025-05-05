@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { useRoundSubmissions, useToggleVote, type Round } from "@/lib/queries"
 import {
   LeaderboardList,
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { shouldHideLeaderboardRankings } from "@/lib/utils"
 
 function formatDateRange(start: string, end: string): string {
   const startDate = new Date(start)
@@ -48,6 +49,18 @@ export function LeaderboardClient({
   seasonalTag,
 }: LeaderboardClientProps) {
   const [selectedCategory, setSelectedCategory] = useState<Category>("global")
+  // Store randomized submissions for each category
+  const [randomizedSubmissionsMap, setRandomizedSubmissionsMap] = useState<
+    Record<Category, any[]>
+  >({
+    global: [],
+    marketing: [],
+    ui: [],
+    seasonal: [],
+  })
+
+  // Flag to track if initial randomization is done
+  const isRandomizationDoneRef = useRef<boolean>(false)
 
   const {
     submissions = [],
@@ -57,7 +70,64 @@ export function LeaderboardClient({
   } = useRoundSubmissions(currentRound.id)
   const toggleVote = useToggleVote(currentRound.id)
 
-  const filteredRows = getFilteredSubmissions(selectedCategory)
+  // Use the shared utility function
+  const shouldRandomize = shouldHideLeaderboardRankings()
+
+  // Pre-randomize all category submissions ONCE when data arrives
+  useEffect(() => {
+    if (
+      isLoading ||
+      !submissions.length ||
+      !shouldRandomize ||
+      isRandomizationDoneRef.current
+    ) {
+      // Skip if already randomized, not needed, or no data yet
+      return
+    }
+
+    const categories: Category[] = ["global", "marketing", "ui", "seasonal"]
+    const randomized: Record<Category, any[]> = {} as Record<Category, any[]>
+
+    // For each category, get and randomize the submissions
+    categories.forEach((category) => {
+      const categorySubmissions =
+        category === "global"
+          ? [...submissions]
+          : [...getFilteredSubmissions(category)]
+
+      // Shuffle using Fisher-Yates
+      for (let i = categorySubmissions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[categorySubmissions[i], categorySubmissions[j]] = [
+          categorySubmissions[j],
+          categorySubmissions[i],
+        ]
+      }
+
+      randomized[category] = categorySubmissions
+    })
+
+    setRandomizedSubmissionsMap(randomized)
+    // Mark randomization as done so it doesn't re-randomize on every render
+    isRandomizationDoneRef.current = true
+  }, [submissions, getFilteredSubmissions, isLoading, shouldRandomize])
+
+  // Get the appropriate submissions for the current category
+  const filteredRows = useMemo(() => {
+    if (
+      shouldRandomize &&
+      randomizedSubmissionsMap[selectedCategory]?.length > 0
+    ) {
+      return randomizedSubmissionsMap[selectedCategory]
+    }
+
+    return getFilteredSubmissions(selectedCategory)
+  }, [
+    selectedCategory,
+    shouldRandomize,
+    randomizedSubmissionsMap,
+    getFilteredSubmissions,
+  ])
 
   if (error) {
     return (
