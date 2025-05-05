@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Check, Beaker } from "lucide-react"
+import { Check } from "lucide-react"
 import { Spinner } from "@/components/icons/spinner"
 
 interface VersionSelectorDialogProps {
@@ -58,59 +58,87 @@ export function VersionSelectorDialog({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[500px] bg-background ring-1 ring-border rounded-xl shadow-lg overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Choose Publishing Method</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-xl font-bold tracking-tight">
+            Choose Publishing Method
+          </DialogTitle>
+          <DialogDescription className="mt-1 text-sm text-muted-foreground">
             Select which method you'd like to use to publish your component
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-6 py-4">
-          <div className="flex flex-col gap-4 border rounded-lg p-6">
-            <div className="flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-blue-500" />
-              <h3 className="font-medium">Beta Version</h3>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Our new publishing experience with support for Tailwind 4 and
-              drafts. May contain some bugs as it's still in development.
-            </p>
-            <Button
-              onClick={handleBetaVersion}
-              className="mt-auto w-full transition-all"
-              disabled={isCreating}
-            >
-              <div className="flex items-center gap-2 justify-center">
-                {isCreating ? (
-                  <>
-                    <Spinner size={16} color="white" />
-                    <span>Creating...</span>
-                  </>
-                ) : (
-                  <span>Use Beta</span>
-                )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="group">
+            <div className="flex flex-col justify-between rounded-lg bg-muted/50 p-4 h-full border">
+              <div>
+                <div className="mb-3">
+                  <h3 className="text-lg font-semibold">Beta Version</h3>
+                </div>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-blue-400" />
+                    Tailwind 4 support
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-blue-400" />
+                    Draft mode
+                  </li>
+                  <li className="flex items-center gap-2 text-yellow-600/70 dark:text-yellow-500/70">
+                    <span className="text-sm">•</span>
+                    May contain minor bugs
+                  </li>
+                </ul>
               </div>
-            </Button>
+              <Button
+                onClick={handleBetaVersion}
+                className="mt-4 w-full"
+                disabled={isCreating}
+              >
+                <div className="flex items-center gap-2 justify-center">
+                  {isCreating ? (
+                    <>
+                      <Spinner size={16} color="white" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <span>Use Beta</span>
+                  )}
+                </div>
+              </Button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-4 border border-border rounded-lg p-6">
-            <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-500" />
-              <h3 className="font-medium">Stable Version</h3>
+          <div className="group">
+            <div className="flex flex-col justify-between rounded-lg bg-muted/50 p-4 h-full border">
+              <div>
+                <div className="mb-3">
+                  <h3 className="text-lg font-semibold">Stable Version</h3>
+                </div>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-green-400" />
+                    Proven reliability
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-green-400" />
+                    Traditional workflow
+                  </li>
+                  <li className="flex items-center gap-2 text-yellow-600/70 dark:text-yellow-500/70">
+                    <span className="text-sm">•</span>
+                    No Tailwind 4 support
+                  </li>
+                </ul>
+              </div>
+              <Button
+                onClick={handleStableVersion}
+                variant="outline"
+                className="mt-4 w-full"
+                disabled={isCreating}
+              >
+                Use Stable
+              </Button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Our traditional publishing experience. More stable but doesn't
-              support Tailwind 4 and drafts.
-            </p>
-            <Button
-              onClick={handleStableVersion}
-              variant="outline"
-              className="mt-auto"
-              disabled={isCreating}
-            >
-              Use Stable
-            </Button>
           </div>
         </div>
       </DialogContent>
