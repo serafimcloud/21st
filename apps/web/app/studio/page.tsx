@@ -6,15 +6,18 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
-
 export default function StudioPage() {
   const { userId } = useAuth()
   const [studioUrl, setStudioUrl] = useState("/studio")
 
   useEffect(() => {
-    
     const fetchUserData = async () => {
       const supabase = useClerkSupabaseClient()
+
+      if (!userId) {
+        return
+      }
+
       const { data: userData } = await supabase
         .from("users")
         .select("display_username, username")

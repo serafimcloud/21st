@@ -522,12 +522,12 @@ export type Database = {
           pro_preview_image_url: string | null
           registry: string
           registry_url: string | null
+          sandbox_id: string | null
           tailwind_config_extension: string | null
           updated_at: string
           user_id: string
           video_url: string | null
           website_url: string | null
-          sandbox_id: string | null
         }
         Insert: {
           code?: string
@@ -557,12 +557,12 @@ export type Database = {
           pro_preview_image_url?: string | null
           registry?: string
           registry_url?: string | null
+          sandbox_id?: string | null
           tailwind_config_extension?: string | null
           updated_at?: string
           user_id: string
           video_url?: string | null
           website_url?: string | null
-          sandbox_id?: string | null
         }
         Update: {
           code?: string
@@ -592,12 +592,12 @@ export type Database = {
           pro_preview_image_url?: string | null
           registry?: string
           registry_url?: string | null
+          sandbox_id?: string | null
           tailwind_config_extension?: string | null
           updated_at?: string
           user_id?: string
           video_url?: string | null
           website_url?: string | null
-          sandbox_id?: string | null
         }
         Relationships: [
           {
@@ -643,6 +643,13 @@ export type Database = {
             referencedColumns: ["username"]
           },
           {
+            foreignKeyName: "components_sandbox_id_fkey"
+            columns: ["sandbox_id"]
+            isOneToOne: false
+            referencedRelation: "sandboxes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "components_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -654,13 +661,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "components_sandbox_id_fkey"
-            columns: ["sandbox_id"]
-            isOneToOne: false
-            referencedRelation: "sandbox"
             referencedColumns: ["id"]
           },
         ]
@@ -1018,8 +1018,8 @@ export type Database = {
       demos: {
         Row: {
           bookmarks_count: number | null
-          bundle_hash?: string | null
-          bundle_html_url?: string | null
+          bundle_hash: string | null
+          bundle_html_url: string | null
           compiled_css: string | null
           component_id: number | null
           created_at: string | null
@@ -1483,33 +1483,33 @@ export type Database = {
       sandboxes: {
         Row: {
           codesandbox_id: string | null
+          component_id: number | null
           created_at: string
           id: string
           name: string
           status: string | null
           updated_at: string
           user_id: string
-          component_id: string | null
         }
         Insert: {
           codesandbox_id?: string | null
+          component_id?: number | null
           created_at?: string
           id?: string
           name?: string
           status?: string | null
           updated_at?: string
           user_id: string
-          component_id?: string | null
         }
         Update: {
           codesandbox_id?: string | null
+          component_id?: number | null
           created_at?: string
           id?: string
           name?: string
           status?: string | null
           updated_at?: string
           user_id?: string
-          component_id?: string | null
         }
         Relationships: [
           {
@@ -1527,10 +1527,32 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "sandbox_component_id_fkey"
+            foreignKeyName: "sandboxes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sandboxes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sandboxes_component_id_fkey"
             columns: ["component_id"]
             isOneToOne: false
             referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sandboxes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2483,6 +2505,17 @@ export type Database = {
           slug: string
           components_count: number
           user_data: Json
+        }[]
+      }
+      get_daily_user_earnings: {
+        Args: { p_user_id: string }
+        Returns: {
+          mcp_usages: number
+          mcp_earnings: number
+          views: number
+          views_earnings: number
+          total_earnings: number
+          date: string
         }[]
       }
       get_demos_list: {

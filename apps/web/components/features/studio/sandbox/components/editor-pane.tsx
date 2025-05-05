@@ -1,6 +1,6 @@
 "use client"
 import { Loader2Icon } from "lucide-react"
-import Editor, { useMonaco } from "@monaco-editor/react"
+import Editor, { useMonaco, Monaco } from "@monaco-editor/react"
 import { getMonacoLanguage } from "../utils"
 import { useTheme } from "next-themes"
 // import parse from "@babel/parser"
@@ -9,7 +9,10 @@ import { useTheme } from "next-themes"
 import dynamic from "next/dynamic"
 import { useEffect } from "react"
 
-const activateMonacoJSXHighlighter = async (monacoEditor, monaco) => {
+const activateMonacoJSXHighlighter = async (
+  monacoEditor: typeof Editor,
+  monaco: Monaco,
+) => {
   // monaco-jsx-highlighter depends on these in addition to Monaco and an instance of a Monaco Editor.
   const { default: traverse } = await import("@babel/traverse")
   const { parse } = await import("@babel/parser")
@@ -97,19 +100,18 @@ function EditorPaneOriginal({
 }: EditorPaneProps) {
   const { resolvedTheme } = useTheme()
 
-  const handleEditorMount = (monacoEditor, monaco) => {
+  const handleEditorMount = (editor: any, monaco: Monaco) => {
     const compilerOpts =
       monaco.languages.typescript.typescriptDefaults.getCompilerOptions()
 
     monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
       ...compilerOpts,
-      allowUnreachableCode: true, // kills TS 7027
-      allowUnusedLabels: true, // usually paired with it
+      allowUnreachableCode: true,
+      allowUnusedLabels: true,
       noUnusedLocals: true,
       noUnusedParameters: true,
     })
 
-    // keep JS in sync if you ever switch languages
     monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
       ...compilerOpts,
       allowUnreachableCode: true,
@@ -128,7 +130,7 @@ function EditorPaneOriginal({
       noSyntaxValidation: true,
     })
 
-    activateMonacoJSXHighlighter(monacoEditor, monaco)
+    activateMonacoJSXHighlighter(editor, monaco)
       .then((monacoJSXHighlighterRefCurrent) => {
         // monacoJSXHighlighterRefCurrent.isToggleJSXCommentingOn()
         // monacoJSXHighlighterRefCurrent.isToggleJSXHighlightingOn()

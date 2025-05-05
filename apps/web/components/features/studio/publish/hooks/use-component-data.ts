@@ -10,7 +10,7 @@ type Tag = {
   slug: string
 }
 
-export const useComponentData = (componentId: string | null | undefined) => {
+export const useComponentData = (componentId: number | null | undefined) => {
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<FormData | null>(null)
   const client = useClerkSupabaseClient()
@@ -76,8 +76,13 @@ export const useComponentData = (componentId: string | null | undefined) => {
           publish_as_username: undefined, // Will be set by main component
           code: "", // Will be populated by sandbox
           unknown_dependencies: [],
-          direct_registry_dependencies:
-            componentData.direct_registry_dependencies || [],
+          direct_registry_dependencies: Array.isArray(
+            componentData.direct_registry_dependencies,
+          )
+            ? componentData.direct_registry_dependencies.filter(
+                (d) => typeof d === "string",
+              )
+            : [],
           demos: demoWithTags.map((demo: any) => ({
             name: demo.name,
             demo_code: "", // Will be populated by sandbox

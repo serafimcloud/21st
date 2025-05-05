@@ -44,5 +44,6 @@ export const transformDemoResult = (result: any): ExtendedDemoWithComponent => {
     submission_status: result.submission_status || "featured",
     moderators_feedback: result.moderators_feedback || null,
   }
+  // @ts-ignore TODO: fix this
   return transformed
 }

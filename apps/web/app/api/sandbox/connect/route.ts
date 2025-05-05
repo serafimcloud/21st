@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server"
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import {
   codesandboxSdk,
@@ -7,7 +7,7 @@ import {
 } from "@/lib/codesandbox-sdk"
 import ShortUUID from "short-uuid"
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -39,6 +39,12 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!sandbox.codesandbox_id) {
+      return NextResponse.json(
+        { error: "Sandbox codesandbox_id is missing" },
+        { status: 400 },
+      )
+    }
     const startData = await codesandboxSdk.sandbox.start(
       sandbox.codesandbox_id,
       {

@@ -289,7 +289,6 @@ export const useFileSystem = ({
   const _runTaskAndWaitForOutput = async <T>(
     taskName: string,
     completionOutput: string,
-    env: Record<string, string> | undefined,
     onComplete: (shell: any, sandbox: SandboxSession) => Promise<T | undefined>,
   ): Promise<T | undefined> => {
     // Guranties that the sandbox is connected
@@ -299,12 +298,7 @@ export const useFileSystem = ({
         const interval = setInterval(() => {
           if (sandboxConnectionHash) {
             clearInterval(interval)
-            _runTaskAndWaitForOutput(
-              taskName,
-              completionOutput,
-              env,
-              onComplete,
-            )
+            _runTaskAndWaitForOutput(taskName, completionOutput, onComplete)
               .then(resolve)
               .catch(reject)
           }
@@ -321,7 +315,7 @@ export const useFileSystem = ({
     if (!sandboxRef.current) {
       throw new Error("Sandbox not available")
     }
-    const task = await sandboxRef.current.tasks.runTask(taskName, { env })
+    const task = await sandboxRef.current.tasks.runTask(taskName)
 
     if (!task) {
       throw new Error(`Failed to start ${taskName} task`)
@@ -425,7 +419,6 @@ export const useFileSystem = ({
     return _runTaskAndWaitForOutput<string>(
       "build",
       "built in",
-      undefined,
       async (shell, sandbox) => {
         const content = await getContentOfBundleIndexHTML(sandbox)
         if (!content) {
@@ -452,22 +445,17 @@ export const useFileSystem = ({
           demoRegistryJSON: string
         }
       | undefined
-    >(
-      "generate:registry",
-      "FINISH",
-      slug ? { COMPONENT_SLUG: slug } : undefined,
-      async (shell, sandbox) => {
-        const componentRegistryJSON = await getContentOfComponentRegistryJSON(
-          sandbox,
-          slug,
-        )
-        const demoRegistryJSON = await getContentOfDemoRegistryJSON(sandbox)
-        if (!componentRegistryJSON || !demoRegistryJSON) {
-          throw new Error("Failed to read generated registry files")
-        }
-        return { componentRegistryJSON, demoRegistryJSON }
-      },
-    )
+    >("generate:registry", "FINISH", async (shell, sandbox) => {
+      const componentRegistryJSON = await getContentOfComponentRegistryJSON(
+        sandbox,
+        slug,
+      )
+      const demoRegistryJSON = await getContentOfDemoRegistryJSON(sandbox)
+      if (!componentRegistryJSON || !demoRegistryJSON) {
+        throw new Error("Failed to read generated registry files")
+      }
+      return { componentRegistryJSON, demoRegistryJSON }
+    })
   }
 
   const getContentOfBundleIndexHTML = async (sandbox: SandboxSession) => {

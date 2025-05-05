@@ -65,7 +65,7 @@ const PublishPage = ({
 
   // Fetch component data if sandbox is linked to a component
   const { isLoading: isComponentDataLoading, formData: componentFormData } =
-    useComponentData(serverSandbox?.component_id)
+    useComponentData(serverSandbox?.component_id ?? null)
 
   const { generateRegistry, bundleDemo, updateComponentNameAndImport } =
     useFileSystem({

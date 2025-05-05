@@ -89,7 +89,6 @@ export const useSubmitComponent = () => {
 
     console.log("data", data)
 
-    // Ensure component slug is provided before proceeding
     if (!data.component_slug) {
       toast.error("Component slug is required before submitting.")
       setIsSubmitting(false)
@@ -98,29 +97,25 @@ export const useSubmitComponent = () => {
     }
 
     try {
-      // 1. Rename component file and update imports
       setPublishProgress("Updating component name and imports...")
       await updateComponentNameAndImport(data.component_slug)
 
-      // 2. Generate registry using the slug
       setPublishProgress("Bundling component...")
       const resultOfGenerateRegistry = await generateRegistry(
         data.component_slug,
       )
       if (!resultOfGenerateRegistry) {
         toast.error("Failed to bundle component; Please try again.")
-        // Potentially revert the rename?
-        throw new Error("Failed to generate registry after renaming.") // Throw to signify failure
+        throw new Error("Failed to generate registry after renaming.")
       }
       const parsedCode = await getParsedCode(resultOfGenerateRegistry)
       const { componentCode, demoCode, componentNames, dependencies } =
         parsedCode
 
-      // 3. Bundle the demo
       const bundleDemoResult = await bundleDemo()
       if (!bundleDemoResult) {
         toast.error("Failed to bundle demo; Please try again.")
-        throw new Error("Failed to bundle demo.") // Throw to signify failure
+        throw new Error("Failed to bundle demo.")
       }
       const contentOfHtml = bundleDemoResult
 
@@ -129,10 +124,9 @@ export const useSubmitComponent = () => {
       console.log("componentNames", componentNames)
       console.log("dependencies", dependencies)
 
-      let componentIdToUse: string | null = null
-      let existingDemoId: string | null = null
+      let componentIdToUse: number | null = null
+      let existingDemoId: number | null = null
 
-      // Proceed with the rest of the submission logic (checking sandbox, uploading, DB operations)
       if (!publishAsUser?.id) {
         throw new Error(
           "Cannot determine user to publish as. Please ensure you are logged in.",
@@ -148,7 +142,6 @@ export const useSubmitComponent = () => {
 
       console.log("BEFORE DATA sandboxId", sandboxId)
 
-      // 1. Check if sandbox is already linked to a component
       setPublishProgress("Checking sandbox status...")
       const { data: sandboxData, error: sandboxError } = await client
         .from("sandboxes")
@@ -163,23 +156,22 @@ export const useSubmitComponent = () => {
         )
       }
 
-      if (sandboxData?.component_id) {
+      if (
+        sandboxData?.component_id !== null &&
+        sandboxData?.component_id !== undefined
+      ) {
         componentIdToUse = sandboxData.component_id
         setPublishProgress("Found existing component link. Preparing update...")
-        // Optionally fetch the existing demo ID if needed for update logic
         const { data: existingDemoData, error: demoFetchError } = await client
           .from("demos")
           .select("id")
           .eq("component_id", componentIdToUse)
-          .order("created_at", { ascending: true }) // Get the first demo
+          .order("created_at", { ascending: true })
           .limit(1)
           .single()
 
         if (demoFetchError && demoFetchError.code !== "PGRST116") {
-          // Ignore 'not found' error
           console.error("Error fetching existing demo:", demoFetchError)
-          // Decide how to handle this - fail, or proceed to create a new demo?
-          // For now, let's proceed assuming we might create a new one if needed, or update logic handles null demoId
         }
         existingDemoId = existingDemoData?.id ?? null
       } else {
@@ -189,7 +181,7 @@ export const useSubmitComponent = () => {
       }
 
       setPublishProgress("Uploading component files...")
-      const baseFolder = `${publishAsUser.username}/${data.slug}`
+      const baseFolder = `${publishAsUser.username}/${data.component_slug}`
 
       const [
         codeUrl,
@@ -314,7 +306,6 @@ export const useSubmitComponent = () => {
       let finalComponent: Tables<"components"> | null = null
 
       if (componentIdToUse) {
-        // Update existing component
         console.log(
           `Attempting to update component with ID: ${componentIdToUse}`,
         )
@@ -325,23 +316,21 @@ export const useSubmitComponent = () => {
             .eq("id", componentIdToUse)
             .select()
 
-        console.log("Update component result:", {
-          updatedComponent,
-          updateComponentError,
-        })
-
         if (updateComponentError) {
           console.error("Error updating component:", updateComponentError)
           throw updateComponentError
         }
-        if (!updatedComponent) {
-          console.error("Update component failed: No data returned.") // Log specific error
+        finalComponent = (
+          updatedComponent && updatedComponent.length > 0
+            ? updatedComponent[0]
+            : null
+        ) as Tables<"components"> | null
+        if (!finalComponent) {
+          console.error("Update component failed: No data returned.")
           throw new Error("Failed to update component, no data returned.")
         }
-        finalComponent = updatedComponent
         console.log("Successfully updated component:", finalComponent)
       } else {
-        // Insert new component
         console.log(
           "Attempting to insert new component with data:",
           componentData,
@@ -353,24 +342,20 @@ export const useSubmitComponent = () => {
             .select()
             .single()
 
-        console.log("Insert component result:", {
-          insertedComponent,
-          insertComponentError,
-        })
-
         if (insertComponentError) {
           console.error("Error inserting component:", insertComponentError)
           throw insertComponentError
         }
-        if (!insertedComponent) {
-          console.error("Insert component failed: No data returned.") // Log specific error
+        finalComponent = (
+          insertedComponent ? insertedComponent : null
+        ) as Tables<"components"> | null
+        if (!finalComponent) {
+          console.error("Insert component failed: No data returned.")
           throw new Error("Failed to insert component, no data returned.")
         }
-        finalComponent = insertedComponent
-        componentIdToUse = String(finalComponent!.id) // Convert number to string and assert non-null
+        componentIdToUse = finalComponent.id
         console.log("Successfully created component:", finalComponent)
 
-        // Link sandbox to the new component
         setPublishProgress("Linking sandbox to new component...")
         const { error: updateSandboxError } = await client
           .from("sandboxes")
@@ -379,8 +364,6 @@ export const useSubmitComponent = () => {
 
         if (updateSandboxError) {
           console.error("Error updating sandbox link:", updateSandboxError)
-          // Non-fatal? Log error and continue? Or throw?
-          // Let's log and continue for now, but this might need review
           toast.warning("Failed to link sandbox to the new component.")
         } else {
           console.log(
@@ -388,8 +371,7 @@ export const useSubmitComponent = () => {
           )
         }
 
-        // Handle submission entry only for new, non-public components
-        if (!data.is_public) {
+        if (!data.is_public && typeof componentIdToUse === "number") {
           setPublishProgress("Creating submission entry...")
           const { error: submissionError } = await client
             .from("submissions")
@@ -399,16 +381,15 @@ export const useSubmitComponent = () => {
             })
           if (submissionError) {
             console.error("Error inserting submission:", submissionError)
-            throw submissionError // Throw as this seems critical for review process
+            throw submissionError
           }
           console.log(
             "Submission entry created for component:",
             componentIdToUse,
           )
         }
-      } // End of create/update component block
+      }
 
-      // Ensure we have a component ID before proceeding to demo
       if (!componentIdToUse) {
         throw new Error("Component ID is missing after create/update.")
       }
@@ -421,7 +402,6 @@ export const useSubmitComponent = () => {
       console.log("sandboxData", sandboxData)
       console.log("componentIdToUse", componentIdToUse)
 
-      // Ensure the sandbox is linked to the component
       if (!sandboxData?.component_id) {
         setPublishProgress("Updating sandbox link...")
         const { error: updateSandboxError } = await client
@@ -439,7 +419,6 @@ export const useSubmitComponent = () => {
         }
       }
 
-      // Prepare Demo Data (common for create/update)
       setPublishProgress(
         existingDemoId ? "Updating demo entry..." : "Creating demo entry...",
       )
@@ -448,7 +427,7 @@ export const useSubmitComponent = () => {
         (await generateDemoSlug(
           client,
           demo.name || "Default",
-          Number(componentIdToUse), // Convert string to number for generateDemoSlug
+          componentIdToUse,
           publishAsUser.id,
         ))
       setCreatedDemoSlug(demoSlug)
@@ -463,7 +442,7 @@ export const useSubmitComponent = () => {
         | "fts"
         | "bookmarks_count"
       > = {
-        component_id: Number(componentIdToUse), // Convert string to number for demoData
+        component_id: componentIdToUse,
         demo_code: addVersionToUrl(demoCodeUrl) || "",
         demo_dependencies: demo.demo_dependencies || {},
         preview_url: addVersionToUrl(previewImageR2Url),
@@ -476,34 +455,32 @@ export const useSubmitComponent = () => {
         user_id: publishAsUser.id,
         demo_slug: demoSlug,
         bundle_html_url: bundleHtmlUrl,
+        bundle_hash: null,
       }
 
       let finalDemo: Tables<"demos"> | null = null
 
       if (existingDemoId) {
-        // Update existing demo
         console.log(`Attempting to update demo with ID: ${existingDemoId}`)
         const { data: updatedDemo, error: updateDemoError } = await client
           .from("demos")
           .update(demoData)
           .eq("id", existingDemoId)
           .select()
-          .single()
-
-        console.log("Update demo result:", { updatedDemo, updateDemoError })
 
         if (updateDemoError) {
           console.error("Error updating demo:", updateDemoError)
           throw updateDemoError
         }
-        if (!updatedDemo) {
-          console.error("Update demo failed: No data returned.") // Log specific error
+        finalDemo = (
+          updatedDemo && updatedDemo.length > 0 ? updatedDemo[0] : null
+        ) as Tables<"demos"> | null
+        if (!finalDemo) {
+          console.error("Update demo failed: No data returned.")
           throw new Error("Failed to update demo, no data returned.")
         }
-        finalDemo = updatedDemo
         console.log("Successfully updated demo:", finalDemo)
       } else {
-        // Insert new demo
         console.log("Attempting to insert new demo with data:", demoData)
         const { data: insertedDemo, error: insertDemoError } = await client
           .from("demos")
@@ -511,31 +488,26 @@ export const useSubmitComponent = () => {
           .select()
           .single()
 
-        console.log("Insert demo result:", { insertedDemo, insertDemoError })
-
         if (insertDemoError) {
           console.error("Error inserting demo:", insertDemoError)
           throw insertDemoError
         }
-        if (!insertedDemo) {
-          console.error("Insert demo failed: No data returned.") // Log specific error
+        finalDemo = (
+          insertedDemo ? insertedDemo : null
+        ) as Tables<"demos"> | null
+        if (!finalDemo) {
+          console.error("Insert demo failed: No data returned.")
           throw new Error("Failed to insert demo, no data returned.")
         }
-        finalDemo = insertedDemo
         console.log("Successfully created demo:", finalDemo)
       }
 
-      if (!finalDemo) {
-        console.error("Final demo object is null after create/update attempts.") // Log if somehow finalDemo is still null
-        throw new Error("Demo operation failed.") // Should not happen if errors above are thrown
-      }
-
-      if (demo.tags?.length > 0) {
+      if (demo.tags?.length > 0 && finalDemo) {
         setPublishProgress("Updating tags...")
         await addTagsToDemo(
           client,
-          finalDemo.id, // Use the final demo ID
-          demo.tags.filter((tag): tag is Tag => !!tag && !!tag.slug) as Tag[], // Ensure tags are valid
+          finalDemo.id,
+          demo.tags.filter((tag): tag is Tag => !!tag && !!tag.slug) as Tag[],
         )
         console.log("Tags updated for demo:", finalDemo.id)
       }
@@ -543,11 +515,9 @@ export const useSubmitComponent = () => {
       setPublishProgress("Done!")
       setIsSuccessDialogOpen(true)
 
-      // Log final state
       console.log("Final component state:", finalComponent!)
       console.log("Final demo state:", finalDemo!)
-      if (!data.is_public && !componentIdToUse) {
-        // Only log submission if it was newly created
+      if (!data.is_public && typeof componentIdToUse === "number") {
         const { data: submission } = await client
           .from("submissions")
           .select()
@@ -561,10 +531,9 @@ export const useSubmitComponent = () => {
         `Submission failed: ${error instanceof Error ? error.message : String(error)}`,
       )
       setPublishProgress("Submission failed")
-      // Consider adding rollback logic here if needed, e.g., renaming the file back
     } finally {
       setIsSubmitting(false)
-      onSuccess() // Call onSuccess regardless of success/failure?
+      onSuccess()
       setTimeout(() => setIsLoadingDialogOpen(false), 1500)
     }
   }
