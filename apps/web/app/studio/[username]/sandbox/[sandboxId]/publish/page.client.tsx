@@ -116,6 +116,22 @@ const PublishPage = ({
     },
   })
 
+  // Prefill form with component data if available
+  useEffect(() => {
+    if (componentFormData) {
+      const { code, demos, ...rest } = componentFormData
+      form.reset({
+        ...rest,
+        code: form.getValues("code"),
+        demos: (demos || []).map((demo, i) => ({
+          ...demo,
+          demo_code: form.getValues(`demos.${i}.demo_code`) || demo.demo_code,
+        })),
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [componentFormData])
+
   const publishAsUsername = form.watch("publish_as_username")
   const { user: publishAsUser, isLoading: isPublishAsLoading } = usePublishAs({
     username: publishAsUsername ?? user?.username ?? "",

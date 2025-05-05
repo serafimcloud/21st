@@ -58,8 +58,6 @@ export function Logo({
     </svg>
   )
 
-  console.log("Rendering Logo component, isVisible:", isVisible)
-
   const renderMenu = () => {
     if (!isVisible) return null
 

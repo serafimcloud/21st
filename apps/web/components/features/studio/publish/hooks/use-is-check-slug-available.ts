@@ -70,10 +70,6 @@ export const generateUniqueSlug = async (
     componentId,
   )
 
-  console.log("isUnique", isUnique)
-  console.log("isUnique", isUnique)
-  console.log("isUnique", isUnique)
-
   let suffix = 1
 
   while (!isUnique) {
@@ -87,11 +83,6 @@ export const generateUniqueSlug = async (
     )
     suffix += 1
   }
-
-  console.log("newSlug", newSlug)
-  console.log("newSlug", newSlug)
-  console.log("newSlug", newSlug)
-  console.log("newSlug", newSlug)
 
   return newSlug
 }
