@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight, Link } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, shouldHideLeaderboardRankings } from "@/lib/utils"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { ComponentCard } from "@/components/features/list-card/card"
@@ -47,6 +47,9 @@ export function HorizontalSlider({
 
   // Ensure items is always an array
   const safeItems = items || []
+
+  // Check if we need to hide leaderboard rankings & votes
+  const hideLeaderboardRankings = shouldHideLeaderboardRankings()
 
   useEffect(() => {
     const scrollArea = scrollAreaRef.current
@@ -209,6 +212,7 @@ export function HorizontalSlider({
                         `${item.component?.name || item.name} was opened in a new tab`,
                       )
                     }}
+                    hideVotes={isLeaderboard && hideLeaderboardRankings}
                   />
                 </div>
               ))

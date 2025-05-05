@@ -14,6 +14,7 @@ import { DemoWithComponent } from "@/types/global"
 import { useMemo, useEffect, useState } from "react"
 import { useNavigation } from "@/hooks/use-navigation"
 import { useRouter } from "next/navigation"
+import { shouldHideLeaderboardRankings } from "@/lib/utils"
 
 interface HomeTabLayoutProps {
   sortBy?: SortOption
@@ -180,6 +181,9 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
       navigateToTab(group.targetTab)
     }
   }
+
+  // Check if we need to hide rankings and votes
+  const shouldHideRankings = shouldHideLeaderboardRankings()
 
   return (
     <div className="space-y-8">

@@ -40,12 +40,14 @@ export function ComponentCard({
   hideUser,
   onClick,
   onCtrlClick,
+  hideVotes,
 }: {
   demo?: DemoWithComponent | (Component & { user: User })
   isLoading?: boolean
   hideUser?: boolean
   onClick?: () => void
   onCtrlClick?: (url: string) => void
+  hideVotes?: boolean
 }) {
   if (isLoading || !demo) {
     return <ComponentCardSkeleton />
@@ -296,7 +298,7 @@ export function ComponentCard({
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {votesCount > 0 && (
+                {votesCount > 0 && !hideVotes && (
                   <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
                     <ThumbsUp size={14} className="text-primary" />
                     <span>{formatNumber(votesCount)}</span>
