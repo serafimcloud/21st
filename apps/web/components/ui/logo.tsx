@@ -79,7 +79,7 @@ export function Logo({
       <div
         ref={logoRef}
         className={cn(
-          `${position === "fixed" ? position : ""} w-8 h-8 flex items-center justify-center ${position === "fixed" ? "left-4 top-3" : ""} rounded-full group cursor-pointer relative`,
+          `${position === "fixed" ? position : ""} w-7 h-7 flex items-center justify-center ${position === "fixed" ? "left-4 top-3" : ""} rounded-full group cursor-pointer relative`,
           className,
         )}
         onClick={toggleMenu}
@@ -108,7 +108,7 @@ export function Logo({
       <Link
         href="/?tab=home"
         className={cn(
-          `${position === "fixed" ? position : ""} w-8 h-8 flex items-center justify-center ${position === "fixed" ? "left-4 top-3" : ""} rounded-full group cursor-pointer`,
+          `${position === "fixed" ? position : ""} w-7 h-7 flex items-center justify-center ${position === "fixed" ? "left-4 top-3" : ""} rounded-full group cursor-pointer`,
           className,
         )}
         onClick={toggleMenu}
