@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useCallback, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { Trash2 } from "lucide-react"
@@ -45,14 +45,10 @@ type ParsedCodeData = {
   demoDependencies?: Record<string, string>
 }
 
-interface PageClientProps {
-  onSubmitStatusChange: (isSubmitting: boolean) => void
-  onSubmitHandlerReady: (submitHandler: () => void) => void
-}
-
-const PageClient: React.FC<PageClientProps> = ({
-  onSubmitStatusChange,
-  onSubmitHandlerReady,
+const PublishPage = ({
+  submitHandlerRef,
+}: {
+  submitHandlerRef?: React.MutableRefObject<(() => void) | null>
 }) => {
   const params = useParams()
   const sandboxId = params.sandboxId as string
@@ -79,15 +75,14 @@ const PageClient: React.FC<PageClientProps> = ({
       connectedShellId,
     })
   const { user } = useUser()
+  const { isLoaded: isClerkUserLoaded } = useUser()
 
-  // Declare all state hooks first
   const [formStep] = useState<FormStep>("detailedForm")
   const [openAccordion, setOpenAccordion] = useState([
     "component-info",
     "demo-0",
   ])
 
-  // Form setup
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -106,7 +101,7 @@ const PageClient: React.FC<PageClientProps> = ({
       code: `// Mock component code for ${sandboxId}\nexport default function MockComponent() { return <div>Hello</div>; }`,
       demos: [
         {
-          name: "Default",
+          name: "Default Demo",
           demo_code: `// Mock demo code for ${sandboxId}\nimport MockComponent from './component';\nexport default function Demo() { return <MockComponent />; }`,
           demo_slug: "default",
           tags: [],
@@ -125,18 +120,9 @@ const PageClient: React.FC<PageClientProps> = ({
   const { user: publishAsUser, isLoading: isPublishAsLoading } = usePublishAs({
     username: publishAsUsername ?? user?.username ?? "",
   })
-  const { isLoaded: isClerkUserLoaded } = useUser() // Get Clerk's loading state
-
-  // Log user data for debugging
-  useEffect(() => {
-    console.log("Clerk user:", user)
-    console.log("Publish as username:", publishAsUsername)
-    console.log("Publish as user:", publishAsUser)
-  }, [user, publishAsUsername, publishAsUser])
 
   useEffect(() => {
     if (form.getValues("publish_as_username") === undefined && user?.username) {
-      console.log("Setting publish_as_username to", user.username)
       form.setValue("publish_as_username", user.username)
     }
   }, [user?.username, form])
@@ -151,68 +137,6 @@ const PageClient: React.FC<PageClientProps> = ({
     setIsSuccessDialogOpen,
   } = useSubmitComponent()
 
-  useEffect(() => {
-    onSubmitStatusChange(isSubmitting)
-  }, [isSubmitting, onSubmitStatusChange])
-
-  // Provide the submit handler to the parent component
-  useEffect(() => {
-    // We need to wrap handleSubmit in a function to avoid circular references
-    const submitWrapper = () => {
-      console.log("Submit handler called from parent component")
-      handleSubmit()
-    }
-
-    onSubmitHandlerReady(submitWrapper)
-  }, [onSubmitHandlerReady])
-
-  const handleGoToComponent = () => {
-    const username = publishAsUser?.username || user?.username
-    const slug = form.getValues("component_slug")
-    const demoSlug = createdDemoSlug || "default"
-    if (username && slug) {
-      console.log(`Redirecting to /${username}/${slug}/${demoSlug}`)
-    } else {
-      console.warn("Could not determine redirect path.")
-    }
-    setIsSuccessDialogOpen(false)
-  }
-
-  // Log form state changes
-  useEffect(() => {
-    const subscription = form.watch((value) => {
-      // console.log("Form state updated:", value); // Optional: keep for debugging
-    })
-    return () => subscription.unsubscribe()
-  }, [form])
-
-  // Update form name when serverSandbox name changes
-  useEffect(() => {
-    if (serverSandbox?.name && !componentFormData) {
-      form.setValue("name", serverSandbox.name)
-    }
-  }, [serverSandbox?.name, form, componentFormData])
-
-  // Update form with component data when available
-  useEffect(() => {
-    if (componentFormData && !isComponentDataLoading) {
-      form.reset({
-        ...componentFormData,
-        publish_as_username:
-          user?.username ?? componentFormData.publish_as_username,
-      })
-
-      // Open all demo accordions
-      if (componentFormData.demos.length > 0) {
-        const newOpenAccordion = ["component-info"]
-        componentFormData.demos.forEach((_, index) => {
-          newOpenAccordion.push(`demo-${index}`)
-        })
-        setOpenAccordion(newOpenAccordion)
-      }
-    }
-  }, [componentFormData, isComponentDataLoading, form, user?.username])
-
   const prevNameRef = useRef<string>("")
 
   const debouncedUpdateName = useRef(
@@ -226,8 +150,8 @@ const PageClient: React.FC<PageClientProps> = ({
           )
           prevNameRef.current = newName
 
-          const result = await editSandbox(sandboxId, { name: newName })
-          console.log("Updated sandbox name in database:", result)
+          await editSandbox(sandboxId, { name: newName })
+          console.log("Updated sandbox name in database")
         }
       } catch (error) {
         console.error("Failed to update sandbox name in database:", error)
@@ -237,12 +161,12 @@ const PageClient: React.FC<PageClientProps> = ({
 
   useEffect(() => {
     prevNameRef.current = form.getValues("name") || serverSandbox?.name || ""
-  }, [serverSandbox?.name, form])
+  }, [serverSandbox?.name, form, componentFormData])
 
   useEffect(() => {
     const subscription = form.watch((value, { name: fieldName }) => {
-      if (fieldName === "name" && value.name) {
-        const newName = value.name as string
+      if (fieldName === "name" && typeof value.name === "string") {
+        const newName = value.name
         if (newName !== prevNameRef.current) {
           console.log(`Name field changed, scheduling update to: "${newName}"`)
           debouncedUpdateName(newName)
@@ -256,28 +180,18 @@ const PageClient: React.FC<PageClientProps> = ({
     }
   }, [form, debouncedUpdateName])
 
+  const handleAccordionChange = useCallback((value: string[]) => {
+    setOpenAccordion(value)
+  }, [])
+
   const handleSubmit = (event?: React.FormEvent) => {
     event?.preventDefault()
 
-    // --- Enhanced Debugging ---
-    console.log("handleSubmit triggered")
-    console.log("Clerk user state:", JSON.stringify(user, null, 2))
-    console.log("Clerk user loaded:", isClerkUserLoaded)
-    console.log("Publish as username:", publishAsUsername)
-    console.log(
-      "Publish as user state:",
-      JSON.stringify(publishAsUser, null, 2),
-    )
-    console.log("Publish as user loading:", isPublishAsLoading)
-    // --- End Enhanced Debugging ---
-
-    // --- Check Loading States ---
     if (!isClerkUserLoaded || isPublishAsLoading) {
       console.warn("User data is still loading. Aborting submission.")
       toast.info("User data is loading, please wait...")
-      return // Prevent submission if data isn't ready
+      return
     }
-    // --- End Check Loading States ---
 
     let finalPublishUser: { id: string; username?: string } | null = null
 
@@ -286,40 +200,29 @@ const PageClient: React.FC<PageClientProps> = ({
         id: publishAsUser.id,
         username: publishAsUser.username || undefined,
       }
-      console.log("Using publishAsUser:", finalPublishUser)
     } else if (user?.id) {
-      finalPublishUser = {
-        id: user.id,
-        username: user.username || undefined,
-      }
-      console.log("Using fallback Clerk user:", finalPublishUser)
-    } else {
-      console.error(
-        "Cannot determine user to publish as. Clerk user and publishAsUser are both missing.",
-      )
+      finalPublishUser = { id: user.id, username: user.username || undefined }
+    }
+
+    if (!finalPublishUser) {
+      console.error("Cannot determine user to publish as.")
       toast.error(
-        "Cannot determine user to publish as. Please ensure you are logged in and try again.",
+        "Cannot determine user to publish as. Please ensure you are logged in.",
       )
-      return // Stop submission if no valid user found
+      return
     }
 
     const currentSandbox = serverSandbox
 
-    // Now we know finalPublishUser is not null and has an id
     form.handleSubmit(
       (formData) => {
         console.log("Form data is valid:", formData)
 
-        // --- Add check for serverSandbox ---
         if (!currentSandbox?.id) {
-          console.error(
-            "Captured currentSandbox or currentSandbox.id is null/undefined.",
-            currentSandbox,
-          )
+          console.error("Sandbox data is missing.", currentSandbox)
           toast.error("Sandbox data is missing. Cannot submit.")
-          return // Abort if sandbox data is missing
+          return
         }
-        // --- End check for serverSandbox ---
 
         const data = {
           ...formData,
@@ -328,11 +231,11 @@ const PageClient: React.FC<PageClientProps> = ({
 
         submitComponent({
           data,
-          publishAsUser: finalPublishUser!, // Non-null assertion is safe here
+          publishAsUser: finalPublishUser,
           generateRegistry,
           bundleDemo,
           updateComponentNameAndImport,
-          sandboxId: currentSandbox.id, // Use the captured value's id
+          sandboxId: currentSandbox.id,
           onSuccess: () => {
             reconnectSandbox()
           },
@@ -350,10 +253,33 @@ const PageClient: React.FC<PageClientProps> = ({
     "name",
     "component_slug",
   ])
-  const isComponentInfoComplete = () => {
+  const isComponentInfoComplete = useCallback(() => {
     const [description, name, component_slug] = watchedComponentFields
     return !!description && !!name && !!component_slug
-  }
+  }, [watchedComponentFields])
+
+  const handleGoToComponent = useCallback(() => {
+    let finalPublishUser: { id: string; username?: string } | null = null
+    if (publishAsUser?.id) {
+      finalPublishUser = {
+        id: publishAsUser.id,
+        username: publishAsUser.username || undefined,
+      }
+    } else if (user?.id) {
+      finalPublishUser = { id: user.id, username: user.username || undefined }
+    }
+
+    const username = finalPublishUser?.username
+    const slug = form.getValues("component_slug")
+    const demoSlug = createdDemoSlug || "default"
+    if (username && slug) {
+      window.location.href = `/${username}/${slug}/${demoSlug}`
+      console.log(`Redirecting to /${username}/${slug}/${demoSlug}`)
+    } else {
+      console.warn("Could not determine redirect path.")
+    }
+    setIsSuccessDialogOpen(false)
+  }, [form, createdDemoSlug, setIsSuccessDialogOpen, publishAsUser, user])
 
   const handleAddAnother = () => {
     form.reset()
@@ -364,70 +290,58 @@ const PageClient: React.FC<PageClientProps> = ({
   const isDemoComplete = (demo: any) =>
     demo.name && demo.tags?.length > 0 && demo.preview_image_data_url
 
-  if (isComponentDataLoading || !serverSandbox?.id) {
+  submitHandlerRef!.current = handleSubmit
+
+  if (isComponentDataLoading || (!serverSandbox?.id && !componentFormData)) {
     return (
       <div className="flex flex-col h-[calc(100vh-56px)] w-full">
         <div className="flex h-full">
-          {/* Left Panel Skeleton */}
           <div className="border-r pointer-events-none transition-[width] duration-300 max-h-screen overflow-y-auto w-1/3 p-4">
             <div className="space-y-6">
-              {/* Component Info Skeleton */}
               <div className="space-y-4">
-                {/* Accordion Trigger - Wider */}
                 <Skeleton className="h-10 w-full rounded-md" />
-                {/* Removed indent div, adjusted label/input widths */}
                 <div className="space-y-4 pt-4">
-                  {" "}
-                  {/* Added pt-4 to mimic AccordionContent padding */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-1/3 mb-1" /> {/* Label */}
-                      <Skeleton className="h-10 w-full" /> {/* Input */}
+                      <Skeleton className="h-4 w-1/3 mb-1" />
+                      <Skeleton className="h-10 w-full" />
                     </div>
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-1/3 mb-1" /> {/* Label */}
-                      <Skeleton className="h-10 w-full" /> {/* Input */}
+                      <Skeleton className="h-4 w-1/3 mb-1" />
+                      <Skeleton className="h-10 w-full" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-1/3 mb-1" /> {/* Label */}
-                    <Skeleton className="h-20 w-full" /> {/* Textarea */}
+                    <Skeleton className="h-4 w-1/3 mb-1" />
+                    <Skeleton className="h-20 w-full" />
                   </div>
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-1/3 mb-1" /> {/* Label */}
-                    <Skeleton className="h-10 w-full" /> {/* Select */}
+                    <Skeleton className="h-4 w-1/3 mb-1" />
+                    <Skeleton className="h-10 w-full" />
                   </div>
                 </div>
               </div>
 
-              {/* Demo Details Skeleton */}
               <div className="space-y-4">
-                {/* Accordion Trigger - Wider */}
                 <Skeleton className="h-10 w-full rounded-md" />
-                {/* Removed indent div, adjusted label/input widths */}
                 <div className="space-y-4 pt-4">
-                  {" "}
-                  {/* Added pt-4 */}
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-1/3 mb-1" />{" "}
-                    {/* Label - Demo Name */}
-                    <Skeleton className="h-10 w-full" /> {/* Input */}
+                    <Skeleton className="h-4 w-1/3 mb-1" />
+                    <Skeleton className="h-10 w-full" />
                   </div>
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-1/3 mb-1" /> {/* Label - Tags */}
-                    <Skeleton className="h-10 w-full" /> {/* Tags Input */}
+                    <Skeleton className="h-4 w-1/3 mb-1" />
+                    <Skeleton className="h-10 w-full" />
                   </div>
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-1/3 mb-1" />{" "}
-                    {/* Label - Cover Image */}
-                    <Skeleton className="h-32 w-full" /> {/* File Upload */}
+                    <Skeleton className="h-4 w-1/3 mb-1" />
+                    <Skeleton className="h-32 w-full" />
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Panel Skeleton (Iframe) */}
           <div className="w-2/3 h-full bg-muted flex items-center justify-center">
             <Skeleton className="w-full h-full" />
           </div>
@@ -447,7 +361,7 @@ const PageClient: React.FC<PageClientProps> = ({
                   <Accordion
                     type="multiple"
                     value={openAccordion}
-                    onValueChange={setOpenAccordion}
+                    onValueChange={handleAccordionChange}
                     className="w-full"
                   >
                     <AccordionItem value="component-info">
@@ -500,9 +414,9 @@ const PageClient: React.FC<PageClientProps> = ({
                           <div className="flex items-center gap-2 w-full">
                             <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
                               <div className="truncate flex-shrink min-w-0">
-                                {form.getValues().demos.length > 1
-                                  ? `${demo.name || `Demo ${index + 1}`} Details`
-                                  : "Demo Details"}
+                                {index === 0 && !demo.name
+                                  ? "Default Demo"
+                                  : demo.name || `Demo ${index + 1}`}
                               </div>
                               <Badge
                                 variant="outline"
@@ -534,7 +448,7 @@ const PageClient: React.FC<PageClientProps> = ({
                                   e.stopPropagation()
                                   console.log("Delete demo:", index)
                                   toast.info(
-                                    `Demo ${index + 1} deletion not implemented yet.`,
+                                    `Demo deletion for index ${index} not implemented yet.`,
                                   )
                                 }}
                               >
@@ -575,4 +489,4 @@ const PageClient: React.FC<PageClientProps> = ({
   )
 }
 
-export default PageClient
+export default PublishPage

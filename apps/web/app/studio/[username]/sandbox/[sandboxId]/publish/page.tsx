@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { useState, useCallback } from "react"
+import { useState, useRef } from "react"
 import { SandboxHeader } from "@/components/features/studio/sandbox/components/sandbox-header"
 import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import PageClient from "./page.client"
@@ -12,22 +12,19 @@ export default function Page() {
     sandboxId: string
   }
   const [isNextLoading, setIsNextLoading] = useState(false)
-  const [submitHandler, setSubmitHandler] = useState<(() => void) | null>(null)
+
+  const submitHandlerRef = useRef<(() => void) | null>(null)
 
   // Fetch sandbox metadata for header
   const { serverSandbox } = useSandbox({ sandboxId })
 
-  const handleSubmitStatusChange = useCallback((isSubmitting: boolean) => {
-    setIsNextLoading(isSubmitting)
-  }, [])
-
-  const handleSubmitHandlerReady = useCallback((handler: () => void) => {
-    setSubmitHandler(() => handler)
-  }, [])
+  // const handleSubmitStatusChange = useCallback((isSubmitting: boolean) => {
+  //   setIsNextLoading(isSubmitting)
+  // }, [])
 
   const handleSubmit = () => {
-    if (submitHandler) {
-      submitHandler()
+    if (submitHandlerRef.current) {
+      submitHandlerRef.current()
     }
   }
 
@@ -46,10 +43,7 @@ export default function Page() {
         hideNext={false}
         isNextLoading={isNextLoading}
       />
-      <PageClient
-        onSubmitStatusChange={handleSubmitStatusChange}
-        onSubmitHandlerReady={handleSubmitHandlerReady}
-      />
+      <PageClient submitHandlerRef={submitHandlerRef} />
     </>
   )
 }
