@@ -201,7 +201,7 @@ export function BrandAssetsMenu({
   return (
     <motion.ul
       ref={menuRef}
-      className="fixed top-16 left-4 z-[100] flex flex-col gap-4 shadow-lg"
+      className="fixed top-16 left-4 z-[100] flex flex-col gap-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

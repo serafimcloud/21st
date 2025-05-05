@@ -1,6 +1,13 @@
 import { Component, DemoWithComponent, User, Tag } from "@/types/global"
 
-export const transformDemoResult = (result: any): DemoWithComponent => {
+// Define the extended type here
+export interface ExtendedDemoWithComponent extends DemoWithComponent {
+  is_private?: boolean
+  submission_status?: string
+  moderators_feedback?: string
+}
+
+export const transformDemoResult = (result: any): ExtendedDemoWithComponent => {
   const componentUser =
     result.component_user_data ||
     (result.component_data && result.component_data.user) ||
@@ -33,6 +40,9 @@ export const transformDemoResult = (result: any): DemoWithComponent => {
     embedding: result.embedding || null,
     embedding_oai: result.embedding_oai || null,
     bundle_url: result.bundle_url || null,
+    is_private: result.is_private || false,
+    submission_status: result.submission_status || "featured",
+    moderators_feedback: result.moderators_feedback || null,
   }
   return transformed
 }

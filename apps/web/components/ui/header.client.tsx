@@ -418,6 +418,23 @@ function HeaderContent({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-sm px-3 py-2 cursor-pointer flex items-center justify-between"
+                    onSelect={() => {
+                      if (userState.profile?.display_username) {
+                        router.push(
+                          `/studio/${userState.profile.display_username}`,
+                        )
+                      } else if (userState.profile?.username) {
+                        router.push(`/studio/${userState.profile.username}`)
+                      } else {
+                        router.push("/studio")
+                      }
+                    }}
+                  >
+                    Studio
+                    <Icons.layoutDashboard className="h-4 w-4" />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm px-3 py-2 cursor-pointer flex items-center justify-between"
                     onSelect={() => router.push("/settings/profile")}
                   >
                     Settings

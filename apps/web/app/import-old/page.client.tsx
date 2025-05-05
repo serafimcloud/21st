@@ -11,9 +11,9 @@ import {
   extractAmbigiousRegistryDependencies,
   extractNPMDependencies,
 } from "@/lib/parsers"
-import { UrlInput } from "@/components/features/import/components/url-input"
-import { ImportForm } from "@/components/features/import/components/import-form"
-import { ImportHeader } from "@/components/features/import/components/import-header"
+import { UrlInput } from "@/components/features/import-old/components/url-input"
+import { ImportForm } from "@/components/features/import-old/components/import-form"
+import { ImportHeader } from "@/components/features/import-old/components/import-header"
 import { SuccessDialog } from "@/components/features/publish/components/success-dialog"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
