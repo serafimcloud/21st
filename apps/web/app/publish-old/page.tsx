@@ -1,6 +1,6 @@
 import React from "react"
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs"
-import PublishComponentForm from "@/components/features/publish/publish-layout"
+import PublishComponentForm from "@/components/features/publish-old/publish-layout"
 import { Metadata } from "next"
 
 import { Header } from "@/components/ui/header.client"

@@ -2,7 +2,7 @@
 
 import { FC } from "react"
 import { motion } from "motion/react"
-import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
+import { useIsAdmin } from "@/components/features/publish-old/hooks/use-is-admin"
 import AdminHeader from "@/components/features/admin/AdminHeader"
 import SubmissionCard from "@/components/features/admin/SubmissionCard"
 import ManageSubmissionModal from "@/components/features/admin/ManageSubmissionModal"

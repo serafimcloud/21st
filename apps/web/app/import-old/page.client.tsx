@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useForm, FormProvider } from "react-hook-form"
 import { toast } from "sonner"
-import { FormData } from "@/components/features/publish/config/utils"
+import { FormData } from "@/components/features/publish-old/config/utils"
 import { useTheme } from "next-themes"
 import {
   extractDemoComponentNames,
@@ -14,7 +14,7 @@ import {
 import { UrlInput } from "@/components/features/import-old/components/url-input"
 import { ImportForm } from "@/components/features/import-old/components/import-form"
 import { ImportHeader } from "@/components/features/import-old/components/import-header"
-import { SuccessDialog } from "@/components/features/publish/components/success-dialog"
+import { SuccessDialog } from "@/components/features/publish-old/components/success-dialog"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
 import {
@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { WorkflowIcon } from "@/components/icons/workslow"
-import { ResolveUnknownDependenciesAlertForm } from "@/components/features/publish/components/alerts"
+import { ResolveUnknownDependenciesAlertForm } from "@/components/features/publish-old/components/alerts"
 
 interface RegistryComponent {
   name: string

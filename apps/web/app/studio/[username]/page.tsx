@@ -64,7 +64,8 @@ const getCachedUserSandboxes = unstable_cache(
     const shortUUID = ShortUUID()
     return (sandboxesData || []).map(
       (sandbox): ExtendedDemoWithComponent => ({
-        id: shortUUID.fromUUID(sandbox.id), // Use short UUID if needed, or original ID if consistent
+        id: sandbox.id,
+        sandbox_id: shortUUID.fromUUID(sandbox.id), // Use short UUID if needed, or original ID if consistent
         name: sandbox.name || "Untitled Sandbox",
         created_at: sandbox.created_at,
         updated_at: sandbox.updated_at,
@@ -74,13 +75,17 @@ const getCachedUserSandboxes = unstable_cache(
         demo_slug: sandbox.id, // Use sandbox id as a placeholder slug
         preview_url: null,
         video_url: null,
-        component: null, // No linked component initially
+        // @ts-ignore
+        component: undefined, // No linked component initially
+        // @ts-ignore
         user: null, // User data can be added if needed, but might not be necessary for table display
         component_user: null,
         total_count: 0,
         view_count: 0,
         bookmarks_count: 0,
+        // @ts-ignore
         bundle_url: null,
+        // @ts-ignore
         moderators_feedback: null,
       }),
     )

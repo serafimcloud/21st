@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .select("username, updated_at")
 
   const componentUrls = (components || []).map((component) => ({
-    url: `${baseUrl}/${component.users?.username}/${component.component_slug}`,
+    url: `${baseUrl}/${component.users?.[0]?.username}/${component.component_slug}`,
     lastModified: component.updated_at,
     changeFrequency: "weekly" as const,
     priority: 0.8,

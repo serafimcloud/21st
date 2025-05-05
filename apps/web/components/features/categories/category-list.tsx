@@ -44,7 +44,7 @@ export function CategoriesList({
           category.items.map((item) => {
             if (!item.demoId) return null
             const preview = categoryPreviews?.find(
-              (s) => s.demo_id === item.demoId,
+              (s: { demo_id: number }) => s.demo_id === item.demoId,
             )
             if (!preview) return null
 

@@ -40,7 +40,7 @@ export function CollectionsContainer({ tagSlug }: CollectionsContainerProps) {
       if (error) throw error
       if (!data) return []
 
-      return data.map((collection) => ({
+      return data.map((collection: CollectionWithUser) => ({
         ...collection,
         user_data: collection.user_data || {
           id: "",

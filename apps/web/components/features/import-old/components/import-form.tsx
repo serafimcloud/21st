@@ -1,10 +1,10 @@
 import { UseFormReturn } from "react-hook-form"
-import { FormData } from "@/components/features/publish/config/utils"
-import { DemoDetailsForm } from "@/components/features/publish/components/forms/demo-form"
-import { NameSlugForm } from "@/components/features/publish/components/forms/component-details-form"
-import { EditCodeFileCard } from "@/components/features/publish/components/edit-code-file-card"
-import { DemoPreviewTabs } from "@/components/features/publish/components/preview-with-tabs"
-import { EditorStep } from "@/components/features/publish/components/code-editor"
+import { FormData } from "@/components/features/publish-old/config/utils"
+import { DemoDetailsForm } from "@/components/features/publish-old/components/forms/demo-form"
+import { NameSlugForm } from "@/components/features/publish-old/components/forms/component-details-form"
+import { EditCodeFileCard } from "@/components/features/publish-old/components/edit-code-file-card"
+import { DemoPreviewTabs } from "@/components/features/publish-old/components/preview-with-tabs"
+import { EditorStep } from "@/components/features/publish-old/components/code-editor"
 import { cn } from "@/lib/utils"
 
 interface ImportFormProps {
@@ -83,7 +83,8 @@ export function ImportForm({
           formStep === "demoCode" ? "w-1/2" : "w-2/3",
         )}
       >
-        {(!form.watch("unknown_dependencies") || form.watch("unknown_dependencies").length === 0) && (
+        {(!form.watch("unknown_dependencies") ||
+          form.watch("unknown_dependencies").length === 0) && (
           <DemoPreviewTabs
             code={code}
             slugToPublish={componentSlug}

@@ -1,6 +1,6 @@
 import React from "react"
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs"
-import { PublishTemplateForm } from "@/components/features/publish/template/publish-template-form"
+import { PublishTemplateForm } from "@/components/features/publish-old/template/publish-template-form"
 import { Metadata } from "next"
 import { Header } from "@/components/ui/header.client"
 
