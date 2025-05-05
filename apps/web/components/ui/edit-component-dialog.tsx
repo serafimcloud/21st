@@ -12,7 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
-import { ComponentDetailsForm } from "../features/publish/components/forms/component-form"
+import { ComponentDetailsForm } from "../features/publish-old/components/forms/component-form"
 import {
   Component,
   User,
@@ -22,22 +22,22 @@ import {
   DemoWithTags,
 } from "@/types/global"
 import { useForm } from "react-hook-form"
-import { FormData } from "../features/publish/config/utils"
+import { FormData } from "../features/publish-old/config/utils"
 import { uploadToR2 } from "@/lib/r2"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useIsMobile } from "@/hooks/use-media-query"
-import { DemoDetailsForm } from "../features/publish/components/forms/demo-form"
+import { DemoDetailsForm } from "../features/publish-old/components/forms/demo-form"
 import { Button } from "@/components/ui/button"
 import { LoaderCircle } from "lucide-react"
-import { EditCodeFileCard } from "../features/publish/components/edit-code-file-card"
+import { EditCodeFileCard } from "../features/publish-old/components/edit-code-file-card"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
 import { CodeEditorDialog } from "./code-editor-dialog"
 import { addVersionToUrl } from "@/lib/utils/url"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { atom, useAtom } from "jotai"
-import { useR2Upload } from "../features/publish/hooks/use-r2-upload"
+import { useR2Upload } from "../features/publish-old/hooks/use-r2-upload"
 
 // Helper function to safely fetch file content
 const safeFetchFile = async (url: string): Promise<string> => {

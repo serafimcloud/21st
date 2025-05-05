@@ -1,26 +1,17 @@
-import React from "react"
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs"
-import PublishComponentForm from "@/components/features/publish/publish-layout"
-import { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { auth } from "@clerk/nextjs/server"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
 
-import { Header } from "@/components/ui/header.client"
-
-export const metadata: Metadata = {
-  title: "Publish New Component | 21st.dev",
-}
-
-export default function PublishPage() {
-  return (
-    <>
-      <SignedIn>
-        <Header variant="publish" />
-        <div className="flex flex-row items-center h-screen w-full">
-          <PublishComponentForm />
-        </div>
-      </SignedIn>
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
-    </>
-  )
+export default async function Page() {
+  const { userId } = await auth()
+  if (!userId) redirect("/")
+  const { data: user } = await supabaseWithAdminAccess
+    .from("users")
+    .select("display_username,username")
+    .eq("id", userId)
+    .single()
+  if (!user) redirect("/")
+  const username = user.display_username || user.username
+  if (!username) redirect("/")
+  redirect(`/studio/${username}`)
 }

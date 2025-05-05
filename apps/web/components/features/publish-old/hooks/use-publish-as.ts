@@ -8,7 +8,10 @@ export const usePublishAs = ({ username }: { username: string }) => {
   const { user } = useUser()
   const client = useClerkSupabaseClient()
 
-  const { data: isCurrentUserAdmin = false } = useQuery({
+  const {
+    data: isCurrentUserAdmin = false,
+    isLoading: isCurrentUserAdminLoading,
+  } = useQuery({
     queryKey: ["user", user?.id, "isAdmin"],
     queryFn: async () => {
       if (!user?.id) return false
@@ -22,7 +25,7 @@ export const usePublishAs = ({ username }: { username: string }) => {
     enabled: !!user?.id,
   })
 
-  const { data: publishAsUser } = useQuery({
+  const { data: publishAsUser, isLoading: isPublishAsUserLoading } = useQuery({
     queryKey: ["publishAsUser", username],
     queryFn: async () => {
       const { data } = await client
@@ -38,5 +41,6 @@ export const usePublishAs = ({ username }: { username: string }) => {
   return {
     isAdmin: isCurrentUserAdmin,
     user: publishAsUser,
+    isLoading: isPublishAsUserLoading || isCurrentUserAdminLoading,
   }
 }

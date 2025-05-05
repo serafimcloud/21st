@@ -527,6 +527,7 @@ export type Database = {
           user_id: string
           video_url: string | null
           website_url: string | null
+          sandbox_id: string | null
         }
         Insert: {
           code?: string
@@ -561,6 +562,7 @@ export type Database = {
           user_id: string
           video_url?: string | null
           website_url?: string | null
+          sandbox_id?: string | null
         }
         Update: {
           code?: string
@@ -595,6 +597,7 @@ export type Database = {
           user_id?: string
           video_url?: string | null
           website_url?: string | null
+          sandbox_id?: string | null
         }
         Relationships: [
           {
@@ -651,6 +654,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "components_sandbox_id_fkey"
+            columns: ["sandbox_id"]
+            isOneToOne: false
+            referencedRelation: "sandbox"
             referencedColumns: ["id"]
           },
         ]
@@ -1479,6 +1489,7 @@ export type Database = {
           status: string | null
           updated_at: string
           user_id: string
+          component_id: string | null
         }
         Insert: {
           codesandbox_id?: string | null
@@ -1488,6 +1499,7 @@ export type Database = {
           status?: string | null
           updated_at?: string
           user_id: string
+          component_id?: string | null
         }
         Update: {
           codesandbox_id?: string | null
@@ -1497,6 +1509,7 @@ export type Database = {
           status?: string | null
           updated_at?: string
           user_id?: string
+          component_id?: string | null
         }
         Relationships: [
           {
@@ -1512,6 +1525,12 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sandbox_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
           },
         ]
       }

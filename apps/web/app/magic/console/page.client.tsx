@@ -10,7 +10,6 @@ import {
   LoaderCircle,
   Copy,
   AlertTriangle,
-  MessageSquare,
   RefreshCw,
 } from "lucide-react"
 import { PLAN_LIMITS, PlanType } from "@/lib/config/subscription-plans"
