@@ -198,6 +198,16 @@ function HeaderContent({
     }
   }
 
+  const handleRedirectToStudio = () => {
+    if (userState.profile?.display_username) {
+      router.push(`/studio/${userState.profile.display_username}?new=true`)
+    } else if (userState.profile?.username) {
+      router.push(`/studio/${userState.profile.username}?new=true`)
+    } else {
+      router.push("/studio?new=true")
+    }
+  }
+
   return (
     <>
       <header
@@ -289,10 +299,10 @@ function HeaderContent({
                     )}
                   <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm shadow-black/5 rtl:space-x-reverse">
                     <Button
-                      asChild
+                      onClick={handleRedirectToStudio}
                       className="rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10"
                     >
-                      <Link href="/publish">Add new</Link>
+                      Add new
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -314,18 +324,18 @@ function HeaderContent({
                         sideOffset={4}
                         align="end"
                       >
-                        <DropdownMenuItem asChild>
-                          <Link href="/publish" className="cursor-pointer">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-sm font-medium">
-                                Publish component
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Create and publish a new component to the
-                                registry
-                              </span>
-                            </div>
-                          </Link>
+                        <DropdownMenuItem
+                          onClick={handleRedirectToStudio}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium">
+                              Publish component
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              Create and publish a new component to the registry
+                            </span>
+                          </div>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link

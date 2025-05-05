@@ -5,7 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  jotai: 2.8.0
   react-is: 19.1.0
 
 importers:
