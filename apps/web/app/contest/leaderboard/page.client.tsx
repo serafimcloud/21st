@@ -2,10 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react"
 import { useRoundSubmissions, useToggleVote, type Round } from "@/lib/queries"
-import {
-  LeaderboardList,
-  type Category,
-} from "@/components/features/contest/leaderboard-list"
+import { LeaderboardList } from "@/components/features/contest/leaderboard-list"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Header } from "@/components/ui/header.client"
 import {
@@ -19,6 +16,9 @@ import {
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { shouldHideLeaderboardRankings } from "@/lib/utils"
+
+// Define the Category type locally
+type Category = "global" | "seasonal"
 
 function formatDateRange(start: string, end: string): string {
   const startDate = new Date(start)
@@ -54,8 +54,6 @@ export function LeaderboardClient({
     Record<Category, any[]>
   >({
     global: [],
-    marketing: [],
-    ui: [],
     seasonal: [],
   })
 
@@ -85,7 +83,7 @@ export function LeaderboardClient({
       return
     }
 
-    const categories: Category[] = ["global", "marketing", "ui", "seasonal"]
+    const categories: Category[] = ["global", "seasonal"]
     const randomized: Record<Category, any[]> = {} as Record<Category, any[]>
 
     // For each category, get and randomize the submissions
@@ -162,15 +160,17 @@ export function LeaderboardClient({
               <TableBody>
                 <TableRow>
                   <TableCell className="font-medium">
-                    Global Awards (3)
+                    Global Awards (10)
                   </TableCell>
-                  <TableCell>🥇 $600 • 🥈 $350 • 🥉 $200</TableCell>
+                  <TableCell>
+                    🥇 $700 • 🥈 $400 • 🥉 $250 • 4th-10th $50 each
+                  </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">
-                    Category Awards (9)
+                    Seasonal Awards (3)
                   </TableCell>
-                  <TableCell>🥇 $150 • 🥈 $100 • 🥉 $50 per category</TableCell>
+                  <TableCell>🥇 $150 • 🥈 $100 • 🥉 $50</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell className="font-medium">
@@ -208,18 +208,6 @@ export function LeaderboardClient({
                   className="data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none h-10 px-4 !shadow-none"
                 >
                   Global
-                </TabsTrigger>
-                <TabsTrigger
-                  value="marketing"
-                  className="data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none h-10 px-4 !shadow-none"
-                >
-                  Marketing
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ui"
-                  className="data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none h-10 px-4 !shadow-none"
-                >
-                  UI
                 </TabsTrigger>
                 <TabsTrigger
                   value="seasonal"

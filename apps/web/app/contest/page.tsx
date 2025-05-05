@@ -35,71 +35,6 @@ interface Tag {
   name: string
 }
 
-// Extracted from navigation.ts for clarity on category contents
-const marketingComponents = [
-  "Announcements",
-  "Backgrounds",
-  "Borders",
-  "Calls to Action",
-  "Clients",
-  "Comparisons",
-  "Docks",
-  "Features",
-  "Footers",
-  "Heroes",
-  "Hooks",
-  "Images",
-  "Maps",
-  "Navigation Menus",
-  "Pricing Sections",
-  "Scroll Areas",
-  "Testimonials",
-  "Texts",
-  "Videos",
-].sort()
-
-const uiComponents = [
-  "Accordions",
-  "AI Chats",
-  "Alerts",
-  "Avatars",
-  "Badges",
-  "Buttons",
-  "Calendars",
-  "Cards",
-  "Carousels",
-  "Checkboxes",
-  "Date Pickers",
-  "Dialogs / Modals",
-  "Dropdowns",
-  "Empty States",
-  "File Trees",
-  "File Uploads",
-  "Forms",
-  "Icons",
-  "Inputs",
-  "Links",
-  "Menus",
-  "Notifications",
-  "Numbers",
-  "Paginations",
-  "Popovers",
-  "Radio Groups",
-  "Sidebars",
-  "Sign Ins",
-  "Sign ups",
-  "Selects",
-  "Sliders",
-  "Spinner Loaders",
-  "Tables",
-  "Tags",
-  "Tabs",
-  "Text Areas",
-  "Toasts",
-  "Toggles",
-  "Tooltips",
-].sort()
-
 async function getUpcomingRoundsWithTags(): Promise<{
   rounds: (Round & { seasonalTag: Tag | null })[]
 }> {
@@ -270,45 +205,13 @@ export default async function Page() {
               <h2 className="font-medium flex items-center gap-2">
                 🏷️ Categories
               </h2>
-              <Accordion type="multiple" className="w-full">
-                <AccordionItem value="marketing">
-                  <AccordionTrigger className="font-semibold">
-                    1. Marketing Components
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="list-disc pl-6 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-sm">
-                      {marketingComponents.map((comp) => (
-                        <li key={comp}>{comp}</li>
-                      ))}
-                    </ul>
-                    <p className="mt-2 text-xs text-muted-foreground italic">
-                      Examples: hero banners, CTA strips, email blocks, landing
-                      layouts.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="ui">
-                  <AccordionTrigger className="font-semibold">
-                    2. UI Components
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="list-disc pl-6 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-sm">
-                      {uiComponents.map((comp) => (
-                        <li key={comp}>{comp}</li>
-                      ))}
-                    </ul>
-                    <p className="mt-2 text-xs text-muted-foreground italic">
-                      Examples: tables, dashboards, charts, complex form
-                      elements.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+              <p className="text-base">
+                <span className="font-semibold">1. Global Leaderboard</span> –
+                All components compete for the top 10 positions.
+              </p>
               <p className="text-base pt-2">
-                <span className="font-semibold">
-                  3. Bonus Category (Extra Prizes)
-                </span>{" "}
-                – rotates each week (see roadmap below).
+                <span className="font-semibold">2. Seasonal Category</span> –
+                Rotating theme each week with bonus prizes (see roadmap below).
               </p>
             </section>
 
@@ -330,25 +233,22 @@ export default async function Page() {
                   <TableBody>
                     <TableRow>
                       <TableCell className="font-medium">
-                        Global Awards (3)
+                        Global Awards (10)
                       </TableCell>
-                      <TableCell>🥇 $600 • 🥈 $350 • 🥉 $200</TableCell>
                       <TableCell>
-                        Highest scores across <em className="italic">all</em>{" "}
-                        categories
+                        🥇 $700 • 🥈 $400 • 🥉 $250 • 4th-10th $50 each
+                      </TableCell>
+                      <TableCell>
+                        Top performers across all submissions
                       </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">
-                        Category Awards (9)
+                        Seasonal Awards (3)
                       </TableCell>
+                      <TableCell>🥇 $150 • 🥈 $100 • 🥉 $50</TableCell>
                       <TableCell>
-                        🥇 $150 • 🥈 $100 • 🥉 $50 per category
-                      </TableCell>
-                      <TableCell>
-                        Three winners in{" "}
-                        <span className="font-semibold">each</span> of the three
-                        categories
+                        Best components in the weekly seasonal theme
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -363,7 +263,7 @@ export default async function Page() {
               </div>
               <p className="text-sm text-muted-foreground italic">
                 Overlap allowed: the same component can take multiple prizes
-                (e.g., Global 🥈 + UI 🥇).
+                (e.g., Global 🥈 + Seasonal 🥇).
               </p>
 
               <div className="flex justify-center pt-2">
