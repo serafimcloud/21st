@@ -48,35 +48,28 @@ export function StudioUsernameClient({
     <StudioLayout user={user}>
       <div className="space-y-6">
         <div className="flex flex-row items-center justify-between">
-          <div className="flex items-center">
-            <h1 className="text-xl font-bold">Components</h1>
-          </div>
-        </div>
-
-        <div className="flex flex-row items-end justify-between">
-          <div className="flex items-center justify-between">
-            {(isOwnProfile || isAdmin) && (
-              <Button
-                onClick={handleCreateNewSandbox}
-                disabled={isCreating}
-                className={cn(
-                  "transition-[width] duration-200",
-                  isCreating ? "w-[120px]" : "w-[80px]",
+          <h1 className="text-xl font-bold">Components</h1>
+          {(isOwnProfile || isAdmin) && (
+            <Button
+              onClick={handleCreateNewSandbox}
+              disabled={isCreating}
+              className={cn(
+                "transition-[width] duration-200",
+                isCreating ? "w-[120px]" : "w-[80px]",
+              )}
+            >
+              <div className="flex items-center gap-2 justify-center w-full">
+                {isCreating ? (
+                  <>
+                    <Spinner size={16} color="white" />
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <span>Create</span>
                 )}
-              >
-                <div className="flex items-center gap-2 justify-center w-full">
-                  {isCreating ? (
-                    <>
-                      <Spinner size={16} color="white" />
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    <span>Create</span>
-                  )}
-                </div>
-              </Button>
-            )}
-          </div>
+              </div>
+            </Button>
+          )}
         </div>
 
         <div className="mt-4">

@@ -125,8 +125,34 @@ export function DemosTable({
       accessorKey: "name",
       cell: ({ row }) => {
         const isDraft = row.original.submission_status === "draft"
+        const handleRowClick = () => {
+          if (isDraft && onOpenSandbox) {
+            onOpenSandbox(row.original)
+          }
+          // Optionally, add navigation for non-draft items here if needed
+          // else { router.push(`/component/${row.original.demo_slug}`) }
+        }
+
         return (
-          <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              "flex items-center gap-3",
+              isDraft && onOpenSandbox && "cursor-pointer", // Add cursor pointer for drafts
+            )}
+            onClick={handleRowClick}
+            onKeyDown={(e) => {
+              if (
+                isDraft &&
+                onOpenSandbox &&
+                (e.key === "Enter" || e.key === " ")
+              ) {
+                e.preventDefault()
+                handleRowClick()
+              }
+            }}
+            role={isDraft && onOpenSandbox ? "button" : undefined}
+            tabIndex={isDraft && onOpenSandbox ? 0 : undefined}
+          >
             <div className="h-12 w-20 overflow-hidden rounded-md border bg-muted shrink-0">
               {row.original.preview_url ? (
                 <div
@@ -153,6 +179,7 @@ export function DemosTable({
         )
       },
       size: 300,
+      sortingFn: "alphanumeric",
     },
     {
       header: "Status",
@@ -276,40 +303,10 @@ export function DemosTable({
       size: 80,
       sortingFn: "alphanumeric",
     },
-    {
-      id: "actions",
-      header: () => <div className="text-right">Actions</div>,
-      cell: ({ row }) => {
-        const isDraft = row.original.submission_status === "draft"
-        return (
-          <div className="text-right">
-            {isDraft && onOpenSandbox && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onOpenSandbox(row.original)}
-                className="flex items-center gap-1 ml-auto"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Open
-              </Button>
-            )}
-            {!isDraft && onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(row.original)}
-                className="flex items-center gap-1 ml-auto"
-              >
-                Edit
-              </Button>
-            )}
-          </div>
-        )
-      },
-      size: 100,
-    },
   ]
+
+  // Adjust colSpan for the empty state
+  const columnCount = columns.length
 
   // Ensure demos is always an array
   const safeData = Array.isArray(demos) ? demos : []
@@ -503,7 +500,7 @@ export function DemosTable({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columnCount} // Use dynamic column count
                   className="h-24 text-center text-muted-foreground"
                 >
                   No demos published yet
