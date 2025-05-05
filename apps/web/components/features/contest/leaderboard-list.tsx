@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
@@ -9,6 +9,7 @@ import { LeaderboardCard } from "./leaderboard-card"
 import { UseMutationResult } from "@tanstack/react-query"
 import { Trophy } from "lucide-react"
 import { LeaderboardCardSkeleton } from "@/components/ui/skeletons"
+import { shouldHideLeaderboardRankings } from "@/lib/utils"
 
 export type Category = "global" | "marketing" | "ui" | "seasonal"
 
@@ -35,12 +36,21 @@ export function LeaderboardList({
   const [isVoting, setIsVoting] = useState<number | null>(null)
   const [selectedDemo, setSelectedDemo] = useState<any | null>(null)
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
+
+  // Store original order in a ref to maintain it
+  const originalOrderRef = useRef<number[]>([])
   const [optimisticSubmissions, setOptimisticSubmissions] = useState<any[]>([])
 
   // Initialize optimisticSubmissions with the original submissions
-  React.useEffect(() => {
+  // and preserve the original order
+  useEffect(() => {
+    // Store the IDs in the original order
+    originalOrderRef.current = submissions.map((sub) => sub.id)
     setOptimisticSubmissions(submissions)
   }, [submissions])
+
+  // Use the shared utility function
+  const hideRankings = shouldHideLeaderboardRankings()
 
   const prepareDemo = (demo: any) => {
     if (!demo) return null
@@ -102,9 +112,9 @@ export function LeaderboardList({
       // Mark this specific submission as in voting state
       setIsVoting(demoId)
 
-      // Apply optimistic update
-      setOptimisticSubmissions((current) =>
-        current.map((sub) => {
+      // Apply optimistic update while maintaining original order
+      setOptimisticSubmissions((current) => {
+        const updated = current.map((sub) => {
           if (sub.id === demoId) {
             const hasVoted = !sub.has_voted
             return {
@@ -116,8 +126,21 @@ export function LeaderboardList({
             }
           }
           return sub
-        }),
-      )
+        })
+
+        // Make sure we maintain the exact same order as before
+        // This prevents reordering when votes change
+        if (hideRankings && originalOrderRef.current.length > 0) {
+          // Sort based on our stored original order
+          return updated.sort((a, b) => {
+            const aIndex = originalOrderRef.current.indexOf(a.id)
+            const bIndex = originalOrderRef.current.indexOf(b.id)
+            return aIndex - bIndex
+          })
+        }
+
+        return updated
+      })
 
       // Execute the actual mutation
       await toggleVote.mutateAsync({ demoId })
@@ -204,6 +227,13 @@ export function LeaderboardList({
           />
         ))}
       </div>
+
+      {hideRankings && (
+        <div className="mt-4 text-xs text-muted-foreground italic">
+          Rankings and vote counts are hidden until Thursday to provide equal
+          visibility.
+        </div>
+      )}
 
       {selectedDemo && isPreviewDialogOpen && (
         <ComponentPreviewDialog

@@ -186,6 +186,11 @@ export default async function Page() {
               <p className="text-sm text-muted-foreground italic">
                 All counters reset at the start of each round.
               </p>
+              <p className="text-sm text-muted-foreground italic">
+                Note: From Monday to Wednesday midnight, entries are shown in
+                random order with hidden vote counts. Rankings become visible on
+                Thursday.
+              </p>
             </section>
 
             <div className="h-px bg-border" />
@@ -353,6 +358,18 @@ export default async function Page() {
                     Traffic to the component's detail page
                   </p>
                 </div>
+              </div>
+
+              <div className="rounded-lg border p-4 bg-muted/20 mt-4">
+                <p className="text-sm leading-6">
+                  <span className="font-semibold">Fair Visibility Policy:</span>{" "}
+                  To ensure all components get equal exposure regardless of
+                  submission time, from Monday to Wednesday midnight all
+                  submissions are displayed in random order with hidden vote
+                  counts and rankings. Full leaderboard standings with vote
+                  counts become visible on Thursday, giving late submissions
+                  equal opportunity for visibility.
+                </p>
               </div>
 
               <div className="flex justify-center pt-4">
