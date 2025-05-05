@@ -3,6 +3,12 @@ import Link from "next/link"
 import { Logo } from "@/components/ui/logo"
 import { Footer } from "@/components/ui/footer"
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import {
   Table,
   TableBody,
   TableCell,
@@ -28,6 +34,71 @@ interface Tag {
   id: string
   name: string
 }
+
+// Extracted from navigation.ts for clarity on category contents
+const marketingComponents = [
+  "Announcements",
+  "Backgrounds",
+  "Borders",
+  "Calls to Action",
+  "Clients",
+  "Comparisons",
+  "Docks",
+  "Features",
+  "Footers",
+  "Heroes",
+  "Hooks",
+  "Images",
+  "Maps",
+  "Navigation Menus",
+  "Pricing Sections",
+  "Scroll Areas",
+  "Testimonials",
+  "Texts",
+  "Videos",
+].sort()
+
+const uiComponents = [
+  "Accordions",
+  "AI Chats",
+  "Alerts",
+  "Avatars",
+  "Badges",
+  "Buttons",
+  "Calendars",
+  "Cards",
+  "Carousels",
+  "Checkboxes",
+  "Date Pickers",
+  "Dialogs / Modals",
+  "Dropdowns",
+  "Empty States",
+  "File Trees",
+  "File Uploads",
+  "Forms",
+  "Icons",
+  "Inputs",
+  "Links",
+  "Menus",
+  "Notifications",
+  "Numbers",
+  "Paginations",
+  "Popovers",
+  "Radio Groups",
+  "Sidebars",
+  "Sign Ins",
+  "Sign ups",
+  "Selects",
+  "Sliders",
+  "Spinner Loaders",
+  "Tables",
+  "Tags",
+  "Tabs",
+  "Text Areas",
+  "Toasts",
+  "Toggles",
+  "Tooltips",
+].sort()
 
 async function getUpcomingRoundsWithTags(): Promise<{
   rounds: (Round & { seasonalTag: Tag | null })[]
@@ -186,6 +257,11 @@ export default async function Page() {
               <p className="text-sm text-muted-foreground italic">
                 All counters reset at the start of each round.
               </p>
+              <p className="text-sm text-muted-foreground italic">
+                Note: From Monday to Wednesday midnight, entries are shown in
+                random order with hidden vote counts. Rankings become visible on
+                Thursday.
+              </p>
             </section>
 
             <div className="h-px bg-border" />
@@ -194,22 +270,46 @@ export default async function Page() {
               <h2 className="font-medium flex items-center gap-2">
                 🏷️ Categories
               </h2>
-              <ol className="list-decimal pl-6 space-y-2">
-                <li>
-                  <span className="font-semibold">Marketing Components</span> –
-                  hero banners, CTA strips, email blocks, landing layouts
-                </li>
-                <li>
-                  <span className="font-semibold">UI Components</span> – tables,
-                  dashboards, charts, complex form elements
-                </li>
-                <li>
-                  <span className="font-semibold">
-                    Bonus Category (Extra Prizes)
-                  </span>{" "}
-                  – rotates each week (see roadmap below)
-                </li>
-              </ol>
+              <Accordion type="multiple" className="w-full">
+                <AccordionItem value="marketing">
+                  <AccordionTrigger className="font-semibold">
+                    1. Marketing Components
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="list-disc pl-6 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-sm">
+                      {marketingComponents.map((comp) => (
+                        <li key={comp}>{comp}</li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-muted-foreground italic">
+                      Examples: hero banners, CTA strips, email blocks, landing
+                      layouts.
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="ui">
+                  <AccordionTrigger className="font-semibold">
+                    2. UI Components
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="list-disc pl-6 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-sm">
+                      {uiComponents.map((comp) => (
+                        <li key={comp}>{comp}</li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-muted-foreground italic">
+                      Examples: tables, dashboards, charts, complex form
+                      elements.
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+              <p className="text-base pt-2">
+                <span className="font-semibold">
+                  3. Bonus Category (Extra Prizes)
+                </span>{" "}
+                – rotates each week (see roadmap below).
+              </p>
             </section>
 
             <div className="h-px bg-border" />
@@ -353,6 +453,18 @@ export default async function Page() {
                     Traffic to the component's detail page
                   </p>
                 </div>
+              </div>
+
+              <div className="rounded-lg border p-4 bg-muted/20 mt-4">
+                <p className="text-sm leading-6">
+                  <span className="font-semibold">Fair Visibility Policy:</span>{" "}
+                  To ensure all components get equal exposure regardless of
+                  submission time, from Monday to Wednesday midnight all
+                  submissions are displayed in random order with hidden vote
+                  counts and rankings. Full leaderboard standings with vote
+                  counts become visible on Thursday, giving late submissions
+                  equal opportunity for visibility.
+                </p>
               </div>
 
               <div className="flex justify-center pt-4">

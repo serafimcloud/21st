@@ -62,6 +62,32 @@ export function formatPrice(price: number) {
   }).format(price)
 }
 
+/**
+ * Normalize file path by removing @/ prefix and ensuring consistent format
+ */
+export function normalizePath(path: string): string {
+  return path.replace(/^@\//, "/")
+}
+
+/**
+ * Compare two paths after normalization
+ */
+export function arePathsEqual(path1: string, path2: string): boolean {
+  return normalizePath(path1) === normalizePath(path2)
+}
+
+/**
+ * Check if we should hide leaderboard rankings and vote counts
+ * (Monday through Wednesday before midnight)
+ */
+export function shouldHideLeaderboardRankings(): boolean {
+  const now = new Date()
+  const day = now.getDay() // 0 is Sunday, 1 is Monday, etc.
+
+  // Hide if it's Monday (1), Tuesday (2), or Wednesday (3) before midnight
+  return day >= 1 && day <= 3
+}
+
 export function formatK(num: number, toFixed = 1): string {
   if (num >= 1000) {
     return (num / 1000).toFixed(1).replace(/\.0$/, "") + "k"

@@ -10,6 +10,7 @@ interface FeatureCardsProps {
   features: FeatureCard[]
 }
 
+
 export function FeatureCards({ title, features }: FeatureCardsProps) {
   return (
     <div className="w-full border rounded-lg p-4 mt-auto text-start">

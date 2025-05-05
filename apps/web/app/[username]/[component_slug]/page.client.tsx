@@ -87,6 +87,7 @@ import { cn } from "@/lib/utils"
 import { addVersionToUrl } from "@/lib/utils/url"
 import { isEditingCodeAtom } from "@/components/ui/edit-component-dialog"
 import { useComponentAccess } from "@/hooks/use-component-access"
+import { Logo } from "@/components/ui/logo"
 
 export const isShowCodeAtom = atom(true)
 const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
@@ -684,10 +685,7 @@ export default function ComponentPage({
         <div className="flex gap-2 items-center">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link
-                href="/"
-                className="flex items-center justify-center w-[22px] h-[22px] rounded-full cursor-pointer bg-foreground"
-              />
+              <Logo className="w-[22px] h-[22px]" position="flex" />
             </TooltipTrigger>
             <TooltipContent
               side="bottom"

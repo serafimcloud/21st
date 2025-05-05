@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, ThumbsUp, Video, Tag } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "../../ui/user-avatar"
+import { shouldHideLeaderboardRankings } from "@/lib/utils"
 
 // VideoPreview component for hover video functionality
 const videoLoadingCache = new Map<string, boolean>()
@@ -143,6 +144,9 @@ export function LeaderboardCard({
   const componentData = submission.component_data || {}
   const tags = submission.tags || []
 
+  // Use the shared utility function
+  const hideRankings = shouldHideLeaderboardRankings()
+
   return (
     <div onClick={() => handleDemoClick(submission)}>
       <div className="group relative flex flex-col sm:flex-row items-start gap-4 rounded-xl px-0 py-4 transition-all duration-300 sm:-mx-4 sm:p-4 cursor-pointer hover:sm:bg-gray-100 dark:hover:sm:bg-gray-800">
@@ -178,9 +182,10 @@ export function LeaderboardCard({
           {/* Left column (Title, Author, Tags) */}
           <div className="flex flex-col space-y-2 flex-1 sm:min-h-24 justify-between">
             <div className="space-y-1">
-              {/* Title */}
+              {/* Title - hide the ranking number before Thursday */}
               <h3 className="text-base font-semibold text-foreground group-hover:text-primary">
-                {index + 1}. {componentData.name || submission.name}
+                {!hideRankings ? `${index + 1}. ` : ""}
+                {componentData.name || submission.name}
               </h3>
 
               {/* Description */}
@@ -228,16 +233,16 @@ export function LeaderboardCard({
                 variant="outline"
                 size="icon"
                 className={cn(
-                  "size-12 rounded-lg border transition-colors duration-200",
+                  "size-12 rounded-lg border-2 transition-colors duration-200",
                   submission.has_voted
-                    ? "border-primary bg-primary/10"
-                    : "hover:border-primary",
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "hover:border-primary hover:bg-primary/10 border-primary/50",
                 )}
                 onClick={(e) => handleVote(e, submission.id)}
                 disabled={isVoting}
                 aria-label={submission.has_voted ? "Remove vote" : "Vote"}
               >
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex flex-col items-center justify-center h-full">
                   {isVoting ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
@@ -250,22 +255,25 @@ export function LeaderboardCard({
                     >
                       <ThumbsUp
                         className={cn(
-                          "h-3.5 w-3.5 transition-colors",
+                          "h-3.5 w-3.5 transition-colors font-bold",
                           submission.has_voted
-                            ? "text-primary"
-                            : "text-muted-foreground",
+                            ? "text-primary fill-primary"
+                            : "text-foreground hover:text-primary/80",
                         )}
                       />
                     </motion.div>
                   )}
-                  <motion.div
-                    key={`votes-${submission.votes || 0}`}
-                    initial={{ opacity: 0, y: -3 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-sm font-semibold leading-none"
-                  >
-                    {submission.votes || 0}
-                  </motion.div>
+                  {/* Only show vote counts on Thursday */}
+                  {!hideRankings && (
+                    <motion.div
+                      key={`votes-${submission.votes || 0}`}
+                      initial={{ opacity: 0, y: -3 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-sm font-semibold leading-none mt-1"
+                    >
+                      {submission.votes || 0}
+                    </motion.div>
+                  )}
                 </div>
               </Button>
             </motion.div>
