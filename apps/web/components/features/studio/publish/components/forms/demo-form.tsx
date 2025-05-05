@@ -11,8 +11,6 @@ import { cn } from "@/lib/utils"
 import { useTheme } from "next-themes"
 import { useAvailableTags } from "@/lib/queries"
 import MultipleSelector, { Option } from "@/components/ui/multiselect"
-import { Input } from "@/components/ui/input"
-import { FormField } from "@/components/ui/form"
 import { makeSlugFromName } from "../../hooks/use-is-check-slug-available"
 
 export const DemoDetailsForm = ({
@@ -51,16 +49,6 @@ export const DemoDetailsForm = ({
       }
     }
   }, [demoIndex, form, mode])
-
-  // Добавим эффект, чтобы убедиться, что первая демо всегда называется "Default"
-  React.useEffect(() => {
-    if (demoIndex === 0) {
-      if (form.getValues(`demos.${demoIndex}.name`) !== "Default") {
-        form.setValue(`demos.${demoIndex}.name`, "Default")
-        form.setValue(`demos.${demoIndex}.demo_slug`, "default")
-      }
-    }
-  }, [demoIndex, form])
 
   // Convert tags to MultipleSelector options format
   const tagOptions: Option[] = availableTags.map((tag) => ({
@@ -130,42 +118,6 @@ export const DemoDetailsForm = ({
   return (
     <div className="flex flex-col gap-4 w-full">
       <div className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor={demoNameId}>
-            Demo Name <span className="text-destructive">*</span>
-          </Label>
-          <FormField
-            control={form.control}
-            name={`demos.${demoIndex}.name`}
-            render={({ field }) => (
-              <Input
-                id={demoNameId}
-                placeholder="Name your demo"
-                {...field}
-                value={demoIndex === 0 ? "Default" : field.value || ""}
-                disabled={demoIndex === 0} // Отключаем редактирование для первой демо
-                className={demoIndex === 0 ? "bg-muted cursor-not-allowed" : ""}
-                onChange={(e) => {
-                  if (demoIndex === 0) return
-                  const newValue = e.target.value
-                  field.onChange(newValue)
-                  handleDemoNameChange(newValue)
-                }}
-              />
-            )}
-          />
-          {demoIndex === 0 && (
-            <p className="text-xs text-muted-foreground">
-              The default demo name cannot be changed
-            </p>
-          )}
-          {demoIndex > 0 && (
-            <p className="text-xs text-muted-foreground">
-              A name for this demo variation
-            </p>
-          )}
-        </div>
-
         <div className="space-y-2">
           <Label htmlFor={tagsId}>
             Tags <span className="text-destructive">*</span>
