@@ -21,10 +21,13 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
     "@radix-ui/react-radio-group": "^1.2.3",
+    "@tanstack/react-table": "^8.21.2",
     "emblor": "^1.4.7",
     "jotai": "2.8.0",
-    "next": "^15.2.1"
+    "next": "^15.2.1",
+    "recharts": "^2.15.1"
   },
   "pnpm": {
     "overrides": {

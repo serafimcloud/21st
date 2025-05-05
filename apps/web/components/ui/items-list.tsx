@@ -311,6 +311,8 @@ function useSearchDemos(
             }
 
             const demoComponent: DemoWithComponent = {
+              bundle_hash: null,
+              bundle_html_url: null,
               compiled_css: "",
               component_id: componentData.id,
               created_at: result.created_at || null,
