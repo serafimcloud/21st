@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { createNewSandbox } from "@/components/features/studio/sandbox/api"
 import { useState, useEffect, useRef } from "react"
-import { Spinner } from "@/components/icons/spinner"
-import { cn } from "@/lib/utils"
 import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
 import { Plus } from "lucide-react"
 
@@ -76,25 +74,28 @@ export function StudioUsernameClient({
       showCreateDialog={showCreateDialog}
       setShowCreateDialog={setShowCreateDialog}
     >
-      <div className="space-y-6">
-        <div className="flex flex-row items-center justify-between">
-          <h1 className="text-xl font-bold">Components</h1>
-          {(isOwnProfile || isAdmin) && (
-            <Button
-              onClick={() => setShowCreateDialog(true)}
-              disabled={isCreating}
-            >
-              <div className="flex items-center gap-2 justify-center">
-                <Plus className="h-4 w-4" />
-                <span>Create</span>
-              </div>
-            </Button>
-          )}
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="text-sm font-medium">Components</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Create and manage your UI components
+          </p>
         </div>
+        {(isOwnProfile || isAdmin) && (
+          <Button
+            onClick={() => setShowCreateDialog(true)}
+            disabled={isCreating}
+          >
+            <div className="flex items-center gap-2 justify-center">
+              <Plus className="h-4 w-4" />
+              <span>Create</span>
+            </div>
+          </Button>
+        )}
+      </div>
 
-        <div className="mt-4">
-          <DemosTable demos={demos} onOpenSandbox={handleOpenSandbox} />
-        </div>
+      <div className="mt-4">
+        <DemosTable demos={demos} onOpenSandbox={handleOpenSandbox} />
       </div>
     </StudioLayout>
   )

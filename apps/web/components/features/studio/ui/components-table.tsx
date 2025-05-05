@@ -411,17 +411,18 @@ export function DemosTable({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-lg border border-border bg-background">
-        <Table className="table-fixed">
+      <div className="rounded-lg border border-border bg-background overflow-auto">
+        <Table className="table-fixed min-w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                {headerGroup.headers.map((header) => {
+                {headerGroup.headers.map((header, index) => {
+                  const isLastColumn = index === headerGroup.headers.length - 1
                   return (
                     <TableHead
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
-                      className="h-11"
+                      className={cn("h-11", isLastColumn && "pr-6")}
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
@@ -484,17 +485,24 @@ export function DemosTable({
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(cell.column.id === "actions" && "pr-4")}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell, index) => {
+                    const isLastColumn =
+                      index === row.getVisibleCells().length - 1
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          cell.column.id === "actions" && "pr-4",
+                          isLastColumn && "pr-6",
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             ) : (
