@@ -31,7 +31,9 @@
   },
   "pnpm": {
     "overrides": {
-      "react-is": "19.1.0"
+      "react-is": "19.1.0",
+      "@smithy/types": "4.2.0",
+      "@smithy/protocol-http": "5.1.0"
     }
   },
   "resolutions": {
