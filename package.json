@@ -29,6 +29,11 @@
     "next": "^15.2.1",
     "recharts": "^2.15.1"
   },
+  "pnpm": {
+    "overrides": {
+      "react-is": "19.1.0"
+    }
+  },
   "resolutions": {
     "jotai": "2.8.0"
   }

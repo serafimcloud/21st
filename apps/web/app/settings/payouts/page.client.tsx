@@ -1,33 +1,28 @@
 "use client"
 
-import { useState, KeyboardEvent, useEffect } from "react"
-import { toast } from "sonner"
-import { LoaderCircle } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
+import { LoaderCircle } from "lucide-react"
+import { KeyboardEvent, useEffect, useState } from "react"
+import { toast } from "sonner"
 
+import {
+  PayoutHistoryTable,
+  PayoutRecord,
+} from "@/components/features/settings/payouts/payout-history-table"
+import {
+  PayoutStats,
+  PayoutStatsChart,
+} from "@/components/features/settings/payouts/payout-stats-chart"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useAuth, useUser } from "@clerk/nextjs"
-import { useClerkSupabaseClient } from "@/lib/clerk"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PayoutHistoryTable } from "@/components/features/settings/payouts/payout-history-table"
-interface PayoutRecord {
-  id: string
-  period: string
-  amount: number
-  status: string
-  created_at: string
-  updated_at: string
-}
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { useAuth, useUser } from "@clerk/nextjs"
 
 interface AuthorStats {
   published_components: number
-  last_month_usage: number
-  last_month_share: number
-  estimated_payout: number
+  payoutStats: PayoutStats[]
   payouts: PayoutRecord[]
-  current_month: string
-  last_month: string
 }
 
 async function fetchUserPaypalEmail(username: string): Promise<string> {
@@ -45,13 +40,14 @@ async function fetchAuthorStats(): Promise<AuthorStats> {
     const errorData = await response.json()
     throw new Error(errorData.error || "Failed to load payout statistics")
   }
-  return (await response.json()) as AuthorStats
+  const res = await response.json()
+  return res as AuthorStats
 }
 
 export function PayoutsSettingsClient() {
   const { userId } = useAuth()
   const { user: clerkUser } = useUser()
-  const [paypalEmail, setPaypalEmail] = useState("")
+  const [paypalEmail, setPaypalEmail] = useState<string | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(false)
   const [isValidEmail, setIsValidEmail] = useState(true)
   const supabase = useClerkSupabaseClient()
@@ -59,14 +55,14 @@ export function PayoutsSettingsClient() {
   const { data: userPaypalEmail, isLoading: isLoadingEmail } = useQuery({
     queryKey: ["userPaypalEmail", clerkUser?.username],
     queryFn: async () => {
-      return await fetchUserPaypalEmail(clerkUser?.username || "serafimcloud")
+      return await fetchUserPaypalEmail(clerkUser!.username!)
     },
-    enabled: !!clerkUser,
+    enabled: !!clerkUser?.username,
     staleTime: 5 * 60 * 1000,
   })
 
   useEffect(() => {
-    if (userPaypalEmail) {
+    if (userPaypalEmail !== undefined) {
       setPaypalEmail(userPaypalEmail)
     }
   }, [userPaypalEmail])
@@ -118,11 +114,8 @@ export function PayoutsSettingsClient() {
 
     setIsLoading(true)
     try {
-      const targetUsername = clerkUser?.username
-
       const requestBody = {
         paypal_email: paypalEmail,
-        target_username: targetUsername,
       }
 
       const response = await fetch("/api/user/profile", {
@@ -150,58 +143,10 @@ export function PayoutsSettingsClient() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-background rounded-lg border border-border overflow-hidden">
-        <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <div className="text-xs text-muted-foreground">
-              Published components
-            </div>
-            <div className="text-2xl font-semibold">
-              {isLoadingStats ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                authorStats?.published_components || 0
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <div className="text-xs text-muted-foreground">
-              Usage (last month)
-            </div>
-            <div className="text-2xl font-semibold">
-              {isLoadingStats ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                authorStats?.last_month_usage || 0
-              )}
-            </div>
-            {!isLoadingStats && authorStats?.last_month && (
-              <div className="text-xs text-muted-foreground">
-                {authorStats.last_month}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <div className="text-xs text-muted-foreground">
-              Estimated payout
-            </div>
-            <div className="text-2xl font-semibold">
-              {isLoadingStats ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                `$${(authorStats?.estimated_payout || 0).toFixed(2)}`
-              )}
-            </div>
-            {!isLoadingStats && authorStats?.current_month && (
-              <div className="text-xs text-muted-foreground">
-                {authorStats.current_month}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <PayoutStatsChart
+        data={authorStats?.payoutStats ?? []}
+        isLoading={isLoadingStats || authorStats?.payoutStats === undefined}
+      />
 
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Payment Method</h3>
@@ -262,8 +207,8 @@ export function PayoutsSettingsClient() {
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Payout History</h3>
         <PayoutHistoryTable
-          payouts={authorStats?.payouts}
-          isLoading={isLoadingStats}
+          payouts={authorStats?.payouts ?? []}
+          isLoading={isLoadingStats || authorStats?.payouts === undefined}
         />
       </div>
     </div>

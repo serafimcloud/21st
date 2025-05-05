@@ -90,6 +90,7 @@
     "react-hook-form": "^7.53.1",
     "react-hotkeys-hook": "^4.6.1",
     "react-resizable-panels": "^2.1.8",
+    "recharts": "^2.15.3",
     "resend": "^4.1.2",
     "shiki": "^3.0.0",
     "short-uuid": "^5.2.0",
@@ -121,7 +122,8 @@
   "pnpm": {
     "overrides": {
       "@types/react": "19.0.10",
-      "@types/react-dom": "19.0.4"
+      "@types/react-dom": "19.0.4",
+      "react-is": "19.1.0"
     }
   },
   "resolutions": {
