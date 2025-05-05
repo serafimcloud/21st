@@ -47,7 +47,7 @@ async function fetchAuthorStats(): Promise<AuthorStats> {
 export function PayoutsSettingsClient() {
   const { userId } = useAuth()
   const { user: clerkUser } = useUser()
-  const [paypalEmail, setPaypalEmail] = useState("")
+  const [paypalEmail, setPaypalEmail] = useState<string | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(false)
   const [isValidEmail, setIsValidEmail] = useState(true)
   const supabase = useClerkSupabaseClient()
@@ -55,14 +55,14 @@ export function PayoutsSettingsClient() {
   const { data: userPaypalEmail, isLoading: isLoadingEmail } = useQuery({
     queryKey: ["userPaypalEmail", clerkUser?.username],
     queryFn: async () => {
-      return await fetchUserPaypalEmail(clerkUser?.username || "serafimcloud")
+      return await fetchUserPaypalEmail(clerkUser!.username!)
     },
-    enabled: !!clerkUser,
+    enabled: !!clerkUser?.username,
     staleTime: 5 * 60 * 1000,
   })
 
   useEffect(() => {
-    if (userPaypalEmail) {
+    if (userPaypalEmail !== undefined) {
       setPaypalEmail(userPaypalEmail)
     }
   }, [userPaypalEmail])
@@ -114,11 +114,8 @@ export function PayoutsSettingsClient() {
 
     setIsLoading(true)
     try {
-      const targetUsername = clerkUser?.username
-
       const requestBody = {
         paypal_email: paypalEmail,
-        target_username: targetUsername,
       }
 
       const response = await fetch("/api/user/profile", {
