@@ -42,7 +42,10 @@ async function getWeekData(weekNumber: number) {
   }
 }
 
-export default async function WeekArchivePage({ params }: { params: Params }) {
+export default async function WeekArchivePage(props: {
+  params: Promise<{ week: string }>
+}) {
+  const params = await props.params
   const weekNumber = parseInt(params.week, 10)
 
   if (isNaN(weekNumber) || weekNumber <= 0) {
