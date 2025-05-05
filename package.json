@@ -26,6 +26,11 @@
     "jotai": "2.8.0",
     "next": "^15.2.1"
   },
+  "pnpm": {
+    "overrides": {
+      "react-is": "19.1.0"
+    }
+  },
   "resolutions": {
     "jotai": "2.8.0"
   }

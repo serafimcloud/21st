@@ -188,13 +188,17 @@ iframe {
   inset: 0;
   border-radius: 0.5rem;
   padding: 1px;
-  background: linear-gradient(90deg,
-      rgba(255, 255, 255),
-      rgba(0, 0, 0, 0.5),
-      rgba(255, 255, 255));
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255),
+    rgba(0, 0, 0, 0.5),
+    rgba(255, 255, 255)
+  );
   background-size: 200% 100%;
   animation: shimmer 4.5s ease-in-out infinite;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: exclude;
   pointer-events: none;
 }
@@ -285,6 +289,24 @@ iframe {
     --border-gradient-mid: rgba(255, 255, 255, 0.8);
   }
 
+  @layer base {
+    :root {
+      --chart-1: 12 76% 61%;
+      --chart-2: 173 58% 39%;
+      --chart-3: 197 37% 24%;
+      --chart-4: 43 74% 66%;
+      --chart-5: 27 87% 67%;
+    }
+
+    .dark {
+      --chart-1: 220 70% 50%;
+      --chart-2: 160 60% 45%;
+      --chart-3: 30 80% 55%;
+      --chart-4: 280 65% 60%;
+      --chart-5: 340 75% 55%;
+    }
+  }
+
   @media (min-width: 720px) {
     .min-720\: {
       --container-x-padding: 24px;
@@ -330,31 +352,40 @@ iframe {
 
   .bg-grid-purple\/\[0\.02\] {
     background-size: 30px 30px;
-    background-image: linear-gradient(to right, rgb(29 31 211 / 0.02) 1px, transparent 1px),
+    background-image:
+      linear-gradient(to right, rgb(29 31 211 / 0.02) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(29 31 211 / 0.02) 1px, transparent 1px);
   }
 
   .bg-grid-purple {
     background-size: 30px 30px;
-    background-image: linear-gradient(to right, rgb(29 31 211 / 0.05) 1px, transparent 1px),
+    background-image:
+      linear-gradient(to right, rgb(29 31 211 / 0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(29 31 211 / 0.05) 1px, transparent 1px);
     mask-image: radial-gradient(circle at top, black 30%, transparent 70%);
-    -webkit-mask-image: radial-gradient(circle at top, black 30%, transparent 70%);
+    -webkit-mask-image: radial-gradient(
+      circle at top,
+      black 30%,
+      transparent 70%
+    );
     z-index: 0;
   }
 
   .bg-grid-white {
     background-size: 50px 50px;
-    background-image: linear-gradient(to right, rgb(255 255 255 / 0.075) 1px, transparent 1px),
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.075) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(255 255 255 / 0.075) 1px, transparent 1px);
     mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
-    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(
+      circle at center,
+      black 40%,
+      transparent 100%
+    );
     transform: translateX(-10px);
     z-index: 0;
   }
 }
-
-
 
 [data-vaul-drawer-close-button] {
   display: none;

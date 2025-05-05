@@ -87,3 +87,10 @@ export function shouldHideLeaderboardRankings(): boolean {
   // Hide if it's Monday (1), Tuesday (2), or Wednesday (3) before midnight
   return day >= 1 && day <= 3
 }
+
+export function formatK(num: number, toFixed = 1): string {
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, "") + "k"
+  }
+  return num.toFixed(toFixed)
+}

@@ -1,4 +1,4 @@
-import { Info } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -7,15 +7,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
+import { formatPrice } from "@/lib/utils"
+import { Info } from "lucide-react"
 
-interface PayoutRecord {
-  id: string
-  period: string
-  amount: number
+export interface PayoutRecord {
+  id: number
+  period_start: string
+  period_end: string
+  total_amount: number
+  paypal_email: string
   status: string
+  transaction_id: string | null
   created_at: string
-  updated_at: string
+  processed_at: string | null
 }
 
 interface PayoutHistoryTableProps {
@@ -49,9 +53,12 @@ export function PayoutHistoryTable({
             ) : payouts && payouts.length > 0 ? (
               payouts.map((payout) => (
                 <TableRow key={payout.id}>
-                  <TableCell className="py-2">{payout.period}</TableCell>
                   <TableCell className="py-2">
-                    ${payout.amount.toFixed(2)}
+                    {new Date(payout.period_start).toLocaleDateString()} -{" "}
+                    {new Date(payout.period_end).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="py-2">
+                    {formatPrice(payout.total_amount)}
                   </TableCell>
                   <TableCell className="py-2">
                     <span

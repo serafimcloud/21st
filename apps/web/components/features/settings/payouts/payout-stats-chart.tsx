@@ -1,0 +1,373 @@
+"use client"
+
+import { Code, DollarSign, Eye } from "lucide-react"
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { formatK, formatPrice } from "@/lib/utils"
+import { eachMonthOfInterval, format, startOfMonth } from "date-fns"
+import { useMemo, useState } from "react"
+
+const chartConfig = {
+  views_earnings: {
+    label: "Views",
+    color: "hsl(var(--chart-1))",
+  },
+  views: {
+    label: "Views",
+    color: "hsl(var(--chart-1))",
+  },
+  mcp_earnings: {
+    label: "MCP",
+    color: "hsl(var(--chart-2))",
+  },
+  mcp_usages: {
+    label: "MCP Uses",
+    color: "hsl(var(--chart-2))",
+  },
+} satisfies ChartConfig
+
+export type PayoutStats = {
+  mcp_earnings: number
+  mcp_usages: number
+  views: number
+  views_earnings: number
+  total_earnings: number
+  date: string
+}
+
+interface PayoutStatsChartProps {
+  data: PayoutStats[]
+  isLoading?: boolean
+}
+
+function getMonthYear(dateString: string) {
+  const date = new Date(dateString)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+}
+
+function BarChartSection({
+  data,
+  chartConfig,
+  dataKeys,
+  groupByMonth,
+  valueFormatter = (value: any) => value,
+  showTotal = true,
+}: {
+  data: any[]
+  chartConfig: ChartConfig
+  dataKeys: string[]
+  groupByMonth?: boolean
+  valueFormatter?: (value: any) => string
+  showTotal?: boolean
+}) {
+  return (
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-auto h-[250px] w-full"
+    >
+      <BarChart data={data}>
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="date"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          minTickGap={32}
+          interval="preserveStartEnd"
+          tickFormatter={(value) => {
+            const date = new Date(value)
+            if (groupByMonth) {
+              return date.toLocaleDateString("en-US", {
+                month: "short",
+                year: "numeric",
+              })
+            }
+            return date.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })
+          }}
+        />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              className="w-[200px]"
+              labelFormatter={(value) => {
+                const date = new Date(value)
+                return date.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              }}
+              formatter={(value, name, item, index) => (
+                <>
+                  <div
+                    className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                    style={{ backgroundColor: `var(--color-${name})` }}
+                  />
+                  {chartConfig[name as keyof typeof chartConfig]?.label || name}
+                  <div className="ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums text-foreground">
+                    {valueFormatter(value)}
+                  </div>
+                  {showTotal && index === 1 && (
+                    <div className="flex basis-full items-center border-t pt-1.5 text-xs font-medium text-foreground">
+                      Total
+                      <div className="ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums text-foreground">
+                        {(() => {
+                          const total = dataKeys.reduce(
+                            (sum, key) =>
+                              sum +
+                              (typeof item.payload[key] === "number"
+                                ? item.payload[key]
+                                : 0),
+                            0,
+                          )
+                          return valueFormatter(total)
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            />
+          }
+        />
+        {dataKeys.map((key) => (
+          <Bar
+            key={key}
+            dataKey={key}
+            type="natural"
+            fill={`var(--color-${key})`}
+            stroke={`var(--color-${key})`}
+            stackId={"stack"}
+          />
+        ))}
+        <ChartLegend content={<ChartLegendContent />} />
+      </BarChart>
+    </ChartContainer>
+  )
+}
+
+export function PayoutStatsChart({
+  data,
+  isLoading = false,
+}: PayoutStatsChartProps) {
+  // Generate all months from earliest in data to current month
+  const months = useMemo(() => {
+    if (!data || data.length === 0) return []
+
+    // Find earliest date
+    const minDate = data.reduce((earliest, item) => {
+      if (!item.date) return earliest
+      const d = new Date(item.date)
+      return d < earliest ? d : earliest
+    }, new Date())
+
+    // Generate array of months between earliest date and current month
+    const startDate = startOfMonth(minDate)
+    const endDate = startOfMonth(new Date())
+
+    return eachMonthOfInterval({ start: startDate, end: endDate })
+      .map((date) => format(date, "yyyy-MM"))
+      .reverse()
+  }, [data])
+
+  const [selectedMonth, setSelectedMonth] = useState<string>("all")
+  const [tab, setTab] = useState<string>("earnings")
+
+  // Group data by month for 'All time' view
+  const groupedByMonth = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        date: string
+        mcp_earnings: number
+        views: number
+        views_earnings: number
+        mcp_usages: number
+      }
+    >()
+    data.forEach((item) => {
+      const month = getMonthYear(item.date)
+      const entry = map.get(month) ?? {
+        date: month,
+        mcp_earnings: 0,
+        views: 0,
+        views_earnings: 0,
+        mcp_usages: 0,
+      }
+      entry.mcp_earnings += item.mcp_earnings || 0
+      entry.views += item.views || 0
+      entry.views_earnings += item.views_earnings || 0
+      entry.mcp_usages += item.mcp_usages || 0
+      map.set(month, entry)
+    })
+    // Sort by month ascending
+    return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date))
+  }, [data])
+
+  const filteredData = useMemo(() => {
+    if (selectedMonth === "all") return groupedByMonth
+    return data.filter((item) => getMonthYear(item.date) === selectedMonth)
+  }, [data, selectedMonth, groupedByMonth])
+
+  const earningsSum = filteredData.reduce(
+    (acc, curr) => acc + curr.mcp_earnings + curr.views_earnings,
+    0,
+  )
+  const viewsSum = filteredData.reduce((acc, curr) => acc + curr.views, 0)
+  const mcpUsageSum = filteredData.reduce(
+    (acc, curr) => acc + (curr.mcp_usages || 0),
+    0,
+  )
+
+  const isEmpty = !filteredData || filteredData.length === 0
+
+  return (
+    <Card>
+      <Tabs defaultValue="earnings" value={tab} onValueChange={setTab}>
+        <TabsList className="flex flex-row h-fit">
+          <TabsTrigger
+            value="earnings"
+            className="flex-1 p-6 flex flex-col gap-1 items-start h-fit"
+          >
+            <CardDescription className="font-normal">Earnings</CardDescription>
+            <CardTitle className="tracking-normal">
+              <span className="inline-flex items-center">
+                <DollarSign className="w-5 h-5" />
+                {isLoading ? (
+                  <Skeleton className="h-6 w-24 ml-0.5 bg-muted-foreground/10" />
+                ) : (
+                  formatPrice(earningsSum).replace("$", "")
+                )}
+              </span>
+            </CardTitle>
+          </TabsTrigger>
+          <TabsTrigger
+            value="stats"
+            className="flex-1 p-6 flex flex-col gap-1 items-start h-fit"
+          >
+            <CardDescription className="font-normal">Stats</CardDescription>
+            <CardTitle className="tracking-normal flex items-center gap-4">
+              <span className="inline-flex items-center gap-1.5">
+                <Eye className="w-5 h-5" />
+                {isLoading ? (
+                  <Skeleton className="h-6 w-24 bg-muted-foreground/10" />
+                ) : (
+                  formatK(viewsSum)
+                )}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Code className="w-5 h-5" />
+                {isLoading ? (
+                  <Skeleton className="h-6 w-24 bg-muted-foreground/10" />
+                ) : (
+                  formatK(mcpUsageSum)
+                )}
+              </span>
+            </CardTitle>
+          </TabsTrigger>
+        </TabsList>
+
+        <CardContent className="space-y-6 p-6">
+          <div className="flex flex-row justify-end">
+            {isLoading ? (
+              <Skeleton className="w-48 h-9 rounded-md" />
+            ) : (
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="All time" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All time</SelectItem>
+                  {months.map((month) => {
+                    const [year, m] = month.split("-")
+                    const date = new Date(Number(year), Number(m) - 1)
+                    return (
+                      <SelectItem key={month} value={month}>
+                        {date.toLocaleString("en-US", {
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          {isLoading ? (
+            <div className="w-full h-[250px] flex flex-col items-center justify-center gap-6">
+              {/* Skeleton Bar Chart Imitation */}
+              <div className="flex items-end justify-between w-full h-[250px] gap-3">
+                <Skeleton className="w-1/12 h-1/2 rounded-sm" />
+                <Skeleton className="w-1/12 h-4/5 rounded-sm" />
+                <Skeleton className="w-1/12 h-2/3 rounded-sm" />
+                <Skeleton className="w-1/12 h-1/3 rounded-sm" />
+                <Skeleton className="w-1/12 h-3/4 rounded-sm" />
+                <Skeleton className="w-1/12 h-2/5 rounded-sm" />
+                <Skeleton className="w-1/12 h-3/5 rounded-sm" />
+                <Skeleton className="w-1/12 h-1/4 rounded-sm" />
+                <Skeleton className="w-1/12 h-2/4 rounded-sm" />
+                <Skeleton className="w-1/12 h-3/4 rounded-sm" />
+              </div>
+            </div>
+          ) : isEmpty ? (
+            <div className="w-full h-[250px] flex items-center justify-center">
+              <span className="text-muted-foreground text-base">
+                No data available
+              </span>
+            </div>
+          ) : (
+            <>
+              <TabsContent value="earnings" className="m-0">
+                <BarChartSection
+                  data={filteredData}
+                  chartConfig={chartConfig}
+                  dataKeys={["views_earnings", "mcp_earnings"]}
+                  groupByMonth={selectedMonth === "all"}
+                  valueFormatter={formatPrice}
+                  showTotal={true}
+                />
+              </TabsContent>
+              <TabsContent value="stats" className="m-0">
+                <BarChartSection
+                  data={filteredData}
+                  chartConfig={chartConfig}
+                  dataKeys={["views", "mcp_usages"]}
+                  groupByMonth={selectedMonth === "all"}
+                  valueFormatter={formatK}
+                  showTotal={false}
+                />
+              </TabsContent>
+            </>
+          )}
+        </CardContent>
+      </Tabs>
+    </Card>
+  )
+}
