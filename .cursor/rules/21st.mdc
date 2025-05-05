@@ -1,0 +1,74 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+21st.dev Cursor Rule  1. **Language Requirements**
+   - Use only English text and English comments in code
+
+2. **Tech Stack**
+   - TypeScript
+   - Turborepo with App Router
+   - Motion/React: `import { motion } from "motion/react"`
+   - Supabase for database
+   - PNPM package manager
+
+3. **Project Structure**
+   - Main app location: `apps/web`
+   - Environment variables: `apps/web/.env.local`
+
+4. **Best Practices**
+   - Minimize use of `useEffect`
+   - Use `useQuery` for data fetching
+   - Never add Index files
+
+5. **Supabase Access**
+   - Server-side: 
+     ```typescript
+     import { supabaseWithAdminAccess } from "@/lib/supabase"
+     ```
+   - Client-side:
+     ```typescript
+     import { useClerkSupabaseClient } from "@/lib/clerk"
+     ```
+
+6. **SQL Handling**
+   - SQL queries should be written for Supabase SQL Editor
+   - Queries will be executed manually
+
+7. **Project Context**
+21st.dev is an AI-powered UI component library and platform designed for modern frontend developers and design engineers. It provides high-quality, ready-to-use UI components that are easily customizable and instantly usable in projects built with React, Next.js, and Tailwind CSS.
+
+The core idea behind 21st.dev is to solve the cold-start problem for developers by offering a curated set of plug-and-play UI components that follow best practices, modern design trends, and efficient code structures. Unlike traditional UI libraries that focus solely on static components, 21st.dev is built around AI-assisted generation and customization, allowing developers to modify components to fit their needs instantly.
+
+Who are the users of 21st.dev?
+	•	Frontend developers who need high-quality, pre-built UI components to speed up development.
+	•	Design engineers looking for components that are visually appealing and built with best UI/UX practices.
+	•	Startup teams & indie hackers who want to ship faster without reinventing the wheel.
+	•	AI enthusiasts who want to leverage AI-powered UI generation to build unique, custom interfaces.
+	•	Companies that need a scalable design system with AI-assisted customization to maintain consistency across products.
+
+How is 21st.dev useful?
+
+✅ Instant Access to Quality UI Components – A vast collection of battle-tested UI elements following modern design principles.
+✅ AI-Assisted Customization – AI suggestions help users modify components to match their brand identity, layout needs, or functionality.
+✅ Built for Modern Stacks – Fully optimized for React, Next.js, Tailwind CSS, and shadcn/ui.
+✅ Component Marketplace – Developers can publish, share, and monetize their own UI components.
+✅ No-Code Styling & Configuration – Adjust components visually without modifying code.
+✅ AI-Powered UI Generation – Users can describe a UI component in plain English, and Magic MCP will generate it.
+
+8. RLS Polices
+As we use Clerk + Supabase - please wryle RLS polices this way
+-- This policy will enforce that only tasks where the `user_id` matches the Clerk user ID are returned.
+CREATE POLICY "Select tasks policy" ON "public"."tasks" AS PERMISSIVE FOR
+SELECT
+  TO authenticated USING (requesting_user_id () = user_id);
+
+-- This policy will enforce the `user_id` field on INSERT statements matches the Clerk user ID.
+CREATE POLICY "Insert tasks policy" ON "public"."tasks" AS PERMISSIVE FOR INSERT TO authenticated
+WITH
+  CHECK (requesting_user_id () = user_id);
+
+9. Users table
+We use public.users table, and user_id - TEXT, as we use Clerk integration
+
