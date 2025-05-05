@@ -1,6 +1,13 @@
 import { Component, DemoWithComponent, User, Tag } from "@/types/global"
 
-export const transformDemoResult = (result: any): DemoWithComponent => {
+// Define the extended type here
+export interface ExtendedDemoWithComponent extends DemoWithComponent {
+  is_private?: boolean
+  submission_status?: string
+  moderators_feedback?: string
+}
+
+export const transformDemoResult = (result: any): ExtendedDemoWithComponent => {
   const componentUser =
     result.component_user_data ||
     (result.component_data && result.component_data.user) ||

@@ -39,20 +39,21 @@ import {
 } from "@tanstack/react-table"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { useId } from "react"
-import { DemoWithComponent } from "@/types/global"
-
-interface ExtendedDemoWithComponent extends DemoWithComponent {
-  is_private?: boolean
-  submission_status?: string
-  moderators_feedback?: string
-}
+import { Button } from "@/components/ui/button"
+import { ExternalLink } from "lucide-react"
+import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
 
 interface DemosTableProps {
   demos: ExtendedDemoWithComponent[]
   onEdit?: (demo: ExtendedDemoWithComponent) => void
+  onOpenSandbox?: (demo: ExtendedDemoWithComponent) => void
 }
 
-export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
+export function DemosTable({
+  demos = [],
+  onEdit,
+  onOpenSandbox,
+}: DemosTableProps) {
   const id = useId()
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -122,30 +123,35 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
     {
       header: "Component",
       accessorKey: "name",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-20 overflow-hidden rounded-md border bg-muted shrink-0">
-            {row.original.preview_url ? (
-              <div
-                className="h-12 w-20 bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${row.original.preview_url})`,
-                }}
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                No preview
+      cell: ({ row }) => {
+        const isDraft = row.original.submission_status === "draft"
+        return (
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-20 overflow-hidden rounded-md border bg-muted shrink-0">
+              {row.original.preview_url ? (
+                <div
+                  className="h-12 w-20 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${row.original.preview_url})`,
+                  }}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
+                  {isDraft ? "Draft" : "No preview"}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="font-medium truncate">{row.getValue("name")}</div>
+              <div className="text-sm text-muted-foreground truncate">
+                {isDraft
+                  ? "Sandbox"
+                  : row.original.component?.name || "Unknown component"}
               </div>
-            )}
-          </div>
-          <div className="flex flex-col min-w-0">
-            <div className="font-medium truncate">{row.getValue("name")}</div>
-            <div className="text-sm text-muted-foreground truncate">
-              {row.original.component?.name || "Unknown component"}
             </div>
           </div>
-        </div>
-      ),
+        )
+      },
       size: 300,
     },
     {
@@ -162,6 +168,7 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
                 status === "on_review" && "bg-yellow-100 text-yellow-700",
                 status === "featured" && "bg-green-100 text-green-700",
                 status === "posted" && "bg-blue-100 text-blue-700",
+                status === "draft" && "bg-gray-100 text-gray-700",
                 !status && "bg-gray-100 text-gray-700",
               )}
               title={
@@ -176,7 +183,9 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
                   ? "Featured"
                   : status === "posted"
                     ? "Posted"
-                    : "None"}
+                    : status === "draft"
+                      ? "Draft"
+                      : "None"}
             </span>
           </div>
         )
@@ -267,6 +276,39 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
       size: 80,
       sortingFn: "alphanumeric",
     },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Actions</div>,
+      cell: ({ row }) => {
+        const isDraft = row.original.submission_status === "draft"
+        return (
+          <div className="text-right">
+            {isDraft && onOpenSandbox && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenSandbox(row.original)}
+                className="flex items-center gap-1 ml-auto"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open
+              </Button>
+            )}
+            {!isDraft && onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(row.original)}
+                className="flex items-center gap-1 ml-auto"
+              >
+                Edit
+              </Button>
+            )}
+          </div>
+        )
+      },
+      size: 100,
+    },
   ]
 
   // Ensure demos is always an array
@@ -312,11 +354,12 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
           featured: 4,
           posted: 3,
           on_review: 2,
+          draft: 1,
           null: 1,
         }
 
-        const statusA = rowA.original.submission_status || "featured"
-        const statusB = rowB.original.submission_status || "featured"
+        const statusA = rowA.original.submission_status || "draft"
+        const statusB = rowB.original.submission_status || "draft"
 
         const priorityA =
           statusPriority[statusA as keyof typeof statusPriority] || 0
@@ -445,7 +488,10 @@ export function DemosTable({ demos = [], onEdit }: DemosTableProps) {
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      className={cn(cell.column.id === "actions" && "pr-4")}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),

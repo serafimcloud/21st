@@ -1,21 +1,19 @@
 "use client"
 
-import { User, DemoWithComponent } from "@/types/global"
+import { User } from "@/types/global"
 import { StudioLayout } from "@/components/features/studio/studio-layout"
 import { DemosTable } from "@/components/features/studio/ui/components-table"
-import { SandboxesTable } from "@/components/features/studio/ui/sandboxes-table"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
 import { createNewSandbox } from "@/components/features/studio/sandbox/api"
 import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Spinner } from "@/components/icons/spinner"
 import { cn } from "@/lib/utils"
+import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
 
 interface StudioUsernameClientProps {
   user: User
-  demos: DemoWithComponent[]
-  sandboxes: any[]
+  demos: ExtendedDemoWithComponent[]
   isAdmin: boolean
   isOwnProfile: boolean
 }
@@ -23,7 +21,6 @@ interface StudioUsernameClientProps {
 export function StudioUsernameClient({
   user,
   demos,
-  sandboxes,
   isAdmin,
   isOwnProfile,
 }: StudioUsernameClientProps) {
@@ -43,8 +40,8 @@ export function StudioUsernameClient({
     }
   }
 
-  const handleOpenSandbox = (sandbox: any) => {
-    router.push(`${pathname}/sandbox/${sandbox.id}`)
+  const handleOpenSandbox = (item: ExtendedDemoWithComponent) => {
+    router.push(`${pathname}/sandbox/${item.id}`)
   }
 
   return (
@@ -56,19 +53,8 @@ export function StudioUsernameClient({
           </div>
         </div>
 
-        <Tabs defaultValue="components" className="w-full">
-          <div className="flex flex-row items-end justify-between">
-            <div className="flex items-center justify-between">
-              <TabsList className="grid grid-cols-2 mb-4 rounded-md h-7 p-0.5 w-[200px]">
-                <TabsTrigger className="text-xs h-6" value="components">
-                  Components
-                </TabsTrigger>
-                <TabsTrigger className="text-xs h-6" value="sandboxes">
-                  Sandboxes
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
+        <div className="flex flex-row items-end justify-between">
+          <div className="flex items-center justify-between">
             {(isOwnProfile || isAdmin) && (
               <Button
                 onClick={handleCreateNewSandbox}
@@ -91,14 +77,11 @@ export function StudioUsernameClient({
               </Button>
             )}
           </div>
+        </div>
 
-          <TabsContent value="components" className="mt-4">
-            <DemosTable demos={demos} />
-          </TabsContent>
-          <TabsContent value="sandboxes" className="mt-4">
-            <SandboxesTable sandboxes={sandboxes} onOpen={handleOpenSandbox} />
-          </TabsContent>
-        </Tabs>
+        <div className="mt-4">
+          <DemosTable demos={demos} onOpenSandbox={handleOpenSandbox} />
+        </div>
       </div>
     </StudioLayout>
   )
