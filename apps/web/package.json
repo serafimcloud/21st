@@ -83,6 +83,7 @@
     "node-fetch": "^3.3.2",
     "openai": "^4.86.1",
     "postcss": "^8.4.47",
+    "posthog-js": "^1.239.1",
     "qss": "^3.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",

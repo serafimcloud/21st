@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { ThemeProvider } from "next-themes"
 import { cn } from "@/lib/utils"
 import { AppProviders } from "./providers"
+import SessionRecorder from "./SessionRecorder"
 
 import "./globals.css"
 import { SITE_NAME, SITE_SLOGAN, BASE_KEYWORDS } from "@/lib/constants"
@@ -52,7 +53,10 @@ export default function RootLayout({
             enableColorScheme={false}
           >
             <TooltipProvider>
-              <AppProviders>{children}</AppProviders>
+              <AppProviders>
+                <SessionRecorder />
+                {children}
+              </AppProviders>
             </TooltipProvider>
             <Toaster />
           </ThemeProvider>

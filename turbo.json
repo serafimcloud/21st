@@ -21,7 +21,8 @@
     "STRIPE_SECRET_KEY_V2",
     "STRIPE_WEBHOOK_SECRET_V1",
     "STRIPE_WEBHOOK_SECRET_V2",
-    "OPENAI_API_KEY"
+    "OPENAI_API_KEY",
+    "POSTHOG_PUBLIC_KEY"
   ],
   "tasks": {
     "build": {
