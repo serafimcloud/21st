@@ -482,9 +482,60 @@ export const useFileSystem = ({
 
   const updateComponentNameAndImport = async (newSlug: string) => {
     await sbWrapper(async (sandbox) => {
-      const oldComponentPath = normalizePath("src/components/ui/component.tsx")
+      let oldComponentPath = normalizePath("src/components/ui/component.tsx")
       const newComponentPath = normalizePath(`src/components/ui/${newSlug}.tsx`)
       const demoPath = normalizePath("src/demo.tsx")
+
+      // Check if the new component path already exists
+      try {
+        await sandbox.fs.stat(newComponentPath)
+        console.warn(
+          `Component file ${newComponentPath} already exists. Skipping rename.`,
+        )
+        return
+      } catch (error) {
+        console.log(
+          `New component path ${newComponentPath} does not exist. Proceeding.`,
+        )
+      }
+
+      // Check if the default old component path exists, if not, find the first .tsx file
+      try {
+        await sandbox.fs.stat(oldComponentPath)
+        console.log(`Default old component path ${oldComponentPath} exists.`)
+      } catch (error) {
+        console.warn(
+          `Default old component path ${oldComponentPath} not found. Attempting to find another .tsx file.`,
+        )
+        try {
+          const uiDirEntries = await sandbox.fs.readdir(
+            normalizePath("src/components/ui"),
+          )
+          const firstTsxFile = uiDirEntries.find((entry) =>
+            entry.name.endsWith(".tsx"),
+          )
+
+          if (firstTsxFile) {
+            oldComponentPath = normalizePath(
+              `src/components/ui/${firstTsxFile.name}`,
+            )
+            console.log(`Using ${oldComponentPath} as the old component path.`)
+          } else {
+            console.error("No .tsx files found in src/components/ui/")
+            toast.error(
+              "No component file found to rename in src/components/ui/",
+            )
+            return
+          }
+        } catch (readDirError) {
+          console.error(
+            "Failed to read src/components/ui/ directory:",
+            readDirError,
+          )
+          toast.error("Failed to access component directory.")
+          return
+        }
+      }
 
       // Rename the component file
       try {
@@ -500,8 +551,24 @@ export const useFileSystem = ({
       // Read, update, and write the demo file's import statement
       try {
         const demoContent = await sandbox.fs.readTextFile(demoPath)
-        const oldImportPattern =
-          /from\s+(['"])@\/components\/ui\/component(['"])/g
+        const oldComponentName = oldComponentPath
+          .split("/")
+          .pop()
+          ?.replace(".tsx", "")
+        if (!oldComponentName) {
+          console.error(
+            "Could not determine old component name from path:",
+            oldComponentPath,
+          )
+          toast.error(
+            "Failed to update demo import: could not determine old component name.",
+          )
+          throw new Error("Could not determine old component name.")
+        }
+        const oldImportPattern = new RegExp(
+          `from\\s+(['"])@\\/components\\/ui\\/${oldComponentName}(['"])`,
+          "g",
+        )
         const newImportString = `from $1@/components/ui/${newSlug}$2`
         const updatedDemoContent = demoContent.replace(
           oldImportPattern,
