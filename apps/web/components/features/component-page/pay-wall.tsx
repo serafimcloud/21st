@@ -1,14 +1,6 @@
-import { Button } from "@/components/ui/button"
+import { FeatureCards } from "@/components/features/component-page/feature-cards"
 import { Icons } from "@/components/icons"
-import { useHotkeys } from "react-hotkeys-hook"
-import { Loader2 } from "lucide-react"
-import { Component } from "@/types/global"
-import { ComponentAccessState } from "@/hooks/use-component-access"
-import { useAtom } from "jotai"
-import { userStateAtom, componentAccessAtom } from "@/lib/store/user-store"
-import { toast } from "sonner"
-import { useState } from "react"
-import { useUser } from "@clerk/nextjs"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -17,16 +9,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FeatureCards } from "@/components/features/component-page/feature-cards"
-import { cn } from "@/lib/utils"
-import { usePurchaseComponent } from "@/lib/queries"
-import { useRouter } from "next/navigation"
+import { ComponentAccessState } from "@/hooks/use-component-access"
 import {
-  trackAttribution,
   ATTRIBUTION_SOURCE,
   SOURCE_DETAIL,
+  trackAttribution,
 } from "@/lib/attribution-tracking"
 import { PlanType } from "@/lib/config/subscription-plans"
+import { usePurchaseComponent } from "@/lib/queries"
+import { componentAccessAtom, userStateAtom } from "@/lib/store/user-store"
+import { cn } from "@/lib/utils"
+import { Component } from "@/types/global"
+import { useUser } from "@clerk/nextjs"
+import { useAtom } from "jotai"
+import { Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { useHotkeys } from "react-hotkeys-hook"
+import { toast } from "sonner"
 
 interface PayWallProps {
   accessState: ComponentAccessState
@@ -142,36 +142,32 @@ export function PayWall({ accessState, component }: PayWallProps) {
     { preventDefault: true },
   )
 
+  let paywall = <div className="my-auto">Component is unavailable</div>
+  if (accessState === "REQUIRES_SUBSCRIPTION") {
+    paywall = (
+      <SubscriptionPaywall
+        isProcessing={isProcessing}
+        onUpgrade={() => handleUpgradePlan("pro")}
+      />
+    )
+  } else if (accessState === "REQUIRES_UNLOCK") {
+    paywall = (
+      <UnlockPaywall
+        component={component}
+        balance={userState.balance || 0}
+        isProcessing={isProcessing}
+        onUnlock={() => setShowUnlockDialog(true)}
+        subscription={userState.subscription ?? undefined}
+      />
+    )
+  }
+
   return (
     <div className="relative h-full w-full">
       <div className="absolute inset-0 pointer-events-none bg-grid-purple" />
 
       <div className="relative z-10 h-full w-full overflow-hidden rounded-sm flex flex-col items-center justify-between p-4 text-center">
-        {accessState === "REQUIRES_SUBSCRIPTION" && (
-          <SubscriptionPaywall
-            isProcessing={isProcessing}
-            onUpgrade={() => handleUpgradePlan("pro")}
-          />
-        )}
-
-        {accessState === "REQUIRES_TOKENS" && userState.subscription && (
-          <TokensLimitPaywall
-            requiredTokens={component.price}
-            subscription={userState.subscription}
-            isProcessing={isProcessing}
-            onUpgrade={() => handleUpgradePlan("pro_plus")}
-          />
-        )}
-
-        {accessState === "REQUIRES_UNLOCK" && (
-          <UnlockPaywall
-            component={component}
-            balance={userState.balance || 0}
-            isProcessing={isProcessing}
-            onUnlock={() => setShowUnlockDialog(true)}
-            subscription={userState.subscription ?? undefined}
-          />
-        )}
+        {paywall}
       </div>
 
       <Dialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
@@ -191,7 +187,7 @@ export function PayWall({ accessState, component }: PayWallProps) {
                 Current Balance
               </span>
               <span className="text-sm font-medium">
-                {userState.balance} tokens
+                {userState.balance ?? 0} tokens
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -267,6 +263,7 @@ function getTokenPrice(
   }
 }
 
+// TODO: Remove component.price here
 function UnlockPaywall({
   component,
   balance,
@@ -572,89 +569,6 @@ function SubscriptionPaywall({
             </>
           )}
         </Button>
-      </div>
-
-      <FeatureCards title="What's included" features={features} />
-    </div>
-  )
-}
-
-function TokensLimitPaywall({
-  requiredTokens,
-  subscription,
-  isProcessing,
-  onUpgrade,
-}: {
-  requiredTokens: number
-  subscription: SubscriptionInfo
-  isProcessing: boolean
-  onUpgrade: () => void
-}) {
-  const isPro = subscription?.type === "pro"
-  const tokenPrice = getTokenPrice(subscription?.type, "monthly")
-
-  const nextRefreshDate = subscription?.current_period_end
-    ? new Date(subscription.current_period_end).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "next billing period"
-
-  return (
-    <div className="flex-1 w-full flex flex-col h-full gap-10">
-      <div className="flex flex-col items-center justify-center flex-1 pt-20">
-        <div className="space-y-2 mb-8 text-center">
-          <h3 className="text-lg font-medium">Monthly Token Limit Reached</h3>
-          <p className="text-sm text-muted-foreground">
-            You need {requiredTokens} tokens ($
-            {(requiredTokens * tokenPrice).toFixed(2)}) to unlock this
-            component.
-            <br />
-            Your token balance will refresh on {nextRefreshDate}.
-          </p>
-          {isPro && (
-            <div className="mt-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">OR</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-              <p className="text-sm text-muted-foreground mb-4 px-4">
-                Want higher monthly limits? Upgrade to Pro Plus plan
-              </p>
-              <div className="flex justify-center">
-                <Button
-                  onClick={onUpgrade}
-                  disabled={isProcessing}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5",
-                    isProcessing ? "" : "pr-1.5",
-                  )}
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      Upgrade to Pro Plus
-                      <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100 flex">
-                        <span className="text-[11px] leading-none font-sans">
-                          {navigator?.platform?.toLowerCase()?.includes("mac")
-                            ? "⌘"
-                            : "Ctrl"}
-                        </span>
-                        <Icons.enter className="h-2.5 w-2.5" />
-                      </kbd>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       <FeatureCards title="What's included" features={features} />

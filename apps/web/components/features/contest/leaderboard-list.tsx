@@ -1,15 +1,15 @@
 "use client"
 
-import React, { useState, useRef, useEffect } from "react"
-import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@clerk/nextjs"
-import { useRouter } from "next/navigation"
 import { ComponentPreviewDialog } from "@/components/features/component-page/preview-dialog"
-import { LeaderboardCard } from "./leaderboard-card"
+import { LeaderboardCardSkeleton } from "@/components/ui/skeletons"
+import { useToast } from "@/hooks/use-toast"
+import { shouldHideLeaderboardRankings } from "@/lib/utils"
+import { useUser } from "@clerk/nextjs"
 import { UseMutationResult } from "@tanstack/react-query"
 import { Trophy } from "lucide-react"
-import { LeaderboardCardSkeleton } from "@/components/ui/skeletons"
-import { shouldHideLeaderboardRankings } from "@/lib/utils"
+import { useRouter } from "next/navigation"
+import React, { useEffect, useRef, useState } from "react"
+import { LeaderboardCard } from "./leaderboard-card"
 
 export type Category = "global" | "marketing" | "ui" | "seasonal"
 
@@ -79,7 +79,6 @@ export function LeaderboardList({
         name: componentData.name || result.name || "",
         component_slug: componentData.component_slug || "",
         user_id: "",
-        is_paid: false,
         is_public: true,
         user: {
           id: "",

@@ -1,68 +1,67 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { useTheme } from "next-themes"
 import { useUser } from "@clerk/nextjs"
-import { motion } from "motion/react"
-import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Trash2 } from "lucide-react"
+import { motion } from "motion/react"
+import { useTheme } from "next-themes"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
-import { Form } from "@/components/ui/form"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { LoadingSpinner } from "../../ui/loading-spinner"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Form } from "@/components/ui/form"
 import { LoadingDialog } from "../../ui/loading-dialog"
+import { LoadingSpinner } from "../../ui/loading-spinner"
 
 import { useDebugMode } from "@/hooks/use-debug-mode"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { usePublishAs } from "./hooks/use-publish-as"
 import { useCodeInputsAutoFocus } from "./hooks/use-code-inputs-auto-focus"
+import { usePublishAs } from "./hooks/use-publish-as"
 
-import { cn } from "@/lib/utils"
-import { uploadToR2 } from "@/lib/r2"
+import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
 import { addTagsToDemo } from "@/lib/queries"
-import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
+import { uploadToR2 } from "@/lib/r2"
+import { cn } from "@/lib/utils"
 import { addVersionToUrl } from "@/lib/utils/url"
 import {
-  extractComponentNames,
-  extractNPMDependencies,
-  extractDemoComponentNames,
-  extractRegistryDependenciesFromImports,
   extractAmbigiousRegistryDependencies,
+  extractComponentNames,
+  extractDemoComponentNames,
+  extractNPMDependencies,
+  extractRegistryDependenciesFromImports,
 } from "../../../lib/parsers"
 
-import { Tag } from "@/types/global"
-import { FormStep } from "@/types/global"
+import { FormStep, Tag } from "@/types/global"
 import { Tables } from "@/types/supabase"
-import { formSchema, FormData, isFormValid } from "./config/utils"
+import { FormData, formSchema, isFormValid } from "./config/utils"
 
-import { ComponentDetailsForm } from "./components/forms/component-form"
-import { DemoDetailsForm } from "./components/forms/demo-form"
-import { PublishHeader } from "./components/publish-header"
-import { DemoPreviewTabs } from "./components/preview-with-tabs"
-import { NameSlugStep } from "./components/first-stap-layout"
-import { EditorStep } from "./components/code-editor"
-import { SuccessDialog } from "./components/success-dialog"
-import { DeleteDemoDialog } from "./components/delete-demo-dialog"
-import { EditCodeFileCard } from "./components/edit-code-file-card"
 import {
+  CodeGuidelinesAlert,
   DebugInfoDisplay,
   DemoComponentGuidelinesAlert,
-  CodeGuidelinesAlert,
   GlobalStylesGuidelinesAlert,
   TailwindGuidelinesAlert,
 } from "./components/alerts"
-import { generateDemoSlug } from "./hooks/use-is-check-slug-available"
+import { EditorStep } from "./components/code-editor"
+import { DeleteDemoDialog } from "./components/delete-demo-dialog"
+import { EditCodeFileCard } from "./components/edit-code-file-card"
+import { NameSlugStep } from "./components/first-stap-layout"
+import { ComponentDetailsForm } from "./components/forms/component-form"
+import { DemoDetailsForm } from "./components/forms/demo-form"
+import { DemoPreviewTabs } from "./components/preview-with-tabs"
+import { PublishHeader } from "./components/publish-header"
+import { SuccessDialog } from "./components/success-dialog"
 import { useIsAdmin } from "./hooks/use-is-admin"
+import { generateDemoSlug } from "./hooks/use-is-check-slug-available"
 import { useR2Upload } from "./hooks/use-r2-upload"
 export interface ParsedCodeData {
   dependencies: Record<string, string>
@@ -671,8 +670,6 @@ export default function PublishComponentForm({
           license: data.license,
           website_url: data.website_url,
           is_public: data.is_public,
-          is_paid: data.is_paid,
-          price: data.is_paid ? 5 : 0,
         } as Tables<"components">
 
         const { data: insertedComponent, error } = await client

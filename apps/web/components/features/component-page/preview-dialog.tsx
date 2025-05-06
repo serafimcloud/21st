@@ -1,65 +1,67 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import Link from "next/link"
-import { useTheme } from "next-themes"
-import { useUser } from "@clerk/nextjs"
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs"
-import {
-  Maximize,
-  Minimize,
-  Copy,
-  ChevronDown,
-  Sun,
-  Moon,
-  MoreVertical,
-  Lock,
-  Share2,
-  ArrowLeft,
-} from "lucide-react"
+import { Icons } from "@/components/icons"
+import { Spinner } from "@/components/icons/spinner"
+import { BookmarkButton } from "@/components/ui/bookmark-button"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuTrigger,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { UserAvatar } from "@/components/ui/user-avatar"
-import { BookmarkButton } from "@/components/ui/bookmark-button"
-import { Icons } from "@/components/icons"
-import { useClerkSupabaseClient } from "@/lib/clerk"
-import { useHasUserBookmarkedDemo } from "@/lib/queries"
-import { DemoWithComponent } from "@/types/global"
-import { cn } from "@/lib/utils"
-import { PROMPT_TYPES, PromptType } from "@/types/global"
-import { promptOptions } from "@/lib/prompts"
-import {
-  AMPLITUDE_EVENTS,
-  trackEvent,
-  trackPageProperties,
-} from "@/lib/amplitude"
-import { useSupabaseAnalytics } from "@/hooks/use-analytics"
-import { AnalyticsActivityType } from "@/types/global"
-import { toast } from "sonner"
-import { atomWithStorage } from "jotai/utils"
-import { useAtom } from "jotai"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useIsMobile } from "@/hooks/use-media-query"
-import { PayWall } from "./pay-wall"
+import { UserAvatar } from "@/components/ui/user-avatar"
+import { useSupabaseAnalytics } from "@/hooks/use-analytics"
 import { useComponentAccess } from "@/hooks/use-component-access"
-import { Spinner } from "@/components/icons/spinner"
+import { useIsMobile } from "@/hooks/use-media-query"
+import {
+  AMPLITUDE_EVENTS,
+  trackEvent,
+  trackPageProperties,
+} from "@/lib/amplitude"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { promptOptions } from "@/lib/prompts"
+import { useHasUserBookmarkedDemo } from "@/lib/queries"
+import { cn } from "@/lib/utils"
+import {
+  AnalyticsActivityType,
+  DemoWithComponent,
+  PROMPT_TYPES,
+  PromptType,
+} from "@/types/global"
+import { SignedIn, SignedOut, SignInButton, useUser } from "@clerk/nextjs"
+import { useAtom } from "jotai"
+import { atomWithStorage } from "jotai/utils"
+import {
+  ArrowLeft,
+  ChevronDown,
+  Copy,
+  Lock,
+  Maximize,
+  Minimize,
+  Moon,
+  MoreVertical,
+  Share2,
+  Sun,
+} from "lucide-react"
+import { useTheme } from "next-themes"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
+import { PayWall } from "./pay-wall"
 
 const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
   "previewDialogSelectedPromptType",
@@ -188,7 +190,7 @@ export function ComponentPreviewDialog({
   }
 
   const handlePromptAction = async () => {
-    if (demo.component.is_paid && accessState !== "UNLOCKED") {
+    if (accessState !== "UNLOCKED") {
       setShowUnlockDialog(true)
       return
     }
@@ -372,15 +374,14 @@ export function ComponentPreviewDialog({
           className={cn(
             "focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70",
             // Only add rounded-none if not a single unlock button
-            !(demo.component.is_paid && accessState !== "UNLOCKED") &&
-              "first:rounded-s-lg rounded-none",
+            !(accessState !== "UNLOCKED") && "first:rounded-s-lg rounded-none",
           )}
           disabled={isPromptLoading}
         >
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2">
-                {demo.component.is_paid && accessState !== "UNLOCKED" ? (
+                {accessState !== "UNLOCKED" ? (
                   <>
                     <Lock size={16} />
                     <span>Unlock</span>
@@ -406,7 +407,7 @@ export function ComponentPreviewDialog({
               </div>
             </TooltipTrigger>
             <TooltipContent className="flex items-center gap-1.5">
-              {demo.component.is_paid && accessState !== "UNLOCKED"
+              {accessState !== "UNLOCKED"
                 ? "Unlock component"
                 : isPromptLoading
                   ? "Generating prompt..."
@@ -713,7 +714,7 @@ export function ComponentPreviewDialog({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {demo.component.is_paid && accessState !== "UNLOCKED" ? (
+                  {accessState !== "UNLOCKED" ? (
                     <DropdownMenuItem onClick={handlePromptAction}>
                       <div className="flex items-center gap-2">
                         <Lock size={16} />
@@ -721,13 +722,11 @@ export function ComponentPreviewDialog({
                       </div>
                     </DropdownMenuItem>
                   ) : (
-                    !demo.component.is_paid && (
-                      <DropdownMenuItem onClick={handlePromptAction}>
-                        {selectedPromptType === "v0-open"
-                          ? "Open in v0"
-                          : "Copy prompt"}
-                      </DropdownMenuItem>
-                    )
+                    <DropdownMenuItem onClick={handlePromptAction}>
+                      {selectedPromptType === "v0-open"
+                        ? "Open in v0"
+                        : "Copy prompt"}
+                    </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={toggleTheme}>
                     Toggle theme

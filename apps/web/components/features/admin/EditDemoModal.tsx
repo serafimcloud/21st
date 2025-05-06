@@ -1,6 +1,6 @@
-import { FC } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { FC } from "react"
 import { Submission } from "./types"
 
 interface EditDemoModalProps {
@@ -24,7 +24,7 @@ const EditDemoModal: FC<EditDemoModalProps> = ({
 }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <div className="bg-background rounded-lg p-6 max-w-md w-full">
         <h2 className="text-xl font-bold mb-4">Edit Demo Information</h2>
 
         <div className="mb-4">

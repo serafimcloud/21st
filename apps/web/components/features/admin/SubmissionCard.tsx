@@ -1,6 +1,6 @@
-import { FC } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { FC } from "react"
 import { Submission } from "./types"
 
 interface SubmissionCardProps {
@@ -93,7 +93,7 @@ const SubmissionCard: FC<SubmissionCardProps> = ({
           </div>
 
           {submission.moderators_feedback && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="mt-4 p-3 rounded-lg border">
               <p className="text-sm font-medium">Feedback:</p>
               <p className="text-sm text-gray-600">
                 {submission.moderators_feedback}
