@@ -1,6 +1,4 @@
-import { FC } from "react"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -8,7 +6,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Submission, SubmissionStatus } from "./types"
+import { Textarea } from "@/components/ui/textarea"
+import { FC } from "react"
+import { Submission } from "./types"
 
 interface ManageSubmissionModalProps {
   submission: Submission
@@ -43,7 +43,7 @@ const ManageSubmissionModal: FC<ManageSubmissionModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">
           Manage Submission: {submission.component_data.name}{" "}
           {submission.name && `| ${submission.name}`}

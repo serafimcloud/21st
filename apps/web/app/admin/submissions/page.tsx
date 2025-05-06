@@ -1,15 +1,15 @@
 "use client"
 
-import { FC } from "react"
-import { motion } from "motion/react"
-import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
 import AdminHeader from "@/components/features/admin/AdminHeader"
-import SubmissionCard from "@/components/features/admin/SubmissionCard"
-import ManageSubmissionModal from "@/components/features/admin/ManageSubmissionModal"
 import EditDemoModal from "@/components/features/admin/EditDemoModal"
+import ManageSubmissionModal from "@/components/features/admin/ManageSubmissionModal"
 import NonAdminPlaceholder from "@/components/features/admin/NonAdminPlaceholder"
+import SubmissionCard from "@/components/features/admin/SubmissionCard"
 import SubmissionStatusFilter from "@/components/features/admin/SubmissionStatusFilter"
 import useSubmissions from "@/components/features/admin/hooks/useSubmissions"
+import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
+import { motion } from "motion/react"
+import { FC } from "react"
 
 const SubmissionsAdminPage: FC = () => {
   const isAdmin = useIsAdmin()
@@ -48,7 +48,6 @@ const SubmissionsAdminPage: FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="space-y-6"
       >
         <AdminHeader
           title="Component Submissions"
