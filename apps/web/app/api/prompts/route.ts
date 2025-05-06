@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getComponentInstallPrompt } from "@/lib/prompts"
 import { PromptType } from "@/types/global"
 import {
+  ResolvedComponent,
   resolveRegistryDependecyTreeV2,
   transformToFlatDependencyTree,
 } from "@/lib/registry"
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { fullSlug, prompt_type, demo_id, rule_id, additional_context } = body
+    const { prompt_type, demo_id, rule_id, additional_context } = body
 
     console.log("Received request:", {
       prompt_type,
@@ -74,7 +75,8 @@ export async function POST(request: NextRequest) {
       .select(
         `
         *,
-        component:components(*)
+        component:components(*),
+        user:users(username)
       `,
       )
       .eq("id", demo_id)
@@ -106,18 +108,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const demoCode = await fetchCode(demo.demo_code)
-    const resolvedComponent = await resolveRegistryDependecyTreeV2(fullSlug)
+    const fullSlug = `${demo.user.username}/${demo.component.component_slug}`
 
-    if (!resolvedComponent) {
+    const demoCode = await fetchCode(demo.demo_code)
+    const resolvedComponentRegistryDependencies =
+      await resolveRegistryDependecyTreeV2(fullSlug)
+
+    const resolvedDemoRegistryDependenciesPromises =
+      demo.demo_direct_registry_dependencies.map((fullSlug: string) =>
+        resolveRegistryDependecyTreeV2(fullSlug),
+      )
+
+    // resolve demo registry dependencies
+    const resolvedDemoRegistryDependencies = await Promise.all(
+      resolvedDemoRegistryDependenciesPromises,
+    )
+
+    // console.log(
+    //   "Resolved demo registry dependencies:",
+    //   resolvedDemoRegistryDependencies,
+    // )
+
+    if (!resolvedComponentRegistryDependencies) {
       return NextResponse.json(
         { error: "Failed to resolve component dependencies" },
         { status: 500 },
       )
     }
 
-    const transformedFlatRegistryDependencies =
-      transformToFlatDependencyTree(resolvedComponent)
+    const transformedFlatRegistryDependencies = {
+      ...transformToFlatDependencyTree(resolvedComponentRegistryDependencies),
+    }
+
+    // console.log(
+    //   "Transformed flat registry dependencies:",
+    //   transformedFlatRegistryDependencies,
+    // )
 
     const resolvedFlatRegistryDependencies = Object.values(
       transformedFlatRegistryDependencies,
@@ -138,6 +164,11 @@ export async function POST(request: NextRequest) {
         return acc
       },
       {} as Record<string, string>,
+    )
+
+    console.log(
+      "Resolved flat registry dependencies:",
+      resolvedFlatRegistryDependencies,
     )
 
     // If rule_id is provided, fetch the rule template
@@ -163,18 +194,21 @@ export async function POST(request: NextRequest) {
     // Generate base prompt
     const promptParams = {
       promptType: prompt_type as PromptType,
-      codeFileName: (resolvedComponent.componentSlug || "component") + ".tsx",
+      codeFileName:
+        (resolvedComponentRegistryDependencies.componentSlug || "component") +
+        ".tsx",
       demoCodeFileName: demo.file_name || "demo.tsx",
-      code: resolvedComponent.code || "",
+      code: resolvedComponentRegistryDependencies.code || "",
       demoCode: demoCode,
-      npmDependencies: resolvedComponent.dependencies || {},
+      npmDependencies: resolvedComponentRegistryDependencies.dependencies || {},
       npmDependenciesOfRegistryDependencies:
         npmDependenciesOfRegistryDependencies,
       registryDependencies: resolvedFlatRegistryDependencies,
       // TODO: aggregate tailwind config from all dependencies
-      tailwindConfig: resolvedComponent.tailwindConfig || "",
+      tailwindConfig:
+        resolvedComponentRegistryDependencies.tailwindConfig || "",
       // TODO: aggregate global css from all dependencies
-      globalCss: resolvedComponent.globalCss || "",
+      globalCss: resolvedComponentRegistryDependencies.globalCss || "",
       userAdditionalContext: additional_context,
       ...(ruleData && {
         promptRule: {

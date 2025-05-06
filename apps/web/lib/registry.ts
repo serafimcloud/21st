@@ -1,6 +1,6 @@
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 
-interface ResolvedComponent {
+export interface ResolvedComponent {
   fullSlug: string
   componentSlug: string
   author: string
@@ -195,6 +195,10 @@ export const transformToFlatDependencyTree = (
   const { excludeRootComponent = true } = options
   const flatDependencyTree: Record<string, ResolvedComponent> = {}
 
+  console.log("RESOLVED COMPONENT", resolvedComponent)
+
+  console.log("FLAT DEPENDENCY TREE v1", flatDependencyTree)
+
   function traverse(component: ResolvedComponent | null) {
     if (!component) {
       return
@@ -214,6 +218,7 @@ export const transformToFlatDependencyTree = (
         component.registryDependenciesTree[dependencySlug] || null
       traverse(dependentComponent) // traverse will handle null and duplicate checks internally
     }
+    console.log("FLAT DEPENDENCY TREE UPGRADE", flatDependencyTree)
   }
 
   // Start traversal with the root component.
@@ -223,6 +228,8 @@ export const transformToFlatDependencyTree = (
   if (excludeRootComponent && resolvedComponent) {
     delete flatDependencyTree[resolvedComponent.fullSlug]
   }
+
+  console.log("FLAT DEPENDENCY TREE FINAL", flatDependencyTree)
 
   return flatDependencyTree
 }
