@@ -14,7 +14,7 @@ const supabase = createClient(
 
 async function fetchCode(url: string) {
   if (!url) {
-    return null
+    return ""
   }
   const response = await fetch(url)
   if (!response.ok) {
