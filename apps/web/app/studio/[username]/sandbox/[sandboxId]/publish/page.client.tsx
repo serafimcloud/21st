@@ -77,7 +77,6 @@ const PublishPage = ({
   const { user } = useUser()
   const { isLoaded: isClerkUserLoaded } = useUser()
 
-  const [formStep] = useState<FormStep>("detailedForm")
   const [openAccordion, setOpenAccordion] = useState([
     "component-info",
     "demo-0",
