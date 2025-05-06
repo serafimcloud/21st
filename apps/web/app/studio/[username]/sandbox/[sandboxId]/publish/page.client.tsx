@@ -229,7 +229,8 @@ const PublishPage = ({
     const currentSandbox = serverSandbox
 
     form.handleSubmit(
-      (formData) => {
+      () => {
+        const formData = form.getValues() // Because formData from params cannot handle File object
         console.log("Form data is valid:", formData)
 
         if (!currentSandbox?.id) {

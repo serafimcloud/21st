@@ -77,8 +77,6 @@ export type FormData = {
   publish_as_username?: string
   code: string
   demos: Demo[]
-  is_paid?: boolean
-  price?: number
   unknown_dependencies?: string[]
   direct_registry_dependencies?: string[]
   slug_available?: boolean
