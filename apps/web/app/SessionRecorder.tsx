@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import posthog from "posthog-js"
 import { initPostHog } from "@/lib/posthog"
 
-const RECORDED_ROUTES = ["/studio"]
+const RECORDED_ROUTES = ["/studio", "/publish"]
 
 export default function SessionRecorder() {
   const pathname = usePathname()
