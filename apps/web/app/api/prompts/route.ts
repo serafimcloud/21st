@@ -2,6 +2,10 @@ import { createClient } from "@supabase/supabase-js"
 import { NextRequest, NextResponse } from "next/server"
 import { getComponentInstallPrompt } from "@/lib/prompts"
 import { PromptType } from "@/types/global"
+import {
+  resolveRegistryDependenciesV2,
+  transformToFlatDependencyTree,
+} from "@/lib/registry"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -70,7 +74,8 @@ export async function POST(request: NextRequest) {
       .select(
         `
         *,
-        component:components(*)
+        component:components(*),
+        user:users(username)
       `,
       )
       .eq("id", demo_id)
@@ -95,13 +100,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("Demo data:", {
-      demo_code: demo.demo_code,
-      component_code: demo.component.code,
-      file_name: demo.component?.file_name,
-      demo_file_name: demo.file_name,
-    })
-
     if (!demo.demo_code || !demo.component.code) {
       return NextResponse.json(
         { error: "Demo or component code is missing" },
@@ -109,11 +107,63 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch actual code content
-    const [componentCode, demoCode] = await Promise.all([
-      fetchCode(demo.component.code),
-      fetchCode(demo.demo_code),
-    ])
+    const [demoCode, componentCode, tailwindConfig, globalCss] =
+      await Promise.all([
+        fetchCode(demo.demo_code),
+        fetchCode(demo.component.code),
+        fetchCode(demo.component.tailwind_config_extension),
+        fetchCode(demo.component.global_css_extension),
+      ])
+
+    const resolvedComponentRegistryDependencies =
+      await resolveRegistryDependenciesV2(
+        demo?.component?.direct_registry_dependencies,
+      )
+
+    const resolvedDemoRegistryDependenciesK =
+      await resolveRegistryDependenciesV2(
+        demo?.demo_direct_registry_dependencies,
+      )
+
+    console.log(
+      "Resolved component registry dependencies:",
+      resolvedComponentRegistryDependencies,
+    )
+    console.log(
+      "resolvedDemoRegistryDependencies,",
+      resolvedDemoRegistryDependenciesK,
+    )
+
+    const transformedFlatRegistryDependencies = {
+      ...transformToFlatDependencyTree(resolvedComponentRegistryDependencies),
+      ...transformToFlatDependencyTree(resolvedDemoRegistryDependenciesK),
+    }
+
+    const resolvedFlatRegistryDependencies = Object.values(
+      transformedFlatRegistryDependencies,
+    ).reduce(
+      (acc, component) => {
+        acc[component.fullSlug] = component.code || ""
+        return acc
+      },
+      {} as Record<string, string>,
+    )
+    const npmDependenciesOfRegistryDependencies = Object.values(
+      transformedFlatRegistryDependencies,
+    ).reduce(
+      (acc, component) => {
+        Object.entries(component.dependencies).forEach(([key, value]) => {
+          acc[key] = value
+        })
+        return acc
+      },
+      {} as Record<string, string>,
+    )
+
+    console.log(
+      "Resolved flat registry dependencies:",
+      resolvedFlatRegistryDependencies,
+    )
 
     // If rule_id is provided, fetch the rule template
     let ruleData = null
@@ -138,16 +188,18 @@ export async function POST(request: NextRequest) {
     // Generate base prompt
     const promptParams = {
       promptType: prompt_type as PromptType,
-      codeFileName: demo.component.file_name || "component.tsx",
+      codeFileName: (demo.component.component_slug || "component") + ".tsx",
       demoCodeFileName: demo.file_name || "demo.tsx",
       code: componentCode,
       demoCode: demoCode,
-      npmDependencies: demo.component.npm_dependencies || {},
-      registryDependencies: demo.component.registry_dependencies || {},
+      npmDependencies: demo.component.dependencies || {},
       npmDependenciesOfRegistryDependencies:
-        demo.component.npm_dependencies_of_registry_dependencies || {},
-      tailwindConfig: demo.component.tailwind_config,
-      globalCss: demo.component.global_css,
+        npmDependenciesOfRegistryDependencies,
+      registryDependencies: resolvedFlatRegistryDependencies,
+      // TODO: aggregate tailwind config from all dependencies
+      tailwindConfig: tailwindConfig,
+      // TODO: aggregate global css from all dependencies
+      globalCss: globalCss,
       userAdditionalContext: additional_context,
       ...(ruleData && {
         promptRule: {
@@ -163,40 +215,10 @@ export async function POST(request: NextRequest) {
       }),
     }
 
-    console.log(
-      "Rule data being passed to promptRule:",
-      ruleData
-        ? JSON.stringify(
-            {
-              tech_stack: ruleData.tech_stack,
-              theme: ruleData.theme,
-              additional_context: ruleData.additional_context,
-            },
-            null,
-            2,
-          )
-        : "No rule data",
-    )
-
-    console.log(
-      "Generating prompt with params:",
-      JSON.stringify(promptParams, null, 2),
-    )
     let prompt = getComponentInstallPrompt(promptParams)
     console.log("Generated prompt content:", prompt.substring(0, 500) + "...")
 
     console.log("Base prompt generated")
-
-    console.log(
-      "Additional Context:",
-      additional_context || "No additional context provided",
-    )
-
-    console.log("Final prompt structure:", {
-      hasBasePrompt: !!prompt,
-      hasRuleData: !!ruleData,
-      hasAdditionalContext: !!additional_context,
-    })
 
     return NextResponse.json({
       prompt,

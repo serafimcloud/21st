@@ -22,9 +22,9 @@ const getShadcnRegistrySlug = (registryName: string) => {
 
 export async function GET(
   request: NextRequest,
-  props: { params: Promise<{ username: string; component_slug: string }> }
+  props: { params: Promise<{ username: string; component_slug: string }> },
 ) {
-  const params = await props.params;
+  const params = await props.params
   const { username, component_slug } = params
   console.log("🔍 Fetching component:", { username, component_slug })
 
@@ -127,6 +127,8 @@ export async function GET(
       sourceDependencySlugs: [`${component.user.username}/${component_slug}`],
       withDemoDependencies: false,
     })
+
+    console.log("Resolved registry dependencies:", resolvedRegistryDependencies)
 
     if (resolvedRegistryDependencies.error) {
       throw resolvedRegistryDependencies.error
