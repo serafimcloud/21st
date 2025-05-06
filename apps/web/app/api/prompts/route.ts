@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getComponentInstallPrompt } from "@/lib/prompts"
 import { PromptType } from "@/types/global"
 import {
-  ResolvedComponent,
-  resolveRegistryDependecyTreeV2,
+  resolveRegistryDependenciesV2,
   transformToFlatDependencyTree,
 } from "@/lib/registry"
 
@@ -108,42 +107,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const fullSlug = `${demo.user.username}/${demo.component.component_slug}`
+    const [demoCode, componentCode, tailwindConfig, globalCss] =
+      await Promise.all([
+        fetchCode(demo.demo_code),
+        fetchCode(demo.component.code),
+        fetchCode(demo.component.tailwind_config_extension),
+        fetchCode(demo.component.global_css_extension),
+      ])
 
-    const demoCode = await fetchCode(demo.demo_code)
     const resolvedComponentRegistryDependencies =
-      await resolveRegistryDependecyTreeV2(fullSlug)
-
-    const resolvedDemoRegistryDependenciesPromises =
-      demo.demo_direct_registry_dependencies.map((fullSlug: string) =>
-        resolveRegistryDependecyTreeV2(fullSlug),
+      await resolveRegistryDependenciesV2(
+        demo?.component?.direct_registry_dependencies,
       )
 
-    // resolve demo registry dependencies
-    const resolvedDemoRegistryDependencies = await Promise.all(
-      resolvedDemoRegistryDependenciesPromises,
+    const resolvedDemoRegistryDependenciesK =
+      await resolveRegistryDependenciesV2(
+        demo?.demo_direct_registry_dependencies,
+      )
+
+    console.log(
+      "Resolved component registry dependencies:",
+      resolvedComponentRegistryDependencies,
     )
-
-    // console.log(
-    //   "Resolved demo registry dependencies:",
-    //   resolvedDemoRegistryDependencies,
-    // )
-
-    if (!resolvedComponentRegistryDependencies) {
-      return NextResponse.json(
-        { error: "Failed to resolve component dependencies" },
-        { status: 500 },
-      )
-    }
+    console.log(
+      "resolvedDemoRegistryDependencies,",
+      resolvedDemoRegistryDependenciesK,
+    )
 
     const transformedFlatRegistryDependencies = {
       ...transformToFlatDependencyTree(resolvedComponentRegistryDependencies),
+      ...transformToFlatDependencyTree(resolvedDemoRegistryDependenciesK),
     }
-
-    // console.log(
-    //   "Transformed flat registry dependencies:",
-    //   transformedFlatRegistryDependencies,
-    // )
 
     const resolvedFlatRegistryDependencies = Object.values(
       transformedFlatRegistryDependencies,
@@ -194,21 +188,18 @@ export async function POST(request: NextRequest) {
     // Generate base prompt
     const promptParams = {
       promptType: prompt_type as PromptType,
-      codeFileName:
-        (resolvedComponentRegistryDependencies.componentSlug || "component") +
-        ".tsx",
+      codeFileName: (demo.component.component_slug || "component") + ".tsx",
       demoCodeFileName: demo.file_name || "demo.tsx",
-      code: resolvedComponentRegistryDependencies.code || "",
+      code: componentCode,
       demoCode: demoCode,
-      npmDependencies: resolvedComponentRegistryDependencies.dependencies || {},
+      npmDependencies: demo.component.dependencies || {},
       npmDependenciesOfRegistryDependencies:
         npmDependenciesOfRegistryDependencies,
       registryDependencies: resolvedFlatRegistryDependencies,
       // TODO: aggregate tailwind config from all dependencies
-      tailwindConfig:
-        resolvedComponentRegistryDependencies.tailwindConfig || "",
+      tailwindConfig: tailwindConfig,
       // TODO: aggregate global css from all dependencies
-      globalCss: resolvedComponentRegistryDependencies.globalCss || "",
+      globalCss: globalCss,
       userAdditionalContext: additional_context,
       ...(ruleData && {
         promptRule: {
