@@ -96,10 +96,17 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Demo data:", {
+      id: demo.id,
       demo_code: demo.demo_code,
       component_code: demo.component.code,
-      file_name: demo.component?.file_name,
-      demo_file_name: demo.file_name,
+      name: demo.component?.component_slug + ".tsx",
+      direct_registry_dependencies: demo.component.direct_registry_dependencies,
+      demo_direct_registry_dependencies:
+        demo.component.demo_direct_registry_dependencies,
+      dependencies: demo.component.dependencies,
+      demo_dependencies: demo.component.demo_dependencies,
+      tailwind_config_extension: demo.component.tailwind_config_extension,
+      global_css_extension: demo.component.global_css_extension,
     })
 
     if (!demo.demo_code || !demo.component.code) {
@@ -110,10 +117,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch actual code content
-    const [componentCode, demoCode] = await Promise.all([
-      fetchCode(demo.component.code),
-      fetchCode(demo.demo_code),
-    ])
+    const [componentCode, demoCode, tailwindConfig, globalCss] =
+      await Promise.all([
+        fetchCode(demo.component.code),
+        fetchCode(demo.demo_code),
+        fetchCode(demo.component.tailwind_config_extension),
+        fetchCode(demo.component.global_css_extension),
+      ])
 
     // If rule_id is provided, fetch the rule template
     let ruleData = null
@@ -138,16 +148,16 @@ export async function POST(request: NextRequest) {
     // Generate base prompt
     const promptParams = {
       promptType: prompt_type as PromptType,
-      codeFileName: demo.component.file_name || "component.tsx",
+      codeFileName: (demo.component.component_slug || "component") + ".tsx",
       demoCodeFileName: demo.file_name || "demo.tsx",
       code: componentCode,
       demoCode: demoCode,
-      npmDependencies: demo.component.npm_dependencies || {},
-      registryDependencies: demo.component.registry_dependencies || {},
+      npmDependencies: demo.component.dependencies || {},
+      registryDependencies: demo.component.direct_registry_dependencies || {},
       npmDependenciesOfRegistryDependencies:
-        demo.component.npm_dependencies_of_registry_dependencies || {},
-      tailwindConfig: demo.component.tailwind_config,
-      globalCss: demo.component.global_css,
+        demo.component.demo_direct_registry_dependencies || {},
+      tailwindConfig: tailwindConfig,
+      globalCss: globalCss,
       userAdditionalContext: additional_context,
       ...(ruleData && {
         promptRule: {
@@ -162,6 +172,12 @@ export async function POST(request: NextRequest) {
         },
       }),
     }
+
+    console.log("========")
+    console.log("========")
+    console.log(promptParams)
+    console.log("========")
+    console.log("========")
 
     console.log(
       "Rule data being passed to promptRule:",
