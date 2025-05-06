@@ -511,14 +511,12 @@ export type Database = {
           global_css_extension: string | null
           hunter_username: string | null
           id: number
-          is_paid: boolean
           is_public: boolean
           license: string
           likes_count: number
           name: string
           payment_url: string | null
           preview_url: string
-          price: number
           pro_preview_image_url: string | null
           registry: string
           registry_url: string | null
@@ -546,14 +544,12 @@ export type Database = {
           global_css_extension?: string | null
           hunter_username?: string | null
           id?: number
-          is_paid?: boolean
           is_public?: boolean
           license?: string
           likes_count?: number
           name: string
           payment_url?: string | null
           preview_url: string
-          price?: number
           pro_preview_image_url?: string | null
           registry?: string
           registry_url?: string | null
@@ -581,14 +577,12 @@ export type Database = {
           global_css_extension?: string | null
           hunter_username?: string | null
           id?: number
-          is_paid?: boolean
           is_public?: boolean
           license?: string
           likes_count?: number
           name?: string
           payment_url?: string | null
           preview_url?: string
-          price?: number
           pro_preview_image_url?: string | null
           registry?: string
           registry_url?: string | null
@@ -2385,6 +2379,17 @@ export type Database = {
         Args: { component_id: number }
         Returns: boolean
       }
+      find_pg_column_dependencies: {
+        Args: {
+          schema_name_param: string
+          table_name_param: string
+          column_name_param: string
+        }
+        Returns: {
+          dependent_object_description: string
+          dependency_type_info: string
+        }[]
+      }
       get_active_authors: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2726,7 +2731,6 @@ export type Database = {
           preview_url: string
           demo_slug: string
           demo_preview_url: string
-          is_paid: boolean
           is_current_week: boolean
         }[]
       }

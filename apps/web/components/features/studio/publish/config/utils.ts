@@ -64,8 +64,6 @@ export const formSchema = z.object({
   slug_available: z.boolean().optional(),
   tailwind_config: z.string().optional(),
   globals_css: z.string().optional(),
-  is_paid: z.boolean().default(false),
-  price: z.number().default(0),
 })
 
 export type FormData = {
@@ -79,8 +77,6 @@ export type FormData = {
   publish_as_username?: string
   code: string
   demos: Demo[]
-  is_paid?: boolean
-  price?: number
   unknown_dependencies?: string[]
   direct_registry_dependencies?: string[]
   slug_available?: boolean

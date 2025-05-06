@@ -1,8 +1,8 @@
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { Database } from "@/types/supabase"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { FormData } from "../config/utils"
-import { createSupabaseClerkClient, useClerkSupabaseClient } from "@/lib/clerk"
-import { Database } from "@/types/supabase"
 
 type Tag = {
   id?: number
@@ -71,8 +71,6 @@ export const useComponentData = (componentId: number | null | undefined) => {
           license: componentData.license,
           website_url: componentData.website_url || "",
           is_public: componentData.is_public,
-          is_paid: componentData.is_paid,
-          price: componentData.price,
           publish_as_username: undefined, // Will be set by main component
           code: "", // Will be populated by sandbox
           unknown_dependencies: [],

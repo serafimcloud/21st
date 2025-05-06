@@ -195,7 +195,7 @@ export function PayWall({ accessState, component }: PayWallProps) {
                 Component Price
               </span>
               <span className="text-sm font-medium text-destructive">
-                -{component.price} tokens
+                -{0} tokens
               </span>
             </div>
             <div className="border-t pt-4">
@@ -204,7 +204,7 @@ export function PayWall({ accessState, component }: PayWallProps) {
                   Remaining Balance
                 </span>
                 <span className="text-sm font-medium text-foreground">
-                  {(userState.balance || 0) - component.price} tokens
+                  {(userState.balance || 0) - 0} tokens
                 </span>
               </div>
             </div>
@@ -298,8 +298,7 @@ function UnlockPaywall({
         if (userState.balance !== null) {
           setUserState((prev) => ({
             ...prev,
-            balance:
-              prev.balance !== null ? prev.balance - component.price : null,
+            balance: prev.balance !== null ? prev.balance - 0 : null,
           }))
         }
 
@@ -374,8 +373,8 @@ function UnlockPaywall({
         <div className="space-y-2 mb-8">
           <h3 className="text-xl font-semibold">Premium Component</h3>
           <p className="text-muted-foreground">
-            Unlock for {component.price} tokens ($
-            {(component.price * tokenPrice).toFixed(2)}) to get full access
+            Unlock for {0} tokens ($
+            {(0 * tokenPrice).toFixed(2)}) to get full access
           </p>
         </div>
 
@@ -431,7 +430,7 @@ function UnlockPaywall({
                 Component Price
               </span>
               <span className="text-sm font-medium text-destructive">
-                -{component.price} tokens
+                -{0} tokens
               </span>
             </div>
             <div className="border-t pt-4">
@@ -440,7 +439,7 @@ function UnlockPaywall({
                   Remaining Balance
                 </span>
                 <span className="text-sm font-medium text-foreground">
-                  {balance - component.price} tokens
+                  {balance - 0} tokens
                 </span>
               </div>
             </div>

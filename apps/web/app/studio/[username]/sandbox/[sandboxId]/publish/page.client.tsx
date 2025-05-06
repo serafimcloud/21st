@@ -1,41 +1,41 @@
 "use client"
 
-import React, { useState, useCallback, useEffect, useRef } from "react"
-import { useParams } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { Trash2 } from "lucide-react"
 import { useUser } from "@clerk/nextjs"
-import { toast } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { debounce } from "lodash"
+import { Trash2 } from "lucide-react"
+import { useParams } from "next/navigation"
+import React, { useCallback, useEffect, useRef, useState } from "react"
+import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
-import { Form } from "@/components/ui/form"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Form } from "@/components/ui/form"
 import { LoadingDialog } from "@/components/ui/loading-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 
+import { SuccessDialog } from "@/components/features/publish/components/success-dialog"
 import { ComponentForm } from "@/components/features/studio/publish/components/forms/component-form"
 import { DemoDetailsForm } from "@/components/features/studio/publish/components/forms/demo-form"
-import { SuccessDialog } from "@/components/features/publish/components/success-dialog"
 import {
   FormData,
   formSchema,
 } from "@/components/features/studio/publish/config/utils"
-import { useSubmitComponent } from "@/components/features/studio/publish/hooks/use-submit-component"
 import { useComponentData } from "@/components/features/studio/publish/hooks/use-component-data"
+import { useSubmitComponent } from "@/components/features/studio/publish/hooks/use-submit-component"
 
-import { cn } from "@/lib/utils"
-import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
-import { useFileSystem } from "@/components/features/studio/sandbox/hooks/use-file-system"
 import { usePublishAs } from "@/components/features/publish/hooks/use-publish-as"
 import { editSandbox } from "@/components/features/studio/sandbox/api"
+import { useFileSystem } from "@/components/features/studio/sandbox/hooks/use-file-system"
+import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
+import { cn } from "@/lib/utils"
 
 type FormStep = "detailedForm"
 
@@ -94,8 +94,6 @@ const PublishPage = ({
       website_url: "",
       is_public: false,
       publish_as_username: user?.username ?? undefined,
-      is_paid: false,
-      price: 0,
       unknown_dependencies: [],
       direct_registry_dependencies: [],
       code: `// Mock component code for ${sandboxId}\nexport default function MockComponent() { return <div>Hello</div>; }`,
@@ -231,7 +229,8 @@ const PublishPage = ({
     const currentSandbox = serverSandbox
 
     form.handleSubmit(
-      (formData) => {
+      () => {
+        const formData = form.getValues() // Because formData from params cannot handle File object
         console.log("Form data is valid:", formData)
 
         if (!currentSandbox?.id) {
