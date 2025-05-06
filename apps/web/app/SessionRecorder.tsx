@@ -17,16 +17,8 @@ export default function SessionRecorder() {
     )
 
     if (shouldRecord) {
-      console.log("RECORDING")
-      console.log("RECORDING")
-      console.log("RECORDING")
-      console.log("RECORDING")
       posthog.startSessionRecording()
     } else {
-      console.log("STOP RECORDING")
-      console.log("STOP RECORDING")
-      console.log("STOP RECORDING")
-      console.log("STOP RECORDING")
       posthog.stopSessionRecording()
     }
 
