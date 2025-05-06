@@ -13,8 +13,9 @@ export const metadata: Metadata = {
 export default async function MonetizationPage({
   params,
 }: {
-  params: { username: string }
+  params: Promise<{ username: string }>
 }) {
+  const username = (await params).username
   // Verify user is authenticated
   const { userId } = await auth()
   if (!userId) {
@@ -22,10 +23,7 @@ export default async function MonetizationPage({
   }
 
   // Get user data from Supabase
-  const { data: user } = await getUserData(
-    supabaseWithAdminAccess,
-    params.username,
-  )
+  const { data: user } = await getUserData(supabaseWithAdminAccess, username)
 
   if (!user) {
     console.error("User not found")
