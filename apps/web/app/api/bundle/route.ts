@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import crypto from "crypto"
 import { defaultTailwindConfig, defaultGlobalCss } from "@/lib/sandpack"
+import {
+  resolveRegistryDependenciesV2,
+  transformToFlatDependencyTree,
+} from "@/lib/registry"
 
 export async function POST(request: Request) {
   try {
@@ -24,6 +28,58 @@ export async function POST(request: Request) {
 
     const demoId = typeof id === "string" ? parseInt(id) : id
 
+    // Check if we already have a bundle with this hash
+    const { data: demo, error: demoError } = await supabaseWithAdminAccess
+      .from("demos")
+      .select(
+        `
+        *,
+        component:components(*),
+        user:users(username)
+      `,
+      )
+      .eq("id", demoId)
+      .single()
+
+    if (demoError) {
+      console.error("Error fetching demo:", demoError)
+      return NextResponse.json(
+        { error: "Error fetching demo", details: demoError },
+        { status: 500 },
+      )
+    }
+
+    const resolvedComponentRegistryDependencies =
+      await resolveRegistryDependenciesV2(
+        demo?.component?.direct_registry_dependencies as string[],
+      )
+
+    const resolvedDemoRegistryDependencies =
+      await resolveRegistryDependenciesV2(
+        demo?.demo_direct_registry_dependencies as string[],
+      )
+
+    const resolvedDependencies = transformToFlatDependencyTree({
+      ...resolvedComponentRegistryDependencies,
+      ...resolvedDemoRegistryDependencies,
+    })
+
+    Object.keys(resolvedDependencies).forEach((key) => {
+      Object.entries(resolvedDependencies[key]!.dependencies).forEach(
+        ([key, value]) => {
+          dependencies[key] = value
+        },
+      )
+    })
+
+    for (const key in resolvedDependencies) {
+      const filePath = `/components/ui/${resolvedDependencies[key]!.componentSlug}.tsx`
+      files[filePath] = resolvedDependencies[key]!.code
+    }
+
+    console.log("files", files)
+    console.log("dependencies", dependencies)
+
     // Generate a unique hash for this bundle
     const contentHash = crypto
       .createHash("md5")
@@ -36,13 +92,6 @@ export async function POST(request: Request) {
         }),
       )
       .digest("hex")
-
-    // Check if we already have a bundle with this hash
-    const { data: demo, error: demoError } = await supabaseWithAdminAccess
-      .from("demos")
-      .select("bundle_html_url, bundle_hash")
-      .eq("id", demoId)
-      .single()
 
     // If we have a cached bundle with the same hash, return it
     if (
