@@ -14,8 +14,7 @@ const supabase = createClient(
 
 async function fetchCode(url: string) {
   if (!url) {
-    console.error("Empty URL provided to fetchCode")
-    throw new Error("Code URL is required")
+    return null
   }
   const response = await fetch(url)
   if (!response.ok) {
