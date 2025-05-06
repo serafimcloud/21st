@@ -592,6 +592,7 @@ export default function ComponentPage({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          fullSlug: `${component.user.username}/${component.component_slug}`,
           prompt_type: selectedPromptType,
           demo_id: demo.id,
           rule_id: ruleId,

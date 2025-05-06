@@ -2,11 +2,14 @@ import { supabaseWithAdminAccess } from "@/lib/supabase"
 
 interface ResolvedComponent {
   fullSlug: string
+  componentSlug: string
+  author: string
   code: string | null
   globalCss: string | null
   tailwindConfig: string | null
   registryDependencies: string[]
   registryDependenciesTree: Record<string, ResolvedComponent | null>
+  dependencies: Record<string, string>
 }
 
 /**
@@ -19,10 +22,19 @@ interface ResolvedComponent {
  */
 export async function resolveRegistryDependecyTreeV2(
   fullSlug: string,
-  maxDepth = 10,
-  currentDepth = 0,
-  visitedSlugs = new Set<string>(),
+  options: {
+    shouldFetchR2Assets?: boolean
+    maxDepth?: number
+    currentDepth?: number
+    visitedSlugs?: Set<string>
+  } = {},
 ): Promise<ResolvedComponent | null> {
+  const {
+    maxDepth = 10,
+    currentDepth = 0,
+    visitedSlugs = new Set<string>(),
+  } = options
+
   // Check for circular dependencies
   if (visitedSlugs.has(fullSlug)) {
     console.warn("Circular dependency detected:", fullSlug)
@@ -104,6 +116,18 @@ export async function resolveRegistryDependecyTreeV2(
     fetchR2Asset(tailwindConfigUrl),
   ])
 
+  const dependenciesRaw = newComponent.dependencies
+  let dependencies: Record<string, string> = {}
+  if (typeof dependenciesRaw === "object" && dependenciesRaw !== null) {
+    dependencies = dependenciesRaw as Record<string, string>
+  } else if (typeof dependenciesRaw === "string") {
+    try {
+      dependencies = JSON.parse(dependenciesRaw)
+    } catch (e) {
+      console.error("Error parsing dependencies:", e)
+    }
+  }
+
   // Handle different formats of dependency data (array or JSON string)
   const registryDependenciesRaw = newComponent.direct_registry_dependencies
   let registryDependencies: string[] = []
@@ -134,9 +158,12 @@ export async function resolveRegistryDependecyTreeV2(
 
   const resolvedComponent: ResolvedComponent = {
     fullSlug,
+    componentSlug,
+    author,
     code,
     globalCss,
     tailwindConfig,
+    dependencies,
     registryDependencies: registryDependencies,
     registryDependenciesTree: {} as Record<string, ResolvedComponent | null>,
   }
@@ -146,9 +173,11 @@ export async function resolveRegistryDependecyTreeV2(
     for (const dependency of registryDependencies) {
       const resolvedDependencyComponent = await resolveRegistryDependecyTreeV2(
         dependency,
-        maxDepth,
-        currentDepth + 1,
-        new Set(visitedSlugs), // Create a new copy of the set for each branch
+        {
+          maxDepth: maxDepth,
+          currentDepth: currentDepth + 1,
+          visitedSlugs: new Set(visitedSlugs), // Create a new copy of the set for each branch
+        },
       )
 
       resolvedComponent.registryDependenciesTree[dependency] =
@@ -157,4 +186,43 @@ export async function resolveRegistryDependecyTreeV2(
   }
 
   return resolvedComponent
+}
+
+export const transformToFlatDependencyTree = (
+  resolvedComponent: ResolvedComponent,
+  options: { excludeRootComponent?: boolean } = {},
+): Record<string, ResolvedComponent> => {
+  const { excludeRootComponent = true } = options
+  const flatDependencyTree: Record<string, ResolvedComponent> = {}
+
+  function traverse(component: ResolvedComponent | null) {
+    if (!component) {
+      return
+    }
+
+    // If component is already in the tree, no need to process again.
+    if (flatDependencyTree[component.fullSlug]) {
+      return
+    }
+
+    // Add the current component to the flat dependency tree.
+    flatDependencyTree[component.fullSlug] = component
+
+    // Recursively traverse its direct dependencies.
+    for (const dependencySlug in component.registryDependenciesTree) {
+      const dependentComponent =
+        component.registryDependenciesTree[dependencySlug] || null
+      traverse(dependentComponent) // traverse will handle null and duplicate checks internally
+    }
+  }
+
+  // Start traversal with the root component.
+  traverse(resolvedComponent)
+
+  // If excludeRootComponent is true, remove the root component from the tree.
+  if (excludeRootComponent && resolvedComponent) {
+    delete flatDependencyTree[resolvedComponent.fullSlug]
+  }
+
+  return flatDependencyTree
 }
