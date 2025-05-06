@@ -1,9 +1,9 @@
+import { extractComponentNames } from "@/lib/parsers"
+import { uploadToR2 } from "@/lib/r2"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
+import { makeSlugFromName } from "@/lib/utils"
 import { auth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
-import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { uploadToR2 } from "@/lib/r2"
-import { extractComponentNames } from "@/lib/parsers"
-import { makeSlugFromName } from "@/lib/utils"
 
 export async function POST(request: Request) {
   try {
@@ -82,8 +82,6 @@ export async function POST(request: Request) {
           global_css_extension: globalCssUrl,
           tailwind_config_extension: tailwindConfigUrl,
           preview_url: "",
-          is_paid: false,
-          price: 0,
           downloads_count: 0,
           likes_count: 0,
           created_at: new Date().toISOString(),

@@ -1,31 +1,31 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useMemo } from "react"
-import { useAnimation, motion, AnimatePresence } from "motion/react"
 import { useAtom } from "jotai"
-import { useTheme } from "next-themes"
 import {
   CheckIcon,
-  CopyIcon,
-  Pencil,
-  CodeXml,
-  Info,
   ChevronDown,
+  CodeXml,
+  CopyIcon,
+  Info,
+  Pencil,
 } from "lucide-react"
+import { AnimatePresence, motion, useAnimation } from "motion/react"
+import { useTheme } from "next-themes"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import {
-  SandpackProvider as SandpackProviderUnstyled,
   SandpackPreview,
+  SandpackProvider as SandpackProviderUnstyled,
 } from "@codesandbox/sandpack-react/unstyled"
 
-import { ComponentPageInfo } from "./info-section"
 import { Icons } from "@/components/icons"
-import { LoadingSpinner } from "../../ui/loading-spinner"
-import { CopyCodeButton } from "../../ui/copy-code-card-button"
 import {
-  isShowCodeAtom,
   isFullScreenAtom,
+  isShowCodeAtom,
 } from "../../../app/[username]/[component_slug]/page.client"
+import { CopyCodeButton } from "../../ui/copy-code-card-button"
+import { LoadingSpinner } from "../../ui/loading-spinner"
+import { ComponentPageInfo } from "./info-section"
 
 import {
   DropdownMenu,
@@ -37,29 +37,29 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TextMorph } from "@/components/ui/text-morph"
 
 import {
-  SandpackProvider,
-  SandpackLayout,
   SandpackCodeViewer,
   SandpackFileExplorer,
+  SandpackLayout,
+  SandpackProvider,
   SandpackProviderProps,
 } from "@codesandbox/sandpack-react"
 
-import { useDebugMode } from "@/hooks/use-debug-mode"
 import { useCompileCss } from "@/hooks/use-compile-css"
+import { useDebugMode } from "@/hooks/use-debug-mode"
 import { useIsMobile } from "@/hooks/use-media-query"
 
-import { Component, Tag, User, Demo } from "@/types/global"
+import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
 import { generateBundleFiles, generateSandpackFiles } from "@/lib/sandpack"
-import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
-import { getPackageRunner, cn } from "@/lib/utils"
-import { toast } from "sonner"
+import { cn, getPackageRunner } from "@/lib/utils"
+import { Component, Demo, Tag, User } from "@/types/global"
 import { useUser } from "@clerk/nextjs"
+import { toast } from "sonner"
 
-import styles from "./component-preview.module.css"
-import { FullScreenButton } from "../../ui/full-screen-button"
 import { useBundleDemo } from "@/hooks/use-bundle-demo"
-import { PayWall } from "./pay-wall"
 import { ComponentAccessState } from "@/hooks/use-component-access"
+import { FullScreenButton } from "../../ui/full-screen-button"
+import styles from "./component-preview.module.css"
+import { PayWall } from "./pay-wall"
 
 export function ComponentPagePreview({
   component,
@@ -76,6 +76,7 @@ export function ComponentPagePreview({
   setIsEditDialogOpen,
   demo,
   compiledCss,
+  showPaywall,
   accessState,
 }: {
   component: Component & { user: User } & { tags: Tag[] }
@@ -371,7 +372,7 @@ export function ComponentPagePreview({
               <div ref={sandpackRef} className="h-full w-full flex relative">
                 <SandpackLayout className="flex w-full flex-row gap-4">
                   <div
-                    className={`flex flex-col w-full ${styles.customScroller}`}
+                    className={`flex flex-col w-full h-full ${styles.customScroller}`}
                   >
                     <MobileControls
                       isShowCode={isShowCode}
@@ -381,7 +382,7 @@ export function ComponentPagePreview({
                     />
                     <div className="flex w-full h-full flex-col">
                       {isShowCode ? (
-                        effectiveAccessState === "UNLOCKED" ? (
+                        !showPaywall ? (
                           <>
                             <CopyCommandSection component={component} />
                             {isDebug && <SandpackFileExplorer />}
@@ -395,6 +396,7 @@ export function ComponentPagePreview({
                               <Tabs
                                 value={activeFile}
                                 onValueChange={setActiveFile}
+                                className="h-full"
                               >
                                 <TabsList className="h-9 relative bg-muted dark:bg-background justify-start w-full gap-0.5 pb-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-border px-4 overflow-x-auto flex-nowrap hide-scrollbar">
                                   {visibleFiles.map((file) => (
@@ -407,7 +409,7 @@ export function ComponentPagePreview({
                                     </TabsTrigger>
                                   ))}
                                 </TabsList>
-                                <div className="">
+                                <div className="h-full pb-4">
                                   <SandpackCodeViewer
                                     wrapContent={true}
                                     showTabs={false}

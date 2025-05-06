@@ -1,32 +1,31 @@
 "use client"
 
-import React from "react"
-import Link from "next/link"
-import { Video, Eye, Bookmark, X, ThumbsUp, Trophy } from "lucide-react"
-import { toast } from "sonner"
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuSub,
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
-  ContextMenuSeparator,
 } from "@/components/ui/context-menu"
-import { PromptType } from "@/types/global"
 import { promptOptions } from "@/lib/prompts"
+import { PromptType } from "@/types/global"
+import { Bookmark, Eye, ThumbsUp, Video } from "lucide-react"
+import Link from "next/link"
+import { toast } from "sonner"
 
-import { DemoWithComponent, Component, User } from "@/types/global"
+import { Button } from "@/components/ui/button"
+import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { bookmarkDemo } from "@/lib/queries"
+import { Component, DemoWithComponent, User } from "@/types/global"
+import { useUser } from "@clerk/nextjs"
+import { ComponentCardSkeleton } from "../../ui/skeletons"
+import { UserAvatar } from "../../ui/user-avatar"
 import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
-import { UserAvatar } from "../../ui/user-avatar"
-import { ComponentCardSkeleton } from "../../ui/skeletons"
-import { useUser } from "@clerk/nextjs"
-import { useClerkSupabaseClient } from "@/lib/clerk"
-import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
-import { Button } from "@/components/ui/button"
-import { bookmarkDemo } from "@/lib/queries"
 
 // Extended type to include leaderboard fields
 type LeaderboardDemoWithComponent = DemoWithComponent & {
@@ -236,13 +235,6 @@ export function ComponentCard({
                 </div>
               )}
             </div>
-            {isDemo && demo.component?.is_paid && (
-              <div className="absolute top-2 right-2 z-20">
-                <span className="inline-block text-xs font-medium bg-blue-100 text-blue-600 px-2 py-1 rounded-md">
-                  PRO
-                </span>
-              </div>
-            )}
             {/* Add Top of Week badge for top 3 leaderboard components */}
             {isLeaderboardComponent &&
               typeof demo.global_rank === "number" &&

@@ -15,8 +15,6 @@ export interface Submission {
     likes_count: number
     license: string
     registry: string
-    is_paid: boolean
-    price: number
   }
   user_data: {
     id: string

@@ -1,34 +1,32 @@
+import { PurchaseComponentError } from "@/app/api/components/purchase/route"
+import { makeSlugFromName } from "@/components/features/publish/hooks/use-is-check-slug-available"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { categories } from "@/lib/navigation"
+import { transformDemoResult } from "@/lib/utils/transformData"
 import {
   Component,
   Demo,
-  Tag,
-  User,
   DemoWithComponent,
   SortOption,
+  Tag,
+  User,
 } from "@/types/global"
+import {
+  CreatePromptRuleInput,
+  PromptRule,
+  TechStack,
+  Theme,
+  UpdatePromptRuleInput,
+} from "@/types/prompt-rules"
+import { Database, Json } from "@/types/supabase"
+import { useAuth, useUser } from "@clerk/nextjs"
+import { SupabaseClient } from "@supabase/supabase-js"
 import {
   UseMutationResult,
   useMutation,
-  useQueryClient,
   useQuery,
+  useQueryClient,
 } from "@tanstack/react-query"
-import { makeSlugFromName } from "@/components/features/publish/hooks/use-is-check-slug-available"
-import { SupabaseClient } from "@supabase/supabase-js"
-import { useClerkSupabaseClient } from "@/lib/clerk"
-import { useUser } from "@clerk/nextjs"
-import { Database } from "@/types/supabase"
-import { transformDemoResult } from "@/lib/utils/transformData"
-import {
-  PromptRule,
-  CreatePromptRuleInput,
-  UpdatePromptRuleInput,
-  TechStack,
-  Theme,
-} from "@/types/prompt-rules"
-import { Json } from "@/types/supabase"
-import { PurchaseComponentError } from "@/app/api/components/purchase/route"
-import { useAuth } from "@clerk/nextjs"
-import { categories } from "@/lib/navigation"
 import { useCallback } from "react"
 
 export const componentReadableDbFields = `
@@ -1270,9 +1268,7 @@ export const useRoundSubmissions = (roundId: number | null) => {
           name: componentData.name || "",
           component_slug: componentData.component_slug || "",
           user_id: componentData.user_id || "",
-          is_paid: !!componentData.is_paid,
           is_public: !!componentData.is_public,
-          price: componentData.price || null,
           user: result.component_user_data || {},
           downloads_count: componentData.downloads_count || 0,
           likes_count: componentData.likes_count || 0,
@@ -1509,7 +1505,6 @@ export function useLeaderboardDemosForHome() {
           bookmarks_count: submission.bookmarks_count || 0,
           view_count: submission.view_count || 0,
           votes_count: submission.votes || 0,
-          is_paid: false,
           bundle_url: submission.bundle_url || null,
           global_rank: submission.global_rank || null,
           compiled_css: null,
@@ -1527,7 +1522,6 @@ export function useLeaderboardDemosForHome() {
             name: componentData.name || submission.name || "",
             component_slug: componentData.component_slug || "",
             user_id: componentData.user_id || "",
-            is_paid: false,
             is_public: true,
             user: {
               id: submission.user_data?.id || "",

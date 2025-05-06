@@ -1,47 +1,46 @@
 /* eslint-disable turbo/no-undeclared-env-vars */
 "use client"
 
-import React, { Dispatch, SetStateAction, useEffect, useState } from "react"
-import Link from "next/link"
-import { useTheme } from "next-themes"
-import { atom, useAtom } from "jotai"
 import { SignedIn, SignedOut, SignInButton, useUser } from "@clerk/nextjs"
+import { atom, useAtom } from "jotai"
+import { useTheme } from "next-themes"
+import Link from "next/link"
+import { Dispatch, SetStateAction, useEffect, useState } from "react"
 
+import { useSupabaseAnalytics } from "@/hooks/use-analytics"
 import {
-  Component,
-  Demo,
-  Tag,
-  User,
-  DemoWithTags,
-  Submission,
-} from "@/types/global"
-import { PromptType, PROMPT_TYPES } from "@/types/global"
-import { useClerkSupabaseClient } from "@/lib/clerk"
-import {
-  addTagsToDemo,
-  useUpdateComponentWithTags,
-  useHasUserBookmarkedDemo,
-} from "@/lib/queries"
-import {
-  identifyUser,
-  trackPageProperties,
-  trackEvent,
   AMPLITUDE_EVENTS,
+  identifyUser,
+  trackEvent,
+  trackPageProperties,
 } from "@/lib/amplitude"
+import { useClerkSupabaseClient } from "@/lib/clerk"
 import {
   formatV0Prompt,
   promptOptions,
   type PromptOptionBase,
 } from "@/lib/prompts"
-import { useSupabaseAnalytics } from "@/hooks/use-analytics"
-import { AnalyticsActivityType } from "@/types/global"
-
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+  addTagsToDemo,
+  useHasUserBookmarkedDemo,
+  useUpdateComponentWithTags,
+} from "@/lib/queries"
+import {
+  AnalyticsActivityType,
+  Component,
+  Demo,
+  DemoWithTags,
+  PROMPT_TYPES,
+  PromptType,
+  Submission,
+  Tag,
+  User,
+} from "@/types/global"
+
+import { Icons } from "@/components/icons"
+import { BookmarkButton } from "@/components/ui/bookmark-button"
 import { Button } from "@/components/ui/button"
+import { CopyPromptDialog } from "@/components/ui/copy-prompt-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,27 +48,17 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { UserAvatar } from "../../../components/ui/user-avatar"
-import { BookmarkButton } from "@/components/ui/bookmark-button"
-import { ThemeToggle } from "../../../components/ui/theme-toggle"
-import { ComponentPagePreview } from "../../../components/features/component-page/component-preview"
-import { EditComponentDialog } from "../../../components/ui/edit-component-dialog"
-import { usePublishAs } from "../../../components/features/publish/hooks/use-publish-as"
-import { Icons } from "@/components/icons"
-import { CopyPromptDialog } from "@/components/ui/copy-prompt-dialog"
-
 import {
-  CodeXml,
-  Info,
-  Pencil,
-  ChevronDown,
-  Flag,
-  Plus,
-  Check,
-} from "lucide-react"
-import { toast } from "sonner"
-import { atomWithStorage } from "jotai/utils"
-import { useRouter } from "next/navigation"
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { ComponentPagePreview } from "../../../components/features/component-page/component-preview"
+import { usePublishAs } from "../../../components/features/publish/hooks/use-publish-as"
+import { EditComponentDialog } from "../../../components/ui/edit-component-dialog"
+import { ThemeToggle } from "../../../components/ui/theme-toggle"
+import { UserAvatar } from "../../../components/ui/user-avatar"
+
 import {
   Command,
   CommandEmpty,
@@ -78,16 +67,28 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
+import { isEditingCodeAtom } from "@/components/ui/edit-component-dialog"
+import { Logo } from "@/components/ui/logo"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { useComponentAccess } from "@/hooks/use-component-access"
 import { cn } from "@/lib/utils"
 import { addVersionToUrl } from "@/lib/utils/url"
-import { isEditingCodeAtom } from "@/components/ui/edit-component-dialog"
-import { useComponentAccess } from "@/hooks/use-component-access"
-import { Logo } from "@/components/ui/logo"
+import { atomWithStorage } from "jotai/utils"
+import {
+  Check,
+  ChevronDown,
+  CodeXml,
+  Flag,
+  Info,
+  Pencil,
+  Plus,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export const isShowCodeAtom = atom(true)
 const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
@@ -377,7 +378,7 @@ export default function ComponentPage({
   const router = useRouter()
 
   const accessState = useComponentAccess(component, hasPurchased)
-  const showPaywall = component.is_paid && accessState !== "UNLOCKED"
+  const showPaywall = accessState !== "UNLOCKED"
 
   const { data: bookmarked } = useHasUserBookmarkedDemo(
     supabase,
