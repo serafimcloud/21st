@@ -64,8 +64,6 @@ export const formSchema = z.object({
   slug_available: z.boolean().optional(),
   tailwind_config: z.string().optional(),
   globals_css: z.string().optional(),
-  is_paid: z.boolean().default(false),
-  price: z.number().default(0),
 })
 
 export type FormData = {

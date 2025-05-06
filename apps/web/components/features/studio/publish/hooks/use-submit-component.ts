@@ -1,14 +1,14 @@
+import { generateDemoSlug } from "@/components/features/publish/hooks/use-is-check-slug-available"
+import { useR2Upload } from "@/components/features/publish/hooks/use-r2-upload"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { addTagsToDemo } from "@/lib/queries"
+import { uploadToR2 } from "@/lib/r2"
+import { addVersionToUrl } from "@/lib/utils/url"
+import { Tag } from "@/types/global"
+import { Tables } from "@/types/supabase"
 import { useState } from "react"
 import { toast } from "sonner"
-import { Tables } from "@/types/supabase"
-import { Tag } from "@/types/global"
-import { addVersionToUrl } from "@/lib/utils/url"
-import { addTagsToDemo } from "@/lib/queries"
-import { generateDemoSlug } from "@/components/features/publish/hooks/use-is-check-slug-available"
-import { useClerkSupabaseClient } from "@/lib/clerk"
 import { FormData } from "../config/utils"
-import { uploadToR2 } from "@/lib/r2"
-import { useR2Upload } from "@/components/features/publish/hooks/use-r2-upload"
 
 type ParsedCodeData = {
   componentCode: string
@@ -298,8 +298,6 @@ export const useSubmitComponent = () => {
         license: data.license,
         website_url: data.website_url || null,
         is_public: data.is_public,
-        is_paid: data.is_paid || false,
-        price: data.is_paid ? data.price || 5 : 0,
         sandbox_id: sandboxId,
       }
 
