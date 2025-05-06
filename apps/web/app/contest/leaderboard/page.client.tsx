@@ -1,7 +1,12 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
-import { useRoundSubmissions, useToggleVote, type Round } from "@/lib/queries"
+import {
+  useRoundSubmissions,
+  useToggleVote,
+  type Round,
+  usePreviousRoundsSubmissions,
+} from "@/lib/queries"
 import { LeaderboardList } from "@/components/features/contest/leaderboard-list"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Header } from "@/components/ui/header.client"
@@ -16,9 +21,10 @@ import {
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { shouldHideLeaderboardRankings } from "@/lib/utils"
+import { ChevronDown } from "lucide-react"
 
 // Define the Category type locally
-type Category = "global" | "seasonal"
+type Category = "global" | "seasonal" | "marketing" | "ui"
 
 function formatDateRange(start: string, end: string): string {
   const startDate = new Date(start)
@@ -55,7 +61,13 @@ export function LeaderboardClient({
   >({
     global: [],
     seasonal: [],
+    marketing: [],
+    ui: [],
   })
+
+  // Control how many items to display
+  const [showAll, setShowAll] = useState(false)
+  const ITEMS_LIMIT = 10
 
   // Flag to track if initial randomization is done
   const isRandomizationDoneRef = useRef<boolean>(false)
@@ -67,6 +79,13 @@ export function LeaderboardClient({
     error,
   } = useRoundSubmissions(currentRound.id)
   const toggleVote = useToggleVote(currentRound.id)
+
+  // Fetch previous rounds data
+  const {
+    data: previousRoundsData = [],
+    isLoading: previousRoundsLoading,
+    error: previousRoundsError,
+  } = usePreviousRoundsSubmissions(3)
 
   // Use the shared utility function
   const shouldRandomize = shouldHideLeaderboardRankings()
@@ -83,7 +102,7 @@ export function LeaderboardClient({
       return
     }
 
-    const categories: Category[] = ["global", "seasonal"]
+    const categories: Category[] = ["global", "seasonal", "marketing", "ui"]
     const randomized: Record<Category, any[]> = {} as Record<Category, any[]>
 
     // For each category, get and randomize the submissions
@@ -126,6 +145,14 @@ export function LeaderboardClient({
     randomizedSubmissionsMap,
     getFilteredSubmissions,
   ])
+
+  // Get limited or all rows based on the showAll state
+  const displayRows = useMemo(() => {
+    if (showAll) {
+      return filteredRows
+    }
+    return filteredRows.slice(0, ITEMS_LIMIT)
+  }, [filteredRows, showAll])
 
   if (error) {
     return (
@@ -222,7 +249,7 @@ export function LeaderboardClient({
 
         <div className="space-y-4">
           <LeaderboardList
-            submissions={filteredRows}
+            submissions={displayRows}
             roundId={currentRound.id}
             toggleVote={toggleVote}
             category={selectedCategory}
@@ -231,7 +258,169 @@ export function LeaderboardClient({
             }
             isLoading={isLoading}
           />
+
+          {filteredRows.length > ITEMS_LIMIT && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setShowAll(!showAll)}
+                className="mt-4"
+              >
+                {showAll ? "Show Less" : "Show More"}{" "}
+                <ChevronDown
+                  className={`ml-2 h-4 w-4 ${showAll ? "rotate-180" : ""} transition-transform`}
+                />
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Previous Weeks Results */}
+        {previousRoundsData.length > 0 && (
+          <div className="mt-12 space-y-8">
+            <h2 className="text-xl font-semibold">Previous Weeks Results</h2>
+
+            {previousRoundsData.map((roundData) => (
+              <div key={roundData.round.id} className="space-y-6 border-t pt-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium">
+                    Week #{roundData.round.week_number} Results
+                  </h3>
+                  <div className="text-sm text-muted-foreground">
+                    {formatDateRange(
+                      roundData.round.start_at,
+                      roundData.round.end_at,
+                    )}
+                  </div>
+                </div>
+
+                {/* Global Winners for all weeks */}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Global Winners</h4>
+                  <div className="">
+                    <LeaderboardList
+                      submissions={
+                        roundData.isFirstWeek
+                          ? roundData.submissions.slice(0, 3) // Only top 3 for the first week
+                          : roundData.submissions.slice(0, 10) // Top 10 for other weeks
+                      }
+                      roundId={roundData.round.id}
+                      toggleVote={null}
+                      category="global"
+                      isLoading={false}
+                      isHistorical={true}
+                    />
+                  </div>
+                </div>
+
+                {/* Seasonal Winners */}
+                {roundData.seasonalTag && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">
+                      {roundData.seasonalTag.name} Winners
+                    </h4>
+                    <div className="">
+                      <LeaderboardList
+                        submissions={roundData.submissions
+                          .filter((submission: any) => {
+                            const tags = submission.tags || []
+                            return tags.some(
+                              (tag: any) =>
+                                (typeof tag === "string" ? tag : tag?.slug) ===
+                                roundData.seasonalTag?.slug,
+                            )
+                          })
+                          .slice(0, 3)}
+                        roundId={roundData.round.id}
+                        toggleVote={null}
+                        category="seasonal"
+                        seasonalTheme={roundData.seasonalTag.name}
+                        isLoading={false}
+                        isHistorical={true}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Special case for week 1: Marketing and UI categories */}
+                {roundData.isFirstWeek && (
+                  <>
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Marketing Winners</h4>
+                      <div className="">
+                        <LeaderboardList
+                          submissions={roundData.submissions
+                            .filter((submission: any) => {
+                              const tags = submission.tags || []
+                              return tags.some((tag: any) => {
+                                const slug =
+                                  typeof tag === "string" ? tag : tag?.slug
+                                return [
+                                  "hero",
+                                  "testimonials",
+                                  "pricing-section",
+                                  "features",
+                                ].includes(slug)
+                              })
+                            })
+                            .slice(0, 3)}
+                          roundId={roundData.round.id}
+                          toggleVote={null}
+                          category="marketing"
+                          isLoading={false}
+                          isHistorical={true}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">UI Winners</h4>
+                      <div className="">
+                        <LeaderboardList
+                          submissions={roundData.submissions
+                            .filter((submission: any) => {
+                              const tags = submission.tags || []
+                              return tags.some((tag: any) => {
+                                const slug =
+                                  typeof tag === "string" ? tag : tag?.slug
+                                return [
+                                  "button",
+                                  "card",
+                                  "form",
+                                  "tabs",
+                                  "toggle",
+                                ].includes(slug)
+                              })
+                            })
+                            .slice(0, 3)}
+                          roundId={roundData.round.id}
+                          toggleVote={null}
+                          category="ui"
+                          isLoading={false}
+                          isHistorical={true}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="flex justify-center mt-4">
+                  <Button
+                    variant="ghost"
+                    asChild
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    <Link
+                      href={`/contest/archive/${roundData.round.week_number}`}
+                    >
+                      View all Week #{roundData.round.week_number} submissions
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

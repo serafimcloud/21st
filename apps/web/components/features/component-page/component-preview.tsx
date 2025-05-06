@@ -198,6 +198,7 @@ export function ComponentPagePreview({
     [dependencies, demoDependencies, npmDependenciesOfRegistryDependencies],
   )
   const [previewError, setPreviewError] = useState(false)
+
   const { bundle, error } = useBundleDemo(
     bundleFiles,
     allDependencies,
@@ -209,6 +210,9 @@ export function ComponentPagePreview({
   )
 
   useEffect(() => {
+    if (demo.bundle_html_url) {
+      return
+    }
     if (error) {
       setPreviewError(true)
     }
@@ -297,7 +301,7 @@ export function ComponentPagePreview({
     },
     ...({ fileLabels: customFileLabels } as any),
   }
-  console.log(demo?.bundle_hash)
+
   return (
     <motion.div
       layout
@@ -335,9 +339,14 @@ export function ComponentPagePreview({
             <LoadingSpinner text={loadingText} />
           </div>
         )}
-        {bundle?.html && demo?.bundle_hash !== "0" && (
+        {(demo.bundle_html_url ||
+          (bundle?.html && demo?.bundle_hash !== "0")) && (
           <iframe
-            src={isDarkTheme ? `${bundle?.html}?dark=true` : bundle?.html}
+            src={
+              isDarkTheme
+                ? `${demo.bundle_html_url || bundle?.html}?dark=true`
+                : demo.bundle_html_url || bundle?.html
+            }
             className="w-full h-full"
             onLoad={() => {
               setIsLoading(false)
@@ -411,7 +420,7 @@ export function ComponentPagePreview({
                                 </TabsList>
                                 <div className="h-full pb-4">
                                   <SandpackCodeViewer
-                                    wrapContent={true}
+                                    wrapContent
                                     showTabs={false}
                                   />
                                 </div>

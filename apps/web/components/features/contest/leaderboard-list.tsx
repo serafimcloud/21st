@@ -16,10 +16,16 @@ export type Category = "global" | "marketing" | "ui" | "seasonal"
 interface LeaderboardListProps {
   submissions: any[]
   roundId: number
-  toggleVote: UseMutationResult<boolean, Error, { demoId: number }, unknown>
+  toggleVote: UseMutationResult<
+    boolean,
+    Error,
+    { demoId: number },
+    unknown
+  > | null
   category: Category
   seasonalTheme?: string
   isLoading?: boolean
+  isHistorical?: boolean
 }
 
 export function LeaderboardList({
@@ -29,6 +35,7 @@ export function LeaderboardList({
   category,
   seasonalTheme,
   isLoading = false,
+  isHistorical = false,
 }: LeaderboardListProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -50,7 +57,7 @@ export function LeaderboardList({
   }, [submissions])
 
   // Use the shared utility function
-  const hideRankings = shouldHideLeaderboardRankings()
+  const hideRankings = shouldHideLeaderboardRankings() && !isHistorical
 
   const prepareDemo = (demo: any) => {
     if (!demo) return null
@@ -98,6 +105,12 @@ export function LeaderboardList({
 
   const handleVote = async (e: React.MouseEvent, demoId: number) => {
     e.stopPropagation()
+
+    // Don't allow voting on historical data
+    if (isHistorical || !toggleVote) {
+      return
+    }
+
     if (!user) {
       toast({
         title: "Please sign in",
@@ -200,8 +213,8 @@ export function LeaderboardList({
       }
     }
 
-    const prepared = prepareDemo(submission)
-    setSelectedDemo(prepared)
+    const preparedDemo = prepareDemo(submission)
+    setSelectedDemo(preparedDemo)
     setIsPreviewDialogOpen(true)
   }
 
@@ -213,19 +226,18 @@ export function LeaderboardList({
   }
 
   return (
-    <>
-      <div className="space-y-2">
-        {optimisticSubmissions.map((submission, index) => (
-          <LeaderboardCard
-            key={submission.id}
-            submission={submission}
-            index={index}
-            isVoting={isVoting === submission.id}
-            handleVote={handleVote}
-            handleDemoClick={handleDemoClick}
-          />
-        ))}
-      </div>
+    <div className="space-y-2">
+      {optimisticSubmissions.map((submission, index) => (
+        <LeaderboardCard
+          key={submission.id}
+          submission={submission}
+          index={index}
+          isVoting={isVoting === submission.id}
+          handleVote={handleVote}
+          handleDemoClick={handleDemoClick}
+          isHistorical={isHistorical}
+        />
+      ))}
 
       {hideRankings && (
         <div className="mt-4 text-xs text-muted-foreground italic">
@@ -234,15 +246,13 @@ export function LeaderboardList({
         </div>
       )}
 
-      {selectedDemo && isPreviewDialogOpen && (
+      {selectedDemo && (
         <ComponentPreviewDialog
-          key={`preview-${selectedDemo.id}`}
-          isOpen={true}
-          onClose={handleCloseDialog}
           demo={selectedDemo}
-          hasPurchased={false}
+          isOpen={isPreviewDialogOpen}
+          onClose={handleCloseDialog}
         />
       )}
-    </>
+    </div>
   )
 }

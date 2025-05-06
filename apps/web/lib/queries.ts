@@ -1548,3 +1548,72 @@ export function useLeaderboardDemosForHome() {
     weekNumber: roundQuery.data?.week_number,
   }
 }
+
+export function usePreviousRoundsSubmissions(limit: number = 3) {
+  const supabase = useClerkSupabaseClient()
+  const { user } = useUser()
+
+  return useQuery({
+    queryKey: ["previous-rounds-submissions", limit, user?.id],
+    queryFn: async () => {
+      // Get previous rounds sorted by start date (descending)
+      const { data: rounds, error: roundsError } = await supabase
+        .from("component_hunt_rounds")
+        .select("*")
+        .order("start_at", { ascending: false })
+        .limit(limit + 1) // +1 to check if current round is included
+
+      if (roundsError) throw roundsError
+
+      if (!rounds || rounds.length === 0) {
+        return []
+      }
+
+      // Skip the current round if it's included
+      const now = new Date().toISOString()
+      const previousRounds = rounds
+        .filter((round) => new Date(round.end_at) < new Date(now))
+        .slice(0, limit)
+
+      if (previousRounds.length === 0) {
+        return []
+      }
+
+      // Get seasonal tags for these rounds
+      const seasonalTagIds = previousRounds
+        .map((round) => round.seasonal_tag_id)
+        .filter((id) => id !== null) as number[]
+
+      const { data: seasonalTags, error: tagsError } = await supabase
+        .from("tags")
+        .select("id,name,slug")
+        .in("id", seasonalTagIds)
+
+      if (tagsError) throw tagsError
+
+      // For each round, get the top submissions
+      const result = await Promise.all(
+        previousRounds.map(async (round) => {
+          const data = await getHuntDemosList(supabase, round.id)
+
+          // Get the seasonal tag for this round
+          const seasonalTag =
+            seasonalTags?.find((tag) => tag.id === round.seasonal_tag_id) ||
+            null
+
+          // First week was special with marketing, ui and seasonal categories
+          const isFirstWeek = round.week_number === 1
+
+          return {
+            round,
+            seasonalTag,
+            isFirstWeek,
+            submissions: data || [],
+          }
+        }),
+      )
+
+      return result
+    },
+  })
+}

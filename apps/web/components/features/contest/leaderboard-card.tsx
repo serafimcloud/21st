@@ -4,9 +4,10 @@ import React, { useRef, useCallback, useState } from "react"
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Loader2, ThumbsUp, Video, Tag } from "lucide-react"
+import { Loader2, Video, Tag } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "../../ui/user-avatar"
+import { UpvoteIcon } from "../../icons/upvote-icon"
 import { shouldHideLeaderboardRankings } from "@/lib/utils"
 
 // VideoPreview component for hover video functionality
@@ -131,6 +132,7 @@ interface LeaderboardCardProps {
   isVoting: boolean
   handleVote: (e: React.MouseEvent, demoId: number) => Promise<void>
   handleDemoClick: (submission: any) => void
+  isHistorical?: boolean
 }
 
 export function LeaderboardCard({
@@ -139,6 +141,7 @@ export function LeaderboardCard({
   isVoting,
   handleVote,
   handleDemoClick,
+  isHistorical = false,
 }: LeaderboardCardProps) {
   const userData = submission.user_data || {}
   const componentData = submission.component_data || {}
@@ -149,9 +152,9 @@ export function LeaderboardCard({
 
   return (
     <div onClick={() => handleDemoClick(submission)}>
-      <div className="group relative flex flex-col sm:flex-row items-start gap-4 rounded-xl px-0 py-4 transition-all duration-300 sm:-mx-4 sm:p-4 cursor-pointer hover:sm:bg-gray-100 dark:hover:sm:bg-gray-800">
+      <div className="group relative flex flex-col sm:flex-row items-start gap-4 rounded-xl px-0 py-4 transition-all duration-300 sm:-mx-4 sm:p-4 cursor-pointer hover:sm:bg-transparent dark:hover:sm:bg-transparent">
         {/* Preview Image with Video (Top on mobile, Left on desktop) */}
-        <div className="relative aspect-[4/3] w-full sm:w-32 rounded-lg overflow-hidden shrink-0 group mb-4 sm:mb-0">
+        <div className="relative aspect-[4/3] w-full sm:w-56 rounded-lg overflow-hidden shrink-0 group mb-4 sm:mb-0">
           <div className="absolute inset-0">
             <img
               src={submission.preview_url || "/placeholder.svg"}
@@ -226,58 +229,66 @@ export function LeaderboardCard({
             </div>
           </div>
 
-          {/* Votes (Right on both mobile and desktop) */}
-          <div className="flex ml-4 shrink-0">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button
-                variant="outline"
-                size="icon"
-                className={cn(
-                  "size-12 rounded-lg border-2 transition-colors duration-200",
-                  submission.has_voted
-                    ? "border-primary bg-primary/20 text-primary"
-                    : "hover:border-primary hover:bg-primary/10 border-primary/50",
-                )}
-                onClick={(e) => handleVote(e, submission.id)}
-                disabled={isVoting}
-                aria-label={submission.has_voted ? "Remove vote" : "Vote"}
+          {/* Votes (Right on both mobile and desktop) - Hide completely for historical views */}
+          {!isHistorical && (
+            <div className="flex ml-4 shrink-0">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <div className="flex flex-col items-center justify-center h-full">
-                  {isVoting ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <motion.div
-                      initial={{ scale: 1 }}
-                      animate={
-                        submission.has_voted ? { scale: [1, 1.1, 1] } : {}
-                      }
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ThumbsUp
-                        className={cn(
-                          "h-3.5 w-3.5 transition-colors font-bold",
-                          submission.has_voted
-                            ? "text-primary fill-primary"
-                            : "text-foreground hover:text-primary/80",
-                        )}
-                      />
-                    </motion.div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={cn(
+                    "size-12 rounded-lg border transition-colors duration-200",
+                    submission.has_voted
+                      ? "border-primary bg-muted/20 text-primary"
+                      : "hover:border-primary hover:bg-primary/10 border-primary/50",
                   )}
-                  {/* Only show vote counts on Thursday */}
-                  {!hideRankings && (
-                    <motion.div
-                      key={`votes-${submission.votes || 0}`}
-                      initial={{ opacity: 0, y: -3 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-sm font-semibold leading-none mt-1"
-                    >
-                      {submission.votes || 0}
-                    </motion.div>
-                  )}
-                </div>
-              </Button>
-            </motion.div>
-          </div>
+                  onClick={(e) => handleVote(e, submission.id)}
+                  disabled={isVoting}
+                  aria-label={submission.has_voted ? "Remove vote" : "Vote"}
+                >
+                  <div className="flex flex-col items-center justify-center h-full">
+                    {isVoting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <motion.div
+                        initial={{ scale: 1 }}
+                        animate={
+                          submission.has_voted ? { scale: [1, 1.1, 1] } : {}
+                        }
+                        transition={{ duration: 0.2 }}
+                      >
+                        <UpvoteIcon isVoted={submission.has_voted} size={14} />
+                      </motion.div>
+                    )}
+                    {/* Only show vote counts on Thursday */}
+                    {!hideRankings && (
+                      <motion.div
+                        key={`votes-${submission.votes || 0}`}
+                        initial={{ opacity: 0, y: -3 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm font-semibold leading-none mt-1"
+                      >
+                        {submission.votes || 0}
+                      </motion.div>
+                    )}
+                  </div>
+                </Button>
+              </motion.div>
+            </div>
+          )}
+
+          {/* Show vote count as a simple text for historical views */}
+          {isHistorical && (
+            <div className="flex items-center gap-1 ml-4">
+              <UpvoteIcon size={14} className="text-muted-foreground" />
+              <span className="text-sm text-muted-foreground font-medium">
+                {submission.votes || 0}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

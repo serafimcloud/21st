@@ -37,7 +37,7 @@ import { CodeEditorDialog } from "./code-editor-dialog"
 import { addVersionToUrl } from "@/lib/utils/url"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { atom, useAtom } from "jotai"
-import { useR2Upload } from "../features/publish/hooks/use-r2-upload"
+import { useR2Upload } from "@/components/features/publish/hooks/use-r2-upload"
 
 // Helper function to safely fetch file content
 const safeFetchFile = async (url: string): Promise<string> => {

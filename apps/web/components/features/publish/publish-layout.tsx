@@ -540,6 +540,8 @@ export default function PublishComponentForm({
             fts: null,
             demo_slug: demo.demo_slug,
             bookmarks_count: null,
+            bundle_hash: null,
+            bundle_html_url: null,
           }
 
           const [demoCodeUrl, previewImageR2Url, videoR2Url] =
@@ -728,6 +730,8 @@ export default function PublishComponentForm({
             fts: null,
             demo_slug: demoSlug,
             bookmarks_count: null,
+            bundle_hash: null,
+            bundle_html_url: null,
           }
 
           const { data: insertedDemo, error: demoError } = await client
