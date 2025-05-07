@@ -44,16 +44,15 @@ export function LeaderboardList({
   const [selectedDemo, setSelectedDemo] = useState<any | null>(null)
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
 
-  // Store original order in a ref to maintain it
-  const originalOrderRef = useRef<number[]>([])
+  // Store original submissions without reshuffling
   const [optimisticSubmissions, setOptimisticSubmissions] = useState<any[]>([])
 
   // Initialize optimisticSubmissions with the original submissions
-  // and preserve the original order
   useEffect(() => {
-    // Store the IDs in the original order
-    originalOrderRef.current = submissions.map((sub) => sub.id)
-    setOptimisticSubmissions(submissions)
+    // Only update if submissions is not empty
+    if (submissions && submissions.length > 0) {
+      setOptimisticSubmissions(submissions)
+    }
   }, [submissions])
 
   // Use the shared utility function
@@ -124,9 +123,9 @@ export function LeaderboardList({
       // Mark this specific submission as in voting state
       setIsVoting(demoId)
 
-      // Apply optimistic update while maintaining original order
+      // Apply optimistic update
       setOptimisticSubmissions((current) => {
-        const updated = current.map((sub) => {
+        return current.map((sub) => {
           if (sub.id === demoId) {
             const hasVoted = !sub.has_voted
             return {
@@ -139,19 +138,6 @@ export function LeaderboardList({
           }
           return sub
         })
-
-        // Make sure we maintain the exact same order as before
-        // This prevents reordering when votes change
-        if (hideRankings && originalOrderRef.current.length > 0) {
-          // Sort based on our stored original order
-          return updated.sort((a, b) => {
-            const aIndex = originalOrderRef.current.indexOf(a.id)
-            const bIndex = originalOrderRef.current.indexOf(b.id)
-            return aIndex - bIndex
-          })
-        }
-
-        return updated
       })
 
       // Execute the actual mutation
@@ -170,17 +156,30 @@ export function LeaderboardList({
     }
   }
 
+  // Render loading state
   if (isLoading) {
+    // Check if ranking info should be displayed
+    const hideRankings = shouldHideLeaderboardRankings() && !isHistorical
+
     return (
       <div className="space-y-2">
-        {Array.from({ length: 3 }).map((_, index) => (
+        {hideRankings && (
+          <div className="-mt-3.5 text-xs text-muted-foreground italic mb-4">
+            Rankings and vote counts are hidden on weekdays and submissions are
+            shown in random order. Rankings become visible only on weekends
+            (Saturday and Sunday) to provide equal visibility to all
+            submissions.
+          </div>
+        )}
+        {Array.from({ length: 10 }).map((_, index) => (
           <LeaderboardCardSkeleton key={index} />
         ))}
       </div>
     )
   }
 
-  if (optimisticSubmissions.length === 0) {
+  // Render empty state only if data has been loaded and there are no results
+  if (!isLoading && submissions && submissions.length === 0) {
     let categoryDisplay = "components"
     if (category === "seasonal" && seasonalTheme) {
       categoryDisplay = `${seasonalTheme.toLowerCase()} components`
@@ -225,16 +224,20 @@ export function LeaderboardList({
     }, 300)
   }
 
+  // If we've got to this point, we should always show the list
   return (
     <div className="space-y-2">
       {hideRankings && (
         <div className="-mt-3.5 text-xs text-muted-foreground italic">
-          Rankings and vote counts are hidden on weekdays and submissions are shown in random order. 
-          Rankings become visible only on weekends (Saturday and Sunday) to provide equal visibility 
-          to all submissions.
+          Rankings and vote counts are hidden on weekdays and submissions are
+          shown in random order. Rankings become visible only on weekends
+          (Saturday and Sunday) to provide equal visibility to all submissions.
         </div>
       )}
-      {optimisticSubmissions.map((submission, index) => (
+      {(optimisticSubmissions.length > 0
+        ? optimisticSubmissions
+        : submissions
+      ).map((submission, index) => (
         <LeaderboardCard
           key={submission.id}
           submission={submission}

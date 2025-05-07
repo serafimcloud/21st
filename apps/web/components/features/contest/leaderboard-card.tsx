@@ -154,19 +154,24 @@ export function LeaderboardCard({
     <div onClick={() => handleDemoClick(submission)}>
       <div className="group relative flex flex-col sm:flex-row items-start gap-4 rounded-xl px-0 py-4 transition-all duration-300 sm:-mx-4 sm:p-4 cursor-pointer hover:sm:bg-transparent dark:hover:sm:bg-transparent">
         {/* Preview Image with Video (Top on mobile, Left on desktop) */}
-        <div className="relative aspect-[4/3] w-full sm:w-56 rounded-lg overflow-hidden shrink-0 group mb-4 sm:mb-0">
+        <div className="relative aspect-[4/3] w-full sm:w-56 mb-4 sm:mb-0">
           <div className="absolute inset-0">
-            <img
-              src={submission.preview_url || "/placeholder.svg"}
-              alt={submission.name}
-              className="w-full h-full object-cover rounded-lg"
-            />
-          </div>
-          <div className="absolute inset-0 rounded-lg" />
+            <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
+              <img
+                src={submission.preview_url || "/placeholder.svg"}
+                alt={submission.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0" />
 
-          {submission.video_url && (
-            <VideoPreview videoUrl={submission.video_url} id={submission.id} />
-          )}
+              {submission.video_url && (
+                <VideoPreview
+                  videoUrl={submission.video_url}
+                  id={submission.id}
+                />
+              )}
+            </div>
+          </div>
 
           <div className="absolute top-2 left-2 z-20 flex gap-2">
             {submission.video_url && (
