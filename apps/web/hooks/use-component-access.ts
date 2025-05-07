@@ -22,15 +22,7 @@ export function useComponentAccess(
   const supabase = useClerkSupabaseClient()
   const isAdmin = useIsAdmin()
 
-  // Determine access state based on component and user state
-  if (!isSignedIn || !subscription) {
-    return "REQUIRES_SUBSCRIPTION" as const
-  }
-
-  // If the component is not owned by the user, hide it
-  if (!isAdmin && !component.is_public && component.user_id !== user?.id) {
-    return "HIDDEN" as const
-  }
+  // Paywall logic goes here
 
   return "UNLOCKED" as const
 }

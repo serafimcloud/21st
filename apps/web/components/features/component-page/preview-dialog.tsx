@@ -61,6 +61,7 @@ import { useTheme } from "next-themes"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { PayWall } from "./pay-wall"
 
 const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
   "previewDialogSelectedPromptType",
@@ -90,6 +91,23 @@ export function ComponentPreviewDialog({
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light")
   const [isLoading, setIsLoading] = useState(true)
   const [isPromptLoading, setIsPromptLoading] = useState(false)
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false)
+  const accessState = useComponentAccess(demo.component, hasPurchased)
+
+  // Close unlock dialog when component becomes unlocked
+  useEffect(() => {
+    if (accessState === "UNLOCKED") {
+      setShowUnlockDialog(false)
+    }
+  }, [accessState])
+
+  // Add effect to sync preview theme with system theme
+  useEffect(() => {
+    if (resolvedTheme) {
+      setPreviewTheme(resolvedTheme === "dark" ? "dark" : "light")
+    }
+  }, [resolvedTheme])
+
   const { user } = useUser()
   const supabase = useClerkSupabaseClient()
   const { capture } = useSupabaseAnalytics()
@@ -172,6 +190,34 @@ export function ComponentPreviewDialog({
   }
 
   const handlePromptAction = async () => {
+    if (accessState !== "UNLOCKED") {
+      setShowUnlockDialog(true)
+      return
+    }
+
+    if (selectedPromptType === "v0-open") {
+      const formattedPrompt = encodeURIComponent(demo.component.name)
+      window.open(`https://v0.dev/?q=${formattedPrompt}`, "_blank")
+
+      trackEvent(AMPLITUDE_EVENTS.COPY_AI_PROMPT, {
+        componentId: demo.component.id,
+        componentName: demo.component.name,
+        promptType: selectedPromptType,
+        action: "open",
+        destination: "v0.dev",
+      })
+
+      if (capture) {
+        capture(
+          demo.component.id,
+          AnalyticsActivityType.COMPONENT_PROMPT_COPY,
+          user?.id,
+        )
+      }
+
+      return
+    }
+
     // Set loading state before API call
     setIsPromptLoading(true)
 
@@ -327,13 +373,20 @@ export function ComponentPreviewDialog({
           variant="ghost"
           className={cn(
             "focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70",
+            // Only add rounded-none if not a single unlock button
+            !(accessState !== "UNLOCKED") && "first:rounded-s-lg rounded-none",
           )}
           disabled={isPromptLoading}
         >
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2">
-                {isPromptLoading ? (
+                {accessState !== "UNLOCKED" ? (
+                  <>
+                    <Lock size={16} />
+                    <span>Unlock</span>
+                  </>
+                ) : isPromptLoading ? (
                   <>
                     <Spinner size={16} />
                     <span>Generating...</span>
@@ -354,85 +407,89 @@ export function ComponentPreviewDialog({
               </div>
             </TooltipTrigger>
             <TooltipContent className="flex items-center gap-1.5">
-              {isPromptLoading
-                ? "Generating prompt..."
-                : selectedPromptType === "v0-open"
-                  ? "Open in v0"
-                  : "Copy prompt"}
+              {accessState !== "UNLOCKED"
+                ? "Unlock component"
+                : isPromptLoading
+                  ? "Generating prompt..."
+                  : selectedPromptType === "v0-open"
+                    ? "Open in v0"
+                    : "Copy prompt"}
               <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
                 ⌘X
               </kbd>
             </TooltipContent>
           </Tooltip>
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              className="rounded-none shadow-none last:rounded-e-lg focus-visible:z-10"
-              size="icon"
-              variant="ghost"
+        {accessState === "UNLOCKED" && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="rounded-none shadow-none last:rounded-e-lg focus-visible:z-10"
+                size="icon"
+                variant="ghost"
+              >
+                <ChevronDown size={16} strokeWidth={2} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="w-64"
+              side="bottom"
+              sideOffset={4}
+              align="end"
             >
-              <ChevronDown size={16} strokeWidth={2} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-64"
-            side="bottom"
-            sideOffset={4}
-            align="end"
-          >
-            <DropdownMenuRadioGroup
-              value={selectedPromptType}
-              onValueChange={(value) =>
-                setSelectedPromptType(value as PromptType | "v0-open")
-              }
-            >
-              {(() => {
-                const options = []
+              <DropdownMenuRadioGroup
+                value={selectedPromptType}
+                onValueChange={(value) =>
+                  setSelectedPromptType(value as PromptType | "v0-open")
+                }
+              >
+                {(() => {
+                  const options = []
 
-                const copyOption = promptOptions.find(
-                  (opt) =>
-                    opt.type === "option" && opt.id === PROMPT_TYPES.EXTENDED,
-                )
-                if (copyOption)
-                  options.push({
-                    ...copyOption,
-                    label: "Copy prompt",
-                  })
-
-                const v0Option = promptOptions.find(
-                  (opt) => opt.id === "v0-open",
-                )
-                if (v0Option) options.push(v0Option)
-
-                return options.map((option) => {
-                  if (option.type === "separator") return null
-                  return (
-                    <DropdownMenuRadioItem
-                      key={option.id}
-                      value={option.id}
-                      className="items-start [&>span]:pt-1"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex items-center justify-center w-[22px] h-[22px]">
-                          {option.icon}
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium">
-                            {option.label}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {option.description}
-                          </span>
-                        </div>
-                      </div>
-                    </DropdownMenuRadioItem>
+                  const copyOption = promptOptions.find(
+                    (opt) =>
+                      opt.type === "option" && opt.id === PROMPT_TYPES.EXTENDED,
                   )
-                })
-              })()}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  if (copyOption)
+                    options.push({
+                      ...copyOption,
+                      label: "Copy prompt",
+                    })
+
+                  const v0Option = promptOptions.find(
+                    (opt) => opt.id === "v0-open",
+                  )
+                  if (v0Option) options.push(v0Option)
+
+                  return options.map((option) => {
+                    if (option.type === "separator") return null
+                    return (
+                      <DropdownMenuRadioItem
+                        key={option.id}
+                        value={option.id}
+                        className="items-start [&>span]:pt-1"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center w-[22px] h-[22px]">
+                            {option.icon}
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-medium">
+                              {option.label}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {option.description}
+                            </span>
+                          </div>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    )
+                  })
+                })()}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <Tooltip>
@@ -657,11 +714,20 @@ export function ComponentPreviewDialog({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handlePromptAction}>
-                    {selectedPromptType === "v0-open"
-                      ? "Open in v0"
-                      : "Copy prompt"}
-                  </DropdownMenuItem>
+                  {accessState !== "UNLOCKED" ? (
+                    <DropdownMenuItem onClick={handlePromptAction}>
+                      <div className="flex items-center gap-2">
+                        <Lock size={16} />
+                        <span>Unlock</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={handlePromptAction}>
+                      {selectedPromptType === "v0-open"
+                        ? "Open in v0"
+                        : "Copy prompt"}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={toggleTheme}>
                     Toggle theme
                   </DropdownMenuItem>
@@ -677,6 +743,14 @@ export function ComponentPreviewDialog({
           </div>
         )}
       </DialogContent>
+
+      {showUnlockDialog && (
+        <Dialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
+          <DialogContent>
+            <PayWall accessState={accessState} component={demo.component} />
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   )
 }
