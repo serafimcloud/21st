@@ -59,6 +59,7 @@ import { useBundleDemo } from "@/hooks/use-bundle-demo"
 import { ComponentAccessState } from "@/hooks/use-component-access"
 import { FullScreenButton } from "../../ui/full-screen-button"
 import styles from "./component-preview.module.css"
+import { PayWall } from "./pay-wall"
 
 export function ComponentPagePreview({
   component,
@@ -102,6 +103,8 @@ export function ComponentPagePreview({
   const [isShowCode, setIsShowCode] = useAtom(isShowCodeAtom)
   const isDebug = useDebugMode()
   const [isFullScreen] = useAtom(isFullScreenAtom)
+
+  const effectiveAccessState = accessState
 
   const dumySandpackFiles = generateSandpackFiles({
     demoComponentNames,
@@ -388,41 +391,48 @@ export function ComponentPagePreview({
                     />
                     <div className="flex w-full h-full flex-col">
                       {isShowCode ? (
-                        <>
-                          <CopyCommandSection component={component} />
-                          {isDebug && <SandpackFileExplorer />}
-                          <div
-                            className={`overflow-auto ${styles.codeViewerWrapper} relative`}
-                          >
-                            <CopyCodeButton
-                              component_id={component.id}
-                              user_id={user?.id}
-                            />
-                            <Tabs
-                              value={activeFile}
-                              onValueChange={setActiveFile}
-                              className="h-full"
+                        !showPaywall ? (
+                          <>
+                            <CopyCommandSection component={component} />
+                            {isDebug && <SandpackFileExplorer />}
+                            <div
+                              className={`overflow-auto ${styles.codeViewerWrapper} relative`}
                             >
-                              <TabsList className="h-9 relative bg-muted dark:bg-background justify-start w-full gap-0.5 pb-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-border px-4 overflow-x-auto flex-nowrap hide-scrollbar">
-                                {visibleFiles.map((file) => (
-                                  <TabsTrigger
-                                    key={file}
-                                    value={file}
-                                    className="overflow-hidden data-[state=active]:rounded-b-none data-[state=active]:bg-white dark:data-[state=active]:bg-[#151515] data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
-                                  >
-                                    {file.split("/").pop()}
-                                  </TabsTrigger>
-                                ))}
-                              </TabsList>
-                              <div className="h-full pb-4">
-                                <SandpackCodeViewer
-                                  wrapContent
-                                  showTabs={false}
-                                />
-                              </div>
-                            </Tabs>
-                          </div>
-                        </>
+                              <CopyCodeButton
+                                component_id={component.id}
+                                user_id={user?.id}
+                              />
+                              <Tabs
+                                value={activeFile}
+                                onValueChange={setActiveFile}
+                                className="h-full"
+                              >
+                                <TabsList className="h-9 relative bg-muted dark:bg-background justify-start w-full gap-0.5 pb-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px before:bg-border px-4 overflow-x-auto flex-nowrap hide-scrollbar">
+                                  {visibleFiles.map((file) => (
+                                    <TabsTrigger
+                                      key={file}
+                                      value={file}
+                                      className="overflow-hidden data-[state=active]:rounded-b-none data-[state=active]:bg-white dark:data-[state=active]:bg-[#151515] data-[state=active]:border-x data-[state=active]:border-t data-[state=active]:border-border bg-muted dark:bg-background py-2 data-[state=active]:z-10 data-[state=active]:shadow-none flex-shrink-0 whitespace-nowrap"
+                                    >
+                                      {file.split("/").pop()}
+                                    </TabsTrigger>
+                                  ))}
+                                </TabsList>
+                                <div className="h-full pb-4">
+                                  <SandpackCodeViewer
+                                    wrapContent
+                                    showTabs={false}
+                                  />
+                                </div>
+                              </Tabs>
+                            </div>
+                          </>
+                        ) : (
+                          <PayWall
+                            accessState={effectiveAccessState}
+                            component={component}
+                          />
+                        )
                       ) : (
                         <ComponentPageInfo component={component} />
                       )}
