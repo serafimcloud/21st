@@ -44,14 +44,20 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
       const connectedSandbox = await connectToCodeSandboxSDK(startData)
 
       console.log("connectedSandbox", connectedSandbox)
-      const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
-      console.log("newPreviewURL", newPreviewURL)
+
       sandboxRef.current = connectedSandbox
 
       const hash = Math.random().toString(36).substring(2, 15)
       setSandboxConnectionHash(hash)
-      setPreviewURL(newPreviewURL || null)
+
       checkShells()
+
+      const isPortOpen = await connectedSandbox.ports.waitForPort(5173)
+      if (isPortOpen) {
+        const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
+        console.log("newPreviewURL", newPreviewURL)
+        setPreviewURL(newPreviewURL || null)
+      }
     } catch (error) {
       console.error("Failed to initialize sandbox in hook:", error)
       sandboxRef.current = null
@@ -76,6 +82,8 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
       (shell) =>
         shell.name === "pnpm run install-and-dev" && shell.status === "RUNNING",
     )
+
+    console.log("allRunningShells", allRunningShells)
 
     const newRunningShells = allRunningShells?.filter(
       (shell) => !subscribedShells.current.has(shell.id),
@@ -124,10 +132,12 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
   }, [])
 
   useEffect(() => {
+    console.log("INITIALIZING sandbox", sandboxId)
     initialize()
-  }, [sandboxId])
+  }, [])
 
   const reconnectSandbox = async () => {
+    console.log("RECONNECTING sandbox")
     if (!sandboxId) return
     await initialize(true)
   }
