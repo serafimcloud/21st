@@ -227,6 +227,13 @@ export function LeaderboardList({
 
   return (
     <div className="space-y-2">
+      {hideRankings && (
+        <div className="-mt-3.5 text-xs text-muted-foreground italic">
+          Rankings and vote counts are hidden on weekdays and submissions are shown in random order. 
+          Rankings become visible only on weekends (Saturday and Sunday) to provide equal visibility 
+          to all submissions.
+        </div>
+      )}
       {optimisticSubmissions.map((submission, index) => (
         <LeaderboardCard
           key={submission.id}
@@ -238,14 +245,6 @@ export function LeaderboardList({
           isHistorical={isHistorical}
         />
       ))}
-
-      {hideRankings && (
-        <div className="mt-4 text-xs text-muted-foreground italic">
-          Rankings and vote counts are hidden on weekdays and only visible on
-          weekends (Saturday and Sunday) to provide equal visibility to all
-          submissions.
-        </div>
-      )}
 
       {selectedDemo && (
         <ComponentPreviewDialog

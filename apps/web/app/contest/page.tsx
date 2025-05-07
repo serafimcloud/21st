@@ -193,9 +193,9 @@ export default async function Page() {
                 All counters reset at the start of each round.
               </p>
               <p className="text-sm text-muted-foreground italic">
-                Note: From Monday to Wednesday midnight, entries are shown in
-                random order with hidden vote counts. Rankings become visible on
-                Thursday.
+                Note: From Monday to Friday, entries are shown in random order
+                with hidden vote counts. Rankings become visible only on
+                weekends (Saturday and Sunday).
               </p>
             </section>
 
@@ -327,12 +327,14 @@ export default async function Page() {
                 📊 How We Rank Components
               </h2>
               <p className="text-base leading-7">
-                Both <span className="font-semibold">community voting</span> and{" "}
-                <span className="font-semibold">real-world usage metrics</span>{" "}
-                are combined into a single score to decide the leaderboard.
+                Components are ranked primarily based on{" "}
+                <span className="font-semibold">community voting</span>, with{" "}
+                <span className="font-semibold">real-world usage</span>{" "}
+                providing additional weight. In our current formula, one vote
+                equals 10 installs.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="rounded-lg border p-4 text-center space-y-2">
                   <div className="font-medium text-xl">Votes</div>
                   <p className="text-sm text-muted-foreground">
@@ -344,13 +346,6 @@ export default async function Page() {
                   <div className="font-medium text-xl">Installs</div>
                   <p className="text-sm text-muted-foreground">
                     Number of times a component has been downloaded
-                  </p>
-                </div>
-
-                <div className="rounded-lg border p-4 text-center space-y-2">
-                  <div className="font-medium text-xl">Views</div>
-                  <p className="text-sm text-muted-foreground">
-                    Traffic to the component's detail page
                   </p>
                 </div>
               </div>
