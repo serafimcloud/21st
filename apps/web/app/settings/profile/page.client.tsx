@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useImageUpload } from "@/hooks/use-image-upload"
 import { useUserProfile } from "@/components/hooks/use-user-profile"
+import { DeleteAccountDialog } from "@/components/ui/delete-account-dialog"
 
 const profileFormSchema = z.object({
   display_name: z.string().min(2).max(50),
@@ -69,6 +70,7 @@ export default function ProfileSettingsPage() {
   const [isCheckingUsername, setIsCheckingUsername] = useState(false)
   const [isUsernameValid, setIsUsernameValid] = useState<boolean | null>(null)
   const [isFormInitialized, setIsFormInitialized] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const {
     user: dbUser,
     clerkUser: user,
@@ -544,9 +546,38 @@ export default function ProfileSettingsPage() {
                 Manage GitHub connection
               </Button>
             </div>
+            {/* Danger Zone Section */}
+            <div className="bg-background rounded-lg border border-border overflow-hidden">
+              <div className="p-4">
+                <h3 className="text-sm font-medium text-destructive">
+                  Danger Zone
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Permanently delete your account and all associated data
+                </p>
+              </div>
+
+              <div className="bg-muted p-3 rounded-b-lg flex justify-end border-t">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  type="button"
+                >
+                  Delete Account
+                </Button>
+              </div>
+            </div>
           </div>
         </form>
       </Form>
+
+      {/* Delete Account Dialog */}
+      <DeleteAccountDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      />
     </div>
   )
 }
