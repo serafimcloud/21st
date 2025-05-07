@@ -1807,6 +1807,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_admin: boolean
+          is_partner: boolean | null
           manually_added: boolean
           name: string | null
           paypal_email: string | null
@@ -1830,6 +1831,7 @@ export type Database = {
           id: string
           image_url?: string | null
           is_admin?: boolean
+          is_partner?: boolean | null
           manually_added?: boolean
           name?: string | null
           paypal_email?: string | null
@@ -1853,6 +1855,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_admin?: boolean
+          is_partner?: boolean | null
           manually_added?: boolean
           name?: string | null
           paypal_email?: string | null
@@ -2647,6 +2650,13 @@ export type Database = {
       get_liked_components: {
         Args: { p_user_id: string }
         Returns: Json[]
+      }
+      get_missing_usage_embedding_items: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          item_id: number
+          item_type: string
+        }[]
       }
       get_pro_publishers: {
         Args: Record<PropertyKey, never>

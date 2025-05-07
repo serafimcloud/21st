@@ -13,6 +13,8 @@ import {
   Settings,
   ArrowLeft,
 } from "lucide-react"
+import { useAtom } from "jotai"
+import { userStateAtom } from "@/lib/store/user-store"
 import {
   Sidebar,
   SidebarContent,
@@ -22,42 +24,52 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useEffect, useState } from "react"
+import { partnerModalOpenAtom } from "@/app/studio/[username]/analytics/page.client"
 
 interface StudioSidebarProps {
   user: User
 }
 
-interface NavItem {
-  title: string
-  href: string
-  icon: React.ReactNode
-  disabled?: boolean
-}
-
 export function StudioSidebar({ user }: StudioSidebarProps) {
   const pathname = usePathname()
+  const [userState] = useAtom(userStateAtom)
+  const isPartner = userState?.profile?.is_partner || false
+  const [currentHash, setCurrentHash] = useState("")
+  const [, setPartnerModalOpen] = useAtom(partnerModalOpenAtom)
 
   // Get the base username path
   const baseUsername = user.display_username || user.username
   const basePath = `/studio/${baseUsername}`
 
-  const navItems: NavItem[] = [
-    {
-      title: "Components",
-      href: basePath,
-      icon: <Layers className="h-4 w-4" />,
-    },
-    {
-      title: "Analytics",
-      href: `${basePath}/analytics`,
-      icon: <BarChartBig className="h-4 w-4" />,
-    },
-    {
-      title: "Monetization",
-      href: `${basePath}/monetization`,
-      icon: <CreditCard className="h-4 w-4" />,
-    },
-  ]
+  // Update hash on client side
+  useEffect(() => {
+    const updateHash = () => {
+      setCurrentHash(window.location.hash)
+    }
+
+    // Set initial hash
+    if (typeof window !== "undefined") {
+      updateHash()
+    }
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", updateHash)
+    return () => window.removeEventListener("hashchange", updateHash)
+  }, [])
+
+  // Check which item should be active
+  const isComponentsActive = pathname === basePath
+  const isAnalyticsActive = pathname.includes("/analytics")
+  const isMonetizationActive = pathname.includes("/monetization")
+
+  // Handle click on Monetization menu item
+  const handleMonetizationClick = (e: React.MouseEvent) => {
+    if (!isPartner) {
+      // Only handle for non-partners
+      setPartnerModalOpen(true)
+    }
+  }
 
   return (
     <Sidebar>
@@ -80,28 +92,43 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
 
       <SidebarContent className="px-2 py-4">
         <SidebarMenu>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <Link
-                href={item.disabled ? "#" : item.href}
-                className={cn(
-                  "flex items-center gap-2",
-                  item.disabled &&
-                    "opacity-50 cursor-not-allowed pointer-events-none",
-                )}
-              >
-                <SidebarMenuButton isActive={pathname === item.href}>
-                  {item.icon}
-                  <span>{item.title}</span>
-                  {item.disabled && (
-                    <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                      Soon
-                    </span>
-                  )}
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
+          <SidebarMenuItem>
+            <Link href={basePath} className="flex items-center gap-2">
+              <SidebarMenuButton isActive={isComponentsActive}>
+                <Layers className="h-4 w-4" />
+                <span>Components</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <Link
+              href={`${basePath}/analytics`}
+              className="flex items-center gap-2"
+            >
+              <SidebarMenuButton isActive={isAnalyticsActive}>
+                <BarChartBig className="h-4 w-4" />
+                <span>Analytics</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <Link
+              href={
+                isPartner
+                  ? `${basePath}/monetization`
+                  : `${basePath}/analytics#monetization`
+              }
+              className="flex items-center gap-2"
+              onClick={handleMonetizationClick}
+            >
+              <SidebarMenuButton isActive={isMonetizationActive}>
+                <CreditCard className="h-4 w-4" />
+                <span>Monetization</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
 

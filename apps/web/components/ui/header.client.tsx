@@ -58,6 +58,7 @@ interface UserProfile {
   twitter_url: string | null
   website_url: string | null
   is_admin: boolean
+  is_partner: boolean | null
   manually_added: boolean
   name: string | null
   paypal_email: string | null
@@ -440,7 +441,7 @@ function HeaderContent({
                       }
                     }}
                   >
-                    Studio
+                    Creator Studio
                     <Icons.layoutDashboard className="h-4 w-4" />
                   </DropdownMenuItem>
                   <DropdownMenuItem
