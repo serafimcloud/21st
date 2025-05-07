@@ -125,9 +125,16 @@ export function DemosTable({
       accessorKey: "name",
       cell: ({ row }) => {
         const isDraft = row.original.submission_status === "draft"
+        const shouldOpenSandbox =
+          // if component has sandbox_id (short), use that
+          row.original.component?.sandbox_id ||
+          // if it's sandbox (no component) use the sandbox short id
+          (!row.original.component && row.original.id && onOpenSandbox)
+
         const handleRowClick = () => {
-          if (isDraft && onOpenSandbox) {
-            onOpenSandbox(row.original)
+          if (shouldOpenSandbox) {
+            // @ts-ignore
+            onOpenSandbox(row.original.component?.sandbox_id || row.original.id)
           }
           // Optionally, add navigation for non-draft items here if needed
           // else { router.push(`/component/${row.original.demo_slug}`) }
@@ -137,21 +144,17 @@ export function DemosTable({
           <div
             className={cn(
               "flex items-center gap-3",
-              isDraft && onOpenSandbox && "cursor-pointer", // Add cursor pointer for drafts
+              shouldOpenSandbox && "cursor-pointer", // Add cursor pointer for drafts
             )}
             onClick={handleRowClick}
             onKeyDown={(e) => {
-              if (
-                isDraft &&
-                onOpenSandbox &&
-                (e.key === "Enter" || e.key === " ")
-              ) {
+              if (shouldOpenSandbox && (e.key === "Enter" || e.key === " ")) {
                 e.preventDefault()
                 handleRowClick()
               }
             }}
-            role={isDraft && onOpenSandbox ? "button" : undefined}
-            tabIndex={isDraft && onOpenSandbox ? 0 : undefined}
+            role={shouldOpenSandbox ? "button" : undefined}
+            tabIndex={shouldOpenSandbox ? 0 : undefined}
           >
             <div className="h-12 w-20 overflow-hidden rounded-md border bg-muted shrink-0">
               {row.original.preview_url ? (
@@ -170,9 +173,7 @@ export function DemosTable({
             <div className="flex flex-col min-w-0">
               <div className="font-medium truncate">{row.getValue("name")}</div>
               <div className="text-sm text-muted-foreground truncate">
-                {isDraft
-                  ? "Sandbox"
-                  : row.original.component?.name || "Unknown component"}
+                {row.original.component?.name || "Unknown component"}
               </div>
             </div>
           </div>

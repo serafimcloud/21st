@@ -54,6 +54,7 @@ const getCachedUserSandboxes = unstable_cache(
       .from("sandboxes")
       .select("*")
       .eq("user_id", userId)
+      .is("component_id", null)
 
     if (error) {
       console.error("Error fetching user sandboxes:", error)
