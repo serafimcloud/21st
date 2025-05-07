@@ -78,7 +78,6 @@ function PublishClientPageContent({
     sandboxRef,
     reconnectSandbox,
     sandboxConnectionHash,
-    connectedShellId,
   })
 
   useEffect(() => {

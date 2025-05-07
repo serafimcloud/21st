@@ -46,7 +46,7 @@ import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
 interface DemosTableProps {
   demos: ExtendedDemoWithComponent[]
   onEdit?: (demo: ExtendedDemoWithComponent) => void
-  onOpenSandbox?: (demo: ExtendedDemoWithComponent) => void
+  onOpenSandbox?: (shortSandboxId: string) => void
 }
 
 export function DemosTable({
