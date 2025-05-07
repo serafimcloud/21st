@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { FC } from "react"
 import { Submission } from "./types"
+import { ExternalLink } from "lucide-react"
 
 interface SubmissionCardProps {
   submission: Submission
@@ -16,6 +17,10 @@ const SubmissionCard: FC<SubmissionCardProps> = ({
   onEditDemo,
   onSetDefaultDemo,
 }) => {
+  // Supabase URLs
+  const componentSupabaseUrl = `https://supabase.com/dashboard/project/vucvdpamtrjkzmubwlts/editor/29179?sort=created_at%3Adesc&filter=id%3Aeq%3A${submission.component_data.id}`
+  const demoSupabaseUrl = `https://supabase.com/dashboard/project/vucvdpamtrjkzmubwlts/editor/229472?sort=created_at:desc&filter=component_id:eq:${submission.component_data.id}`
+
   return (
     <div className="border rounded-lg p-6 hover:shadow-md transition-shadow">
       <div className="flex flex-col md:flex-row gap-6">
@@ -133,6 +138,28 @@ const SubmissionCard: FC<SubmissionCardProps> = ({
               onClick={() => onSetDefaultDemo(submission)}
             >
               Set Default Demo
+            </Button>
+
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={componentSupabaseUrl}
+                target="_blank"
+                className="flex items-center gap-1"
+              >
+                <ExternalLink size={14} />
+                Open Component in Supabase
+              </Link>
+            </Button>
+
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={demoSupabaseUrl}
+                target="_blank"
+                className="flex items-center gap-1"
+              >
+                <ExternalLink size={14} />
+                Open Demo in Supabase
+              </Link>
             </Button>
           </div>
         </div>
