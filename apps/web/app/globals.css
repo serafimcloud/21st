@@ -188,12 +188,10 @@ iframe {
   inset: 0;
   border-radius: 0.5rem;
   padding: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255),
-    rgba(0, 0, 0, 0.5),
-    rgba(255, 255, 255)
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255),
+      rgba(0, 0, 0, 0.5),
+      rgba(255, 255, 255));
   background-size: 200% 100%;
   animation: shimmer 4.5s ease-in-out infinite;
   mask:
@@ -363,11 +361,9 @@ iframe {
       linear-gradient(to right, rgb(29 31 211 / 0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(29 31 211 / 0.05) 1px, transparent 1px);
     mask-image: radial-gradient(circle at top, black 30%, transparent 70%);
-    -webkit-mask-image: radial-gradient(
-      circle at top,
-      black 30%,
-      transparent 70%
-    );
+    -webkit-mask-image: radial-gradient(circle at top,
+        black 30%,
+        transparent 70%);
     z-index: 0;
   }
 
@@ -377,11 +373,9 @@ iframe {
       linear-gradient(to right, rgb(255 255 255 / 0.075) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(255 255 255 / 0.075) 1px, transparent 1px);
     mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
-    -webkit-mask-image: radial-gradient(
-      circle at center,
-      black 40%,
-      transparent 100%
-    );
+    -webkit-mask-image: radial-gradient(circle at center,
+        black 40%,
+        transparent 100%);
     transform: translateX(-10px);
     z-index: 0;
   }
@@ -421,4 +415,20 @@ iframe {
 
 .delay-700 {
   animation-delay: 700ms;
+}
+
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up-fade {
+  animation: slide-up-fade 0.4s ease-out;
 }

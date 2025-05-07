@@ -453,7 +453,7 @@ export function PayoutStatsChart({
                   <BarChartSection
                     data={filteredData}
                     chartConfig={chartConfig}
-                    dataKeys={["views_earnings", "mcp_earnings"]}
+                    dataKeys={["views_earnings"]}
                     groupByMonth={selectedMonth === "all"}
                     valueFormatter={formatPrice}
                     showTotal={true}
