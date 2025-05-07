@@ -241,8 +241,9 @@ export function LeaderboardList({
 
       {hideRankings && (
         <div className="mt-4 text-xs text-muted-foreground italic">
-          Rankings and vote counts are hidden until Thursday to provide equal
-          visibility.
+          Rankings and vote counts are hidden on weekdays and only visible on
+          weekends (Saturday and Sunday) to provide equal visibility to all
+          submissions.
         </div>
       )}
 

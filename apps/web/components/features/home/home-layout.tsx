@@ -37,10 +37,10 @@ interface SliderGroup {
 const shouldRandomizeLeaderboard = () => {
   const now = new Date()
   const day = now.getDay() // 0 is Sunday, 1 is Monday, etc.
-  const hour = now.getHours()
 
-  // Randomize if it's Monday (1), Tuesday (2), or Wednesday (3) before midnight
-  return day >= 1 && day <= 3 && !(day === 3 && hour >= 0 && hour < 24)
+  // Randomize on weekdays (Monday through Friday)
+  // Same logic as shouldHideLeaderboardRankings but reversed
+  return !(day === 0 || day === 6)
 }
 
 export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {

@@ -78,14 +78,15 @@ export function arePathsEqual(path1: string, path2: string): boolean {
 
 /**
  * Check if we should hide leaderboard rankings and vote counts
- * (Monday through Wednesday before midnight)
+ * (Only show on Saturday and Sunday)
  */
 export function shouldHideLeaderboardRankings(): boolean {
   const now = new Date()
   const day = now.getDay() // 0 is Sunday, 1 is Monday, etc.
 
-  // Hide if it's Monday (1), Tuesday (2), or Wednesday (3) before midnight
-  return day >= 1 && day <= 3
+  // Show only on weekends (Saturday = 6, Sunday = 0)
+  // Hide on weekdays (Monday through Friday)
+  return !(day === 0 || day === 6)
 }
 
 export function formatK(num: number, toFixed = 1): string {

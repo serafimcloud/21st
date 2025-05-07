@@ -359,11 +359,11 @@ export default async function Page() {
                 <p className="text-sm leading-6">
                   <span className="font-semibold">Fair Visibility Policy:</span>{" "}
                   To ensure all components get equal exposure regardless of
-                  submission time, from Monday to Wednesday midnight all
-                  submissions are displayed in random order with hidden vote
-                  counts and rankings. Full leaderboard standings with vote
-                  counts become visible on Thursday, giving late submissions
-                  equal opportunity for visibility.
+                  submission time, rankings and vote counts are hidden on
+                  weekdays (Monday through Friday) and all submissions are
+                  displayed in random order. Rankings and vote counts only
+                  become visible on weekends (Saturday and Sunday), giving all
+                  submissions equal opportunity for visibility.
                 </p>
               </div>
 
