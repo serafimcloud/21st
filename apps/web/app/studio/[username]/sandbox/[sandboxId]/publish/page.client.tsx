@@ -72,7 +72,6 @@ const PublishPage = ({
       sandboxRef: sandboxRef,
       reconnectSandbox: reconnectSandbox,
       sandboxConnectionHash: sandboxConnectionHash,
-      connectedShellId,
     })
   const { user } = useUser()
   const { isLoaded: isClerkUserLoaded } = useUser()
@@ -250,9 +249,7 @@ const PublishPage = ({
           bundleDemo,
           updateComponentNameAndImport,
           sandboxId: currentSandbox.id,
-          onSuccess: () => {
-            reconnectSandbox()
-          },
+          reconnectSandbox,
         })
       },
       (errors) => {

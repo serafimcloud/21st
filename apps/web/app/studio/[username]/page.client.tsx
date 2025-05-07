@@ -42,8 +42,8 @@ export function StudioUsernameClient({
     }
   }
 
-  const handleOpenSandbox = (item: ExtendedDemoWithComponent) => {
-    router.push(`${pathname}/sandbox/${item.id}`)
+  const handleOpenSandbox = (shortSandboxId: string) => {
+    router.push(`${pathname}/sandbox/${shortSandboxId}`)
   }
 
   // Show create dialog on ?new=true
