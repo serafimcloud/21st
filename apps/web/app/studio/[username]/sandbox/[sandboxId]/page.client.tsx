@@ -10,7 +10,10 @@ import {
 import { FileExplorer } from "@/components/features/studio/sandbox/components/file-explorer"
 import { PreviewPane } from "@/components/features/studio/sandbox/components/preview-pane"
 import { Spinner } from "@/components/icons/spinner"
-import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
+import {
+  ServerSandbox,
+  useSandbox,
+} from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import {
   useFileSystem,
   type FileEntry,
@@ -26,7 +29,11 @@ import {
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
-function PublishClientPageContent() {
+function PublishClientPageContent({
+  setServerSandbox,
+}: {
+  setServerSandbox: (serverSandbox: ServerSandbox) => void
+}) {
   const params = useParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -47,7 +54,10 @@ function PublishClientPageContent() {
     missingDependencyInfo,
     clearMissingDependencyInfo,
     connectedShellId,
+    serverSandbox,
   } = useSandbox({ sandboxId })
+
+  console.log("previewURL", previewURL)
 
   const {
     files,
@@ -134,6 +144,13 @@ function PublishClientPageContent() {
 
     findAndSelectFirstUiFile()
   }, [files, isTreeLoading, selectedEntry, loadFileContent]) // Add loadFileContent to dependencies
+
+  useEffect(() => {
+    if (serverSandbox) {
+      console.log("serverSandbox !!!!!!", serverSandbox)
+      setServerSandbox(serverSandbox)
+    }
+  }, [serverSandbox])
 
   useEffect(() => {
     if (missingDependencyInfo) {
@@ -435,10 +452,14 @@ function PublishClientPageContent() {
   )
 }
 
-export default function PublishPage() {
+export default function PublishPage({
+  setServerSandbox,
+}: {
+  setServerSandbox: (serverSandbox: ServerSandbox) => void
+}) {
   return (
     <Suspense fallback={<div>Loading project...</div>}>
-      <PublishClientPageContent />
+      <PublishClientPageContent setServerSandbox={setServerSandbox} />
     </Suspense>
   )
 }

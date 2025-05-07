@@ -5,7 +5,7 @@ import { connectToSandbox } from "../api"
 import { getLatestPackageVersionFromError } from "../utils/dependencies"
 import { Tables } from "@/types/supabase"
 
-type ServerSandbox = Pick<
+export type ServerSandbox = Pick<
   Tables<"sandboxes">,
   "codesandbox_id" | "name" | "id" | "component_id"
 > | null
@@ -45,6 +45,7 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
 
       console.log("connectedSandbox", connectedSandbox)
       const newPreviewURL = connectedSandbox.ports.getPreviewUrl(5173)
+      console.log("newPreviewURL", newPreviewURL)
       sandboxRef.current = connectedSandbox
 
       const hash = Math.random().toString(36).substring(2, 15)
