@@ -2,6 +2,7 @@
 
 import { Code, DollarSign, Eye } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import { motion, AnimatePresence } from "motion/react"
 
 import {
   Card,
@@ -259,11 +260,33 @@ export function PayoutStatsChart({
             <CardTitle className="tracking-normal">
               <span className="inline-flex items-center">
                 <DollarSign className="w-5 h-5" />
-                {isLoading ? (
-                  <Skeleton className="h-6 w-24 ml-0.5 bg-muted-foreground/10" />
-                ) : (
-                  formatPrice(earningsSum).replace("$", "")
-                )}
+                <AnimatePresence mode="wait" initial={false}>
+                  {isLoading ? (
+                    <motion.span
+                      key="earnings-skeleton"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="h-6 w-24 ml-0.5 bg-muted-foreground/10 rounded-md"
+                      style={{ display: "inline-block" }}
+                    >
+                      <Skeleton className="h-6 w-24 ml-0.5 bg-muted-foreground/10 rounded-md" />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="earnings-value"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="ml-0.5 min-w-[6rem] h-6 flex items-center"
+                      style={{ display: "inline-flex" }}
+                    >
+                      {formatPrice(earningsSum).replace("$", "")}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </span>
             </CardTitle>
           </TabsTrigger>
@@ -275,19 +298,63 @@ export function PayoutStatsChart({
             <CardTitle className="tracking-normal flex items-center gap-4">
               <span className="inline-flex items-center gap-1.5">
                 <Eye className="w-5 h-5" />
-                {isLoading ? (
-                  <Skeleton className="h-6 w-24 bg-muted-foreground/10" />
-                ) : (
-                  formatK(viewsSum)
-                )}
+                <AnimatePresence mode="wait" initial={false}>
+                  {isLoading ? (
+                    <motion.span
+                      key="views-skeleton"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="h-6 w-20 bg-muted-foreground/10 rounded-md"
+                      style={{ display: "inline-block" }}
+                    >
+                      <Skeleton className="h-6 w-20 bg-muted-foreground/10 rounded-md" />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="views-value"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="min-w-[5rem] h-6 flex items-center"
+                      style={{ display: "inline-flex" }}
+                    >
+                      {formatK(viewsSum)}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Code className="w-5 h-5" />
-                {isLoading ? (
-                  <Skeleton className="h-6 w-24 bg-muted-foreground/10" />
-                ) : (
-                  formatK(mcpUsageSum)
-                )}
+                <AnimatePresence mode="wait" initial={false}>
+                  {isLoading ? (
+                    <motion.span
+                      key="mcp-skeleton"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="h-6 w-20 bg-muted-foreground/10 rounded-md"
+                      style={{ display: "inline-block" }}
+                    >
+                      <Skeleton className="h-6 w-20 bg-muted-foreground/10 rounded-md" />
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="mcp-value"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="min-w-[5rem] h-6 flex items-center"
+                      style={{ display: "inline-flex" }}
+                    >
+                      {formatK(mcpUsageSum)}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </span>
             </CardTitle>
           </TabsTrigger>
@@ -297,7 +364,7 @@ export function PayoutStatsChart({
           <div className="flex flex-row justify-end">
             {isLoading ? (
               <Skeleton className="w-48 h-9 rounded-md" />
-            ) : (
+            ) : !isEmpty ? (
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="All time" />
@@ -318,54 +385,93 @@ export function PayoutStatsChart({
                   })}
                 </SelectContent>
               </Select>
+            ) : (
+              <div className="w-48 h-9 opacity-0 pointer-events-none select-none" />
             )}
           </div>
-          {isLoading ? (
-            <div className="w-full h-[250px] flex flex-col items-center justify-center gap-6">
-              {/* Skeleton Bar Chart Imitation */}
-              <div className="flex items-end justify-between w-full h-[250px] gap-3">
-                <Skeleton className="w-1/12 h-1/2 rounded-sm" />
-                <Skeleton className="w-1/12 h-4/5 rounded-sm" />
-                <Skeleton className="w-1/12 h-2/3 rounded-sm" />
-                <Skeleton className="w-1/12 h-1/3 rounded-sm" />
-                <Skeleton className="w-1/12 h-3/4 rounded-sm" />
-                <Skeleton className="w-1/12 h-2/5 rounded-sm" />
-                <Skeleton className="w-1/12 h-3/5 rounded-sm" />
-                <Skeleton className="w-1/12 h-1/4 rounded-sm" />
-                <Skeleton className="w-1/12 h-2/4 rounded-sm" />
-                <Skeleton className="w-1/12 h-3/4 rounded-sm" />
-              </div>
-            </div>
-          ) : isEmpty ? (
-            <div className="w-full h-[250px] flex items-center justify-center">
-              <span className="text-muted-foreground text-base">
-                No data available
-              </span>
-            </div>
-          ) : (
-            <>
-              <TabsContent value="earnings" className="m-0">
-                <BarChartSection
-                  data={filteredData}
-                  chartConfig={chartConfig}
-                  dataKeys={["views_earnings", "mcp_earnings"]}
-                  groupByMonth={selectedMonth === "all"}
-                  valueFormatter={formatPrice}
-                  showTotal={true}
-                />
-              </TabsContent>
-              <TabsContent value="stats" className="m-0">
-                <BarChartSection
-                  data={filteredData}
-                  chartConfig={chartConfig}
-                  dataKeys={["views", "mcp_usages"]}
-                  groupByMonth={selectedMonth === "all"}
-                  valueFormatter={formatK}
-                  showTotal={false}
-                />
-              </TabsContent>
-            </>
-          )}
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="w-full h-[250px] flex flex-col items-center justify-center gap-6"
+              >
+                {/* Skeleton Bar Chart Imitation */}
+                <div className="flex items-end justify-between w-full h-[250px] gap-3">
+                  <Skeleton className="w-1/12 h-1/2 rounded-sm" />
+                  <Skeleton className="w-1/12 h-4/5 rounded-sm" />
+                  <Skeleton className="w-1/12 h-2/3 rounded-sm" />
+                  <Skeleton className="w-1/12 h-1/3 rounded-sm" />
+                  <Skeleton className="w-1/12 h-3/4 rounded-sm" />
+                  <Skeleton className="w-1/12 h-2/5 rounded-sm" />
+                  <Skeleton className="w-1/12 h-3/5 rounded-sm" />
+                  <Skeleton className="w-1/12 h-1/4 rounded-sm" />
+                  <Skeleton className="w-1/12 h-2/4 rounded-sm" />
+                  <Skeleton className="w-1/12 h-3/4 rounded-sm" />
+                </div>
+              </motion.div>
+            ) : isEmpty ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="w-full h-[250px] relative flex items-center justify-center"
+              >
+                {/* Skeleton Bar Chart Imitation as background */}
+                <div className="absolute inset-0 flex items-end justify-between w-full h-full gap-3 opacity-60 pointer-events-none">
+                  <Skeleton className="w-1/12 h-1/2 rounded-sm" />
+                  <Skeleton className="w-1/12 h-4/5 rounded-sm" />
+                  <Skeleton className="w-1/12 h-2/3 rounded-sm" />
+                  <Skeleton className="w-1/12 h-1/3 rounded-sm" />
+                  <Skeleton className="w-1/12 h-3/4 rounded-sm" />
+                  <Skeleton className="w-1/12 h-2/5 rounded-sm" />
+                  <Skeleton className="w-1/12 h-3/5 rounded-sm" />
+                  <Skeleton className="w-1/12 h-1/4 rounded-sm" />
+                  <Skeleton className="w-1/12 h-2/4 rounded-sm" />
+                  <Skeleton className="w-1/12 h-3/4 rounded-sm" />
+                </div>
+                {/* Overlayed message */}
+                <span className="relative z-10 text-muted-foreground text-base font-medium bg-background/80 px-4 py-2 rounded-md shadow-md">
+                  No data available
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="data"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="w-full"
+              >
+                <TabsContent value="earnings" className="m-0">
+                  <BarChartSection
+                    data={filteredData}
+                    chartConfig={chartConfig}
+                    dataKeys={["views_earnings", "mcp_earnings"]}
+                    groupByMonth={selectedMonth === "all"}
+                    valueFormatter={formatPrice}
+                    showTotal={true}
+                  />
+                </TabsContent>
+                <TabsContent value="stats" className="m-0">
+                  <BarChartSection
+                    data={filteredData}
+                    chartConfig={chartConfig}
+                    dataKeys={["views", "mcp_usages"]}
+                    groupByMonth={selectedMonth === "all"}
+                    valueFormatter={formatK}
+                    showTotal={false}
+                  />
+                </TabsContent>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Tabs>
     </Card>

@@ -51,13 +51,11 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
       title: "Analytics",
       href: `${basePath}/analytics`,
       icon: <BarChartBig className="h-4 w-4" />,
-      disabled: true,
     },
     {
       title: "Monetization",
       href: `${basePath}/monetization`,
       icon: <CreditCard className="h-4 w-4" />,
-      disabled: true,
     },
   ]
 
