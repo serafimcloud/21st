@@ -55,6 +55,23 @@ interface DemosTableProps {
   onOpenSandbox?: (shortSandboxId: string) => void
 }
 
+// Format text with clickable links
+const formatTextWithLinks = (text: string) => {
+  if (!text) return null
+
+  // Replace URLs with HTML links
+  const linkedText = text.replace(
+    /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g,
+    (url) => {
+      const href = url.startsWith("www.") ? `https://${url}` : url
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline break-all">${url}</a>`
+    },
+  )
+
+  // Return with dangerouslySetInnerHTML since we're only adding safe <a> tags
+  return <div dangerouslySetInnerHTML={{ __html: linkedText }} />
+}
+
 // Format status text: capitalize and replace underscores with spaces
 const formatStatusText = (status: string | null | undefined): string => {
   if (!status) return "None"
@@ -200,6 +217,7 @@ export function DemosTable({
         const status = row.original.submission_status || "featured"
         const feedback = row.original.moderators_feedback
         const isRejected = status === "rejected"
+        const [tooltipOpen, setTooltipOpen] = useState(false)
 
         return (
           <div className="flex items-center gap-1.5">
@@ -219,19 +237,22 @@ export function DemosTable({
 
             {isRejected && feedback && (
               <TooltipProvider delayDuration={100}>
-                <Tooltip>
+                <Tooltip open={tooltipOpen} onOpenChange={setTooltipOpen}>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => setTooltipOpen(!tooltipOpen)}
                     >
                       <InfoIcon size={14} />
                       <span className="sr-only">Feedback</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-xs">
-                    <p className="font-light">{feedback}</p>
+                    <div className="font-light text-xs">
+                      {formatTextWithLinks(feedback)}
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
