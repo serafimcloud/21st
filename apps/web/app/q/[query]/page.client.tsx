@@ -1,12 +1,12 @@
 "use client"
 
-import { sortByAtom } from "@/components/features/main-page/main-page-header"
-import { searchQueryAtom } from "@/components/ui/header.client"
-import ComponentsList from "@/components/ui/items-list"
-import { SortOption } from "@/types/global"
+import React, { useEffect } from "react"
 import { useAtom } from "jotai"
 import { motion } from "motion/react"
-import { useEffect } from "react"
+import { searchQueryAtom } from "@/components/ui/header.client"
+import { sortByAtom } from "@/components/features/main-page/main-page-header"
+import { SortOption } from "@/types/global"
+import ComponentsList from "@/components/ui/items-list"
 
 type SearchPageClientProps = {
   initialQuery: string
@@ -18,12 +18,12 @@ export function SearchPageClient({
   initialSortBy,
 }: SearchPageClientProps) {
   const [, setSearchQuery] = useAtom(searchQueryAtom)
-  const [, setSortBy] = useAtom(sortByAtom)
+  const [sortBy, setSortBy] = useAtom(sortByAtom)
 
   useEffect(() => {
     setSearchQuery(initialQuery)
     setSortBy(initialSortBy)
-  }, [initialQuery, initialSortBy])
+  }, [initialQuery, initialSortBy, setSearchQuery, setSortBy])
 
   return (
     <motion.div
@@ -40,7 +40,7 @@ export function SearchPageClient({
         <ComponentsList
           type="search"
           query={initialQuery}
-          sortBy={initialSortBy}
+          sortBy={sortBy || initialSortBy}
         />
       </div>
     </motion.div>
