@@ -76,11 +76,7 @@ export function Features() {
               <h3 className="text-lg font-semibold text-neutral-200">
                 {feature.title}
               </h3>
-              {feature.title === "Enhance Existing UI" && (
-                <span className="rounded-xl bg-neutral-800/50 px-2 py-1 text-xs text-neutral-200">
-                  Soon
-                </span>
-              )}
+              {feature.title === "Enhance Existing UI" }
             </div>
             <p className="mt-2 text-neutral-400 leading-relaxed">
               {feature.description}

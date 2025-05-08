@@ -195,20 +195,27 @@ export function LeaderboardCardSkeleton() {
   return (
     <div className="group relative flex flex-col sm:flex-row items-start gap-4 rounded-xl px-0 py-4 transition-all duration-300 sm:-mx-4 sm:p-4">
       {/* Preview Image Skeleton */}
-      <div className="relative aspect-[4/3] w-full sm:w-32 rounded-lg overflow-hidden shrink-0 group mb-4 sm:mb-0">
-        <div className="absolute inset-0 bg-muted animate-pulse rounded-lg" />
+      <div className="relative aspect-[4/3] w-full sm:w-56 mb-4 sm:mb-0">
+        <div className="absolute inset-0">
+          <div className="relative w-full h-full rounded-lg shadow-base overflow-hidden">
+            <div className="w-full h-full bg-muted" />
+          </div>
+        </div>
       </div>
 
       {/* Content Area Skeleton */}
       <div className="flex-1 flex flex-row justify-between w-full">
         {/* Left column Skeleton */}
         <div className="flex flex-col space-y-2 flex-1 sm:min-h-24 justify-between">
-          <div className="space-y-1">
+          <div className="space-y-2">
             {/* Title Skeleton */}
             <div className="h-5 bg-muted rounded w-3/4 animate-pulse" />
 
+            {/* Description Skeleton */}
+            <div className="h-5 bg-muted rounded w-1/2 animate-pulse" />
+
             {/* User Avatar Skeleton */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mt-1">
               <div className="h-5 w-5 rounded-full bg-muted animate-pulse" />
               <div className="h-4 bg-muted rounded w-24 animate-pulse" />
             </div>
@@ -216,6 +223,7 @@ export function LeaderboardCardSkeleton() {
 
           {/* Tags Skeleton */}
           <div className="flex flex-row flex-wrap items-center gap-2 mt-2">
+            <div className="h-4 w-4 bg-muted rounded animate-pulse" />
             <div className="h-4 bg-muted rounded w-16 animate-pulse" />
             <div className="h-4 bg-muted rounded w-12 animate-pulse" />
           </div>

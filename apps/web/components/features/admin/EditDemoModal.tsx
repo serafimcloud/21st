@@ -23,8 +23,8 @@ const EditDemoModal: FC<EditDemoModalProps> = ({
   onSave,
 }) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-background rounded-lg p-6 max-w-md w-full">
+    <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
+      <div className="bg-card text-card-foreground rounded-lg p-6 max-w-md w-full border shadow-lg">
         <h2 className="text-xl font-bold mb-4">Edit Demo Information</h2>
 
         <div className="mb-4">
@@ -45,7 +45,7 @@ const EditDemoModal: FC<EditDemoModalProps> = ({
             placeholder="demo-slug"
             className="w-full"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             URL will be: /{submission.user_data.username}/
             {submission.component_data.component_slug}/{demoSlug}
           </p>

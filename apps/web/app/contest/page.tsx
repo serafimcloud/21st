@@ -193,9 +193,9 @@ export default async function Page() {
                 All counters reset at the start of each round.
               </p>
               <p className="text-sm text-muted-foreground italic">
-                Note: From Monday to Wednesday midnight, entries are shown in
-                random order with hidden vote counts. Rankings become visible on
-                Thursday.
+                Note: From Monday to Friday, entries are shown in random order
+                with hidden vote counts. Rankings become visible only on
+                weekends (Saturday and Sunday).
               </p>
             </section>
 
@@ -327,12 +327,14 @@ export default async function Page() {
                 📊 How We Rank Components
               </h2>
               <p className="text-base leading-7">
-                Both <span className="font-semibold">community voting</span> and{" "}
-                <span className="font-semibold">real-world usage metrics</span>{" "}
-                are combined into a single score to decide the leaderboard.
+                Components are ranked primarily based on{" "}
+                <span className="font-semibold">community voting</span>, with{" "}
+                <span className="font-semibold">real-world usage</span>{" "}
+                providing additional weight. In our current formula, one vote
+                equals 10 installs.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="rounded-lg border p-4 text-center space-y-2">
                   <div className="font-medium text-xl">Votes</div>
                   <p className="text-sm text-muted-foreground">
@@ -346,24 +348,17 @@ export default async function Page() {
                     Number of times a component has been downloaded
                   </p>
                 </div>
-
-                <div className="rounded-lg border p-4 text-center space-y-2">
-                  <div className="font-medium text-xl">Views</div>
-                  <p className="text-sm text-muted-foreground">
-                    Traffic to the component's detail page
-                  </p>
-                </div>
               </div>
 
               <div className="rounded-lg border p-4 bg-muted/20 mt-4">
                 <p className="text-sm leading-6">
                   <span className="font-semibold">Fair Visibility Policy:</span>{" "}
                   To ensure all components get equal exposure regardless of
-                  submission time, from Monday to Wednesday midnight all
-                  submissions are displayed in random order with hidden vote
-                  counts and rankings. Full leaderboard standings with vote
-                  counts become visible on Thursday, giving late submissions
-                  equal opportunity for visibility.
+                  submission time, rankings and vote counts are hidden on
+                  weekdays (Monday through Friday) and all submissions are
+                  displayed in random order. Rankings and vote counts only
+                  become visible on weekends (Saturday and Sunday), giving all
+                  submissions equal opportunity for visibility.
                 </p>
               </div>
 

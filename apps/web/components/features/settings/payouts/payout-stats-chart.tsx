@@ -436,7 +436,7 @@ export function PayoutStatsChart({
                   <Skeleton className="w-1/12 h-3/4 rounded-sm" />
                 </div>
                 {/* Overlayed message */}
-                <span className="relative z-10 text-muted-foreground text-base font-medium bg-background/80 px-4 py-2 rounded-md shadow-md">
+                <span className="relative z-10 text-muted-foreground text-base font-medium bg-background/80 px-4 py-2 rounded-md">
                   No data available
                 </span>
               </motion.div>
@@ -453,7 +453,7 @@ export function PayoutStatsChart({
                   <BarChartSection
                     data={filteredData}
                     chartConfig={chartConfig}
-                    dataKeys={["views_earnings", "mcp_earnings"]}
+                    dataKeys={["views_earnings"]}
                     groupByMonth={selectedMonth === "all"}
                     valueFormatter={formatPrice}
                     showTotal={true}

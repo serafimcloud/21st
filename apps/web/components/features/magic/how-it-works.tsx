@@ -4,21 +4,21 @@ import Image from "next/image"
 
 const steps = [
   {
-    title: "Tell Agent What You Need",
+    title: "Describe Your Vision",
     description:
-      "In your AI Agent's chat, just type /ui and describe the component you're looking for—maybe a waitlist form or a login page.",
+      "Simply tell the AI Agent what component you need by typing /ui and describing your idea - whether it's a pricing table, contact form, or navigation menu.",
     image: "/how-it-works-1.png",
   },
   {
-    title: "Let Magic Create It",
+    title: "Choose from Options",
     description:
-      "Your IDE (e.g., Cursor) prompts you to use Magic. Magic then instantly builds a polished UI component, inspired by 21st.dev's library.",
+      "Magic generates three unique variations of your component. Review them and select the one that best matches your needs and design preferences.",
     image: "/how-it-works-3.png",
   },
   {
-    title: "Seamless Integration",
+    title: "Instant Integration",
     description:
-      "With a single click, Magic adds the new files directly into your project, so you can start using your brand-new UI right away.",
+      "Your IDE's AI Agent automatically integrates the chosen component into your project, handling all the necessary files and dependencies seamlessly.",
     image: "/how-it-works-2.png",
   },
 ]

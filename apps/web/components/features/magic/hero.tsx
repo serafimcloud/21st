@@ -355,7 +355,7 @@ export function Hero() {
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
-                    <Spinner size={16} />
+                    <Spinner size={16} color="white" />
                     Getting Started...
                   </div>
                 ) : (

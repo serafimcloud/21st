@@ -47,7 +47,7 @@ export function MagicPageClient() {
           <HowItWorks />
           <FAQ />
         </div>
-        <Footer isOpenSource={false} />
+        <Footer isOpenSource={false} className="border-none" />
       </main>
     </div>
   )

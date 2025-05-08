@@ -204,6 +204,7 @@ export type Database = {
       component_analytics: {
         Row: {
           activity_type: string | null
+          anon_id: string | null
           component_id: number
           created_at: string
           id: number
@@ -211,6 +212,7 @@ export type Database = {
         }
         Insert: {
           activity_type?: string | null
+          anon_id?: string | null
           component_id: number
           created_at?: string
           id?: number
@@ -218,6 +220,7 @@ export type Database = {
         }
         Update: {
           activity_type?: string | null
+          anon_id?: string | null
           component_id?: number
           created_at?: string
           id?: number

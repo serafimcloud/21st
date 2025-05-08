@@ -64,9 +64,6 @@ export function SelectIdeStep({ onSelect }: SelectIdeStepProps) {
           </div>
           <div className="text-center">
             <h3 className="font-medium text-lg">Cursor</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              AI-native code editor
-            </p>
           </div>
           {renderHotkeyHint("1")}
         </Button>
@@ -91,9 +88,6 @@ export function SelectIdeStep({ onSelect }: SelectIdeStepProps) {
           </div>
           <div className="text-center">
             <h3 className="font-medium text-lg">VS Code + Cline</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Popular code editor
-            </p>
           </div>
           {renderHotkeyHint("2")}
         </Button>
@@ -109,9 +103,6 @@ export function SelectIdeStep({ onSelect }: SelectIdeStepProps) {
           </div>
           <div className="text-center">
             <h3 className="font-medium text-lg">Windsurf</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              AI-powered code editor
-            </p>
           </div>
           {renderHotkeyHint("3")}
         </Button>

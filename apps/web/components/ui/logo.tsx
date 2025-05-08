@@ -98,9 +98,6 @@ export function Logo({
     )
   }
 
-  // Add console log outside of JSX
-  console.log("Before render check, isVisible:", isVisible)
-
   return (
     <div ref={logoRef} className="relative">
       <Link
