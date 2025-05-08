@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { BrandAssetsMenu, useBrandAssetsMenu } from "./brand-assets-menu"
 import { createPortal } from "react-dom"
 import Lottie from "lottie-react"
+import { useTheme } from "next-themes"
 
 // Animation cache to prevent multiple fetches of the same file
 const animationCache = new Map<string, any>()
@@ -44,6 +45,7 @@ export function Logo({
   )
   const [lottieReady, setLottieReady] = useState(false)
   const hasFetchedRef = useRef(false)
+  const { resolvedTheme } = useTheme()
 
   // Only render portal on client-side
   useEffect(() => {
@@ -138,6 +140,7 @@ export function Logo({
           className={cn(
             "w-full h-full absolute inset-0 transition-opacity duration-300",
             isHovered && lottieReady ? "opacity-100" : "opacity-0",
+            resolvedTheme === "dark" && "lottie-dark-mode",
           )}
         >
           <Lottie

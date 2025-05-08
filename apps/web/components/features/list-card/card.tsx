@@ -27,11 +27,23 @@ import { UserAvatar } from "../../ui/user-avatar"
 import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
 import { shouldHideLeaderboardRankings } from "@/lib/utils"
+import { UpvoteIcon } from "../../icons/upvote-icon"
+import { motion } from "motion/react"
+import { useState } from "react"
+import { cn } from "@/lib/utils"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import NumberFlow from "@number-flow/react"
 
 // Extended type to include leaderboard fields
 type LeaderboardDemoWithComponent = DemoWithComponent & {
   global_rank?: number
   votes_count?: number
+  has_voted?: boolean
 }
 
 export function ComponentCard({
@@ -41,6 +53,8 @@ export function ComponentCard({
   onClick,
   onCtrlClick,
   hideVotes,
+  isLeaderboard,
+  onVote,
 }: {
   demo?: DemoWithComponent | (Component & { user: User })
   isLoading?: boolean
@@ -48,6 +62,8 @@ export function ComponentCard({
   onClick?: () => void
   onCtrlClick?: (url: string) => void
   hideVotes?: boolean
+  isLeaderboard?: boolean
+  onVote?: (demoId: number) => Promise<void>
 }) {
   if (isLoading || !demo) {
     return <ComponentCardSkeleton />
@@ -55,7 +71,6 @@ export function ComponentCard({
 
   const { user } = useUser()
   const supabase = useClerkSupabaseClient()
-
   const userData = "component" in demo ? demo.component?.user : demo.user
   const username = userData?.username || userData?.display_username
   const isDemo = "demo_slug" in demo
@@ -92,7 +107,16 @@ export function ComponentCard({
       ? (demo as LeaderboardDemoWithComponent).votes_count || 0
       : 0
 
+  // Check if the user has voted for this item (only for leaderboard items)
+  const hasVoted =
+    isDemo && "has_voted" in demo
+      ? (demo as LeaderboardDemoWithComponent).has_voted
+      : false
+
   const formatNumber = (num: number) => {
+    if (num === undefined || num === null || isNaN(num)) {
+      return "0"
+    }
     if (num >= 1000) {
       return `${(num / 1000).toFixed(1)}k`
     }
@@ -184,6 +208,45 @@ export function ComponentCard({
     }
   }
 
+  const handleVote = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!user) {
+      toast(
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium">Authentication required</p>
+            <p className="text-sm text-muted-foreground">
+              Please sign in to vote
+            </p>
+          </div>
+          <Link href="https://accounts.21st.dev/sign-in">
+            <Button size="sm" variant="outline">
+              Sign In
+            </Button>
+          </Link>
+        </div>,
+        {
+          duration: 5000,
+        },
+      )
+      return
+    }
+
+    if (onVote && demo.id) {
+      try {
+        await onVote(demo.id)
+      } catch (error) {
+        console.error("Error voting:", error)
+        toast.error("Failed to update vote")
+      }
+    }
+  }
+
+  // Hide rankings on weekdays
+  const hideRankings = shouldHideLeaderboardRankings()
+
   return (
     <ContextMenu>
       <ContextMenuTrigger className="block p-[1px]">
@@ -236,6 +299,80 @@ export function ComponentCard({
                 </div>
               )}
             </div>
+            {/* Vote button for leaderboard items - Always show when isLeaderboard, but hide count when hideRankings */}
+            {isLeaderboard && onVote && (
+              <div
+                className="absolute top-2 right-2 z-30"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div onClick={handleVote}>
+                        <motion.div
+                          layout="size"
+                          layoutId={`vote-button-${demo.id}`}
+                          initial={false}
+                          transition={{
+                            duration: 0.3,
+                            ease: "easeInOut",
+                            layout: {
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30,
+                            },
+                          }}
+                          className={cn(
+                            "h-8 shadow-sm border-[0.5px] flex items-center",
+                            !votesCount || hideVotes
+                              ? "rounded-full w-8 justify-center px-0"
+                              : "rounded-full px-3 gap-1.5",
+                            hasVoted
+                              ? "bg-background/90 text-primary hover:bg-background/95"
+                              : "bg-background/90 text-foreground/70 hover:bg-background/95 hover:text-foreground",
+                          )}
+                        >
+                          {/* Icon wrapper with proper vertical alignment */}
+                          <div className="flex items-center justify-center flex-shrink-0">
+                            <UpvoteIcon isVoted={hasVoted} size={14} />
+                          </div>
+
+                          {votesCount > 0 && !hideVotes && (
+                            <motion.div
+                              initial={{ width: 0, opacity: 0 }}
+                              animate={{ width: "auto", opacity: 1 }}
+                              exit={{ width: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden flex-shrink-0 flex items-center"
+                            >
+                              <span className="text-xs font-medium whitespace-nowrap leading-none">
+                                <NumberFlow
+                                  value={Number(formatNumber(votesCount))}
+                                  transformTiming={{
+                                    duration: 550,
+                                    easing: "ease-in-out",
+                                  }}
+                                  opacityTiming={{
+                                    duration: 350,
+                                    easing: "ease-out",
+                                  }}
+                                  trend={0}
+                                />
+                              </span>
+                            </motion.div>
+                          )}
+                        </motion.div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {hasVoted ? "Remove vote" : "Vote for this component"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
             {/* Add Top of Week badge for top 3 leaderboard components */}
             {isLeaderboardComponent &&
               typeof demo.global_rank === "number" &&
@@ -277,12 +414,6 @@ export function ComponentCard({
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {votesCount > 0 && !hideVotes && (
-                  <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
-                    <ThumbsUp size={14} className="text-primary" />
-                    <span>{formatNumber(votesCount)}</span>
-                  </div>
-                )}
                 {viewCount > 0 && (
                   <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
                     <Eye size={14} />
