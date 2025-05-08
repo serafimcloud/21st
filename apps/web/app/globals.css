@@ -24,6 +24,12 @@ a {
   }
 }
 
+/* Invert colors of Lottie animations in dark mode */
+.lottie-dark-mode {
+  color-scheme: light;
+  filter: brightness(0) invert(1);
+}
+
 iframe {
   background: var(--background);
 }

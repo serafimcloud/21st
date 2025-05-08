@@ -5,12 +5,27 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { BrandAssetsMenu, useBrandAssetsMenu } from "./brand-assets-menu"
 import { createPortal } from "react-dom"
+import Lottie from "lottie-react"
+
+// Animation cache to prevent multiple fetches of the same file
+const animationCache = new Map<string, any>()
+
+// Preload the default animation
+if (typeof window !== "undefined") {
+  fetch("/loading.json")
+    .then((response) => response.json())
+    .then((data) => {
+      animationCache.set("/loading.json", data)
+    })
+    .catch((error) => console.error("Error preloading animation:", error))
+}
 
 interface LogoProps {
   fill?: string
   className?: string
   position?: "fixed" | "flex"
   hasLink?: boolean
+  animationFile?: string
 }
 
 export function Logo({
@@ -18,10 +33,17 @@ export function Logo({
   className,
   position = "fixed",
   hasLink = true,
+  animationFile = "/loading.json",
 }: LogoProps) {
   const { isVisible, setIsVisible, toggleMenu } = useBrandAssetsMenu()
   const logoRef = useRef<HTMLDivElement>(null)
   const [isMounted, setIsMounted] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const [animationData, setAnimationData] = useState<any>(
+    animationCache.get(animationFile) || null,
+  )
+  const [lottieReady, setLottieReady] = useState(false)
+  const hasFetchedRef = useRef(false)
 
   // Only render portal on client-side
   useEffect(() => {
@@ -31,6 +53,42 @@ export function Logo({
   useEffect(() => {
     console.log("Brand menu visibility state:", isVisible)
   }, [isVisible])
+
+  useEffect(() => {
+    // Skip fetch if we already have the animation in cache
+    if (animationCache.has(animationFile)) {
+      setAnimationData(animationCache.get(animationFile))
+      return
+    }
+
+    // Skip duplicate fetches
+    if (hasFetchedRef.current) return
+    hasFetchedRef.current = true
+
+    // We'll use the JSON file as default
+    if (animationFile && animationFile.endsWith(".json")) {
+      fetch(animationFile)
+        .then((response) => response.json())
+        .then((data) => {
+          // Cache the animation data
+          animationCache.set(animationFile, data)
+          setAnimationData(data)
+        })
+        .catch((error) =>
+          console.error("Error loading Lottie animation:", error),
+        )
+    }
+  }, [animationFile])
+
+  // Set lottieReady to true after a small delay when animation data is available
+  useEffect(() => {
+    if (animationData) {
+      const timer = setTimeout(() => {
+        setLottieReady(true)
+      }, 300) // Small delay to ensure Lottie is rendered before fading in
+      return () => clearTimeout(timer)
+    }
+  }, [animationData])
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -56,6 +114,43 @@ export function Logo({
         fill={fill}
       />
     </svg>
+  )
+
+  const renderLogo = () => (
+    <div
+      className="w-full h-full relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Static SVG Logo */}
+      <div
+        className={cn(
+          "w-full h-full absolute inset-0 transition-opacity duration-300",
+          isHovered ? "opacity-0" : "opacity-100",
+        )}
+      >
+        {svgLogo}
+      </div>
+
+      {/* Lottie Animation */}
+      {animationData && (
+        <div
+          className={cn(
+            "w-full h-full absolute inset-0 transition-opacity duration-300",
+            isHovered && lottieReady ? "opacity-100" : "opacity-0",
+          )}
+        >
+          <Lottie
+            animationData={animationData}
+            style={{ width: "100%", height: "100%" }}
+            rendererSettings={{
+              preserveAspectRatio: "xMidYMid slice",
+              progressiveLoad: true,
+            }}
+          />
+        </div>
+      )}
+    </div>
   )
 
   const renderMenu = () => {
@@ -84,7 +179,7 @@ export function Logo({
         onContextMenu={handleContextMenu}
         title="Right-click for brand assets menu"
       >
-        {svgLogo}
+        {renderLogo()}
         {renderMenu()}
         <span
           id="brand-tooltip"
@@ -110,7 +205,7 @@ export function Logo({
         onContextMenu={handleContextMenu}
         title="Right-click for brand assets menu"
       >
-        {svgLogo}
+        {renderLogo()}
         <span
           id="brand-tooltip"
           role="tooltip"
