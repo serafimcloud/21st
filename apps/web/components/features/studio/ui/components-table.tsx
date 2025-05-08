@@ -40,13 +40,29 @@ import {
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { useId } from "react"
 import { Button } from "@/components/ui/button"
-import { ExternalLink } from "lucide-react"
 import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { InfoIcon } from "lucide-react"
 
 interface DemosTableProps {
   demos: ExtendedDemoWithComponent[]
   onEdit?: (demo: ExtendedDemoWithComponent) => void
   onOpenSandbox?: (shortSandboxId: string) => void
+}
+
+// Format status text: capitalize and replace underscores with spaces
+const formatStatusText = (status: string | null | undefined): string => {
+  if (!status) return "None"
+
+  return status
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
 }
 
 export function DemosTable({
@@ -63,17 +79,11 @@ export function DemosTable({
     Record<string, { loaded: boolean; error?: string; fixedUrl?: string }>
   >({})
 
+  console.log("DEMOS", demos)
+
   // Format numbers with thousand separators (spaces)
   const formatNumberWithSpaces = (num: number): string => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
-  }
-
-  // Format numbers the same way as in the card component
-  const formatNumber = (num: number) => {
-    if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}k`
-    }
-    return num.toString()
   }
 
   useEffect(() => {
@@ -188,8 +198,11 @@ export function DemosTable({
       accessorFn: (row) => row.submission_status || "featured",
       cell: ({ row }) => {
         const status = row.original.submission_status || "featured"
+        const feedback = row.original.moderators_feedback
+        const isRejected = status === "rejected"
+
         return (
-          <div>
+          <div className="flex items-center gap-1.5">
             <span
               className={cn(
                 "px-2 py-1 text-xs rounded",
@@ -197,24 +210,32 @@ export function DemosTable({
                 status === "featured" && "bg-green-100 text-green-700",
                 status === "posted" && "bg-blue-100 text-blue-700",
                 status === "draft" && "bg-gray-100 text-gray-700",
+                status === "rejected" && "bg-red-100 text-red-700",
                 !status && "bg-gray-100 text-gray-700",
               )}
-              title={
-                row.original.moderators_feedback
-                  ? `Feedback: ${row.original.moderators_feedback}`
-                  : undefined
-              }
             >
-              {status === "on_review"
-                ? "On Review"
-                : status === "featured"
-                  ? "Featured"
-                  : status === "posted"
-                    ? "Posted"
-                    : status === "draft"
-                      ? "Draft"
-                      : "None"}
+              {formatStatusText(status)}
             </span>
+
+            {isRejected && feedback && (
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <InfoIcon size={14} />
+                      <span className="sr-only">Feedback</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="font-light">{feedback}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         )
       },
@@ -248,13 +269,11 @@ export function DemosTable({
     {
       header: "Created",
       id: "created_at",
-      accessorFn: (row) => row.updated_at || row.created_at || "",
+      accessorFn: (row) => row.created_at || row.updated_at || "",
       cell: ({ row }) => {
-        // Use updated_at if created_at is not available
         const dateValue = row.original.created_at || row.original.updated_at
 
         try {
-          // Format as actual date instead of relative time
           const date = new Date(dateValue || "")
           return (
             <div>
@@ -270,7 +289,15 @@ export function DemosTable({
         }
       },
       size: 150,
-      sortingFn: "alphanumeric",
+      sortingFn: (rowA, rowB, columnId) => {
+        const a = rowA.original.created_at || rowA.original.updated_at || ""
+        const b = rowB.original.created_at || rowB.original.updated_at || ""
+
+        const dateA = a ? new Date(a).getTime() : 0
+        const dateB = b ? new Date(b).getTime() : 0
+
+        return dateA > dateB ? 1 : dateA < dateB ? -1 : 0
+      },
     },
     {
       header: "Views",
@@ -326,16 +353,6 @@ export function DemosTable({
       pagination,
     },
     sortingFns: {
-      "updated-at": (rowA, rowB, columnId) => {
-        const a = rowA.original.updated_at || rowA.original.created_at || ""
-        const b = rowB.original.updated_at || rowB.original.created_at || ""
-
-        // Convert to dates for comparison
-        const dateA = a ? new Date(a).getTime() : 0
-        const dateB = b ? new Date(b).getTime() : 0
-
-        return dateA > dateB ? 1 : dateA < dateB ? -1 : 0
-      },
       "view-count": (rowA, rowB, columnId) => {
         const a = rowA.original.view_count || 0
         const b = rowB.original.view_count || 0
@@ -347,11 +364,12 @@ export function DemosTable({
         return a > b ? 1 : a < b ? -1 : 0
       },
       status: (rowA, rowB, columnId) => {
-        // Status priority: featured > posted > on_review > null
+        // Status priority: featured > posted > on_review > rejected > draft/null
         const statusPriority = {
-          featured: 4,
-          posted: 3,
-          on_review: 2,
+          featured: 5,
+          posted: 4,
+          on_review: 3,
+          rejected: 2,
           draft: 1,
           null: 1,
         }
