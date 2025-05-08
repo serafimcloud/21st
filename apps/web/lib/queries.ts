@@ -1482,8 +1482,8 @@ export function useLeaderboardDemosForHome() {
         return a.id - b.id
       })
 
-      // Limit to top 10 for the slider
-      return sortedData.slice(0, 10).map((submission: any, index: number) => {
+      // Return all items, not just the top 10
+      return sortedData.map((submission: any, index: number) => {
         // Create a transformed version that matches DemoWithComponent format
         const componentData =
           typeof submission.component_data === "object"
