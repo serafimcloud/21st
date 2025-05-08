@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { motion } from "motion/react"
+import React from "react"
 
 interface FileEntry {
   name: string
@@ -77,6 +78,81 @@ function InlineInputForm({
   )
 }
 
+// Simple inline input without button - for renaming files/directories
+function SimpleInlineInput({
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  autoFocus = true,
+}: {
+  value: string
+  onChange: (value: string) => void
+  onSubmit: () => void
+  onCancel: () => void
+  autoFocus?: boolean
+}) {
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  const selectionAppliedRef = React.useRef(false)
+
+  // Set selection to select text before dot only when first mounted
+  useEffect(() => {
+    if (!selectionAppliedRef.current && autoFocus && inputRef.current) {
+      const dotIndex = value.lastIndexOf(".")
+      if (dotIndex > 0) {
+        // Select text before the dot
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.setSelectionRange(0, dotIndex)
+            selectionAppliedRef.current = true
+          }
+        }, 0)
+      }
+      selectionAppliedRef.current = true
+    }
+  }, []) // Empty dependency array to run only once on mount
+
+  return (
+    <>
+      {/* Add custom selection styling */}
+      <style jsx global>{`
+        .filename-input::selection {
+          background-color: rgba(
+            0,
+            0,
+            0,
+            0.3
+          ); /* Black with opacity for light theme */
+          color: inherit; /* Maintain text color */
+        }
+
+        /* Dark theme specific styling */
+        [data-theme="dark"] .filename-input::selection {
+          background-color: rgba(
+            255,
+            255,
+            255,
+            0.3
+          ); /* White with opacity for dark theme */
+          color: white;
+        }
+      `}</style>
+      <Input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSubmit()
+          if (e.key === "Escape") onCancel()
+        }}
+        className="h-5 pl-1 text-[14px] rounded-none border-0 focus-visible:ring-1 bg-muted filename-input"
+        autoFocus={autoFocus}
+        onBlur={onSubmit}
+      />
+    </>
+  )
+}
+
 // Action buttons for file/directory operations
 function TreeItemActions({
   showActions,
@@ -88,10 +164,10 @@ function TreeItemActions({
   itemName,
 }: {
   showActions: boolean
-  onRename?: () => void
+  onRename?: (e: React.MouseEvent) => void
   onDelete: () => void
-  onCreateFile?: () => void
-  onCreateDirectory?: () => void
+  onCreateFile?: (e: React.MouseEvent) => void
+  onCreateDirectory?: (e: React.MouseEvent) => void
   itemType: "file" | "dir"
   itemName: string
 }) {
@@ -101,7 +177,7 @@ function TreeItemActions({
 
   return (
     <div className={`flex items-center gap-1 action-icon ${actionClasses}`}>
-      {onRename && (
+      {onRename && itemType === "file" && (
         <Button
           size="icon"
           variant="ghost"
@@ -188,10 +264,8 @@ function FileItem({
       } catch (error) {
         // Error handling is done in the hook
       }
-      setIsRenaming(false)
-    } else {
-      setIsRenaming(false)
     }
+    setIsRenaming(false)
   }
 
   const startRename = (e: React.MouseEvent) => {
@@ -212,13 +286,17 @@ function FileItem({
       style={{ paddingLeft: `${level * 1}rem` }}
     >
       {isRenaming ? (
-        <InlineInputForm
-          value={newName}
-          onChange={setNewName}
-          onSubmit={handleRename}
-          onCancel={cancelRename}
-          buttonText="Rename"
-        />
+        <div className="flex items-center px-2 py-1">
+          <FileIcon className="h-4 w-4 mr-0.5 text-gray-500 flex-shrink-0" />
+          <div className="flex-1">
+            <SimpleInlineInput
+              value={newName}
+              onChange={setNewName}
+              onSubmit={handleRename}
+              onCancel={cancelRename}
+            />
+          </div>
+        </div>
       ) : (
         <div className="flex items-center justify-between">
           <button
@@ -226,17 +304,16 @@ function FileItem({
               selectedPath === entry.path ? "bg-accent" : ""
             }`}
             onClick={() => onSelect(entry)}
+            onDoubleClick={startRename}
             title={entry.path}
           >
-            <FileIcon className="h-4 w-4 mr-1 text-gray-500 flex-shrink-0" />
-            {entry.name}
+            <FileIcon className="h-4 w-4 mr-[6px] text-gray-500 flex-shrink-0" />
+            <span>{entry.name}</span>
           </button>
 
-          {/* <TreeItemActions
+          {/*  <TreeItemActions
             showActions={showActions}
-            onRename={() =>
-              startRename({ stopPropagation: () => {} } as React.MouseEvent)
-            }
+            onRename={startRename}
             onDelete={() => onDelete(entry.path)}
             itemType="file"
             itemName={entry.name}
@@ -271,8 +348,6 @@ function DirectoryItem({
   expandedDirs: Record<string, boolean>
   setExpandedDirs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
 }) {
-  const [isRenaming, setIsRenaming] = useState(false)
-  const [newName, setNewName] = useState(entry.name)
   const [isCreatingFile, setIsCreatingFile] = useState(false)
   const [newFileName, setNewFileName] = useState("")
   const [isCreatingDirectory, setIsCreatingDirectory] = useState(false)
@@ -309,26 +384,6 @@ function DirectoryItem({
     }
   }
 
-  const handleRename = async () => {
-    if (newName && newName !== entry.name && onRename) {
-      try {
-        await onRename(entry.path, newName)
-        setIsRenaming(false)
-      } catch (error) {
-        // Error handling is done in the hook
-      }
-    } else {
-      setIsRenaming(false)
-    }
-  }
-
-  const startRename = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setNewName(entry.name)
-    setIsRenaming(true)
-  }
-
   const startCreateFile = (e: React.MouseEvent) => {
     e.stopPropagation()
     e.preventDefault()
@@ -348,7 +403,6 @@ function DirectoryItem({
     setNewFileName("")
     setIsCreatingDirectory(false)
     setNewDirectoryName("")
-    setIsRenaming(false)
   }
 
   const indentStyle = { paddingLeft: `${level * 1 + 0.5}rem` }
@@ -360,80 +414,52 @@ function DirectoryItem({
       className="py-0.5 group/item relative select-none"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => {
-        if (!isCreatingFile && !isCreatingDirectory && !isRenaming) {
+        if (!isCreatingFile && !isCreatingDirectory) {
           setShowActions(false)
         }
       }}
     >
       <details className="group select-none" open={isExpanded}>
-        {isRenaming ? (
-          <div className="flex gap-1 py-1 pl-2" style={indentStyle}>
-            <InlineInputForm
-              value={newName}
-              onChange={setNewName}
-              onSubmit={handleRename}
-              onCancel={cancelCreate}
-              buttonText="Rename"
-            />
-          </div>
-        ) : (
-          <summary
-            className={`flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-muted rounded list-none select-none ${
-              selectedPath === entry.path ? "bg-accent" : ""
-            } relative z-10`}
-            onClick={toggleExpanded}
-            style={indentStyle}
-          >
-            <div className="flex items-center overflow-hidden">
-              <div className="relative h-4 w-4 mr-1 flex-shrink-0">
-                <motion.div
-                  className="absolute inset-0 flex items-center justify-center"
-                  initial={false}
-                  animate={{ opacity: isExpanded ? 0 : 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <FolderIcon className="h-4 w-4 text-blue-500" />
-                </motion.div>
-                <motion.div
-                  className="absolute inset-0 flex items-center justify-center"
-                  initial={false}
-                  animate={{ opacity: isExpanded ? 1 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <FolderOpenIcon className="h-4 w-4 text-blue-500" />
-                </motion.div>
-              </div>
-              <span className="truncate" title={entry.name}>
-                {entry.name}
-              </span>
+        <summary
+          className={`flex items-center justify-between px-2 py-1 cursor-pointer hover:bg-muted rounded list-none select-none ${
+            selectedPath === entry.path ? "bg-accent" : ""
+          } relative z-10`}
+          onClick={toggleExpanded}
+          style={indentStyle}
+        >
+          <div className="flex items-center overflow-hidden">
+            <div className="relative h-4 w-4 mr-[6px] flex-shrink-0">
+              <motion.div
+                className="absolute inset-0 flex items-center justify-center"
+                initial={false}
+                animate={{ opacity: isExpanded ? 0 : 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <FolderIcon className="h-4 w-4 text-blue-500" />
+              </motion.div>
+              <motion.div
+                className="absolute inset-0 flex items-center justify-center"
+                initial={false}
+                animate={{ opacity: isExpanded ? 1 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <FolderOpenIcon className="h-4 w-4 text-blue-500" />
+              </motion.div>
             </div>
-
-            {/* <TreeItemActions
-              showActions={showActions}
-              onRename={() =>
-                startRename({
-                  stopPropagation: () => {},
-                  preventDefault: () => {},
-                } as React.MouseEvent)
-              }
-              onCreateFile={() =>
-                startCreateFile({
-                  stopPropagation: () => {},
-                  preventDefault: () => {},
-                } as React.MouseEvent)
-              }
-              onCreateDirectory={() =>
-                startCreateDirectory({
-                  stopPropagation: () => {},
-                  preventDefault: () => {},
-                } as React.MouseEvent)
-              }
-              onDelete={() => onDelete(entry.path)}
-              itemType="dir"
-              itemName={entry.name}
-            /> */}
-          </summary>
-        )}
+            <span className="truncate" title={entry.name}>
+              {entry.name}
+            </span>
+          </div>
+          {/* 
+              <TreeItemActions
+            showActions={showActions}
+            onCreateFile={startCreateFile}
+            onCreateDirectory={startCreateDirectory}
+            onDelete={() => onDelete(entry.path)}
+            itemType="dir"
+            itemName={entry.name}
+          /> */}
+        </summary>
 
         {isCreatingFile && (
           <div className="flex gap-1 py-1" style={childIndentStyle}>
