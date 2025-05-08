@@ -6,7 +6,8 @@
     },
     {
       "path": "/api/cron/gen-usage-embeddings",
-      "schedule": "0 * * * *"
+      "schedule": "0 * * * *",
+      "maxDuration": 600
     }
   ]
 }
