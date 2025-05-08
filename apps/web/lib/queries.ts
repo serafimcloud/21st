@@ -937,8 +937,17 @@ export function useFeaturedDemos() {
           return dateB - dateA // Descending order
         })
 
+      // Shuffle the featured items to add variety each time
+      const shuffledFeaturedItems = [...uniqueLikedDemosTransformed]
+      for (let i = shuffledFeaturedItems.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = shuffledFeaturedItems[i]
+        shuffledFeaturedItems[i] = shuffledFeaturedItems[j] as DemoWithComponent
+        shuffledFeaturedItems[j] = temp as DemoWithComponent
+      }
+
       return {
-        data: uniqueLikedDemosTransformed as DemoWithComponent[],
+        data: shuffledFeaturedItems as DemoWithComponent[],
         ids: new Set(uniqueLikedDemosTransformed.map((d) => d.id)),
       }
     },
