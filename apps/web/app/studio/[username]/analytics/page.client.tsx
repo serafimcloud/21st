@@ -95,6 +95,7 @@ export function AnalyticsClient({ userId }: { userId: string }) {
         <PayoutStatsChart
           data={authorStats?.payoutStats ?? []}
           isLoading={isLoadingStats || authorStats?.payoutStats === undefined}
+          isPartner={isPartner}
         />
       </div>
       {/* Partner program section - only show if not a partner */}
