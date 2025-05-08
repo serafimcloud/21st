@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ComponentCardSkeleton } from "@/components/ui/skeletons"
 import { ComponentPreviewDialog } from "@/components/features/component-page/preview-dialog"
-import { useUser } from "@clerk/nextjs"
 
 interface HorizontalSliderProps {
   title: string
@@ -23,7 +22,6 @@ interface HorizontalSliderProps {
   className?: string
   totalCount?: number
   isLeaderboard?: boolean
-  onVote?: (demoId: number) => Promise<void>
 }
 
 export function HorizontalSlider({
@@ -36,10 +34,8 @@ export function HorizontalSlider({
   className,
   totalCount,
   isLeaderboard = false,
-  onVote,
 }: HorizontalSliderProps) {
   const router = useRouter()
-  const { user } = useUser()
   const [showLeftButton, setShowLeftButton] = useState(false)
   const [showRightButton, setShowRightButton] = useState(true)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -217,8 +213,6 @@ export function HorizontalSlider({
                       )
                     }}
                     hideVotes={isLeaderboard && hideLeaderboardRankings}
-                    isLeaderboard={isLeaderboard}
-                    onVote={isLeaderboard && user ? onVote : undefined}
                   />
                 </div>
               ))

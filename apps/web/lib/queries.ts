@@ -1514,7 +1514,6 @@ export function useLeaderboardDemosForHome() {
           bookmarks_count: submission.bookmarks_count || 0,
           view_count: submission.view_count || 0,
           votes_count: submission.votes || 0,
-          has_voted: submission.has_voted || false,
           bundle_url: submission.bundle_url || null,
           global_rank: submission.global_rank || null,
           compiled_css: null,

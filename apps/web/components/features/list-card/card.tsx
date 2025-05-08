@@ -27,23 +27,11 @@ import { UserAvatar } from "../../ui/user-avatar"
 import ComponentPreviewImage from "./card-image"
 import { ComponentVideoPreview } from "./card-video"
 import { shouldHideLeaderboardRankings } from "@/lib/utils"
-import { UpvoteIcon } from "../../icons/upvote-icon"
-import { motion } from "motion/react"
-import { useState } from "react"
-import { cn } from "@/lib/utils"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import NumberFlow from "@number-flow/react"
 
 // Extended type to include leaderboard fields
 type LeaderboardDemoWithComponent = DemoWithComponent & {
   global_rank?: number
   votes_count?: number
-  has_voted?: boolean
 }
 
 export function ComponentCard({
@@ -53,8 +41,6 @@ export function ComponentCard({
   onClick,
   onCtrlClick,
   hideVotes,
-  isLeaderboard,
-  onVote,
 }: {
   demo?: DemoWithComponent | (Component & { user: User })
   isLoading?: boolean
@@ -62,8 +48,6 @@ export function ComponentCard({
   onClick?: () => void
   onCtrlClick?: (url: string) => void
   hideVotes?: boolean
-  isLeaderboard?: boolean
-  onVote?: (demoId: number) => Promise<void>
 }) {
   if (isLoading || !demo) {
     return <ComponentCardSkeleton />
@@ -107,12 +91,6 @@ export function ComponentCard({
     isDemo && "votes_count" in demo
       ? (demo as LeaderboardDemoWithComponent).votes_count || 0
       : 0
-
-  // Check if the user has voted for this item (only for leaderboard items)
-  const hasVoted =
-    isDemo && "has_voted" in demo
-      ? (demo as LeaderboardDemoWithComponent).has_voted
-      : false
 
   const formatNumber = (num: number) => {
     if (num >= 1000) {
@@ -206,45 +184,6 @@ export function ComponentCard({
     }
   }
 
-  const handleVote = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    if (!user) {
-      toast(
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium">Authentication required</p>
-            <p className="text-sm text-muted-foreground">
-              Please sign in to vote
-            </p>
-          </div>
-          <Link href="https://accounts.21st.dev/sign-in">
-            <Button size="sm" variant="outline">
-              Sign In
-            </Button>
-          </Link>
-        </div>,
-        {
-          duration: 5000,
-        },
-      )
-      return
-    }
-
-    if (onVote && demo.id) {
-      try {
-        await onVote(demo.id)
-      } catch (error) {
-        console.error("Error voting:", error)
-        toast.error("Failed to update vote")
-      }
-    }
-  }
-
-  // Hide rankings on weekdays
-  const hideRankings = shouldHideLeaderboardRankings()
-
   return (
     <ContextMenu>
       <ContextMenuTrigger className="block p-[1px]">
@@ -297,46 +236,6 @@ export function ComponentCard({
                 </div>
               )}
             </div>
-            {/* Vote button for leaderboard items - Always show when isLeaderboard, but hide count when hideRankings */}
-            {isLeaderboard && onVote && (
-              <div
-                className="absolute top-2 right-2 z-30"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div onClick={handleVote}>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "h-8 rounded-full shadow-sm transition-colors duration-200 border-[0.5px] px-3 flex items-center gap-1.5",
-                            hasVoted
-                              ? "bg-background/90 text-primary hover:bg-background/95"
-                              : "bg-background/90 text-foreground/70 hover:bg-background/95 hover:text-foreground",
-                          )}
-                          aria-label={hasVoted ? "Remove vote" : "Vote"}
-                        >
-                          <UpvoteIcon isVoted={hasVoted} size={14} />
-                          {votesCount > 0 && !hideVotes && (
-                            <span className="text-xs font-medium">
-                              <NumberFlow
-                                value={Number(formatNumber(votesCount))}
-                              />
-                            </span>
-                          )}
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        {hasVoted ? "Remove vote" : "Vote for this component"}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            )}
             {/* Add Top of Week badge for top 3 leaderboard components */}
             {isLeaderboardComponent &&
               typeof demo.global_rank === "number" &&
@@ -378,22 +277,22 @@ export function ComponentCard({
                 </div>
               </div>
               <div className="flex items-center gap-3">
+                {votesCount > 0 && !hideVotes && (
+                  <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
+                    <ThumbsUp size={14} className="text-primary" />
+                    <span>{formatNumber(votesCount)}</span>
+                  </div>
+                )}
                 {viewCount > 0 && (
                   <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
                     <Eye size={14} />
-                    <span>
-                      <NumberFlow value={Number(formatNumber(viewCount))} />
-                    </span>
+                    <span>{formatNumber(viewCount)}</span>
                   </div>
                 )}
                 {bookmarksCount > 0 && (
                   <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap shrink-0 gap-1">
                     <Bookmark size={14} className="text-muted-foreground" />
-                    <span>
-                      <NumberFlow
-                        value={Number(formatNumber(bookmarksCount))}
-                      />
-                    </span>
+                    <span>{formatNumber(bookmarksCount)}</span>
                   </div>
                 )}
               </div>
