@@ -107,13 +107,7 @@ function AddDemoContent() {
   }
 
   if (isLoading || !componentData) {
-    return (
-      <LoadingSpinnerPage
-        text="Loading component..."
-        size="lg"
-        showText={true}
-      />
-    )
+    return <LoadingSpinnerPage size="lg" />
   }
 
   return (
@@ -130,11 +124,7 @@ function AddDemoContent() {
 
 export default function AddDemoPage() {
   return (
-    <Suspense
-      fallback={
-        <LoadingSpinnerPage text="Loading..." size="lg" showText={true} />
-      }
-    >
+    <Suspense fallback={<LoadingSpinnerPage size="lg" />}>
       <AddDemoContent />
     </Suspense>
   )

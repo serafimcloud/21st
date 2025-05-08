@@ -231,21 +231,6 @@ export function ComponentPagePreview({
   )
 
   const [isLoading, setIsLoading] = useState(true)
-  const [loadingText, setLoadingText] = useState("Starting preview...")
-
-  useEffect(() => {
-    if (isLoading) {
-      const timer = setTimeout(() => {
-        setLoadingText(
-          "Loading is taking longer than usual... you may want to refresh the page",
-        )
-      }, 10000)
-
-      return () => {
-        clearTimeout(timer)
-      }
-    }
-  }, [isLoading])
 
   if (!css)
     return (
@@ -336,7 +321,7 @@ export function ComponentPagePreview({
 
         {isLoading && (
           <div className="flex flex-col items-center justify-center h-full gap-3">
-            <LoadingSpinner text={loadingText} />
+            <LoadingSpinner />
           </div>
         )}
         {(demo.bundle_html_url ||

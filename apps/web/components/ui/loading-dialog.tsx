@@ -13,7 +13,7 @@ export function LoadingDialog({ isOpen, message }: LoadingDialogProps) {
         hideCloseButton
         className="w-[425px] h-40 flex flex-col items-center justify-center gap-4"
       >
-        <LoadingSpinner showText={false} />
+        <LoadingSpinner />
         <p className="text-center text-sm text-muted-foreground">{message}</p>
       </DialogContent>
     </Dialog>

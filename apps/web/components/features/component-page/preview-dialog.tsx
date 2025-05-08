@@ -18,6 +18,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import {
   Tooltip,
   TooltipContent,
@@ -71,7 +72,7 @@ const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
 export function PreviewSkeleton() {
   return (
     <div className="flex-1 animate-pulse bg-muted flex items-center justify-center">
-      <Spinner />
+      <LoadingSpinner />
     </div>
   )
 }
