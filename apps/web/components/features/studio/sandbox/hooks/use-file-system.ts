@@ -98,12 +98,10 @@ export const useFileSystem = ({
   sandboxRef,
   reconnectSandbox,
   sandboxConnectionHash,
-  connectedShellId,
 }: {
   sandboxRef: RefObject<SandboxSession | null>
   reconnectSandbox: () => Promise<void>
   sandboxConnectionHash: string | null
-  connectedShellId: string | null
 }) => {
   const [files, setFiles] = useState<FileEntry[]>([])
   const [isTreeLoading, setIsTreeLoading] = useState(false)

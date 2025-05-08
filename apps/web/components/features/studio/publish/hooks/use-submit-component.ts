@@ -67,7 +67,7 @@ export const useSubmitComponent = () => {
     generateRegistry,
     bundleDemo,
     sandboxId,
-    onSuccess,
+    reconnectSandbox,
   }: {
     data: FormData
     publishAsUser: { id: string; username?: string }
@@ -81,11 +81,12 @@ export const useSubmitComponent = () => {
     >
     bundleDemo: () => Promise<string | undefined>
     sandboxId: string
-    onSuccess: () => void
+    reconnectSandbox: () => Promise<void>
   }) => {
     setIsSubmitting(true)
     setIsLoadingDialogOpen(true)
     setPublishProgress("Bundling component...")
+    await reconnectSandbox()
 
     console.log("data", data)
 
@@ -97,10 +98,15 @@ export const useSubmitComponent = () => {
     }
 
     try {
-      setPublishProgress("Updating component name and imports...")
-      await updateComponentNameAndImport(data.component_slug)
+      try {
+        setPublishProgress("Updating component name and imports...")
+        await updateComponentNameAndImport(data.component_slug)
+      } catch (error) {
+        console.error("Error updating component name and imports:", error)
+        toast.error("Renaming component failed; but we will continue")
+      }
 
-      setPublishProgress("Bundling component...")
+      setPublishProgress("Building component...")
       const resultOfGenerateRegistry = await generateRegistry(
         data.component_slug,
       )
@@ -118,11 +124,6 @@ export const useSubmitComponent = () => {
         throw new Error("Failed to bundle demo.")
       }
       const contentOfHtml = bundleDemoResult
-
-      console.log("componentCode", componentCode)
-      console.log("demoCode", demoCode)
-      console.log("componentNames", componentNames)
-      console.log("dependencies", dependencies)
 
       let componentIdToUse: number | null = null
       let existingDemoId: number | null = null
@@ -182,6 +183,10 @@ export const useSubmitComponent = () => {
 
       setPublishProgress("Uploading component files...")
       const baseFolder = `${publishAsUser.username}/${data.component_slug}`
+
+      console.log("PREVIEW UPLOAD")
+      console.log("demo.preview_image_file", demo.preview_image_file)
+      console.log("demo.preview_image_data_url", demo.preview_image_data_url)
 
       const [
         codeUrl,
@@ -247,13 +252,15 @@ export const useSubmitComponent = () => {
         }),
       ])
 
-      console.log("Actual Uploading Results:", {
-        codeUrl,
-        demoCodeUrl,
-        previewImageR2Url,
-        videoR2Url,
-        bundleHtmlUrl,
-      })
+      // console.log("Actual Uploading Results:", {
+      //   codeUrl,
+      //   demoCodeUrl,
+      //   previewImageR2Url,
+      //   videoR2Url,
+      //   bundleHtmlUrl,
+      // })
+
+      console.log("Preview Image R2 URL", previewImageR2Url)
 
       setPublishProgress(
         componentIdToUse
@@ -526,12 +533,13 @@ export const useSubmitComponent = () => {
     } catch (error) {
       console.error("Error submitting component:", error)
       toast.error(
-        `Submission failed: ${error instanceof Error ? error.message : String(error)}`,
+        `Please try again.Submission failed: ${error instanceof Error ? error.message : String(error)}`,
       )
-      setPublishProgress("Submission failed")
+      setPublishProgress("Submission failed; Please try again.")
+      setTimeout(() => setIsLoadingDialogOpen(false), 1500)
     } finally {
       setIsSubmitting(false)
-      onSuccess()
+      await reconnectSandbox()
       setTimeout(() => setIsLoadingDialogOpen(false), 1500)
     }
   }

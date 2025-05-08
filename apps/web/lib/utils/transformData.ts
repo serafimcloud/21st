@@ -1,4 +1,5 @@
 import { Component, DemoWithComponent, User, Tag } from "@/types/global"
+import ShortUUID from "short-uuid"
 
 // Define the extended type here
 export interface ExtendedDemoWithComponent extends DemoWithComponent {
@@ -6,6 +7,8 @@ export interface ExtendedDemoWithComponent extends DemoWithComponent {
   submission_status?: string
   moderators_feedback?: string
 }
+
+const shortUUID = ShortUUID()
 
 export const transformDemoResult = (result: any): ExtendedDemoWithComponent => {
   const componentUser =
@@ -31,6 +34,9 @@ export const transformDemoResult = (result: any): ExtendedDemoWithComponent => {
     fts: result.fts,
     component: {
       ...(result.component_data as Component),
+      sandbox_id: result.component_data.sandbox_id
+        ? shortUUID.fromUUID(result.component_data.sandbox_id)
+        : null,
       user: componentUser as User,
     } as Component & { user: User },
     user: result.user_data as User,

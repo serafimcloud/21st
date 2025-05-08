@@ -35,7 +35,7 @@ interface SandboxHeaderProps {
 
 export function SandboxHeader({
   sandboxId,
-  sandboxName = "Untitled",
+  sandboxName = "...",
   username,
   status = "draft",
   showEditName = true,
