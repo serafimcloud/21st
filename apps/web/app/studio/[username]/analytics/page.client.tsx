@@ -13,7 +13,7 @@ import { userStateAtom } from "@/lib/store/user-store"
 import {
   PayoutStats,
   PayoutStatsChart,
-} from "@/components/features/settings/payouts/payout-stats-chart"
+} from "@/components/features/studio/analytics/creator-stats-chart"
 import { PartnerProgramModal } from "@/components/features/studio/monetization/partner-program-modal"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
@@ -109,7 +109,8 @@ export function AnalyticsClient({ userId }: { userId: string }) {
               Partner Program
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Join our partner program to earn revenue when your components are viewed and used
+              Join our partner program to earn revenue when your components are
+              viewed and used
             </p>
           </div>
 

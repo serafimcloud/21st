@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import {
   PayoutHistoryTable,
   PayoutRecord,
-} from "@/components/features/settings/payouts/payout-history-table"
+} from "@/components/features/studio/monetization/payout-history-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"

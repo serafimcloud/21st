@@ -24,7 +24,7 @@ const settingsLinks = [
     href: "/settings/billing",
   },
   {
-    title: "Payouts",
+    title: "Payouts moved to Studio",
     href: "/settings/payouts",
   },
 ]
