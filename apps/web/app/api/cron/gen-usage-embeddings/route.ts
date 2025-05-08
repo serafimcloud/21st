@@ -2,6 +2,12 @@ import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  // Validate the request has the correct authorization header
+  const authHeader = req.headers.get("Authorization")
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   const supabase = supabaseWithAdminAccess
 
   const { data: missingItems, error } = await supabase.rpc(
