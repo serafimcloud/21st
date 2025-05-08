@@ -96,8 +96,6 @@ export function DemosTable({
     Record<string, { loaded: boolean; error?: string; fixedUrl?: string }>
   >({})
 
-  console.log("DEMOS", demos)
-
   // Format numbers with thousand separators (spaces)
   const formatNumberWithSpaces = (num: number): string => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
