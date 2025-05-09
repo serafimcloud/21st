@@ -149,7 +149,7 @@ export function LeaderboardCard({
   const tags = submission.tags || []
 
   // Use the shared utility function
-  const hideRankings = false
+  const hideRankings = shouldHideLeaderboardRankings() && !isHistorical
 
   const formatNumber = (num: number) => {
     if (num === undefined || num === null || isNaN(num)) {

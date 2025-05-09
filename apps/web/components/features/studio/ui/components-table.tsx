@@ -37,7 +37,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronDown, ChevronUp, InfoIcon, Lock, Globe } from "lucide-react"
 import { useId } from "react"
 import { Button } from "@/components/ui/button"
 import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
@@ -47,12 +47,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { InfoIcon } from "lucide-react"
+import { VisibilityToggle } from "./visibility-toggle"
 
 interface DemosTableProps {
   demos: ExtendedDemoWithComponent[]
   onEdit?: (demo: ExtendedDemoWithComponent) => void
   onOpenSandbox?: (shortSandboxId: string) => void
+  onUpdateVisibility?: (demoId: string, isPrivate: boolean) => Promise<void>
+  isOwnProfile?: boolean
 }
 
 // Format text with clickable links
@@ -86,6 +88,8 @@ export function DemosTable({
   demos = [],
   onEdit,
   onOpenSandbox,
+  onUpdateVisibility,
+  isOwnProfile = false,
 }: DemosTableProps) {
   const id = useId()
   const [pagination, setPagination] = useState<PaginationState>({
@@ -266,20 +270,19 @@ export function DemosTable({
       id: "is_private",
       accessorFn: (row) => (row.is_private ? "private" : "public"),
       cell: ({ row }) => {
-        const isPrivate = row.original.is_private
+        const isPrivate = Boolean(row.original.is_private)
+
+        const handleToggleVisibility = async (newIsPrivate: boolean) => {
+          if (!onUpdateVisibility) return
+          await onUpdateVisibility(String(row.original.id), newIsPrivate)
+        }
+
         return (
-          <div>
-            <span
-              className={cn(
-                "px-2 py-1 text-xs rounded",
-                isPrivate
-                  ? "bg-muted text-muted-foreground"
-                  : "bg-green-100 text-green-700",
-              )}
-            >
-              {isPrivate ? "Private" : "Public"}
-            </span>
-          </div>
+          <VisibilityToggle
+            isPrivate={isPrivate}
+            onToggle={onUpdateVisibility ? handleToggleVisibility : undefined}
+            readonly={!isOwnProfile && !onUpdateVisibility}
+          />
         )
       },
       size: 100,

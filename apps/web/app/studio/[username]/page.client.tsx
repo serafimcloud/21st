@@ -9,6 +9,8 @@ import { createNewSandbox } from "@/components/features/studio/sandbox/api"
 import { useState, useEffect, useRef } from "react"
 import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
 import { Plus } from "lucide-react"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { toast } from "sonner"
 
 interface StudioUsernameClientProps {
   user: User
@@ -29,6 +31,13 @@ export function StudioUsernameClient({
   const [isCreating, setIsCreating] = useState(false)
   const hasProcessedBeta = useRef(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const supabase = useClerkSupabaseClient()
+  const [localDemos, setLocalDemos] =
+    useState<ExtendedDemoWithComponent[]>(demos)
+
+  useEffect(() => {
+    setLocalDemos(demos)
+  }, [demos])
 
   const handleCreateNewSandbox = async () => {
     try {
@@ -44,6 +53,35 @@ export function StudioUsernameClient({
 
   const handleOpenSandbox = (shortSandboxId: string) => {
     router.push(`${pathname}/sandbox/${shortSandboxId}`)
+  }
+
+  const handleUpdateVisibility = async (demoId: string, isPrivate: boolean) => {
+    try {
+      // Update in Supabase - change to use is_public (which is the inverse of isPrivate)
+      const { error } = await supabase
+        .from("components")
+        .update({ is_public: !isPrivate } as any) // inverting the boolean
+        .eq("id", parseInt(demoId, 10))
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      setLocalDemos((prevDemos) =>
+        prevDemos.map((demo) =>
+          String(demo.id) === demoId
+            ? { ...demo, is_private: isPrivate }
+            : demo,
+        ),
+      )
+
+      toast.success(`Component is now ${isPrivate ? "private" : "public"}`)
+    } catch (error) {
+      console.error("Failed to update visibility:", error)
+      toast.error("Failed to update visibility")
+      throw error
+    }
   }
 
   // Show create dialog on ?new=true
@@ -95,7 +133,14 @@ export function StudioUsernameClient({
       </div>
 
       <div className="mt-4">
-        <DemosTable demos={demos} onOpenSandbox={handleOpenSandbox} />
+        <DemosTable
+          demos={localDemos}
+          onOpenSandbox={handleOpenSandbox}
+          onUpdateVisibility={
+            isOwnProfile || isAdmin ? handleUpdateVisibility : undefined
+          }
+          isOwnProfile={isOwnProfile || isAdmin}
+        />
       </div>
     </StudioLayout>
   )
