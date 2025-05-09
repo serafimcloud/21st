@@ -259,7 +259,7 @@ export const useSubmitComponent = () => {
             type: "text/plain",
             textContent: componentCode,
           },
-          fileKey: `${baseFolder}/code.tsx?t=${Date.now()}`,
+          fileKey: `${baseFolder}/code.${Date.now()}.tsx`,
           bucketName: "components-code",
         }),
         uploadToR2({
@@ -268,7 +268,7 @@ export const useSubmitComponent = () => {
             type: "text/plain",
             textContent: demoCode,
           },
-          fileKey: `${baseFolder}/${demo.demo_slug}/code.demo.tsx?t=${Date.now()}`,
+          fileKey: `${baseFolder}/${demo.demo_slug}/code.demo.${Date.now()}.tsx`,
           bucketName: "components-code",
         }),
         demo.preview_image_file &&
@@ -283,7 +283,7 @@ export const useSubmitComponent = () => {
                   "",
                 ),
               },
-              fileKey: `${baseFolder}/${demo.demo_slug}/preview.png?t=${Date.now()}`,
+              fileKey: `${baseFolder}/${demo.demo_slug}/preview.${Date.now()}.png`,
               bucketName: "components-code",
               contentType: demo.preview_image_file.type,
             })
@@ -293,7 +293,7 @@ export const useSubmitComponent = () => {
         demo.preview_video_data_url
           ? context.uploadToR2ClientSide({
               file: demo.preview_video_file,
-              fileKey: `${baseFolder}/${demo.demo_slug}/video.mp4?t=${Date.now()}`,
+              fileKey: `${baseFolder}/${demo.demo_slug}/video.${Date.now()}.mp4`,
               bucketName: "components-code",
               contentType: "video/mp4",
             })
@@ -304,7 +304,7 @@ export const useSubmitComponent = () => {
             type: "text/html",
             textContent: state.contentOfHtml!,
           },
-          fileKey: `${baseFolder}/${demo.demo_slug}/bundle.html?t=${Date.now()}`,
+          fileKey: `${baseFolder}/${demo.demo_slug}/bundle.${Date.now()}.html`,
           bucketName: "components-code",
           contentType: "text/html",
         }),
