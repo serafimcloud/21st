@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { editSandbox } from "../api"
+import { useUser } from "@clerk/nextjs"
 
 interface SandboxHeaderProps {
   sandboxId: string | null | undefined
@@ -27,6 +28,7 @@ interface SandboxHeaderProps {
   customBackLabel?: string
   customNextUrl?: string
   customNextLabel?: string
+  customNextIcon?: React.ReactNode
   customNextAction?: () => void
   hideNext?: boolean
   isNextLoading?: boolean
@@ -44,6 +46,7 @@ export function SandboxHeader({
   customBackLabel,
   customNextUrl,
   customNextLabel = "Continue",
+  customNextIcon,
   customNextAction,
   hideNext = false,
   isNextLoading = false,
@@ -54,6 +57,8 @@ export function SandboxHeader({
   const [editLoading, setEditLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const textRef = useRef<HTMLHeadingElement>(null)
+
+  const { user } = useUser()
 
   const params = useParams()
   const pathname = usePathname()
@@ -176,12 +181,7 @@ export function SandboxHeader({
 
           {username && (
             <div className="flex items-center gap-1">
-              <UserAvatar
-                src={null}
-                alt={username}
-                size={24}
-                className="mr-1"
-              />
+              <UserAvatar src={user?.imageUrl} size={24} className="mr-1" />
               <span className="text-sm font-medium">{username}</span>
               <div className="text-muted-foreground mx-1">/</div>
             </div>
@@ -285,6 +285,7 @@ export function SandboxHeader({
               <div className="flex items-center justify-center gap-2">
                 {isNextLoading && <Spinner size={16} color="white" />}
                 {customNextLabel}
+                {customNextIcon && !isNextLoading && customNextIcon}
               </div>
             </Button>
           )}
