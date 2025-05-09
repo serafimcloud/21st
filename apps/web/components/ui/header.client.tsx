@@ -226,6 +226,7 @@ function HeaderContent({
           )}
         >
           <Logo />
+
           {text && !isMobile && (
             <div className="flex items-center gap-2">
               <Icons.slash className="text-border w-[22px] h-[22px]" />
@@ -391,6 +392,7 @@ function HeaderContent({
             >
               <Icons.search className="h-6 w-6" />
             </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger className="cursor-pointer rounded-full ml-2">
                 <UserAvatar
@@ -628,6 +630,14 @@ function HeaderContent({
                 <Button>Sign up</Button>
               </SignInButton>
             )}
+            <Button
+            variant="ghost"
+            size="icon"
+              className="hidden md:flex md:justify-center"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+            > 
+             <Icons.sidebar className="h-4 w-4" />
+            </Button>
           </SignedOut>
         </div>
       </header>
