@@ -66,6 +66,63 @@ export type Database = {
           },
         ]
       }
+      author_payouts: {
+        Row: {
+          author_id: string
+          created_at: string | null
+          id: number
+          paypal_email: string
+          period_end: string
+          period_start: string
+          processed_at: string | null
+          status: string
+          total_amount: number
+          total_usage: number
+          transaction_id: string | null
+        }
+        Insert: {
+          author_id: string
+          created_at?: string | null
+          id?: number
+          paypal_email: string
+          period_end: string
+          period_start: string
+          processed_at?: string | null
+          status?: string
+          total_amount: number
+          total_usage: number
+          transaction_id?: string | null
+        }
+        Update: {
+          author_id?: string
+          created_at?: string | null
+          id?: number
+          paypal_email?: string
+          period_end?: string
+          period_start?: string
+          processed_at?: string | null
+          status?: string
+          total_amount?: number
+          total_usage?: number
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_author"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       backup_code_embeddings: {
         Row: {
           created_at: string | null
@@ -1169,63 +1226,6 @@ export type Database = {
           },
         ]
       }
-      mcp_author_payouts: {
-        Row: {
-          author_id: string
-          created_at: string | null
-          id: number
-          paypal_email: string
-          period_end: string
-          period_start: string
-          processed_at: string | null
-          status: string
-          total_amount: number
-          total_usage: number
-          transaction_id: string | null
-        }
-        Insert: {
-          author_id: string
-          created_at?: string | null
-          id?: never
-          paypal_email: string
-          period_end: string
-          period_start: string
-          processed_at?: string | null
-          status?: string
-          total_amount: number
-          total_usage: number
-          transaction_id?: string | null
-        }
-        Update: {
-          author_id?: string
-          created_at?: string | null
-          id?: never
-          paypal_email?: string
-          period_end?: string
-          period_start?: string
-          processed_at?: string | null
-          status?: string
-          total_amount?: number
-          total_usage?: number
-          transaction_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_author"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "referral_analytics"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "fk_author"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       mcp_component_usage: {
         Row: {
           author_id: string
@@ -1347,6 +1347,51 @@ export type Database = {
           },
           {
             foreignKeyName: "fk_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_rates: {
+        Row: {
+          active_from: string
+          active_till: string | null
+          activity_type: string
+          created_at: string
+          id: number
+          price: number
+          user_id: string | null
+        }
+        Insert: {
+          active_from: string
+          active_till?: string | null
+          activity_type: string
+          created_at?: string
+          id?: number
+          price: number
+          user_id?: string | null
+        }
+        Update: {
+          active_from?: string
+          active_till?: string | null
+          activity_type?: string
+          created_at?: string
+          id?: number
+          price?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_rates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "payout_rates_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -2526,6 +2571,17 @@ export type Database = {
           views: number
           views_earnings: number
           total_earnings: number
+          date: string
+        }[]
+      }
+      get_daily_user_earnings_v2: {
+        Args: { p_user_id: string }
+        Returns: {
+          mcp_usages: number
+          views: number
+          code_copies: number
+          prompt_copies: number
+          cli_downloads: number
           date: string
         }[]
       }

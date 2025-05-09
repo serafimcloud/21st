@@ -1,8 +1,16 @@
 "use client"
 
-import { Code, DollarSign, Eye } from "lucide-react"
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
-import { motion, AnimatePresence } from "motion/react"
+import {
+  Bot,
+  Code,
+  DollarSign,
+  Eye,
+  ScrollText,
+  SquareTerminal,
+} from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
+import React from "react"
+import { Bar, CartesianGrid, ComposedChart, XAxis } from "recharts"
 
 import {
   Card,
@@ -32,21 +40,29 @@ import { eachMonthOfInterval, format, startOfMonth } from "date-fns"
 import { useMemo, useState } from "react"
 
 const chartConfig = {
-  views_earnings: {
-    label: "Views",
+  total_earnings: {
+    label: "Earnings",
     color: "hsl(var(--chart-1))",
   },
   views: {
     label: "Views",
     color: "hsl(var(--chart-1))",
   },
-  mcp_earnings: {
-    label: "MCP",
+  code_copies: {
+    label: "Code Copies",
     color: "hsl(var(--chart-2))",
+  },
+  prompt_copies: {
+    label: "Prompt Copies",
+    color: "hsl(var(--chart-3))",
+  },
+  cli_downloads: {
+    label: "CLI Downloads",
+    color: "hsl(var(--chart-4))",
   },
   mcp_usages: {
     label: "MCP Uses",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(var(--chart-5))",
   },
 } satisfies ChartConfig
 
@@ -89,7 +105,7 @@ function BarChartSection({
       config={chartConfig}
       className="aspect-auto h-[250px] w-full"
     >
-      <BarChart data={data}>
+      <ComposedChart data={data}>
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="date"
@@ -168,7 +184,7 @@ function BarChartSection({
           />
         ))}
         <ChartLegend content={<ChartLegendContent />} />
-      </BarChart>
+      </ComposedChart>
     </ChartContainer>
   )
 }
@@ -206,25 +222,20 @@ export function PayoutStatsChart({
       string,
       {
         date: string
-        mcp_earnings: number
-        views: number
-        views_earnings: number
-        mcp_usages: number
+        [key: string]: any // Allow dynamic keys
       }
     >()
     data.forEach((item) => {
       const month = getMonthYear(item.date)
       const entry = map.get(month) ?? {
         date: month,
-        mcp_earnings: 0,
-        views: 0,
-        views_earnings: 0,
-        mcp_usages: 0,
       }
-      entry.mcp_earnings += item.mcp_earnings || 0
-      entry.views += item.views || 0
-      entry.views_earnings += item.views_earnings || 0
-      entry.mcp_usages += item.mcp_usages || 0
+      // Dynamically sum all numeric fields except 'date'
+      for (const key in item) {
+        if (key !== "date" && typeof (item as any)[key] === "number") {
+          entry[key] = (entry[key] || 0) + (item as any)[key]
+        }
+      }
       map.set(month, entry)
     })
     // Sort by month ascending
@@ -237,16 +248,43 @@ export function PayoutStatsChart({
   }, [data, selectedMonth, groupedByMonth])
 
   const earningsSum = filteredData.reduce(
-    (acc, curr) => acc + curr.mcp_earnings + curr.views_earnings,
-    0,
-  )
-  const viewsSum = filteredData.reduce((acc, curr) => acc + curr.views, 0)
-  const mcpUsageSum = filteredData.reduce(
-    (acc, curr) => acc + (curr.mcp_usages || 0),
+    (acc, curr) => acc + curr.total_earnings,
     0,
   )
 
+  const statKeysForSelect = useMemo(() => {
+    return [
+      "views",
+      "code_copies",
+      "prompt_copies",
+      "cli_downloads",
+      "mcp_usages",
+    ] as const
+  }, [])
+
+  const [selectedStat, setSelectedStat] = useState<string>(statKeysForSelect[0])
+
+  const selectedStatSum = useMemo(() => {
+    if (!filteredData || !selectedStat || filteredData.length === 0) return 0
+    return filteredData.reduce((acc, curr) => {
+      const value = (curr as { [key: string]: any })[selectedStat]
+      return acc + (typeof value === "number" ? value : 0)
+    }, 0)
+  }, [filteredData, selectedStat])
+
   const isEmpty = !filteredData || filteredData.length === 0
+
+  // Map stat keys to icons
+  const statIcons: Record<
+    string,
+    React.ComponentType<{ className?: string }>
+  > = {
+    views: Eye,
+    code_copies: Code,
+    prompt_copies: ScrollText,
+    cli_downloads: SquareTerminal,
+    mcp_usages: Bot,
+  }
 
   return (
     <Card>
@@ -297,11 +335,14 @@ export function PayoutStatsChart({
             <CardDescription className="font-normal">Stats</CardDescription>
             <CardTitle className="tracking-normal flex items-center gap-4">
               <span className="inline-flex items-center gap-1.5">
-                <Eye className="w-5 h-5" />
+                {statIcons[selectedStat] &&
+                  React.createElement(statIcons[selectedStat], {
+                    className: "w-5 h-5",
+                  })}
                 <AnimatePresence mode="wait" initial={false}>
                   {isLoading ? (
                     <motion.span
-                      key="views-skeleton"
+                      key="stats-sum-skeleton"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -313,7 +354,7 @@ export function PayoutStatsChart({
                     </motion.span>
                   ) : (
                     <motion.span
-                      key="views-value"
+                      key="stats-sum-value"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -321,37 +362,7 @@ export function PayoutStatsChart({
                       className="min-w-[5rem] h-6 flex items-center"
                       style={{ display: "inline-flex" }}
                     >
-                      {formatK(viewsSum)}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Code className="w-5 h-5" />
-                <AnimatePresence mode="wait" initial={false}>
-                  {isLoading ? (
-                    <motion.span
-                      key="mcp-skeleton"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="h-6 w-20 bg-muted-foreground/10 rounded-md"
-                      style={{ display: "inline-block" }}
-                    >
-                      <Skeleton className="h-6 w-20 bg-muted-foreground/10 rounded-md" />
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="mcp-value"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="min-w-[5rem] h-6 flex items-center"
-                      style={{ display: "inline-flex" }}
-                    >
-                      {formatK(mcpUsageSum)}
+                      {formatK(selectedStatSum)}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -361,7 +372,22 @@ export function PayoutStatsChart({
         </TabsList>
 
         <CardContent className="space-y-6 p-6">
-          <div className="flex flex-row justify-end">
+          <div className="flex flex-row justify-end gap-4">
+            {tab === "stats" && !isLoading && !isEmpty && (
+              <Select value={selectedStat} onValueChange={setSelectedStat}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select Stat" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statKeysForSelect.map((statKey) => (
+                    <SelectItem key={statKey} value={statKey}>
+                      {chartConfig[statKey as keyof typeof chartConfig]
+                        ?.label || statKey}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {isLoading ? (
               <Skeleton className="w-48 h-9 rounded-md" />
             ) : !isEmpty ? (
@@ -389,6 +415,7 @@ export function PayoutStatsChart({
               <div className="w-48 h-9 opacity-0 pointer-events-none select-none" />
             )}
           </div>
+
           <AnimatePresence mode="wait">
             {isLoading ? (
               <motion.div
@@ -424,16 +451,16 @@ export function PayoutStatsChart({
               >
                 {/* Skeleton Bar Chart Imitation as background */}
                 <div className="absolute inset-0 flex items-end justify-between w-full h-full gap-3 opacity-60 pointer-events-none">
-                  <Skeleton className="w-1/12 h-1/2 rounded-sm" />
-                  <Skeleton className="w-1/12 h-4/5 rounded-sm" />
-                  <Skeleton className="w-1/12 h-2/3 rounded-sm" />
-                  <Skeleton className="w-1/12 h-1/3 rounded-sm" />
-                  <Skeleton className="w-1/12 h-3/4 rounded-sm" />
-                  <Skeleton className="w-1/12 h-2/5 rounded-sm" />
-                  <Skeleton className="w-1/12 h-3/5 rounded-sm" />
-                  <Skeleton className="w-1/12 h-1/4 rounded-sm" />
-                  <Skeleton className="w-1/12 h-2/4 rounded-sm" />
-                  <Skeleton className="w-1/12 h-3/4 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-1/2 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-4/5 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-2/3 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-1/3 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-3/4 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-2/5 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-3/5 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-1/4 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-2/4 rounded-sm" />
+                  <Skeleton className="animate-none w-1/12 h-3/4 rounded-sm" />
                 </div>
                 {/* Overlayed message */}
                 <span className="relative z-10 text-muted-foreground text-base font-medium bg-background/80 px-4 py-2 rounded-md">
@@ -453,17 +480,17 @@ export function PayoutStatsChart({
                   <BarChartSection
                     data={filteredData}
                     chartConfig={chartConfig}
-                    dataKeys={["views_earnings"]}
+                    dataKeys={["total_earnings"]}
                     groupByMonth={selectedMonth === "all"}
                     valueFormatter={formatPrice}
-                    showTotal={true}
+                    showTotal={false}
                   />
                 </TabsContent>
                 <TabsContent value="stats" className="m-0">
                   <BarChartSection
                     data={filteredData}
                     chartConfig={chartConfig}
-                    dataKeys={["views", "mcp_usages"]}
+                    dataKeys={selectedStat ? [selectedStat] : []}
                     groupByMonth={selectedMonth === "all"}
                     valueFormatter={formatK}
                     showTotal={false}

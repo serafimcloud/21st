@@ -1,6 +1,8 @@
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { NextRequest, NextResponse } from "next/server"
 
+export const maxDuration = 600
+
 export async function GET(req: NextRequest): Promise<NextResponse> {
   // Validate the request has the correct authorization header
   const authHeader = req.headers.get("Authorization")
