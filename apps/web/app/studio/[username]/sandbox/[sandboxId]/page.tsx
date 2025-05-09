@@ -4,12 +4,9 @@ import { useParams } from "next/navigation"
 import { SandboxHeader } from "@/components/features/studio/sandbox/components/sandbox-header"
 import { useRouter, usePathname } from "next/navigation"
 import { useState } from "react"
-import {
-  ServerSandbox,
-  useSandbox,
-} from "@/components/features/studio/sandbox/hooks/use-sandbox"
+import { ServerSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import PageClient from "./page.client"
-import { ArrowRight, FileText, PenLineIcon } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 export default function Page() {
   const { username, sandboxId } = useParams() as {

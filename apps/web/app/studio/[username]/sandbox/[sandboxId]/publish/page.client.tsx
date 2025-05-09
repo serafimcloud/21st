@@ -67,12 +67,16 @@ const PublishPage = ({
   const { isLoading: isComponentDataLoading, formData: componentFormData } =
     useComponentData(serverSandbox?.component_id ?? null)
 
-  const { generateRegistry, bundleDemo, updateComponentNameAndImport } =
-    useFileSystem({
-      sandboxRef: sandboxRef,
-      reconnectSandbox: reconnectSandbox,
-      sandboxConnectionHash: sandboxConnectionHash,
-    })
+  const {
+    generateRegistry,
+    bundleDemo,
+    updateComponentNameAndImport,
+    optimizeComponentAndDemo,
+  } = useFileSystem({
+    sandboxRef: sandboxRef,
+    reconnectSandbox: reconnectSandbox,
+    sandboxConnectionHash: sandboxConnectionHash,
+  })
   const { user } = useUser()
   const { isLoaded: isClerkUserLoaded } = useUser()
 
@@ -248,6 +252,7 @@ const PublishPage = ({
           generateRegistry,
           bundleDemo,
           updateComponentNameAndImport,
+          optimizeComponentAndDemo,
           sandboxId: currentSandbox.id,
           reconnectSandbox,
         })

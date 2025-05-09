@@ -9,6 +9,7 @@ import { Tables } from "@/types/supabase"
 import { useState } from "react"
 import { toast } from "sonner"
 import { FormData } from "../config/utils"
+import { useFileSystem } from "@/components/features/studio/sandbox/hooks/use-file-system"
 
 type ParsedCodeData = {
   componentCode: string
@@ -32,6 +33,7 @@ type StepContext = {
   publishAsUser: { id: string; username?: string }
   sandboxId: string
   updateComponentNameAndImport: (newSlug: string) => Promise<void>
+  optimizeComponentAndDemo: (componentSlug: string) => Promise<void>
   generateRegistry: (slug?: string) => Promise<
     | {
         componentRegistryJSON: string
@@ -143,6 +145,24 @@ export const useSubmitComponent = () => {
     } catch (error) {
       console.error("Error updating component name and imports:", error)
       toast.error("Renaming component failed; but we will continue")
+    }
+    return state
+  }
+
+  async function _stepOptimizeComponent(
+    context: StepContext,
+    state: SubmissionProcessState,
+  ): Promise<SubmissionProcessState> {
+    context.setPublishProgress("Optimizing component code...")
+    try {
+      await context.optimizeComponentAndDemo(context.form.component_slug)
+      console.log(
+        `Successfully optimized code for ${context.form.component_slug}`,
+      )
+    } catch (error) {
+      console.error("Error during component optimization:", error)
+      toast.error("Failed to optimize component code.")
+      // Continue with the process even if optimization fails
     }
     return state
   }
@@ -629,6 +649,7 @@ export const useSubmitComponent = () => {
     data,
     publishAsUser,
     updateComponentNameAndImport,
+    optimizeComponentAndDemo,
     generateRegistry,
     bundleDemo,
     sandboxId,
@@ -637,6 +658,7 @@ export const useSubmitComponent = () => {
     data: FormData
     publishAsUser: { id: string; username?: string }
     updateComponentNameAndImport: (newSlug: string) => Promise<void>
+    optimizeComponentAndDemo?: (componentSlug: string) => Promise<void>
     generateRegistry: (slug?: string) => Promise<
       | {
           componentRegistryJSON: string
@@ -659,6 +681,7 @@ export const useSubmitComponent = () => {
       publishAsUser,
       sandboxId,
       updateComponentNameAndImport,
+      optimizeComponentAndDemo: optimizeComponentAndDemo || (async () => {}),
       generateRegistry,
       bundleDemo,
       reconnectSandbox,
@@ -692,6 +715,14 @@ export const useSubmitComponent = () => {
         "after _stepUpdateComponentNameAndImports state",
         submissionState,
       )
+
+      // Add optimization step
+      submissionState = await _stepOptimizeComponent(
+        stepContext,
+        submissionState,
+      )
+      console.log("after _stepOptimizeComponent state", submissionState)
+
       submissionState = await _stepGenerateRegistryAndParseCode(
         stepContext,
         submissionState,

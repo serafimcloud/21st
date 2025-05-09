@@ -427,6 +427,62 @@ export const useFileSystem = ({
     )
   }
 
+  // clean comments from component and demo
+  const optimizeComponentAndDemo = async (componentSlug: string) => {
+    const demoPath = normalizePath("src/demo.tsx")
+    const componentPath = normalizePath(
+      `src/components/ui/${componentSlug}.tsx`,
+    )
+
+    const commentsToRemoveDemo = [
+      "// This is a demo of a preview",
+      "// That's what users will see in the preview",
+    ]
+
+    const commentsToRemoveComponent = [
+      "// This is file of your component",
+      "// You can use any dependencies from npm; we import them automatically in package.json",
+    ]
+
+    const cleanFileContent = async (
+      filePath: string,
+      commentsToRemove: string[],
+    ) => {
+      try {
+        let content = await sbWrapper((sandbox) =>
+          sandbox.fs.readTextFile(filePath),
+        )
+        if (content) {
+          let updated = false
+          commentsToRemove.forEach((comment) => {
+            const regex = new RegExp(
+              `^\\s*${comment.replace(/[.*+?^${}()|[\]\\]/g, "\\\\$&")}\\s*\\n?`,
+              "gm",
+            )
+            if (regex.test(content!)) {
+              content = content!.replace(regex, "")
+              updated = true
+            }
+          })
+          if (updated) {
+            await sbWrapper((sandbox) =>
+              sandbox.fs.writeTextFile(filePath, content!),
+            )
+            console.log(`Cleaned comments from ${filePath}`)
+          }
+        }
+      } catch (error) {
+        // Fail silently if file doesn't exist or cannot be read/written
+        console.warn(
+          `Could not clean comments from ${filePath}: ${(error as Error).message}`,
+        )
+      }
+    }
+
+    await cleanFileContent(demoPath, commentsToRemoveDemo)
+    await cleanFileContent(componentPath, commentsToRemoveComponent)
+  }
+
   // Function to compile the project into a shadcn registry
   const generateRegistry = async (
     slug?: string,
@@ -611,6 +667,7 @@ export const useFileSystem = ({
     // registry
     generateRegistry,
     bundleDemo,
+    optimizeComponentAndDemo,
     // getContentOfComponentRegistryJSON, // Keep these private
     // getContentOfDemoRegistryJSON,
   }
