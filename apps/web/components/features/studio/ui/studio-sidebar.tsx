@@ -23,6 +23,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { useEffect, useState } from "react"
 import { partnerModalOpenAtom } from "@/app/studio/[username]/analytics/page.client"
@@ -37,6 +38,7 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
   const isPartner = userState?.profile?.is_partner || false
   const [currentHash, setCurrentHash] = useState("")
   const [, setPartnerModalOpen] = useAtom(partnerModalOpenAtom)
+  const { open } = useSidebar()
 
   // Get the base username path
   const baseUsername = user.display_username || user.username
@@ -72,29 +74,42 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
   }
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b">
+    <Sidebar className="z-4 pt-14  bg-background border-r-transparent border-none" collapsible="icon">
+      <SidebarHeader className="border-b bg-background">
         <div className="flex flex-col items-center py-4">
           <UserAvatar
             src={user.display_image_url || user.image_url || "/placeholder.svg"}
             alt={user.display_name || user.name || ""}
-            size={64}
-            className="mb-4"
+            size={open ? 48 : 24}
+            className={cn(
+              "transition-all duration-300 ease-in-out",
+              open ? "mb-4" : "mb-0",
+            )}
           />
-          <h2 className="text-xl font-medium text-center">
-            {user.display_name || user.name || user.username}
-          </h2>
-          <p className="text-sm text-muted-foreground text-center">
-            @{user.display_username || user.username}
-          </p>
+          <div
+            className={cn(
+              "flex flex-col items-center transition-all duration-300 ease-in-out overflow-hidden",
+              open ? "max-h-16 opacity-100 mt-1" : "max-h-0 opacity-0 mt-0",
+            )}
+          >
+            <h2 className="text-xl font-medium text-center">
+              {user.display_name || user.name || user.username}
+            </h2>
+            <p className="text-sm text-muted-foreground text-center">
+              @{user.display_username || user.username}
+            </p>
+          </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4">
+      <SidebarContent className="px-2 py-4  bg-background">
         <SidebarMenu>
           <SidebarMenuItem>
             <Link href={basePath} className="flex items-center gap-2">
-              <SidebarMenuButton isActive={isComponentsActive}>
+              <SidebarMenuButton
+                isActive={isComponentsActive}
+                tooltip="Components"
+              >
                 <Layers className="h-4 w-4" />
                 <span>Components</span>
               </SidebarMenuButton>
@@ -106,7 +121,10 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
               href={`${basePath}/analytics`}
               className="flex items-center gap-2"
             >
-              <SidebarMenuButton isActive={isAnalyticsActive}>
+              <SidebarMenuButton
+                isActive={isAnalyticsActive}
+                tooltip="Analytics"
+              >
                 <BarChartBig className="h-4 w-4" />
                 <span>Analytics</span>
               </SidebarMenuButton>
@@ -123,7 +141,10 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
               className="flex items-center gap-2"
               onClick={handleMonetizationClick}
             >
-              <SidebarMenuButton isActive={isMonetizationActive}>
+              <SidebarMenuButton
+                isActive={isMonetizationActive}
+                tooltip="Monetization"
+              >
                 <CreditCard className="h-4 w-4" />
                 <span>Monetization</span>
               </SidebarMenuButton>
@@ -132,21 +153,26 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="border-t">
-        <Link
-          href="/settings/profile"
-          className="flex w-full items-center gap-2 h-9 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md"
-        >
-          <Settings className="h-4 w-4" />
-          <span>Settings</span>
-        </Link>
-        <Link
-          href="/"
-          className="flex w-full items-center gap-2 h-9 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to 21st.dev</span>
-        </Link>
+      <SidebarFooter className="border-t bg-background">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <Link href="/settings/profile" className="flex items-center gap-2">
+              <SidebarMenuButton tooltip="Settings">
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <Link href="/" className="flex items-center gap-2">
+              <SidebarMenuButton tooltip="Home">
+                <Home className="h-4 w-4" />
+                <span>Back to 21st.dev</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )
