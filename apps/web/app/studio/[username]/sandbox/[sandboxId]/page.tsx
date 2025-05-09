@@ -9,6 +9,7 @@ import {
   useSandbox,
 } from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import PageClient from "./page.client"
+import { ArrowRight, FileText, PenLineIcon } from "lucide-react"
 
 export default function Page() {
   const { username, sandboxId } = useParams() as {
@@ -33,6 +34,8 @@ export default function Page() {
         sandboxName={serverSandbox?.name}
         username={username}
         customNextAction={handleNext}
+        customNextIcon={<ArrowRight size={16} />}
+        customNextLabel="Continue"
         isNextLoading={isNextLoading || !serverSandbox}
       />
       <PageClient setServerSandbox={setServerSandbox} />
