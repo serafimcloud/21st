@@ -6,6 +6,7 @@ import { atom, useAtom } from "jotai"
 import { useTheme } from "next-themes"
 import Link from "next/link"
 import { Dispatch, SetStateAction, useEffect, useState } from "react"
+import ShortUUID from "short-uuid"
 
 import { useSupabaseAnalytics } from "@/hooks/use-analytics"
 import {
@@ -551,12 +552,29 @@ export default function ComponentPage({
   }
 
   const handleEditClick = () => {
-    setIsEditDialogOpen(true)
-    trackEvent(AMPLITUDE_EVENTS.EDIT_COMPONENT, {
-      componentId: component.id,
-      componentName: component.name,
-      userId: user?.id,
-    })
+    if (component.sandbox_id) {
+      const shortSandboxId = ShortUUID().fromUUID(component.sandbox_id)
+
+      const username =
+        component.user.display_username || component.user.username
+      router.push(`/studio/${username}/sandbox/${shortSandboxId}`)
+      trackEvent(AMPLITUDE_EVENTS.EDIT_COMPONENT, {
+        componentId: component.id,
+        componentName: component.name,
+        userId: user?.id,
+        sandboxId: component.sandbox_id,
+        shortSandboxId: shortSandboxId,
+        editType: "sandbox",
+      })
+    } else {
+      setIsEditDialogOpen(true)
+      trackEvent(AMPLITUDE_EVENTS.EDIT_COMPONENT, {
+        componentId: component.id,
+        componentName: component.name,
+        userId: user?.id,
+        editType: "dialog",
+      })
+    }
   }
 
   const handlePromptAction = async () => {
