@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
+    "cypress:open": "cypress open",
     "build:css": "tailwindcss -i ./input.css -o ./public/compiled-tailwind.css --minify",
     "combine-css": "node css/combinedCSS.js",
     "generate-embeddings": "ts-node --project scripts/tsconfig.json scripts/generate-embeddings.ts"
@@ -115,6 +116,7 @@
     "@types/react": "19.1.1",
     "@types/react-dom": "19.1.2",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "cypress": "^14.3.3",
     "dotenv": "^16.4.5",
     "eslint": "^8",
     "eslint-config-next": "15.3.0",
