@@ -237,7 +237,7 @@ function HeaderContent({
           <div
             className={cn(
               "hidden md:block w-[400px]",
-              open ? "ml-4" : "absolute left-1/2 -translate-x-1/2",
+              open ? "" : "absolute left-1/2 -translate-x-1/2",
             )}
           >
             <Button
