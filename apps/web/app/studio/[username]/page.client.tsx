@@ -6,11 +6,12 @@ import { DemosTable } from "@/components/features/studio/ui/components-table"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { createNewSandbox } from "@/components/features/studio/sandbox/api"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
 import { Plus } from "lucide-react"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { toast } from "sonner"
+import { SuccessDialog } from "@/components/features/publish/components/success-dialog"
 
 interface StudioUsernameClientProps {
   user: User
@@ -34,6 +35,13 @@ export function StudioUsernameClient({
   const supabase = useClerkSupabaseClient()
   const [localDemos, setLocalDemos] =
     useState<ExtendedDemoWithComponent[]>(demos)
+
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [successDialogData, setSuccessDialogData] = useState<{
+    componentSlug: string
+    username: string
+    demoSlug: string
+  } | null>(null)
 
   useEffect(() => {
     setLocalDemos(demos)
@@ -102,7 +110,39 @@ export function StudioUsernameClient({
       hasProcessedBeta.current = true
       handleCreateNewSandbox()
     }
-  }, [searchParams])
+  }, [searchParams, handleCreateNewSandbox, isOwnProfile, isAdmin])
+
+  useEffect(() => {
+    const publishSuccess = searchParams.get("publishSuccess")
+    const componentSlug = searchParams.get("componentSlug")
+    const username = searchParams.get("username")
+    const demoSlug = searchParams.get("demoSlug")
+
+    if (publishSuccess === "true" && componentSlug && username && demoSlug) {
+      setSuccessDialogData({ componentSlug, username, demoSlug })
+      setShowSuccessDialog(true)
+
+      const newSearchParams = new URLSearchParams(searchParams.toString())
+      newSearchParams.delete("publishSuccess")
+      newSearchParams.delete("componentSlug")
+      newSearchParams.delete("username")
+      newSearchParams.delete("demoSlug")
+      router.replace(`${pathname}?${newSearchParams.toString()}`)
+    }
+  }, [searchParams, router, pathname])
+
+  const handleGoToComponentDialog = useCallback(() => {
+    if (successDialogData) {
+      const { username, componentSlug, demoSlug } = successDialogData
+      router.push(`/${username}/${componentSlug}/${demoSlug}`)
+    }
+    setShowSuccessDialog(false)
+  }, [successDialogData, router])
+
+  const handleAddAnotherDialog = useCallback(() => {
+    setShowCreateDialog(true) // Open the create new sandbox dialog
+    setShowSuccessDialog(false)
+  }, [setShowCreateDialog])
 
   return (
     <StudioLayout
@@ -142,6 +182,13 @@ export function StudioUsernameClient({
           isOwnProfile={isOwnProfile || isAdmin}
         />
       </div>
+      <SuccessDialog
+        isOpen={showSuccessDialog}
+        onOpenChange={setShowSuccessDialog}
+        onAddAnother={handleAddAnotherDialog}
+        onGoToComponent={handleGoToComponentDialog}
+        mode={"component"}
+      />
     </StudioLayout>
   )
 }

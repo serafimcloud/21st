@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { debounce } from "lodash"
 import { Trash2 } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -21,7 +21,6 @@ import { Form } from "@/components/ui/form"
 import { LoadingDialog } from "@/components/ui/loading-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 
-import { SuccessDialog } from "@/components/features/publish/components/success-dialog"
 import { ComponentForm } from "@/components/features/studio/publish/components/forms/component-form"
 import { DemoDetailsForm } from "@/components/features/studio/publish/components/forms/demo-form"
 import {
@@ -62,6 +61,7 @@ const PublishPage = ({
   } = useSandbox({
     sandboxId,
   })
+  const router = useRouter()
 
   // Fetch component data if sandbox is linked to a component
   const { isLoading: isComponentDataLoading, formData: componentFormData } =
@@ -269,39 +269,43 @@ const PublishPage = ({
     return !!description && !!name && !!component_slug
   }, [watchedComponentFields])
 
-  const handleGoToComponent = useCallback(() => {
-    let finalPublishUser: { id: string; username?: string } | null = null
-    if (publishAsUser?.id) {
-      finalPublishUser = {
-        id: publishAsUser.id,
-        username: publishAsUser.username || undefined,
-      }
-    } else if (user?.id) {
-      finalPublishUser = { id: user.id, username: user.username || undefined }
-    }
-
-    const username = finalPublishUser?.username
-    const slug = form.getValues("component_slug")
-    const demoSlug = createdDemoSlug || "default"
-    if (username && slug) {
-      window.location.href = `/${username}/${slug}/${demoSlug}`
-      console.log(`Redirecting to /${username}/${slug}/${demoSlug}`)
-    } else {
-      console.warn("Could not determine redirect path.")
-    }
-    setIsSuccessDialogOpen(false)
-  }, [form, createdDemoSlug, setIsSuccessDialogOpen, publishAsUser, user])
-
-  const handleAddAnother = () => {
-    form.reset()
-    setIsSuccessDialogOpen(false)
-    setOpenAccordion(["component-info", "demo-0"])
-  }
-
   const isDemoComplete = (demo: any) =>
     demo.name && demo.tags?.length > 0 && demo.preview_image_data_url
 
   submitHandlerRef!.current = handleSubmit
+
+  useEffect(() => {
+    if (isSuccessDialogOpen) {
+      const usernameToUse = publishAsUser?.username || user?.username
+      const componentSlugValue = form.getValues("component_slug")
+      const demoSlugToUse = createdDemoSlug || "default"
+
+      if (usernameToUse && componentSlugValue) {
+        router.push(
+          `/studio/${usernameToUse}?publishSuccess=true&componentSlug=${componentSlugValue}&username=${usernameToUse}&demoSlug=${demoSlugToUse}`,
+        )
+        console.log(
+          `Redirecting to /${usernameToUse}?publishSuccess=true&componentSlug=${componentSlugValue}&username=${usernameToUse}&demoSlug=${demoSlugToUse}`,
+        )
+      } else {
+        console.warn(
+          "Could not determine redirect path for success dialog. Missing username or component slug.",
+        )
+        toast.error(
+          "Successfully published, but could not redirect to success page.",
+        )
+      }
+      setIsSuccessDialogOpen(false)
+    }
+  }, [
+    isSuccessDialogOpen,
+    publishAsUser,
+    user,
+    form,
+    createdDemoSlug,
+    router,
+    setIsSuccessDialogOpen,
+  ])
 
   if (isComponentDataLoading || (!serverSandbox?.id && !componentFormData)) {
     return (
@@ -489,13 +493,6 @@ const PublishPage = ({
       </Form>
 
       <LoadingDialog isOpen={isLoadingDialogOpen} message={publishProgress} />
-      <SuccessDialog
-        isOpen={isSuccessDialogOpen}
-        onOpenChange={setIsSuccessDialogOpen}
-        onAddAnother={handleAddAnother}
-        onGoToComponent={handleGoToComponent}
-        mode={"component"}
-      />
     </>
   )
 }

@@ -181,7 +181,12 @@ export function SandboxHeader({
 
           {username && (
             <div className="flex items-center gap-1">
-              <UserAvatar src={user?.imageUrl} size={24} className="mr-1" />
+              <UserAvatar
+                alt=" "
+                src={user?.imageUrl}
+                size={24}
+                className="mr-1"
+              />
               <span className="text-sm font-medium">{username}</span>
               <div className="text-muted-foreground mx-1">/</div>
             </div>
