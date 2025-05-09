@@ -1,14 +1,13 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { CreditCard, Check } from "lucide-react"
-import { usePathname } from "next/navigation"
-import { useAtom } from "jotai"
-import { atom } from "jotai"
 import { userStateAtom } from "@/lib/store/user-store"
+import { useQuery } from "@tanstack/react-query"
+import { atom, useAtom } from "jotai"
+import { CreditCard } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { useEffect, useRef } from "react"
+import { toast } from "sonner"
 
 import {
   PayoutStats,
@@ -25,8 +24,12 @@ interface AuthorStats {
   payoutStats: PayoutStats[]
 }
 
-async function fetchAuthorStats(): Promise<AuthorStats> {
-  const response = await fetch(`/api/author/stats`)
+async function fetchAuthorStats(userId?: string): Promise<AuthorStats> {
+  const url = new URL("/api/author/stats", window.location.origin)
+  if (userId) {
+    url.searchParams.set("user_id", userId)
+  }
+  const response = await fetch(url)
   if (!response.ok) {
     const errorData = await response.json()
     throw new Error(errorData.error || "Failed to load analytics statistics")
@@ -78,7 +81,7 @@ export function AnalyticsClient({ userId }: { userId: string }) {
     queryKey: ["authorStats", userId],
     queryFn: async () => {
       try {
-        return await fetchAuthorStats()
+        return await fetchAuthorStats(userId)
       } catch (error) {
         console.error("Error fetching author stats:", error)
         toast.error("Failed to load analytics statistics")
