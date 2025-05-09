@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  AlertCircle,
   Bot,
   Code,
   DollarSign,
@@ -35,6 +36,12 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { formatK, formatPrice } from "@/lib/utils"
 import { eachMonthOfInterval, format, startOfMonth } from "date-fns"
 import { useMemo, useState } from "react"
@@ -78,6 +85,7 @@ export type PayoutStats = {
 interface PayoutStatsChartProps {
   data: PayoutStats[]
   isLoading?: boolean
+  isPartner?: boolean
 }
 
 function getMonthYear(dateString: string) {
@@ -192,6 +200,7 @@ function BarChartSection({
 export function PayoutStatsChart({
   data,
   isLoading = false,
+  isPartner = true,
 }: PayoutStatsChartProps) {
   // Generate all months from earliest in data to current month
   const months = useMemo(() => {
@@ -294,7 +303,30 @@ export function PayoutStatsChart({
             value="earnings"
             className="flex-1 p-6 flex flex-col gap-1 items-start h-fit"
           >
-            <CardDescription className="font-normal">Earnings</CardDescription>
+            {isPartner ? (
+              <CardDescription className="font-normal">
+                Earnings
+              </CardDescription>
+            ) : (
+              <CardDescription className="font-normal flex items-center gap-1">
+                Projected Income
+                {earningsSum > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className=" p-3">
+                        <p>
+                          This is how much you could earn by joining our
+                          partnership program.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </CardDescription>
+            )}
             <CardTitle className="tracking-normal">
               <span className="inline-flex items-center">
                 <DollarSign className="w-5 h-5" />

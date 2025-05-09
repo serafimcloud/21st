@@ -38,6 +38,7 @@ function PublishClientPageContent({
   const router = useRouter()
   const pathname = usePathname()
   const sandboxId = params.sandboxId as string
+  const username = params.username as string
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
   const [code, setCode] = useState<string>("")
   const [isRegenerating, setIsRegenerating] = useState(false)
@@ -363,7 +364,7 @@ function PublishClientPageContent({
           <XCircle className="h-6 w-6 text-muted-foreground" />
           <p className="text-base">Failed to initialize sandbox</p>
           <div className="flex gap-3">
-            <Button onClick={() => router.back()} variant="outline">
+            <Button onClick={() => router.push(`/studio/${username}`)} variant="outline">
               Go Back
               <kbd className="pointer-events-none hidden md:inline-flex h-5 select-none items-center rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100">
                 ESC

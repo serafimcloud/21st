@@ -12,7 +12,7 @@ import { toast } from "sonner"
 import {
   PayoutStats,
   PayoutStatsChart,
-} from "@/components/features/settings/payouts/payout-stats-chart"
+} from "@/components/features/studio/analytics/creator-stats-chart"
 import { PartnerProgramModal } from "@/components/features/studio/monetization/partner-program-modal"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
@@ -98,6 +98,7 @@ export function AnalyticsClient({ userId }: { userId: string }) {
         <PayoutStatsChart
           data={authorStats?.payoutStats ?? []}
           isLoading={isLoadingStats || authorStats?.payoutStats === undefined}
+          isPartner={isPartner}
         />
       </div>
       {/* Partner program section - only show if not a partner */}

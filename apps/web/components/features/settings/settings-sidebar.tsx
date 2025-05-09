@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronLeft, User, CreditCard, Wallet, BookText } from "lucide-react"
+import { ChevronLeft, User, CreditCard, Wallet, BookText, ArrowUpRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -20,11 +20,6 @@ export function SettingsSidebar() {
       href: "/settings/billing",
       title: "Billing",
       icon: <CreditCard className="h-3.5 w-3.5" />,
-    },
-    {
-      href: "/settings/payouts",
-      title: "Payouts",
-      icon: <Wallet className="h-3.5 w-3.5" />,
     },
     {
       href: "/settings/rules",
@@ -71,6 +66,18 @@ export function SettingsSidebar() {
               </Link>
             </Button>
           ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            asChild
+          >
+            <Link href="/studio">
+              <Wallet className="h-3.5 w-3.5" />
+              <span className="truncate">Payouts moved to Studio</span>
+              <ArrowUpRight className="ml-auto h-3.5 w-3.5" />
+            </Link>
+          </Button>
         </div>
       </div>
     </nav>

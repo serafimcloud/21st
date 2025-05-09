@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { UserAvatar } from "../../ui/user-avatar"
 import { UpvoteIcon } from "../../icons/upvote-icon"
 import { shouldHideLeaderboardRankings } from "@/lib/utils"
+import NumberFlow from "@number-flow/react"
 
 // VideoPreview component for hover video functionality
 const videoLoadingCache = new Map<string, boolean>()
@@ -148,7 +149,17 @@ export function LeaderboardCard({
   const tags = submission.tags || []
 
   // Use the shared utility function
-  const hideRankings = shouldHideLeaderboardRankings()
+  const hideRankings = false
+
+  const formatNumber = (num: number) => {
+    if (num === undefined || num === null || isNaN(num)) {
+      return "0"
+    }
+    if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}k`
+    }
+    return num.toString()
+  }
 
   return (
     <div onClick={() => handleDemoClick(submission)}>
@@ -237,51 +248,52 @@ export function LeaderboardCard({
           {/* Votes (Right on both mobile and desktop) - Hide completely for historical views */}
           {!isHistorical && (
             <div className="flex ml-4 shrink-0">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <Button
+                variant="outline"
+                size="icon"
+                className={cn(
+                  "size-12 rounded-lg border transition-colors duration-200",
+                  submission.has_voted
+                    ? "border-primary bg-muted/20 text-primary"
+                    : "hover:border-primary hover:bg-primary/10 border-primary/50",
+                )}
+                onClick={(e) => handleVote(e, submission.id)}
+                disabled={isVoting}
+                aria-label={submission.has_voted ? "Remove vote" : "Vote"}
               >
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className={cn(
-                    "size-12 rounded-lg border transition-colors duration-200",
-                    submission.has_voted
-                      ? "border-primary bg-muted/20 text-primary"
-                      : "hover:border-primary hover:bg-primary/10 border-primary/50",
+                <div className="flex flex-col items-center justify-center h-full">
+                  {isVoting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <motion.div
+                      initial={{ scale: 1 }}
+                      animate={
+                        submission.has_voted ? { scale: [1, 1.1, 1] } : {}
+                      }
+                      transition={{ duration: 0.2 }}
+                    >
+                      <UpvoteIcon isVoted={submission.has_voted} size={14} />
+                    </motion.div>
                   )}
-                  onClick={(e) => handleVote(e, submission.id)}
-                  disabled={isVoting}
-                  aria-label={submission.has_voted ? "Remove vote" : "Vote"}
-                >
-                  <div className="flex flex-col items-center justify-center h-full">
-                    {isVoting ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <motion.div
-                        initial={{ scale: 1 }}
-                        animate={
-                          submission.has_voted ? { scale: [1, 1.1, 1] } : {}
-                        }
-                        transition={{ duration: 0.2 }}
-                      >
-                        <UpvoteIcon isVoted={submission.has_voted} size={14} />
-                      </motion.div>
-                    )}
-                    {/* Only show vote counts on Thursday */}
-                    {!hideRankings && (
-                      <motion.div
-                        key={`votes-${submission.votes || 0}`}
-                        initial={{ opacity: 0, y: -3 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-sm font-semibold leading-none mt-1"
-                      >
-                        {submission.votes || 0}
-                      </motion.div>
-                    )}
-                  </div>
-                </Button>
-              </motion.div>
+                  {/* Only show vote counts on Thursday */}
+                  {!hideRankings && (
+                    <div className="text-sm font-semibold leading-none h-[18px]">
+                      <NumberFlow
+                        value={Number(formatNumber(submission.votes || 0))}
+                        transformTiming={{
+                          duration: 550,
+                          easing: "ease-in-out",
+                        }}
+                        opacityTiming={{
+                          duration: 350,
+                          easing: "ease-out",
+                        }}
+                        trend={0}
+                      />
+                    </div>
+                  )}
+                </div>
+              </Button>
             </div>
           )}
 
@@ -290,7 +302,18 @@ export function LeaderboardCard({
             <div className="flex items-center gap-1 ml-4">
               <UpvoteIcon size={14} className="text-muted-foreground" />
               <span className="text-sm text-muted-foreground font-medium">
-                {submission.votes || 0}
+                <NumberFlow
+                  value={Number(formatNumber(submission.votes || 0))}
+                  transformTiming={{
+                    duration: 550,
+                    easing: "ease-in-out",
+                  }}
+                  opacityTiming={{
+                    duration: 350,
+                    easing: "ease-out",
+                  }}
+                  trend={0}
+                />
               </span>
             </div>
           )}

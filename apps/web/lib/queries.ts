@@ -937,8 +937,17 @@ export function useFeaturedDemos() {
           return dateB - dateA // Descending order
         })
 
+      // Shuffle the featured items to add variety each time
+      const shuffledFeaturedItems = [...uniqueLikedDemosTransformed]
+      for (let i = shuffledFeaturedItems.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = shuffledFeaturedItems[i]
+        shuffledFeaturedItems[i] = shuffledFeaturedItems[j] as DemoWithComponent
+        shuffledFeaturedItems[j] = temp as DemoWithComponent
+      }
+
       return {
-        data: uniqueLikedDemosTransformed as DemoWithComponent[],
+        data: shuffledFeaturedItems as DemoWithComponent[],
         ids: new Set(uniqueLikedDemosTransformed.map((d) => d.id)),
       }
     },
@@ -1482,8 +1491,8 @@ export function useLeaderboardDemosForHome() {
         return a.id - b.id
       })
 
-      // Limit to top 10 for the slider
-      return sortedData.slice(0, 10).map((submission: any, index: number) => {
+      // Return all items, not just the top 10
+      return sortedData.map((submission: any, index: number) => {
         // Create a transformed version that matches DemoWithComponent format
         const componentData =
           typeof submission.component_data === "object"
@@ -1505,6 +1514,7 @@ export function useLeaderboardDemosForHome() {
           bookmarks_count: submission.bookmarks_count || 0,
           view_count: submission.view_count || 0,
           votes_count: submission.votes || 0,
+          has_voted: submission.has_voted || false,
           bundle_url: submission.bundle_url || null,
           global_rank: submission.global_rank || null,
           compiled_css: null,
