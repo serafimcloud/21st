@@ -9,7 +9,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
@@ -70,7 +69,7 @@ export function VisibilityToggle({
       <div className="flex items-center">
         <div
           className={cn(
-            "bg-zinc-900 rounded-md px-2 py-1 flex items-center gap-1.5 text-xs",
+            "bg-muted text-muted-foreground rounded-md px-2 py-1 flex items-center gap-1.5 text-xs",
             !isPrivate && "text-green-500",
           )}
         >
@@ -96,7 +95,7 @@ export function VisibilityToggle({
           role="combobox"
           aria-expanded={open}
           disabled={disabled || isUpdating}
-          className="bg-zinc-900 border-0 rounded-md w-[100px] h-7 focus:ring-0 text-xs px-2 justify-between"
+          className="bg-card text-card-foreground border-border rounded-md w-[100px] h-7 focus:ring-0 text-xs px-2 justify-between"
         >
           <div
             className={cn(
@@ -119,11 +118,10 @@ export function VisibilityToggle({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="bg-zinc-900 border-zinc-800 w-[160px] p-0"
+        className="bg-popover text-popover-foreground border-border w-[160px] p-0"
         align="start"
       >
         <Command className="text-xs">
-          <CommandInput placeholder="Search..." className="text-xs h-7 py-1" />
           <CommandList>
             <CommandEmpty>No option found.</CommandEmpty>
             <CommandGroup>
