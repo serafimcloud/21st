@@ -454,16 +454,20 @@ export const useFileSystem = ({
         )
         if (content) {
           let updated = false
+
           commentsToRemove.forEach((comment) => {
-            const regex = new RegExp(
-              `^\\s*${comment.replace(/[.*+?^${}()|[\]\\]/g, "\\\\$&")}\\s*\\n?`,
-              "gm",
-            )
-            if (regex.test(content!)) {
-              content = content!.replace(regex, "")
+            // Replace comment plus newline character
+            if (content!.includes(comment)) {
+              content = content!.replace(comment + "\n", "")
+              // Also try without newline in case it's the last line
+              content = content!.replace(comment, "")
               updated = true
             }
           })
+
+          // Remove any leading blank lines
+          content = content!.replace(/^\s*\n+/g, "")
+
           if (updated) {
             await sbWrapper((sandbox) =>
               sandbox.fs.writeTextFile(filePath, content!),
@@ -472,7 +476,6 @@ export const useFileSystem = ({
           }
         }
       } catch (error) {
-        // Fail silently if file doesn't exist or cannot be read/written
         console.warn(
           `Could not clean comments from ${filePath}: ${(error as Error).message}`,
         )
