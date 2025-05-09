@@ -48,6 +48,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { VisibilityToggle } from "./visibility-toggle"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 interface DemosTableProps {
   demos: ExtendedDemoWithComponent[]
@@ -92,6 +94,7 @@ export function DemosTable({
   isOwnProfile = false,
 }: DemosTableProps) {
   const id = useId()
+  const router = useRouter()
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 20,
@@ -271,17 +274,26 @@ export function DemosTable({
       accessorFn: (row) => (row.is_private ? "private" : "public"),
       cell: ({ row }) => {
         const isPrivate = Boolean(row.original.is_private)
+        const isDraft = row.original.submission_status === "draft"
 
         const handleToggleVisibility = async (newIsPrivate: boolean) => {
           if (!onUpdateVisibility) return
+
+          // Don't allow setting draft components to public
+          if (isDraft && !newIsPrivate) return
+
           await onUpdateVisibility(String(row.original.id), newIsPrivate)
         }
 
         return (
           <VisibilityToggle
-            isPrivate={isPrivate}
-            onToggle={onUpdateVisibility ? handleToggleVisibility : undefined}
-            readonly={!isOwnProfile && !onUpdateVisibility}
+            isPrivate={isDraft ? true : isPrivate}
+            onToggle={
+              onUpdateVisibility && !isDraft
+                ? handleToggleVisibility
+                : undefined
+            }
+            readonly={!isOwnProfile || !onUpdateVisibility || isDraft}
           />
         )
       },
@@ -524,28 +536,63 @@ export function DemosTable({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell, index) => {
-                    const isLastColumn =
-                      index === row.getVisibleCells().length - 1
-                    return (
-                      <TableCell
-                        key={cell.id}
-                        className={cn(
-                          cell.column.id === "actions" && "pr-4",
-                          isLastColumn && "pr-6",
-                        )}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
+              table.getRowModel().rows.map((row) => {
+                const isDraft = row.original.submission_status === "draft"
+                const demo = row.original
+
+                // Logic to determine where to navigate when clicking the row
+                const handleRowClick = () => {
+                  if (
+                    isDraft &&
+                    (demo.component?.sandbox_id || (demo.id && onOpenSandbox))
+                  ) {
+                    // For drafts, open in sandbox editor
+                    onOpenSandbox?.(
+                      demo.component?.sandbox_id || String(demo.id),
                     )
-                  })}
-                </TableRow>
-              ))
+                  } else if (demo.demo_slug && demo.component?.component_slug) {
+                    // For public components, navigate to their view page
+                    // Get username from the user object in the demo
+                    const username = demo.user?.username || "u"
+                    const componentSlug = demo.component.component_slug
+                    const demoSlug = demo.demo_slug
+
+                    router.push(`/${username}/${componentSlug}/${demoSlug}`)
+                  }
+                }
+
+                return (
+                  <TableRow
+                    key={row.id}
+                    className="group cursor-pointer hover:bg-muted/50"
+                    onClick={handleRowClick}
+                  >
+                    {row.getVisibleCells().map((cell, index) => {
+                      const isLastColumn =
+                        index === row.getVisibleCells().length - 1
+                      return (
+                        <TableCell
+                          key={cell.id}
+                          className={cn(
+                            cell.column.id === "actions" && "pr-4",
+                            isLastColumn && "pr-6",
+                          )}
+                          onClick={
+                            cell.column.id === "is_private"
+                              ? (e) => e.stopPropagation()
+                              : undefined
+                          }
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      )
+                    })}
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
                 <TableCell

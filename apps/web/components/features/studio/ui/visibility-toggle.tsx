@@ -2,15 +2,22 @@
 
 import { useState } from "react"
 import { useId } from "react"
-import { Globe, Lock } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, Globe, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface VisibilityToggleProps {
   isPrivate: boolean
@@ -19,6 +26,21 @@ interface VisibilityToggleProps {
   readonly?: boolean
 }
 
+const visibilityOptions = [
+  {
+    value: "public",
+    label: "Public",
+    icon: Globe,
+    className: "text-green-500",
+  },
+  {
+    value: "private",
+    label: "Private",
+    icon: Lock,
+    className: "",
+  },
+]
+
 export function VisibilityToggle({
   isPrivate,
   onToggle,
@@ -26,6 +48,7 @@ export function VisibilityToggle({
   readonly = false,
 }: VisibilityToggleProps) {
   const [isUpdating, setIsUpdating] = useState(false)
+  const [open, setOpen] = useState(false)
   const id = useId()
 
   const handleVisibilityChange = async (value: string) => {
@@ -58,46 +81,81 @@ export function VisibilityToggle({
     )
   }
 
-  // Editable dropdown
+  const currentValue = isPrivate ? "private" : "public"
+  const currentOption = visibilityOptions.find(
+    (option) => option.value === currentValue,
+  )
+
+  // Editable dropdown with search
   return (
-    <Select
-      value={isPrivate ? "private" : "public"}
-      onValueChange={handleVisibilityChange}
-      disabled={disabled || isUpdating}
-    >
-      <SelectTrigger
-        id={id}
-        className="bg-zinc-900 border-0 rounded-md w-[100px] h-7 focus:ring-0 text-xs px-2"
-      >
-        <SelectValue placeholder="Visibility">
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          id={id}
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled || isUpdating}
+          className="bg-zinc-900 border-0 rounded-md w-[100px] h-7 focus:ring-0 text-xs px-2 justify-between"
+        >
           <div
             className={cn(
               "flex items-center gap-2",
               !isPrivate && "text-green-500",
             )}
           >
-            {isPrivate ? <Lock size={12} className="min-w-3 min-h-3" /> : <Globe size={12} className="min-w-3 min-h-3" />}
+            {isPrivate ? (
+              <Lock size={12} className="min-w-3 min-h-3" />
+            ) : (
+              <Globe size={12} className="min-w-3 min-h-3" />
+            )}
             <span>{isPrivate ? "Private" : "Public"}</span>
           </div>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent className="bg-zinc-900 border-zinc-800">
-        <SelectItem
-          value="public"
-          className={cn("cursor-pointer text-xs", !isPrivate && "text-green-500")}
-        >
-          <div className="flex items-center gap-1.5">
-            <Globe size={12} className="min-w-3 min-h-3" />
-            <span>Public</span>
-          </div>
-        </SelectItem>
-        <SelectItem value="private" className="cursor-pointer text-xs">
-          <div className="flex items-center gap-1.5">
-            <Lock size={12} className="min-w-3 min-h-3" />
-            <span>Private</span>
-          </div>
-        </SelectItem>
-      </SelectContent>
-    </Select>
+          <ChevronDownIcon
+            size={14}
+            className="text-muted-foreground/80 shrink-0"
+            aria-hidden="true"
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="bg-zinc-900 border-zinc-800 w-[160px] p-0"
+        align="start"
+      >
+        <Command className="text-xs">
+          <CommandInput placeholder="Search..." className="text-xs h-7 py-1" />
+          <CommandList>
+            <CommandEmpty>No option found.</CommandEmpty>
+            <CommandGroup>
+              {visibilityOptions.map((option) => {
+                const Icon = option.icon
+                return (
+                  <CommandItem
+                    key={option.value}
+                    value={option.value}
+                    onSelect={(value) => {
+                      handleVisibilityChange(value)
+                      setOpen(false)
+                    }}
+                    className={cn(
+                      "cursor-pointer text-xs py-1",
+                      option.value === "public" && "text-green-500",
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Icon size={12} className="min-w-3 min-h-3" />
+                      <span>{option.label}</span>
+                    </div>
+                    {currentValue === option.value && (
+                      <CheckIcon size={14} className="ml-auto" />
+                    )}
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   )
 }
