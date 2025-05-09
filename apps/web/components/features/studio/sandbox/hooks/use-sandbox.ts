@@ -83,8 +83,6 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
         shell.name === "pnpm run install-and-dev" && shell.status === "RUNNING",
     )
 
-    console.log("allRunningShells", allRunningShells)
-
     const newRunningShells = allRunningShells?.filter(
       (shell) => !subscribedShells.current.has(shell.id),
     )
@@ -108,7 +106,7 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
 
     openedRunningShells.forEach((shell) => {
       shell!.onOutput(async (data) => {
-        console.log("SHELL", shell!.id, "OUTPUT", data)
+        // console.log("SHELL", shell!.id, "OUTPUT", data)
 
         const latestPackageVersion =
           await getLatestPackageVersionFromError(data)
