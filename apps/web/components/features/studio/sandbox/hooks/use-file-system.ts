@@ -454,7 +454,6 @@ export const useFileSystem = ({
         )
         if (content) {
           let updated = false
-
           commentsToRemove.forEach((comment) => {
             // Replace comment plus newline character
             if (content!.includes(comment)) {
@@ -464,10 +463,8 @@ export const useFileSystem = ({
               updated = true
             }
           })
-
           // Remove any leading blank lines
           content = content!.replace(/^\s*\n+/g, "")
-
           if (updated) {
             await sbWrapper((sandbox) =>
               sandbox.fs.writeTextFile(filePath, content!),
