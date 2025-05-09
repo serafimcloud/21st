@@ -88,17 +88,17 @@ const PublishPage = ({
       component_slug: "",
       registry: "ui",
       description: "",
-      license: "mit",
+      license: "",
       website_url: "",
       is_public: false,
       publish_as_username: user?.username ?? undefined,
       unknown_dependencies: [],
       direct_registry_dependencies: [],
-      code: `// Mock component code for ${sandboxId}\nexport default function MockComponent() { return <div>Hello</div>; }`,
+      code: ``,
       demos: [
         {
           name: "Default Demo",
-          demo_code: `// Mock demo code for ${sandboxId}\nimport MockComponent from './component';\nexport default function Demo() { return <MockComponent />; }`,
+          demo_code: ``,
           demo_slug: "default",
           tags: [],
           preview_image_data_url: "",
@@ -118,10 +118,10 @@ const PublishPage = ({
       const { code, demos, ...rest } = componentFormData
       form.reset({
         ...rest,
-        code: form.getValues("code"),
+        code: "",
         demos: (demos || []).map((demo, i) => ({
           ...demo,
-          demo_code: form.getValues(`demos.${i}.demo_code`) || demo.demo_code,
+          demo_code: "",
         })),
       })
     }

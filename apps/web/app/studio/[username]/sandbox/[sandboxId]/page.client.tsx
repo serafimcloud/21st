@@ -41,7 +41,6 @@ function PublishClientPageContent({
   const username = params.username as string
   const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null)
   const [code, setCode] = useState<string>("")
-  const [isRegenerating, setIsRegenerating] = useState(false)
   const [showPreview, setShowPreview] = useState<boolean>(true)
   const [iframeKey, setIframeKey] = useState<number>(0)
   const [isNavigating, setIsNavigating] = useState(false)
@@ -241,12 +240,6 @@ function PublishClientPageContent({
     }
   }
 
-  const handleGenerateRegistry = async () => {
-    console.log("Starting registry generation...")
-    // setIsRegenerating(true)
-    generateRegistry()
-  }
-
   const handleReset = () => {
     window.location.reload()
   }
@@ -271,11 +264,6 @@ function PublishClientPageContent({
 
   const handleTogglePreview = () => {
     setShowPreview((prev) => !prev)
-  }
-
-  const handleNextStep = () => {
-    setIsNavigating(true)
-    router.push(`${pathname}/publish`)
   }
 
   if (isSandboxLoading) {
@@ -364,7 +352,10 @@ function PublishClientPageContent({
           <XCircle className="h-6 w-6 text-muted-foreground" />
           <p className="text-base">Failed to initialize sandbox</p>
           <div className="flex gap-3">
-            <Button onClick={() => router.push(`/studio/${username}`)} variant="outline">
+            <Button
+              onClick={() => router.push(`/studio/${username}`)}
+              variant="outline"
+            >
               Go Back
               <kbd className="pointer-events-none hidden md:inline-flex h-5 select-none items-center rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100">
                 ESC
