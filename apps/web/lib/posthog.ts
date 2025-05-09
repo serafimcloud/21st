@@ -8,5 +8,8 @@ export function initPostHog() {
     disable_session_recording: true,
     autocapture: false,
     capture_pageview: false,
+    session_recording: {
+      blockSelector: "iframe",
+    },
   })
 }

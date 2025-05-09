@@ -12,17 +12,21 @@ export default function SessionRecorder() {
   useEffect(initPostHog, [])
 
   useEffect(() => {
-    const shouldRecord = RECORDED_ROUTES.some((route) =>
-      pathname.startsWith(route),
-    )
+    try {
+      const shouldRecord = RECORDED_ROUTES.some((route) =>
+        pathname.startsWith(route),
+      )
 
-    if (shouldRecord) {
-      posthog.startSessionRecording()
-    } else {
-      posthog.stopSessionRecording()
+      if (shouldRecord) {
+        posthog.startSessionRecording()
+      } else {
+        posthog.stopSessionRecording()
+      }
+
+      posthog.capture("$pageview", { url: pathname })
+    } catch (error) {
+      console.error("Error recording session", error)
     }
-
-    posthog.capture("$pageview", { url: pathname })
   }, [pathname])
 
   return null
