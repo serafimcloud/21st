@@ -9,6 +9,7 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
@@ -122,6 +123,7 @@ export function VisibilityToggle({
         align="start"
       >
         <Command className="text-xs">
+          <CommandInput placeholder="Search..." className="text-xs h-7 py-1" />
           <CommandList>
             <CommandEmpty>No option found.</CommandEmpty>
             <CommandGroup>
