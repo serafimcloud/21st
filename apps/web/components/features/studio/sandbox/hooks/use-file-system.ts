@@ -21,6 +21,7 @@ const ALWAYS_HIDDEN_FILES = [
   "app.tsx",
   "scripts",
   "registry.json",
+  "next",
 ]
 const ADVANCED_VIEW_HIDDEN_FILES = [
   "package.json",

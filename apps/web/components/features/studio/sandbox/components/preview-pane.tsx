@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { EditorPane } from "./editor-pane"
 import { cn } from "@/lib/utils"
 import {
@@ -6,6 +6,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
+import { useTheme } from "next-themes"
 
 interface PreviewPaneProps {
   previewURL: string | null
@@ -35,6 +36,8 @@ export function PreviewPane({
   const [previousConnectedShellId, setPreviousConnectedShellId] = useState<
     string | null
   >(connectedShellId)
+
+  const { resolvedTheme } = useTheme()
 
   //  takes time to complile need to reload iframe, will be fixed at codesandbox SDK team side
   useEffect(() => {
@@ -84,7 +87,7 @@ export function PreviewPane({
             ) : (
               <iframe
                 key={`${iframeKey}-${connectedShellId}`}
-                src={previewURL}
+                src={`${previewURL}?theme=${resolvedTheme}`}
                 className="w-full h-full rounded-b"
               />
             )}
