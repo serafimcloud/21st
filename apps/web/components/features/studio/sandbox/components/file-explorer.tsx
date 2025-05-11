@@ -15,12 +15,13 @@ interface FileEntry {
 }
 */
 import { FileEntry } from "../hooks/use-file-system"
-import { FolderIcon, FolderOpenIcon } from "lucide-react"
+import { FolderIcon, FolderOpenIcon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FileTree } from "./file-tree"
 import { cn } from "@/lib/utils"
 import { motion } from "motion/react"
+import { AddRegistryModal } from "./add-registry-modal"
 
 interface FileExplorerProps {
   entries: FileEntry[]
@@ -53,6 +54,7 @@ export function FileExplorer({
   const [newFileName, setNewFileName] = useState("")
   const [isCreatingDirectory, setIsCreatingDirectory] = useState(false)
   const [newDirectoryName, setNewDirectoryName] = useState("")
+  const [isAddRegistryModalOpen, setIsAddRegistryModalOpen] = useState(false)
 
   const handleCreateFile = () => {
     if (newFileName) {
@@ -195,6 +197,47 @@ export function FileExplorer({
           </span>
         </Button>
       </motion.div>
+
+      <motion.div
+        className="absolute bottom-[calc(2rem+0.5rem+0.5rem)] left-4 z-10 rounded-full overflow-hidden transition-all duration-200 ease-in-out w-auto"
+        initial={{ opacity: 0.95 }}
+        whileHover={{
+          opacity: 1,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        }}
+        transition={{ duration: 0.15 }}
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsAddRegistryModalOpen(true)}
+          className={cn(
+            "bg-background/90 backdrop-blur-md shadow-sm border rounded-full pl-1.5 pr-3 h-8",
+            "flex items-center gap-1.5 transition-all duration-200 ease-in-out w-auto",
+            "border-muted-foreground/30 hover:border-primary/30",
+          )}
+          disabled={isLoading}
+          title="Add from Registry"
+        >
+          <motion.div
+            className={cn(
+              "rounded-full flex items-center justify-center w-5 h-5 bg-muted text-muted-foreground",
+            )}
+          >
+            <PlusIcon className="h-3 w-3" />
+          </motion.div>
+          <span className="text-xs font-medium whitespace-nowrap">
+            Add from Registry
+          </span>
+        </Button>
+      </motion.div>
+
+      {isAddRegistryModalOpen && (
+        <AddRegistryModal
+          isOpen={isAddRegistryModalOpen}
+          onClose={() => setIsAddRegistryModalOpen(false)}
+        />
+      )}
     </div>
   )
 }
