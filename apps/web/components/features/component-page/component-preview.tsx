@@ -331,9 +331,9 @@ export function ComponentPagePreview({
           (bundle?.html && demo?.bundle_hash !== "0")) && (
           <iframe
             src={
-              isDarkTheme
-                ? `${demo.bundle_html_url || bundle?.html}?dark=true`
-                : demo.bundle_html_url || bundle?.html
+              !shouldBundle
+                ? `${demo.bundle_html_url}?theme=${resolvedTheme}`
+                : `${bundle?.html}${isDarkTheme ? "?dark=true" : ""}`
             }
             className="w-full h-full"
             onLoad={() => {
