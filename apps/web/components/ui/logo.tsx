@@ -5,7 +5,8 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { BrandAssetsMenu, useBrandAssetsMenu } from "./brand-assets-menu"
 import { createPortal } from "react-dom"
-import Lottie from "lottie-react"
+import dynamic from "next/dynamic"
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false })
 import { useTheme } from "next-themes"
 
 // Animation cache to prevent multiple fetches of the same file
@@ -135,7 +136,7 @@ export function Logo({
       </div>
 
       {/* Lottie Animation */}
-      {animationData && (
+      {animationData && typeof window !== "undefined" && (
         <div
           className={cn(
             "w-full h-full absolute inset-0 transition-opacity duration-300",

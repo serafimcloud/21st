@@ -1,7 +1,8 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import Lottie from "lottie-react"
+import dynamic from "next/dynamic"
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false })
 import { useEffect, useState, useRef } from "react"
 import { useTheme } from "next-themes"
 
@@ -120,7 +121,7 @@ export const LoadingSpinner = ({
           </svg>
         </div>
 
-        {animationData && (
+        {animationData && typeof window !== "undefined" && (
           <div
             className={cn(
               "w-full h-full absolute inset-0 transition-opacity duration-300",
