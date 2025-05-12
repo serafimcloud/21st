@@ -199,15 +199,18 @@ export function ComponentPagePreview({
   )
   const [previewError, setPreviewError] = useState(false)
 
-  const { bundle, error } = useBundleDemo(
-    bundleFiles,
-    allDependencies,
+  const shouldBundle = !demo.bundle_html_url
+
+  const { bundle, error } = useBundleDemo({
+    files: bundleFiles,
+    dependencies: allDependencies,
     component,
     shellCode,
-    demo.id,
+    demoId: demo.id,
     tailwindConfig,
     globalCss,
-  )
+    shouldBundle,
+  })
 
   useEffect(() => {
     if (demo.bundle_html_url) {
@@ -232,7 +235,7 @@ export function ComponentPagePreview({
 
   const [isLoading, setIsLoading] = useState(true)
 
-  if (!css)
+  if (!css && shouldBundle)
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 w-full">
         <LoadingSpinner />
@@ -328,9 +331,9 @@ export function ComponentPagePreview({
           (bundle?.html && demo?.bundle_hash !== "0")) && (
           <iframe
             src={
-              isDarkTheme
-                ? `${demo.bundle_html_url || bundle?.html}?dark=true`
-                : demo.bundle_html_url || bundle?.html
+              !shouldBundle
+                ? `${demo.bundle_html_url}?theme=${resolvedTheme}`
+                : `${bundle?.html}${isDarkTheme ? "?dark=true" : ""}`
             }
             className="w-full h-full"
             onLoad={() => {
