@@ -495,10 +495,12 @@ const PublishPage = ({
               </div>
             </div>
 
-            <iframe
-              src={`${previewURL}?theme=${resolvedTheme}` || ""}
-              className="w-2/3 h-full"
-            />
+            {previewURL && (
+              <iframe
+                src={`${previewURL}?theme=${resolvedTheme}` || ""}
+                className="w-2/3 h-full"
+              />
+            )}
           </div>
         </div>
       </Form>
