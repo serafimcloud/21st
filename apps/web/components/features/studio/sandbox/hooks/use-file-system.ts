@@ -180,10 +180,16 @@ export const useFileSystem = ({
             currentRegistryComponents = parsedRegistry.map(
               (item: any) => item.name,
             )
+            setRegistryComponents(currentRegistryComponents)
+          } else {
+            setRegistryComponents([])
           }
+        } else {
+          setRegistryComponents([])
         }
       } catch (error) {
         console.error("Failed to read 21st-registry.json:", error)
+        setRegistryComponents([])
       }
 
       const rootEntries = await sbWrapper((sandbox) =>
@@ -346,8 +352,10 @@ export const useFileSystem = ({
   // Helper function to run a task, wait for specific output, and execute a callback
   const _runTaskAndWaitForOutput = async <T>(
     taskName: string,
-    completionOutput: string,
-    onComplete: (shell: any, sandbox: SandboxSession) => Promise<T | undefined>,
+    completionMap: Record<
+      string,
+      (shell: any, sandbox: SandboxSession) => Promise<T | undefined> | void
+    >,
   ): Promise<T | undefined> => {
     // Guranties that the sandbox is connected
     if (!sandboxConnectionHash) {
@@ -356,7 +364,7 @@ export const useFileSystem = ({
         const interval = setInterval(() => {
           if (sandboxConnectionHash) {
             clearInterval(interval)
-            _runTaskAndWaitForOutput(taskName, completionOutput, onComplete)
+            _runTaskAndWaitForOutput(taskName, completionMap)
               .then(resolve)
               .catch(reject)
           }
@@ -420,35 +428,66 @@ export const useFileSystem = ({
 
           connectedShell.onOutput(async (data) => {
             // console.log(`${taskName} Output:`, data)
-            // listening for finsih word and not echo (to prevent return from first stateng)
-            //  eg: npm run build && echo "FINISH"
-            if (data.includes(completionOutput) && !data.includes("echo")) {
-              console.log(
-                `${taskName} finished, executing onComplete callback...`,
-              )
-              try {
-                if (!sandboxRef.current) {
-                  throw new Error("Sandbox disconnected before onComplete")
-                }
-                const result = await onComplete(
-                  connectedShell,
-                  sandboxRef.current,
+            // Iterate through the completion map keys and values to find a match
+            for (const [completionString, completionCallback] of Object.entries(
+              completionMap,
+            )) {
+              if (
+                Object.prototype.hasOwnProperty.call(
+                  completionMap,
+                  completionString,
                 )
-                console.log(`${taskName} onComplete finished successfully.`)
-                disposeShellAndClearTimeout()
-                resolve(result)
-              } catch (error) {
-                console.error(`Error during ${taskName} onComplete:`, error)
-                disposeShellAndClearTimeout()
-                reject(error)
+              ) {
+                // listening for finsih word and not echo (to prevent return from first stateng)
+                //  eg: npm run build && echo "FINISH"
+                if (data.includes(completionString) && !data.includes("echo")) {
+                  console.log(
+                    `${taskName} finished with output '${completionString}', executing callback...`,
+                  )
+                  try {
+                    if (!sandboxRef.current) {
+                      throw new Error("Sandbox disconnected before callback")
+                    }
+                    // Execute the callback and handle its potential return value
+                    const result = await completionCallback(
+                      connectedShell,
+                      sandboxRef.current,
+                    )
+                    console.log(
+                      `Callback for '${completionString}' finished successfully.`,
+                    )
+                    // Resolve with the result if the callback returned one
+                    // Dispose and clear timeout before resolving
+                    disposeShellAndClearTimeout()
+                    resolve(result as T | undefined) // Cast needed as void callbacks don't return T
+                    return // Stop processing further output and callbacks for this task
+                  } catch (error) {
+                    console.error(
+                      `Error during callback for '${completionString}':`,
+                      error,
+                    )
+                    // Dispose and clear timeout before rejecting
+                    disposeShellAndClearTimeout()
+                    reject(error)
+                    return // Stop processing further output
+                  }
+                }
               }
             }
           })
 
           outputTimeout = setTimeout(() => {
-            console.error(`Timeout waiting for '${completionOutput}' message.`)
+            console.error(
+              `Timeout waiting for any of the specified output patterns: ${Object.keys(
+                completionMap,
+              )
+                .map((str) => `'${str}'`)
+                .join(", ")}.`,
+            )
             disposeShellAndClearTimeout()
-            reject(new Error(`${taskName}: Timeout waiting for output`))
+            reject(
+              new Error(`${taskName}: Timeout waiting for specified output`),
+            )
           }, 120000) // Increased timeout to 120 seconds
 
           // Wrap resolve/reject to clear timeout
@@ -474,17 +513,19 @@ export const useFileSystem = ({
   }
 
   const bundleDemo = async (): Promise<string | undefined> => {
-    return _runTaskAndWaitForOutput<string>(
-      "build",
-      "built in",
-      async (shell, sandbox) => {
+    return _runTaskAndWaitForOutput<string>("build", {
+      "built in": async (shell, sandbox) => {
         const content = await getContentOfBundleIndexHTML(sandbox)
         if (!content) {
           throw new Error("Failed to read dist/index.html")
         }
         return content
       },
-    )
+      "error during build": (shell, sandbox) => {
+        console.error("Build failed with error during build output.")
+        throw new Error("Build failed.")
+      },
+    })
   }
 
   // clean comments from component and demo
@@ -559,16 +600,21 @@ export const useFileSystem = ({
           demoRegistryJSON: string
         }
       | undefined
-    >("generate:registry", "FINISH", async (shell, sandbox) => {
-      const componentRegistryJSON = await getContentOfComponentRegistryJSON(
-        sandbox,
-        slug,
-      )
-      const demoRegistryJSON = await getContentOfDemoRegistryJSON(sandbox)
-      if (!componentRegistryJSON || !demoRegistryJSON) {
-        throw new Error("Failed to read generated registry files")
-      }
-      return { componentRegistryJSON, demoRegistryJSON }
+    >("generate:registry", {
+      FINISH: async (shell, sandbox) => {
+        const componentRegistryJSON = await getContentOfComponentRegistryJSON(
+          sandbox,
+          slug,
+        )
+        const demoRegistryJSON = await getContentOfDemoRegistryJSON(sandbox)
+        if (!componentRegistryJSON || !demoRegistryJSON) {
+          throw new Error("Failed to read generated registry files")
+        }
+        return { componentRegistryJSON, demoRegistryJSON }
+      },
+      "error during generate:registry": (shell, sandbox) => {
+        throw new Error("Failed to generate registry")
+      },
     })
   }
 
@@ -625,8 +671,10 @@ export const useFileSystem = ({
           const uiDirEntries = await sandbox.fs.readdir(
             normalizePath("src/components/ui"),
           )
-          const firstTsxFile = uiDirEntries.find((entry) =>
-            entry.name.endsWith(".tsx"),
+          const firstTsxFile = uiDirEntries.find(
+            (entry) =>
+              entry.name.endsWith(".tsx") &&
+              !registryComponents.includes(entry.name.replace(/\.tsx$/, "")),
           )
 
           if (firstTsxFile) {
@@ -635,9 +683,11 @@ export const useFileSystem = ({
             )
             console.log(`Using ${oldComponentPath} as the old component path.`)
           } else {
-            console.error("No .tsx files found in src/components/ui/")
+            console.error(
+              "No .tsx files found in src/components/ui/ that are not part of the registry",
+            )
             toast.error(
-              "No component file found to rename in src/components/ui/",
+              "No component file found to rename in src/components/ui/ (excluding registry components)",
             )
             return
           }
