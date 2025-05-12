@@ -82,9 +82,8 @@ function PublishClientPageContent({
   })
 
   const handleAddFrom21Registry = async (jsonUrl: string) => {
-    console.log("ADDING FROM 21ST REGISTRY STARTED", jsonUrl)
     try {
-      await addFrom21Registry("https://21st.dev/r/ibelick/text-shimmer")
+      await addFrom21Registry(jsonUrl)
       await loadRootDirectory()
       toast.success("Added from 21st.dev registry")
     } catch (error) {

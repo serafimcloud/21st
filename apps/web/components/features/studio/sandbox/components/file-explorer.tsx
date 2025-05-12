@@ -201,7 +201,7 @@ export function FileExplorer({
       </motion.div>
 
       <motion.div
-        className="absolute bottom-[calc(2rem+0.5rem+0.5rem)] left-4 z-10 rounded-full overflow-hidden transition-all duration-200 ease-in-out w-auto"
+        className="absolute bottom-[calc(2.5rem+0.5rem+0.5rem)] left-4 z-10 rounded-full overflow-hidden transition-all duration-200 ease-in-out w-auto"
         initial={{ opacity: 0.95 }}
         whileHover={{
           opacity: 1,

@@ -151,6 +151,15 @@ export const useFileSystem = ({
     if (!sandboxRef.current) return
 
     try {
+      await sandboxRef.current.fs.readTextFile(normalizePath("/package.json"))
+    } catch (error) {
+      console.error("Failed to read package.json:", error)
+      await reconnectSandbox()
+      if (!sandboxRef.current) throw new Error("Failed to reconnect sandbox")
+      return await operation(sandboxRef.current)
+    }
+
+    try {
       return await operation(sandboxRef.current)
     } catch (error) {
       try {

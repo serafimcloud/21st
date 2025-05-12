@@ -130,7 +130,10 @@ export function AddRegistryModal({
   const handleSelectComponent = async (component: DemoWithComponent) => {
     setIsInstalling(true)
     try {
-      await onAddFrom21Registry(component.demo_slug)
+      const username = component.user.username
+      const componentSlug = component.component.component_slug
+      const jsonUrl = `https://21st.dev/r/${username}/${componentSlug}`
+      await onAddFrom21Registry(jsonUrl)
     } catch (error) {
       console.error("Error adding component from registry:", error)
       // Optionally, handle the error (e.g., show a toast notification)
