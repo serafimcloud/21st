@@ -523,7 +523,7 @@ export const useFileSystem = ({
       },
       "error during build": (shell, sandbox) => {
         console.error("Build failed with error during build output.")
-        throw new Error("Build failed.")
+        throw new Error("Failed during build.")
       },
     })
   }
