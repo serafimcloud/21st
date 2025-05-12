@@ -148,52 +148,42 @@ export const useFileSystem = ({
   const sbWrapper = async <T>(
     operation: (sandbox: SandboxSession) => Promise<T>,
   ): Promise<T | undefined> => {
-    if (!sandboxRef.current) return
+    if (!sandboxRef.current) {
+      setTimeout(() => {
+        sbWrapper(operation)
+      }, 400)
+      return
+    }
 
     try {
-      await sandboxRef.current.fs.readTextFile(normalizePath("/package.json"))
+      // basic operation; will fail if we don't have connection
+      await sandboxRef.current?.fs.stat(normalizePath("/package.json"))
     } catch (error) {
       console.error("Failed to read package.json:", error)
       await reconnectSandbox()
-      if (!sandboxRef.current) throw new Error("Failed to reconnect sandbox")
-      return await operation(sandboxRef.current)
     }
 
-    try {
-      return await operation(sandboxRef.current)
-    } catch (error) {
-      try {
-        await reconnectSandbox()
-        if (!sandboxRef.current) throw new Error("Failed to reconnect sandbox")
-        return await operation(sandboxRef.current)
-      } catch (error) {
-        console.error("Failed to execute operation:", error)
-        throw error
-      }
-    }
+    return await operation(sandboxRef?.current)
   }
 
   const loadRootDirectory = async () => {
     setIsTreeLoading(true)
     let currentRegistryComponents: string[] = []
     try {
-      // Attempt to load and parse 21st-registry.json
       try {
-        const registryContent = await sbWrapper((sandbox) =>
-          sandbox.fs.readTextFile(normalizePath("/21st-registry.json")),
-        )
+        const registryContent = await sbWrapper<string | null>((sandbox) => {
+          return sandbox.fs.readTextFile(normalizePath("/21st-registry.json"))
+        })
         if (registryContent) {
           const parsedRegistry = JSON.parse(registryContent)
           if (Array.isArray(parsedRegistry)) {
             currentRegistryComponents = parsedRegistry.map(
               (item: any) => item.name,
             )
-            setRegistryComponents(currentRegistryComponents)
           }
         }
-      } catch (e) {
-        console.warn("21st-registry.json not found or unreadable.", e)
-        setRegistryComponents([]) // Reset if file not found or error
+      } catch (error) {
+        console.error("Failed to read 21st-registry.json:", error)
       }
 
       const rootEntries = await sbWrapper((sandbox) =>
