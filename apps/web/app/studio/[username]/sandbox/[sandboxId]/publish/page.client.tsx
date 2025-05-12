@@ -97,7 +97,7 @@ const PublishPage = ({
       description: "",
       license: "",
       website_url: "",
-      is_public: false,
+      is_public: true,
       publish_as_username: user?.username ?? undefined,
       unknown_dependencies: [],
       direct_registry_dependencies: [],
