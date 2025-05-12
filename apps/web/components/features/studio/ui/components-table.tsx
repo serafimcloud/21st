@@ -55,7 +55,10 @@ interface DemosTableProps {
   demos: ExtendedDemoWithComponent[]
   onEdit?: (demo: ExtendedDemoWithComponent) => void
   onOpenSandbox?: (shortSandboxId: string) => void
-  onUpdateVisibility?: (demoId: string, isPrivate: boolean) => Promise<void>
+  onUpdateVisibility?: (
+    componentId: number,
+    isPrivate: boolean,
+  ) => Promise<void>
   isOwnProfile?: boolean
 }
 
@@ -282,7 +285,7 @@ export function DemosTable({
           // Don't allow setting draft components to public
           if (isDraft && !newIsPrivate) return
 
-          await onUpdateVisibility(String(row.original.id), newIsPrivate)
+          await onUpdateVisibility(row.original.component.id, newIsPrivate)
         }
 
         return (
