@@ -10,9 +10,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { useFeaturedDemos } from "@/lib/queries"
-import { DemoWithComponent } from "@/types/global"
+import { DemoWithComponent, Component, User } from "@/types/global"
 import { ComponentCard } from "@/components/features/list-card/card"
 import { ComponentCardSkeleton } from "@/components/ui/skeletons"
+import { useQuery } from "@tanstack/react-query"
+import { useClerkSupabaseClient } from "@/lib/clerk"
 
 interface AddRegistryModalProps {
   isOpen: boolean
@@ -27,11 +29,100 @@ export function AddRegistryModal({
 }: AddRegistryModalProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const featuredDemosQuery = useFeaturedDemos()
+  const supabase = useClerkSupabaseClient()
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
-    // Implement search logic here (this will likely hide featured demos when typing)
   }
+
+  const registrySearchQuery = useQuery({
+    queryKey: ["registryModalSearch", searchTerm],
+    queryFn: async () => {
+      if (!searchTerm.trim()) {
+        return null
+      }
+      try {
+        const { data: searchResults, error } = await supabase.functions.invoke(
+          "search_demos_ai_oai_extended",
+          {
+            body: {
+              search: searchTerm,
+              match_threshold: 0.33,
+            },
+          },
+        )
+
+        if (error) throw error
+        if (!searchResults || !Array.isArray(searchResults)) {
+          console.warn(
+            "Search results are not an array or undefined",
+            searchResults,
+          )
+          return []
+        }
+
+        const transformedResults = searchResults
+          .map((result: any) => {
+            const componentData = result.component_data as Component
+            const userData = result.user_data as User
+
+            console.log("componentData", componentData)
+
+            if (!componentData || !userData) {
+              console.warn(
+                "Missing component or user data in search result",
+                result,
+              )
+              return null
+            }
+
+            const componentWithUser = {
+              ...componentData,
+              user: userData,
+            }
+
+            const demoComponent: DemoWithComponent = {
+              bundle_hash: null,
+              bundle_html_url: null,
+              compiled_css: result.compiled_css || "",
+              component_id: componentData.id,
+              created_at: result.created_at || null,
+              demo_code: result.demo_code || "",
+              demo_dependencies: result.demo_dependencies || "",
+              demo_direct_registry_dependencies:
+                result.demo_direct_registry_dependencies || {},
+              demo_slug: result.demo_slug || "default",
+              id: result.id,
+              name: result.name || "Default",
+              preview_url: result.preview_url,
+              user: userData,
+              user_id: userData.id,
+              video_url: result.video_url,
+              view_count: result.view_count || 0,
+              bookmarks_count: result.bookmarks_count || 0,
+              component: componentWithUser,
+              tags: result.tags || [],
+              embedding: null,
+              embedding_oai: null,
+              fts: null,
+              pro_preview_image_url: null,
+              updated_at: result.updated_at || null,
+            }
+            return demoComponent
+          })
+          .filter((item): item is DemoWithComponent => item !== null)
+        return transformedResults
+      } catch (err) {
+        console.error("Error fetching registry search results:", err)
+        throw err
+      }
+    },
+    enabled: !!searchTerm.trim(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+  })
+
+  console.log("featuredDemosQuery", featuredDemosQuery.data)
 
   const handleSelectComponent = (component: DemoWithComponent) => {
     onAddComponent(component)
@@ -52,34 +143,64 @@ export function AddRegistryModal({
           <Input
             placeholder="Search components..."
             value={searchTerm}
-            onChange={handleSearch}
+            onChange={handleSearchChange}
           />
           <div className="h-96 border rounded-md p-2 overflow-y-auto">
-            {searchTerm && (
-              <p className="text-sm text-muted-foreground p-4 text-center">
-                Searching for: {searchTerm}...
-              </p>
-            )}
-            {!searchTerm && featuredDemosQuery.isLoading && (
+            {searchTerm.trim() && registrySearchQuery.isLoading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                 {[...Array(4)].map((_, i) => (
                   <ComponentCardSkeleton key={i} />
                 ))}
               </div>
             )}
-            {!searchTerm && featuredDemosQuery.error && (
+            {searchTerm.trim() && registrySearchQuery.error && (
+              <p className="text-sm text-destructive p-4 text-center">
+                Error searching components.
+              </p>
+            )}
+            {searchTerm.trim() &&
+              registrySearchQuery.data &&
+              registrySearchQuery.data.length === 0 && (
+                <p className="text-sm text-muted-foreground p-4 text-center">
+                  No components found for "{searchTerm}".
+                </p>
+              )}
+            {searchTerm.trim() &&
+              registrySearchQuery.data &&
+              registrySearchQuery.data.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+                  {registrySearchQuery.data.map((component) => (
+                    <ComponentCard
+                      key={component.id}
+                      demo={component}
+                      onClick={() => handleSelectComponent(component)}
+                      hideUser
+                      hideVotes
+                    />
+                  ))}
+                </div>
+              )}
+
+            {!searchTerm.trim() && featuredDemosQuery.isLoading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+                {[...Array(4)].map((_, i) => (
+                  <ComponentCardSkeleton key={i} />
+                ))}
+              </div>
+            )}
+            {!searchTerm.trim() && featuredDemosQuery.error && (
               <p className="text-sm text-destructive p-4 text-center">
                 Error loading featured components.
               </p>
             )}
-            {!searchTerm &&
+            {!searchTerm.trim() &&
               featuredDemosQuery.data?.data &&
               featuredDemosQuery.data.data.length === 0 && (
                 <p className="text-sm text-muted-foreground p-4 text-center">
                   No featured components available.
                 </p>
               )}
-            {!searchTerm &&
+            {!searchTerm.trim() &&
               featuredDemosQuery.data?.data &&
               featuredDemosQuery.data.data.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
@@ -88,19 +209,20 @@ export function AddRegistryModal({
                       key={component.id}
                       demo={component}
                       onClick={() => handleSelectComponent(component)}
-                      hideUser // Assuming we don't need to show user avatar in this modal
-                      hideVotes // Assuming we don't need to show votes
+                      hideUser
+                      hideVotes
                     />
                   ))}
                 </div>
               )}
-            {!searchTerm &&
+            {!searchTerm.trim() &&
               !featuredDemosQuery.isLoading &&
               !featuredDemosQuery.error &&
-              !featuredDemosQuery.data?.data && (
+              (!featuredDemosQuery.data?.data ||
+                featuredDemosQuery.data.data.length === 0) && (
                 <p className="text-sm text-muted-foreground p-4 text-center">
-                  Enter a search term to find components or browse featured
-                  below.
+                  Browse featured components or enter a search term to find
+                  components.
                 </p>
               )}
           </div>
