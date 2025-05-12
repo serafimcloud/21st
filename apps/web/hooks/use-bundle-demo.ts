@@ -9,20 +9,32 @@ interface BundleUrls {
   css?: string
 }
 
-export const useBundleDemo = (
-  files: Record<string, string>,
-  dependencies: Record<string, string>,
-  component: Component & { user: User } & { tags: Tag[] },
-  shellCode: string[],
-  demoId: number,
-  tailwindConfig?: string,
-  globalCss?: string,
-  existingBundleUrls?: BundleUrls | null,
-) => {
+export const useBundleDemo = ({
+  files,
+  dependencies,
+  component,
+  shellCode,
+  demoId,
+  tailwindConfig,
+  globalCss,
+  existingBundleUrls,
+  shouldBundle = true,
+}: {
+  files: Record<string, string>
+  dependencies: Record<string, string>
+  component: Component & { user: User } & { tags: Tag[] }
+  shellCode: string[]
+  demoId: number
+  tailwindConfig?: string
+  globalCss?: string
+  existingBundleUrls?: BundleUrls | null
+  shouldBundle?: boolean
+}) => {
   const [bundleUrls, setBundleUrls] = useState<BundleUrls | null>(
     existingBundleUrls ?? null,
   )
   const [error, setError] = useState(null)
+  const [isBundling, setIsBundling] = useState(false)
 
   const prevDepsRef = useRef({
     files: null as Record<string, string> | null,
@@ -34,8 +46,10 @@ export const useBundleDemo = (
   })
 
   useEffect(() => {
+    if (!shouldBundle) return
     if (bundleUrls) return
     if (!shellCode) return
+    if (isBundling) return
 
     const prevDeps = prevDepsRef.current
     const filesChanged =
@@ -65,7 +79,6 @@ export const useBundleDemo = (
       demoId,
     }
 
-    // Skip fetch if this isn't the first run and nothing has changed
     const isFirstRun = prevDeps.files === null
     const hasChanges = Object.values(changedDeps).some((changed) => changed)
 
@@ -73,6 +86,7 @@ export const useBundleDemo = (
       return
     }
 
+    setIsBundling(true)
     fetch(`/api/bundle`, {
       method: "POST",
       headers: {
@@ -100,6 +114,9 @@ export const useBundleDemo = (
       .catch((error) => {
         setError(error)
       })
+      .finally(() => {
+        setIsBundling(false)
+      })
   }, [
     files,
     dependencies,
@@ -109,6 +126,8 @@ export const useBundleDemo = (
     shellCode,
     demoId,
     bundleUrls,
+    shouldBundle,
+    isBundling,
   ])
 
   return { bundle: bundleUrls, error }
