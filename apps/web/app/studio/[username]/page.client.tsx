@@ -50,7 +50,7 @@ export function StudioUsernameClient({
   const handleCreateNewSandbox = async () => {
     try {
       setIsCreating(true)
-      const { sandboxId } = await createNewSandbox()
+      const { sandboxId } = await createNewSandbox(user.id)
       setShowCreateDialog(false)
       router.push(`${pathname}/sandbox/${sandboxId}`)
     } catch (error) {
