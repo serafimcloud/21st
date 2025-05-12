@@ -9,14 +9,13 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
-import { useFeaturedDemos } from "@/lib/queries"
 import { DemoWithComponent, Component, User } from "@/types/global"
 import { ComponentCard } from "@/components/features/list-card/card"
 import { ComponentCardSkeleton } from "@/components/ui/skeletons"
 import { useQuery } from "@tanstack/react-query"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { Loader2 } from "lucide-react"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { transformDemoResult } from "@/lib/utils/transformData"
 
 interface AddRegistryModalProps {
   isOpen: boolean
@@ -31,12 +30,26 @@ export function AddRegistryModal({
 }: AddRegistryModalProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [isInstalling, setIsInstalling] = useState(false)
-  const featuredDemosQuery = useFeaturedDemos()
   const supabase = useClerkSupabaseClient()
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
   }
+
+  const shadcnDemosQuery = useQuery({
+    queryKey: ["shadcn-demos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_user_profile_demo_list", {
+        p_user_id: "user_shadcn",
+        p_include_private: false,
+      })
+      if (error) throw error
+      return data.map(transformDemoResult)
+    },
+    staleTime: 30 * 1000,
+  })
+
+  console.log("shadcnDemosQuery", shadcnDemosQuery.data)
 
   const registrySearchQuery = useQuery({
     queryKey: ["registryModalSearch", searchTerm],
@@ -125,8 +138,6 @@ export function AddRegistryModal({
     gcTime: 1000 * 60 * 30,
   })
 
-  console.log("featuredDemosQuery", featuredDemosQuery.data)
-
   const handleSelectComponent = async (component: DemoWithComponent) => {
     setIsInstalling(true)
     try {
@@ -136,12 +147,27 @@ export function AddRegistryModal({
       await onAddFrom21Registry(jsonUrl)
     } catch (error) {
       console.error("Error adding component from registry:", error)
-      // Optionally, handle the error (e.g., show a toast notification)
     } finally {
       setIsInstalling(false)
       onClose()
     }
   }
+
+  const sortedShadcnDemos = shadcnDemosQuery.data
+    ? [...shadcnDemosQuery.data].sort((a, b) => {
+        const downloadsA = a.component?.likes_count || 0
+        const downloadsB = b.component?.likes_count || 0
+        return downloadsB - downloadsA
+      })
+    : []
+
+  const sortedRegistryResults = registrySearchQuery.data
+    ? [...registrySearchQuery.data].sort((a, b) => {
+        const downloadsA = a.component?.likes_count || 0
+        const downloadsB = b.component?.likes_count || 0
+        return downloadsB - downloadsA
+      })
+    : []
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -194,7 +220,7 @@ export function AddRegistryModal({
                   registrySearchQuery.data &&
                   registrySearchQuery.data.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
-                      {registrySearchQuery.data.map((component) => (
+                      {sortedRegistryResults.map((component) => (
                         <ComponentCard
                           key={component.id}
                           demo={component}
@@ -206,30 +232,30 @@ export function AddRegistryModal({
                     </div>
                   )}
 
-                {!searchTerm.trim() && featuredDemosQuery.isLoading && (
+                {!searchTerm.trim() && shadcnDemosQuery.isLoading && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                     {[...Array(4)].map((_, i) => (
                       <ComponentCardSkeleton key={i} />
                     ))}
                   </div>
                 )}
-                {!searchTerm.trim() && featuredDemosQuery.error && (
+                {!searchTerm.trim() && shadcnDemosQuery.error && (
                   <p className="text-sm text-destructive p-4 text-center">
                     Error loading featured components.
                   </p>
                 )}
                 {!searchTerm.trim() &&
-                  featuredDemosQuery.data?.data &&
-                  featuredDemosQuery.data.data.length === 0 && (
+                  shadcnDemosQuery.data &&
+                  shadcnDemosQuery.data.length === 0 && (
                     <p className="text-sm text-muted-foreground p-4 text-center">
                       No featured components available.
                     </p>
                   )}
                 {!searchTerm.trim() &&
-                  featuredDemosQuery.data?.data &&
-                  featuredDemosQuery.data.data.length > 0 && (
+                  shadcnDemosQuery.data &&
+                  shadcnDemosQuery.data.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
-                      {featuredDemosQuery.data.data.map((component) => (
+                      {sortedShadcnDemos.map((component) => (
                         <ComponentCard
                           key={component.id}
                           demo={component}
@@ -241,10 +267,10 @@ export function AddRegistryModal({
                     </div>
                   )}
                 {!searchTerm.trim() &&
-                  !featuredDemosQuery.isLoading &&
-                  !featuredDemosQuery.error &&
-                  (!featuredDemosQuery.data?.data ||
-                    featuredDemosQuery.data.data.length === 0) && (
+                  !shadcnDemosQuery.isLoading &&
+                  !shadcnDemosQuery.error &&
+                  (!shadcnDemosQuery.data ||
+                    shadcnDemosQuery.data.length === 0) && (
                     <p className="text-sm text-muted-foreground p-4 text-center">
                       Browse featured components or enter a search term to find
                       components.
