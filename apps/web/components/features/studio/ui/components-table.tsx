@@ -278,6 +278,7 @@ export function DemosTable({
       cell: ({ row }) => {
         const isPrivate = Boolean(row.original.is_private)
         const isDraft = row.original.submission_status === "draft"
+        const isFeatured = row.original.submission_status === "featured"
 
         const handleToggleVisibility = async (newIsPrivate: boolean) => {
           if (!onUpdateVisibility) return
@@ -296,7 +297,7 @@ export function DemosTable({
                 ? handleToggleVisibility
                 : undefined
             }
-            readonly={!isOwnProfile || !onUpdateVisibility || isDraft}
+            readonly={!isOwnProfile || !onUpdateVisibility || !isFeatured}
           />
         )
       },
