@@ -86,7 +86,7 @@ const activateMonacoJSXHighlighter = async (
 }
 
 interface EditorPaneProps {
-  selectedFile: { path: string; type: string } | null
+  selectedFile: { path: string; type: string; isFromRegistry?: boolean } | null
   code: string
   onCodeChange: (value: string) => void
   isLoading: boolean
@@ -169,6 +169,8 @@ function EditorPaneOriginal({
   //   jsxHighlighter.highlightOnDidChangeModelContent()
   // }
 
+  const isReadOnly = selectedFile?.isFromRegistry ?? false
+
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -188,32 +190,40 @@ function EditorPaneOriginal({
   }
 
   return (
-    <Editor
-      height="100%"
-      language={getMonacoLanguage(selectedFile.path)}
-      value={code}
-      onChange={(value) => onCodeChange(value || "")}
-      theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
-      className="oveflow-hidden"
-      options={{
-        minimap: { enabled: false },
-        fontSize: 14,
-        wordWrap: "on",
-        automaticLayout: true,
-        scrollbar: {
-          verticalScrollbarSize: 5,
-        },
-        overviewRulerLanes: 5,
-        hideCursorInOverviewRuler: true,
-        overviewRulerBorder: false,
-      }}
-      onMount={handleEditorMount}
-      loading={
-        <div className="h-full flex items-center justify-center">
-          <Loader2Icon className="h-6 w-6 animate-spin text-primary" />
+    <div className="h-full flex flex-col">
+      {isReadOnly && (
+        <div className="p-2 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 text-xs text-center">
+          This component is from the 21st.dev registry and is read-only.
         </div>
-      }
-    />
+      )}
+      <Editor
+        height="100%"
+        language={getMonacoLanguage(selectedFile.path)}
+        value={code}
+        onChange={(value) => onCodeChange(value || "")}
+        theme={resolvedTheme === "dark" ? "vs-dark" : "vs"}
+        className="oveflow-hidden grow"
+        options={{
+          minimap: { enabled: false },
+          fontSize: 14,
+          wordWrap: "on",
+          automaticLayout: true,
+          scrollbar: {
+            verticalScrollbarSize: 5,
+          },
+          overviewRulerLanes: 5,
+          hideCursorInOverviewRuler: true,
+          overviewRulerBorder: false,
+          readOnly: isReadOnly,
+        }}
+        onMount={handleEditorMount}
+        loading={
+          <div className="h-full flex items-center justify-center">
+            <Loader2Icon className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        }
+      />
+    </div>
   )
 }
 

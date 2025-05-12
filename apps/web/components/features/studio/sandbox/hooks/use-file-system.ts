@@ -37,6 +37,7 @@ export interface FileEntry {
   name: string
   isSymlink: boolean
   children?: FileEntry[]
+  isFromRegistry?: boolean
 }
 
 const normalizePath = (path: string) => {
@@ -49,17 +50,41 @@ const normalizePath = (path: string) => {
 const mapReaddirEntryToFileEntry = (
   entry: ReaddirEntry,
   parentPath: string,
-): FileEntry => ({
-  name: entry.name,
-  path: `${parentPath === ROOT_PATH ? "" : parentPath}/${entry.name}`,
-  type: entry.type === "directory" ? "dir" : "file",
-  isSymlink: entry.isSymlink,
-})
+  registryComponentPaths: string[],
+): FileEntry => {
+  const fullPath = `${parentPath === ROOT_PATH ? "" : parentPath}/${entry.name}`
+  // Check if the current entry's path (or any of its parent paths up to /src/components/ui/)
+  // matches a path derived from a registry component.
+  // A component from registry might be /src/components/ui/my-component.tsx
+  // or a directory /src/components/ui/my-component/
+  let isFromRegistry = false
+  if (fullPath.startsWith("/src/components/ui/")) {
+    isFromRegistry = registryComponentPaths.some((registryPath) => {
+      // A registry component path is like 'my-component'
+      // We need to check if fullPath is '/src/components/ui/my-component.tsx'
+      // or '/src/components/ui/my-component/...'
+      const baseRegistryPath = `/src/components/ui/${registryPath}`
+      return (
+        fullPath === `${baseRegistryPath}.tsx` || // for files like my-component.tsx
+        fullPath.startsWith(`${baseRegistryPath}/`) // for directories like my-component/
+      )
+    })
+  }
+
+  return {
+    name: entry.name,
+    path: fullPath,
+    type: entry.type === "directory" ? "dir" : "file",
+    isSymlink: entry.isSymlink,
+    isFromRegistry,
+  }
+}
 
 const loadDirectoryRecursively = async (
   sandbox: SandboxSession,
   path: string,
   showAdvancedView: boolean,
+  registryComponentPaths: string[],
 ): Promise<FileEntry[]> => {
   const entries = await sandbox.fs.readdir(normalizePath(path))
 
@@ -80,7 +105,7 @@ const loadDirectoryRecursively = async (
     return true
   })
   const fileEntries = filteredEntries.map((entry) =>
-    mapReaddirEntryToFileEntry(entry, path),
+    mapReaddirEntryToFileEntry(entry, path, registryComponentPaths),
   )
 
   for (const entry of fileEntries) {
@@ -89,7 +114,15 @@ const loadDirectoryRecursively = async (
         sandbox,
         entry.path,
         showAdvancedView,
+        registryComponentPaths,
       )
+      // If any child is from registry, the parent dir (if under /src/components/ui/) should also be considered as part of it for UI purposes
+      if (
+        entry.path.startsWith("/src/components/ui/") &&
+        entry.children?.some((child) => child.isFromRegistry)
+      ) {
+        entry.isFromRegistry = true
+      }
     }
   }
 
@@ -109,6 +142,7 @@ export const useFileSystem = ({
   const [isTreeLoading, setIsTreeLoading] = useState(false)
   const [isFileLoading, setIsFileLoading] = useState(false)
   const [advancedView, setAdvancedView] = useState(false)
+  const [registryComponents, setRegistryComponents] = useState<string[]>([])
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   const sbWrapper = async <T>(
@@ -132,9 +166,34 @@ export const useFileSystem = ({
 
   const loadRootDirectory = async () => {
     setIsTreeLoading(true)
+    let currentRegistryComponents: string[] = []
     try {
+      // Attempt to load and parse 21st-registry.json
+      try {
+        const registryContent = await sbWrapper((sandbox) =>
+          sandbox.fs.readTextFile(normalizePath("/21st-registry.json")),
+        )
+        if (registryContent) {
+          const parsedRegistry = JSON.parse(registryContent)
+          if (Array.isArray(parsedRegistry)) {
+            currentRegistryComponents = parsedRegistry.map(
+              (item: any) => item.name,
+            )
+            setRegistryComponents(currentRegistryComponents)
+          }
+        }
+      } catch (e) {
+        console.warn("21st-registry.json not found or unreadable.", e)
+        setRegistryComponents([]) // Reset if file not found or error
+      }
+
       const rootEntries = await sbWrapper((sandbox) =>
-        loadDirectoryRecursively(sandbox, ROOT_PATH, advancedView),
+        loadDirectoryRecursively(
+          sandbox,
+          ROOT_PATH,
+          advancedView,
+          currentRegistryComponents,
+        ),
       )
       if (rootEntries) setFiles(rootEntries)
     } catch (error) {
