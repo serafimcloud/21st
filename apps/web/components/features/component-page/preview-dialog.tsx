@@ -145,7 +145,7 @@ export function ComponentPreviewDialog({
     capture,
   ])
 
-  const bundleUrl = demo.bundle_url?.html
+  const bundleUrl = demo.bundle_html_url || demo.bundle_url?.html
 
   const { data: bookmarked } = useHasUserBookmarkedDemo(
     supabase,
@@ -643,9 +643,9 @@ export function ComponentPreviewDialog({
             <>
               {isLoading && <PreviewSkeleton />}
               <iframe
-                src={
-                  previewTheme === "dark" ? `${bundleUrl}?dark=true` : bundleUrl
-                }
+                src={`${bundleUrl}?theme=${resolvedTheme}${
+                  previewTheme === "dark" ? "&dark=true" : ""
+                }`}
                 className={cn("w-full h-full border-0", isLoading && "hidden")}
                 style={{
                   flex: 1,
