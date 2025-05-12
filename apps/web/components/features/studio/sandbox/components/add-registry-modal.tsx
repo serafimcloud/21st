@@ -157,93 +157,98 @@ export function AddRegistryModal({
             onChange={handleSearchChange}
           />
           <div className="h-96 border rounded-md p-2 overflow-y-auto relative">
-            {isInstalling && (
-              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-md">
-                <LoadingSpinner />
+            {isInstalling ? (
+              <div className="absolute inset-0 bg-background flex flex-col items-center justify-center z-10 rounded-md">
+                <div className="max-w-xs max-h-xs">
+                  <LoadingSpinner />
+                </div>
                 <p className="mt-4 text-sm text-muted-foreground">
                   Installing component...
                 </p>
               </div>
-            )}
-            {searchTerm.trim() && registrySearchQuery.isLoading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
-                {[...Array(4)].map((_, i) => (
-                  <ComponentCardSkeleton key={i} />
-                ))}
-              </div>
-            )}
-            {searchTerm.trim() && registrySearchQuery.error && (
-              <p className="text-sm text-destructive p-4 text-center">
-                Error searching components.
-              </p>
-            )}
-            {searchTerm.trim() &&
-              registrySearchQuery.data &&
-              registrySearchQuery.data.length === 0 && (
-                <p className="text-sm text-muted-foreground p-4 text-center">
-                  No components found for "{searchTerm}".
-                </p>
-              )}
-            {searchTerm.trim() &&
-              registrySearchQuery.data &&
-              registrySearchQuery.data.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
-                  {registrySearchQuery.data.map((component) => (
-                    <ComponentCard
-                      key={component.id}
-                      demo={component}
-                      onClick={() => handleSelectComponent(component)}
-                      hideUser
-                      hideVotes
-                    />
-                  ))}
-                </div>
-              )}
+            ) : (
+              <>
+                {searchTerm.trim() && registrySearchQuery.isLoading && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+                    {[...Array(4)].map((_, i) => (
+                      <ComponentCardSkeleton key={i} />
+                    ))}
+                  </div>
+                )}
+                {searchTerm.trim() && registrySearchQuery.error && (
+                  <p className="text-sm text-destructive p-4 text-center">
+                    Error searching components.
+                  </p>
+                )}
+                {searchTerm.trim() &&
+                  registrySearchQuery.data &&
+                  registrySearchQuery.data.length === 0 && (
+                    <p className="text-sm text-muted-foreground p-4 text-center">
+                      No components found for "{searchTerm}".
+                    </p>
+                  )}
+                {searchTerm.trim() &&
+                  registrySearchQuery.data &&
+                  registrySearchQuery.data.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+                      {registrySearchQuery.data.map((component) => (
+                        <ComponentCard
+                          key={component.id}
+                          demo={component}
+                          onClick={() => handleSelectComponent(component)}
+                          hideUser
+                          hideVotes
+                        />
+                      ))}
+                    </div>
+                  )}
 
-            {!searchTerm.trim() && featuredDemosQuery.isLoading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
-                {[...Array(4)].map((_, i) => (
-                  <ComponentCardSkeleton key={i} />
-                ))}
-              </div>
+                {!searchTerm.trim() && featuredDemosQuery.isLoading && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+                    {[...Array(4)].map((_, i) => (
+                      <ComponentCardSkeleton key={i} />
+                    ))}
+                  </div>
+                )}
+                {!searchTerm.trim() && featuredDemosQuery.error && (
+                  <p className="text-sm text-destructive p-4 text-center">
+                    Error loading featured components.
+                  </p>
+                )}
+                {!searchTerm.trim() &&
+                  featuredDemosQuery.data?.data &&
+                  featuredDemosQuery.data.data.length === 0 && (
+                    <p className="text-sm text-muted-foreground p-4 text-center">
+                      No featured components available.
+                    </p>
+                  )}
+                {!searchTerm.trim() &&
+                  featuredDemosQuery.data?.data &&
+                  featuredDemosQuery.data.data.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+                      {featuredDemosQuery.data.data.map((component) => (
+                        <ComponentCard
+                          key={component.id}
+                          demo={component}
+                          onClick={() => handleSelectComponent(component)}
+                          hideUser
+                          hideVotes
+                        />
+                      ))}
+                    </div>
+                  )}
+                {!searchTerm.trim() &&
+                  !featuredDemosQuery.isLoading &&
+                  !featuredDemosQuery.error &&
+                  (!featuredDemosQuery.data?.data ||
+                    featuredDemosQuery.data.data.length === 0) && (
+                    <p className="text-sm text-muted-foreground p-4 text-center">
+                      Browse featured components or enter a search term to find
+                      components.
+                    </p>
+                  )}
+              </>
             )}
-            {!searchTerm.trim() && featuredDemosQuery.error && (
-              <p className="text-sm text-destructive p-4 text-center">
-                Error loading featured components.
-              </p>
-            )}
-            {!searchTerm.trim() &&
-              featuredDemosQuery.data?.data &&
-              featuredDemosQuery.data.data.length === 0 && (
-                <p className="text-sm text-muted-foreground p-4 text-center">
-                  No featured components available.
-                </p>
-              )}
-            {!searchTerm.trim() &&
-              featuredDemosQuery.data?.data &&
-              featuredDemosQuery.data.data.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
-                  {featuredDemosQuery.data.data.map((component) => (
-                    <ComponentCard
-                      key={component.id}
-                      demo={component}
-                      onClick={() => handleSelectComponent(component)}
-                      hideUser
-                      hideVotes
-                    />
-                  ))}
-                </div>
-              )}
-            {!searchTerm.trim() &&
-              !featuredDemosQuery.isLoading &&
-              !featuredDemosQuery.error &&
-              (!featuredDemosQuery.data?.data ||
-                featuredDemosQuery.data.data.length === 0) && (
-                <p className="text-sm text-muted-foreground p-4 text-center">
-                  Browse featured components or enter a search term to find
-                  components.
-                </p>
-              )}
           </div>
         </div>
         <DialogFooter>
