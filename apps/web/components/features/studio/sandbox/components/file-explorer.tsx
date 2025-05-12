@@ -35,6 +35,7 @@ interface FileExplorerProps {
   isLoading: boolean
   advancedView: boolean
   onToggleAdvancedView: () => void
+  onAddFrom21Registry: (jsonUrl: string) => Promise<void>
 }
 
 export function FileExplorer({
@@ -49,6 +50,7 @@ export function FileExplorer({
   isLoading,
   advancedView,
   onToggleAdvancedView,
+  onAddFrom21Registry,
 }: FileExplorerProps) {
   const [isCreatingFile, setIsCreatingFile] = useState(false)
   const [newFileName, setNewFileName] = useState("")
@@ -234,6 +236,7 @@ export function FileExplorer({
 
       {isAddRegistryModalOpen && (
         <AddRegistryModal
+          onAddFrom21Registry={onAddFrom21Registry}
           isOpen={isAddRegistryModalOpen}
           onClose={() => setIsAddRegistryModalOpen(false)}
         />

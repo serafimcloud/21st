@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/resizable"
 import { FileExplorer } from "@/components/features/studio/sandbox/components/file-explorer"
 import { PreviewPane } from "@/components/features/studio/sandbox/components/preview-pane"
-import { Spinner } from "@/components/icons/spinner"
 import {
   ServerSandbox,
   useSandbox,
@@ -28,6 +27,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 function PublishClientPageContent({
   setServerSandbox,
@@ -74,11 +74,24 @@ function PublishClientPageContent({
     renameEntry,
     addDependencyToPackageJson,
     generateRegistry,
+    addFrom21Registry,
   } = useFileSystem({
     sandboxRef,
     reconnectSandbox,
     sandboxConnectionHash,
   })
+
+  const handleAddFrom21Registry = async (jsonUrl: string) => {
+    console.log("ADDING FROM 21ST REGISTRY STARTED", jsonUrl)
+    try {
+      await addFrom21Registry("https://21st.dev/r/ibelick/text-shimmer")
+      await loadRootDirectory()
+      toast.success("Added from 21st.dev registry")
+    } catch (error) {
+      toast.error("Failed to add from 21st.dev registry")
+      console.error(error)
+    }
+  }
 
   useEffect(() => {
     // Renamed function for clarity
@@ -391,6 +404,7 @@ function PublishClientPageContent({
             isLoading={isTreeLoading}
             advancedView={advancedView}
             onToggleAdvancedView={toggleAdvancedView}
+            onAddFrom21Registry={handleAddFrom21Registry}
           />
         </ResizablePanel>
         <ResizableHandle />

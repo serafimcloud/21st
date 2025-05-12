@@ -15,19 +15,22 @@ import { ComponentCard } from "@/components/features/list-card/card"
 import { ComponentCardSkeleton } from "@/components/ui/skeletons"
 import { useQuery } from "@tanstack/react-query"
 import { useClerkSupabaseClient } from "@/lib/clerk"
+import { Loader2 } from "lucide-react"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 interface AddRegistryModalProps {
   isOpen: boolean
   onClose: () => void
-  onAddComponent: (component: DemoWithComponent) => void
+  onAddFrom21Registry: (jsonUrl: string) => Promise<void>
 }
 
 export function AddRegistryModal({
   isOpen,
   onClose,
-  onAddComponent,
+  onAddFrom21Registry,
 }: AddRegistryModalProps) {
   const [searchTerm, setSearchTerm] = useState("")
+  const [isInstalling, setIsInstalling] = useState(false)
   const featuredDemosQuery = useFeaturedDemos()
   const supabase = useClerkSupabaseClient()
 
@@ -124,19 +127,27 @@ export function AddRegistryModal({
 
   console.log("featuredDemosQuery", featuredDemosQuery.data)
 
-  const handleSelectComponent = (component: DemoWithComponent) => {
-    onAddComponent(component)
-    onClose()
+  const handleSelectComponent = async (component: DemoWithComponent) => {
+    setIsInstalling(true)
+    try {
+      await onAddFrom21Registry(component.demo_slug)
+    } catch (error) {
+      console.error("Error adding component from registry:", error)
+      // Optionally, handle the error (e.g., show a toast notification)
+    } finally {
+      setIsInstalling(false)
+      onClose()
+    }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Add from Registry</DialogTitle>
+          <DialogTitle>Add from 21st Registry</DialogTitle>
           <DialogDescription>
-            Search for components in the registry or select from our featured
-            components.
+            Search for components in the 21st.dev registry or select from our
+            featured components.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -145,7 +156,15 @@ export function AddRegistryModal({
             value={searchTerm}
             onChange={handleSearchChange}
           />
-          <div className="h-96 border rounded-md p-2 overflow-y-auto">
+          <div className="h-96 border rounded-md p-2 overflow-y-auto relative">
+            {isInstalling && (
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-10 rounded-md">
+                <LoadingSpinner />
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Installing component...
+                </p>
+              </div>
+            )}
             {searchTerm.trim() && registrySearchQuery.isLoading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                 {[...Array(4)].map((_, i) => (
