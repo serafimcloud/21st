@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const { data: dbSandbox, error: dbError } = await supabaseWithAdminAccess
       .from("sandboxes")
       .insert({
-        user_id: userId,
+        user_id: userId as string,
         codesandbox_id: codesandboxId,
         created_at: now,
         updated_at: now,
