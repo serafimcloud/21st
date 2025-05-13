@@ -604,14 +604,15 @@ export function ComponentPreviewDialog({
                 size={24}
                 isClickable={true}
                 user={demo.user}
+                className="flex-shrink-0"
               />
-              <div className="flex flex-col min-w-0">
-                <DialogTitle className="text-md font-medium flex gap-1 items-center">
-                  {demo.component.name}
+              <div className="flex flex-col min-w-0 overflow-hidden">
+                <DialogTitle className="text-md font-medium flex gap-1 items-center truncate">
+                  <span className="truncate">{demo.component.name}</span>
                   {demo.name != "Default" && (
                     <>
-                      <Icons.slash className="text-border w-[12px] h-[12px]" />
-                      {demo.name}
+                      <Icons.slash className="text-border w-[12px] h-[12px] flex-shrink-0" />
+                      <span className="truncate">{demo.name}</span>
                     </>
                   )}
                 </DialogTitle>
@@ -660,13 +661,19 @@ export function ComponentPreviewDialog({
         </div>
 
         {isMobile && (
-          <div className="h-14 flex flex-row items-center justify-between border-t text-sm px-4 space-y-0 flex-shrink-0">
-            <div className="flex items-center gap-3">
+          <div
+            className="flex flex-row items-center justify-between border-t text-sm px-4 space-y-0 flex-shrink-0"
+            style={{
+              height: "calc(3.5rem + env(safe-area-inset-bottom, 0px))",
+              paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))",
+            }}
+          >
+            <div className="flex items-center gap-3 min-w-0 max-w-[75%]">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="h-8 w-8"
+                className="h-8 w-8 flex-shrink-0"
               >
                 <ArrowLeft size={16} />
               </Button>
@@ -685,14 +692,15 @@ export function ComponentPreviewDialog({
                 size={24}
                 isClickable={true}
                 user={demo.user}
+                className="flex-shrink-0"
               />
-              <div className="flex flex-col min-w-0">
-                <DialogTitle className="text-md font-medium flex gap-1 items-center">
-                  {demo.component.name}
+              <div className="flex flex-col min-w-0 overflow-hidden">
+                <DialogTitle className="text-md font-medium flex gap-1 items-center truncate">
+                  <span className="truncate">{demo.component.name}</span>
                   {demo.name != "Default" && (
                     <>
-                      <Icons.slash className="text-border w-[12px] h-[12px]" />
-                      {demo.name}
+                      <Icons.slash className="text-border w-[12px] h-[12px] flex-shrink-0" />
+                      <span className="truncate">{demo.name}</span>
                     </>
                   )}
                 </DialogTitle>
