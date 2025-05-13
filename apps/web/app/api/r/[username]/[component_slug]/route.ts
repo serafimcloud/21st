@@ -243,6 +243,7 @@ export async function GET(
       name: component_slug,
       type: getShadcnRegistrySlug(component.registry),
       dependencies: npmDependencies.length > 0 ? npmDependencies : undefined,
+      registryDependencies: component.direct_registry_dependencies,
       files,
       ...(cssVars ? { cssVars } : {}),
       ...(tailwindConfigObject

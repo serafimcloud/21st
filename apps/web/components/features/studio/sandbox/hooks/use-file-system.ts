@@ -761,7 +761,7 @@ export const useFileSystem = ({
   const addFrom21Registry = async (jsonUrl: string) => {
     await sbWrapper(async (sandbox) => {
       const command = sandbox.shells.run(
-        `npx -y @21st-dev/cli@latest add "${jsonUrl}"`,
+        `npx -y --no-install @21st-dev/cli add "${jsonUrl}" --no-install`,
       )
       console.log("command", command)
 

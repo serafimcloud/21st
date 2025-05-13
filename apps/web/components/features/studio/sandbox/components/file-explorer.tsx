@@ -209,7 +209,7 @@ export function FileExplorer({
         }}
         transition={{ duration: 0.15 }}
       >
-        {/* <Button
+        <Button
           variant="outline"
           size="sm"
           onClick={() => setIsAddRegistryModalOpen(true)}
@@ -231,7 +231,7 @@ export function FileExplorer({
           <span className="text-xs font-medium whitespace-nowrap">
             Add from Registry
           </span>
-        </Button> */}
+        </Button>
       </motion.div>
 
       {isAddRegistryModalOpen && (
