@@ -32,6 +32,8 @@ export interface Submission {
   } | null
   submission_status: string | null
   moderators_feedback: string | null
+  contest_round_id?: number | null
+  is_public?: boolean
 }
 
 export interface AdminRpcResponse {

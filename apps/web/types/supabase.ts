@@ -180,6 +180,199 @@ export type Database = {
         }
         Relationships: []
       }
+      bundle_items: {
+        Row: {
+          bundle_id: number
+          component_id: number
+          created_at: string
+          id: number
+        }
+        Insert: {
+          bundle_id: number
+          component_id: number
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          bundle_id?: number
+          component_id?: number
+          created_at?: string
+          id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "component_dependencies_graph_view_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components_with_username"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundle_plans: {
+        Row: {
+          bundle_id: number
+          created_at: string
+          description: string
+          features: string[]
+          id: number
+          price: number
+          type: Database["public"]["Enums"]["bundle_plan_type"]
+        }
+        Insert: {
+          bundle_id: number
+          created_at?: string
+          description: string
+          features?: string[]
+          id?: number
+          price: number
+          type: Database["public"]["Enums"]["bundle_plan_type"]
+        }
+        Update: {
+          bundle_id?: number
+          created_at?: string
+          description?: string
+          features?: string[]
+          id?: number
+          price?: number
+          type?: Database["public"]["Enums"]["bundle_plan_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_plans_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundle_purchases: {
+        Row: {
+          bundle_id: number
+          created_at: string
+          fee: number
+          id: number
+          plan_id: number | null
+          price: number
+          user_id: string
+        }
+        Insert: {
+          bundle_id: number
+          created_at?: string
+          fee: number
+          id?: number
+          plan_id?: number | null
+          price: number
+          user_id: string
+        }
+        Update: {
+          bundle_id?: number
+          created_at?: string
+          fee?: number
+          id?: number
+          plan_id?: number | null
+          price?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_purchases_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_purchases_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "bundle_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bundle_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundles: {
+        Row: {
+          created_at: string
+          id: number
+          is_public: boolean
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_public?: boolean
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_public?: boolean
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "referral_analytics"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bundles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       code_embeddings: {
         Row: {
           created_at: string | null
@@ -1846,6 +2039,7 @@ export type Database = {
       users: {
         Row: {
           bio: string | null
+          bundles_fee: number
           created_at: string
           display_image_url: string | null
           display_name: string | null
@@ -1863,6 +2057,7 @@ export type Database = {
           pro_referral_url: string | null
           ref: string | null
           role: Database["public"]["Enums"]["user_role"] | null
+          stripe_id: string | null
           twitter_url: string | null
           updated_at: string | null
           username: string | null
@@ -1870,6 +2065,7 @@ export type Database = {
         }
         Insert: {
           bio?: string | null
+          bundles_fee?: number
           created_at?: string
           display_image_url?: string | null
           display_name?: string | null
@@ -1887,6 +2083,7 @@ export type Database = {
           pro_referral_url?: string | null
           ref?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          stripe_id?: string | null
           twitter_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -1894,6 +2091,7 @@ export type Database = {
         }
         Update: {
           bio?: string | null
+          bundles_fee?: number
           created_at?: string
           display_image_url?: string | null
           display_name?: string | null
@@ -1911,6 +2109,7 @@ export type Database = {
           pro_referral_url?: string | null
           ref?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          stripe_id?: string | null
           twitter_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -2706,6 +2905,32 @@ export type Database = {
           has_voted: boolean
         }[]
       }
+      get_hunt_demos_list_v3: {
+        Args: { p_round_id: number }
+        Returns: {
+          id: number
+          name: string
+          preview_url: string
+          video_url: string
+          updated_at: string
+          demo_slug: string
+          component_data: Json
+          user_data: Json
+          component_user_data: Json
+          total_count: number
+          view_count: number
+          bookmarks_count: number
+          bundle_url: Json
+          votes: number
+          installs: number
+          final_score: number
+          global_rank: number
+          tags: Json
+          has_voted: boolean
+          submission_status: string
+          moderators_feedback: string
+        }[]
+      }
       get_liked_components: {
         Args: { p_user_id: string }
         Returns: Json[]
@@ -3110,6 +3335,7 @@ export type Database = {
     }
     Enums: {
       api_plan: "free" | "pro" | "enterprise"
+      bundle_plan_type: "individual" | "team" | "enterprise"
       demo_hunt_category: "marketing" | "ui" | "seasonal"
       payment_status: "pending" | "paid" | "rejected"
       submission_status: "on_review" | "featured" | "posted" | "rejected"
@@ -3266,6 +3492,7 @@ export const Constants = {
   public: {
     Enums: {
       api_plan: ["free", "pro", "enterprise"],
+      bundle_plan_type: ["individual", "team", "enterprise"],
       demo_hunt_category: ["marketing", "ui", "seasonal"],
       payment_status: ["pending", "paid", "rejected"],
       submission_status: ["on_review", "featured", "posted", "rejected"],

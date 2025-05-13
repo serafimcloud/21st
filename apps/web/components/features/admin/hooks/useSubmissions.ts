@@ -1,11 +1,24 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { toast } from "sonner"
 import { Submission, SubmissionStatus, AdminRpcResponse } from "../types"
 import type { PostgrestSingleResponse } from "@supabase/supabase-js"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+
+export interface ContestRound {
+  id: number
+  week_number: number
+  start_at: string
+  end_at: string
+  seasonal_tag_id: number | null
+  created_at: string | null
+}
+
+export type DeleteMode = "submission" | "component" | null
 
 export const useSubmissions = (isAdmin: boolean) => {
   const supabase = useClerkSupabaseClient()
+  const queryClient = useQueryClient()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>("on_review")
@@ -15,6 +28,58 @@ export const useSubmissions = (isAdmin: boolean) => {
   const [editingDemo, setEditingDemo] = useState<Submission | null>(null)
   const [editDemoName, setEditDemoName] = useState("")
   const [editDemoSlug, setEditDemoSlug] = useState("")
+  const [contestRoundLoading, setContestRoundLoading] = useState(false)
+  const [isDeletingComponent, setIsDeletingComponent] = useState(false)
+  const [componentToDelete, setComponentToDelete] = useState<Submission | null>(
+    null,
+  )
+
+  // Get current active round
+  const { data: currentRound, isLoading: isCurrentRoundLoading } = useQuery({
+    queryKey: ["current-contest-round"],
+    queryFn: async () => {
+      const now = new Date().toISOString()
+      // First try to get active round
+      const { data: activeRound } = await supabase
+        .from("component_hunt_rounds")
+        .select("*")
+        .lte("start_at", now)
+        .gte("end_at", now)
+        .single()
+
+      if (activeRound) return activeRound as ContestRound
+
+      // If no active round, get the most recent past round
+      const { data: pastRound } = await supabase
+        .from("component_hunt_rounds")
+        .select("*")
+        .lte("start_at", now)
+        .order("start_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      return pastRound as ContestRound
+    },
+    enabled: isAdmin,
+  })
+
+  // Get all contest rounds
+  const { data: allRounds = [], isLoading: isAllRoundsLoading } = useQuery({
+    queryKey: ["all-contest-rounds"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("component_hunt_rounds")
+        .select("*")
+        .order("start_at", { ascending: false })
+
+      if (error) {
+        throw error
+      }
+
+      return data as ContestRound[]
+    },
+    enabled: isAdmin,
+  })
 
   useEffect(() => {
     if (isAdmin) {
@@ -49,7 +114,24 @@ export const useSubmissions = (isAdmin: boolean) => {
         )
       }
 
-      setSubmissions(filteredData as Submission[])
+      // Check contest participation status for each submission
+      const enhancedData = await Promise.all(
+        filteredData.map(async (submission: any) => {
+          const roundId = await checkContestParticipation(submission.id)
+          const isPublic =
+            submission.component_data &&
+            typeof submission.component_data === "object"
+              ? await checkIsPublic(submission.component_data.id)
+              : false
+          return {
+            ...submission,
+            contest_round_id: roundId,
+            is_public: isPublic,
+          }
+        }),
+      )
+
+      setSubmissions(enhancedData as unknown as Submission[])
     } catch (error) {
       console.error("Error fetching submissions:", error)
       toast.error("Failed to load submissions")
@@ -57,6 +139,127 @@ export const useSubmissions = (isAdmin: boolean) => {
       setLoading(false)
     }
   }
+
+  // Check if a demo is part of a contest round
+  const checkContestParticipation = async (
+    demoId: number,
+  ): Promise<number | null> => {
+    try {
+      const { data, error } = await supabase
+        .from("demo_hunt_scores")
+        .select("round_id")
+        .eq("demo_id", demoId)
+        .single()
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          // No data found, not participating in any contest
+          return null
+        }
+        throw error
+      }
+
+      return data?.round_id || null
+    } catch (error) {
+      console.error("Error checking contest participation:", error)
+      return null
+    }
+  }
+
+  // Get contest round details by ID
+  const getRoundById = (roundId: number | null): ContestRound | null => {
+    if (!roundId) return null
+    return allRounds.find((round) => round.id === roundId) || null
+  }
+
+  // Add a demo to a specific contest round
+  const addToContest = useCallback(
+    async (demoId: number, roundId: number) => {
+      if (!roundId) {
+        toast.error("No contest round selected")
+        return false
+      }
+
+      // Find round details
+      const round = getRoundById(roundId)
+      if (!round) {
+        toast.error("Selected contest round not found")
+        return false
+      }
+
+      setContestRoundLoading(true)
+      try {
+        // First check if it's already in any contest
+        const existingRoundId = await checkContestParticipation(demoId)
+
+        // If demo is already in the same round, just return
+        if (existingRoundId === roundId) {
+          toast.info("This demo is already in this contest round")
+          return true
+        }
+
+        // If demo is in a different round, update its round_id instead of deleting and recreating
+        if (existingRoundId) {
+          const { error: updateError } = await supabase
+            .from("demo_hunt_scores")
+            .update({ round_id: roundId })
+            .eq("demo_id", demoId)
+
+          if (updateError) {
+            throw updateError
+          }
+
+          console.log(
+            `Changed demo ${demoId} round from ${existingRoundId} to ${roundId}`,
+          )
+        } else {
+          // Demo is not in any contest yet, add a new record
+          const { error } = await supabase.from("demo_hunt_scores").insert({
+            demo_id: demoId,
+            round_id: roundId,
+            final_score: 0,
+            installs: 0,
+            views: 0,
+            votes: 0,
+          })
+
+          if (error) {
+            throw error
+          }
+        }
+
+        // Update the local state
+        setSubmissions((prevSubmissions) =>
+          prevSubmissions.map((sub) =>
+            sub.id === demoId ? { ...sub, contest_round_id: roundId } : sub,
+          ),
+        )
+
+        // Invalidate related queries
+        queryClient.invalidateQueries({ queryKey: ["demo-hunt-submissions"] })
+
+        // Show appropriate success message based on whether it was a move or a new addition
+        if (existingRoundId) {
+          toast.success(`Moved to Week #${round.week_number} contest round`)
+        } else {
+          toast.success(`Added to Week #${round.week_number} contest round`)
+        }
+
+        return true
+      } catch (error) {
+        console.error("Error managing contest participation:", error)
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to manage contest participation"
+        toast.error(errorMessage)
+        return false
+      } finally {
+        setContestRoundLoading(false)
+      }
+    },
+    [allRounds, supabase, queryClient],
+  )
 
   const sendStatusNotification = async (
     submission: Submission,
@@ -279,6 +482,108 @@ export const useSubmissions = (isAdmin: boolean) => {
     return status as SubmissionStatus
   }
 
+  // Check if a component is public
+  const checkIsPublic = async (componentId: number): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from("components")
+        .select("is_public")
+        .eq("id", componentId)
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      return data?.is_public ?? false
+    } catch (error) {
+      console.error("Error checking if component is public:", error)
+      return false
+    }
+  }
+
+  // Toggle component public status
+  const toggleComponentPublicStatus = async (
+    componentId: number,
+    currentStatus: boolean,
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("components")
+        .update({ is_public: !currentStatus })
+        .eq("id", componentId)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      setSubmissions((prevSubmissions) =>
+        prevSubmissions.map((sub) =>
+          sub.component_data.id === componentId
+            ? { ...sub, is_public: !currentStatus }
+            : sub,
+        ),
+      )
+
+      toast.success(`Component is now ${!currentStatus ? "public" : "private"}`)
+      return true
+    } catch (error) {
+      console.error("Error toggling component public status:", error)
+      toast.error("Failed to update component visibility")
+      return false
+    }
+  }
+
+  // Delete component functionality
+  const deleteComponent = async (
+    submission: Submission,
+    mode: DeleteMode,
+  ): Promise<boolean> => {
+    if (!mode) return false
+
+    setIsDeletingComponent(true)
+    try {
+      if (mode === "submission") {
+        // Remove only from submissions
+        const { error } = await supabase
+          .from("submissions")
+          .delete()
+          .eq("component_id", submission.component_data.id)
+
+        if (error) throw error
+
+        toast.success("Removed from submissions successfully")
+      } else if (mode === "component") {
+        // Delete component completely - cascade delete will handle demos, etc.
+        const { error } = await supabase
+          .from("components")
+          .delete()
+          .eq("id", submission.component_data.id)
+
+        if (error) throw error
+
+        toast.success("Component deleted completely")
+      }
+
+      // Update local state
+      setSubmissions((prev) =>
+        prev.filter(
+          (s) => s.component_data.id !== submission.component_data.id,
+        ),
+      )
+
+      return true
+    } catch (error) {
+      console.error("Error deleting component:", error)
+      toast.error("Failed to delete component")
+      return false
+    } finally {
+      setIsDeletingComponent(false)
+      setComponentToDelete(null)
+    }
+  }
+
   return {
     submissions,
     loading,
@@ -288,12 +593,20 @@ export const useSubmissions = (isAdmin: boolean) => {
     editingDemo,
     editDemoName,
     editDemoSlug,
+    currentRound,
+    allRounds,
+    isCurrentRoundLoading,
+    isAllRoundsLoading,
+    contestRoundLoading,
+    isDeletingComponent,
+    componentToDelete,
     setFilter,
     setFeedback,
     setSelectedSubmission,
     setEditDemoName,
     setEditDemoSlug,
     setEditingDemo,
+    setComponentToDelete,
     fetchSubmissions,
     updateSubmissionStatus,
     updateDemoInfo,
@@ -301,6 +614,12 @@ export const useSubmissions = (isAdmin: boolean) => {
     handleEditDemo,
     handleSetDefaultDemo,
     getStatusAsEnum,
+    addToContest,
+    checkContestParticipation,
+    getRoundById,
+    checkIsPublic,
+    toggleComponentPublicStatus,
+    deleteComponent,
   }
 }
 

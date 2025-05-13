@@ -301,23 +301,23 @@ export function PayoutStatsChart({
         <TabsList className="flex flex-row h-fit">
           <TabsTrigger
             value="earnings"
-            className="flex-1 p-6 flex flex-col gap-1 items-start h-fit"
+            className="flex-1 p-3 sm:p-6 flex flex-col gap-1 items-start h-fit"
           >
             {isPartner ? (
-              <CardDescription className="font-normal">
+              <CardDescription className="font-normal text-xs sm:text-sm">
                 Earnings
               </CardDescription>
             ) : (
-              <CardDescription className="font-normal flex items-center gap-1">
+              <CardDescription className="font-normal flex items-center gap-1 text-xs sm:text-sm">
                 Projected Income
                 {earningsSum > 0 && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <AlertCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                        <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent className=" p-3">
-                        <p>
+                      <TooltipContent className="p-2 sm:p-3">
+                        <p className="text-xs sm:text-sm">
                           This is how much you could earn by joining our
                           partnership program.
                         </p>
@@ -362,9 +362,11 @@ export function PayoutStatsChart({
           </TabsTrigger>
           <TabsTrigger
             value="stats"
-            className="flex-1 p-6 flex flex-col gap-1 items-start h-fit"
+            className="flex-1 p-3 sm:p-6 flex flex-col gap-1 items-start h-fit"
           >
-            <CardDescription className="font-normal">Stats</CardDescription>
+            <CardDescription className="font-normal text-xs sm:text-sm">
+              Stats
+            </CardDescription>
             <CardTitle className="tracking-normal flex items-center gap-4">
               <span className="inline-flex items-center gap-1.5">
                 {statIcons[selectedStat] &&
