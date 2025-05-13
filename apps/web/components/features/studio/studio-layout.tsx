@@ -30,12 +30,14 @@ export function StudioLayout({
   const username = user?.display_username || user?.username || undefined
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="flex flex-col relative">
       <SidebarProvider defaultOpen={true}>
         <StudioHeader user={user} />
-        <div className="flex pt-14 min-h-screen">
+        <div className="flex w-full">
           <StudioSidebar user={user} />
-          <SidebarInset className="p-8 w-full">{children}</SidebarInset>
+          <SidebarInset className="p-4 md:p-8 !pt-20 w-full max-w-full">
+            {children}
+          </SidebarInset>
         </div>
       </SidebarProvider>
 
