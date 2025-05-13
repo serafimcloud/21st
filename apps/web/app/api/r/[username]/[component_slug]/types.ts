@@ -31,6 +31,7 @@ export type ComponentRegistryResponse = {
   name: string // e.g., "marquee"
   type: string // e.g., "registry:ui"
   dependencies?: string[] // e.g., ["framer-motion", "next-themes"]
+  registryDependencies?: any // e.g., ["framer-motion", "next-themes"]
   files: ComponentFile[] // Array of ComponentFile objects
   tailwind?: {
     config: TailwindConfig
