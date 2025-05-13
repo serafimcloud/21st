@@ -41,7 +41,7 @@ const MagicBannerContent = memo(function MagicBannerContent() {
               <Logo
                 hasLink={false}
                 position="flex"
-                className="opacity-80 w-7 h-7"
+                className="opacity-80 w-6 h-6"
               />
             </div>
             <div className="flex grow flex-col justify-between gap-3 md:flex-row md:items-center">

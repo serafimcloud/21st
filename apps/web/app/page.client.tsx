@@ -106,6 +106,7 @@ export function HomePageClient() {
   const [isBannerVisible] = useAtom(magicBannerVisibleAtom)
   const [shouldShowBanner, setShouldShowBanner] = useState(false)
   const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
+  const isMobile = useIsMobile()
 
   const { activeTab, sortBy, navigateToTab } = useNavigation()
 
@@ -115,10 +116,10 @@ export function HomePageClient() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShouldShowBanner(true)
+      setShouldShowBanner(!isMobile)
     }, 3000)
     return () => clearTimeout(timer)
-  }, [])
+  }, [isMobile])
 
   const handleTabChange = (tab: Exclude<AppSection, "magic"> | "home") => {
     navigateToTab(tab)
