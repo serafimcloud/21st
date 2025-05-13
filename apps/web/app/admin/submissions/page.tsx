@@ -5,10 +5,11 @@ import EditDemoModal from "@/components/features/admin/EditDemoModal"
 import ManageSubmissionModal from "@/components/features/admin/ManageSubmissionModal"
 import NonAdminPlaceholder from "@/components/features/admin/NonAdminPlaceholder"
 import SubmissionStatusFilter from "@/components/features/admin/SubmissionStatusFilter"
+import DeleteComponentDialog from "@/components/features/admin/DeleteComponentDialog"
 import useSubmissions from "@/components/features/admin/hooks/useSubmissions"
 import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
 import { motion } from "motion/react"
-import { FC, useRef, useCallback, useState } from "react"
+import { FC, useRef, useCallback, useState, useEffect } from "react"
 import {
   Table,
   TableBody,
@@ -19,9 +20,23 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Edit, ExternalLink, Settings, Star, Eye, Video } from "lucide-react"
+import {
+  Edit,
+  ExternalLink,
+  Settings,
+  Star,
+  Eye,
+  Video,
+  Award,
+  ChevronDown,
+  Check,
+  Trash,
+  Globe,
+  Lock,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import {
   Tooltip,
   TooltipContent,
@@ -33,6 +48,20 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import { toast } from "sonner"
 
 // VideoPreview component for hover video functionality
 const videoLoadingCache = new Map<string, boolean>()
@@ -221,6 +250,167 @@ const PreviewHoverContent: FC<PreviewHoverContentProps> = ({
   )
 }
 
+// RoundToggle component for switching contest rounds
+const RoundToggle = ({
+  submission,
+  allRounds,
+  onAddToContest,
+  isUpdating,
+  contestDemoId,
+  getRoundById,
+}: {
+  submission: any
+  allRounds: any[]
+  onAddToContest: (demoId: number, roundId: number) => void
+  isUpdating: boolean
+  contestDemoId: number | null
+  getRoundById: (roundId: number | null) => any | null
+}) => {
+  const [open, setOpen] = useState(false)
+  const isInContest = !!submission.contest_round_id
+  const contestRoundId = submission.contest_round_id ?? null
+  const contestRound = isInContest ? getRoundById(contestRoundId) : null
+  const canAddToContest = submission.submission_status === "posted"
+
+  // For demo already in contest, show the current round with ability to change
+  if (isInContest) {
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "gap-1 rounded-md h-7 focus:ring-0 text-xs px-2 justify-between",
+              {
+                "bg-purple-100/70 text-purple-800 border-purple-200":
+                  contestRound?.week_number % 4 === 0,
+                "bg-blue-100/70 text-blue-800 border-blue-200":
+                  contestRound?.week_number % 4 === 1,
+                "bg-green-100/70 text-green-800 border-green-200":
+                  contestRound?.week_number % 4 === 2,
+                "bg-orange-100/70 text-orange-800 border-orange-200":
+                  contestRound?.week_number % 4 === 3,
+              },
+            )}
+          >
+            <div className="flex items-center gap-1">
+              <Award size={12} className="min-w-3 min-h-3" />
+              <span>Week #{contestRound?.week_number || "?"}</span>
+            </div>
+            <ChevronDown
+              size={14}
+              className="shrink-0 opacity-80"
+              aria-hidden="true"
+            />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="bg-popover text-popover-foreground border-border w-auto p-0"
+          align="start"
+        >
+          <Command className="text-xs">
+            <CommandInput
+              placeholder="Search weeks..."
+              className="text-xs h-7 py-1"
+            />
+            <CommandList>
+              <CommandEmpty>No rounds found.</CommandEmpty>
+              <CommandGroup>
+                {allRounds.map((round) => (
+                  <CommandItem
+                    key={round.id}
+                    value={round.id.toString()}
+                    onSelect={(value) => {
+                      onAddToContest(submission.id, Number(value))
+                      setOpen(false)
+                    }}
+                    className="cursor-pointer text-xs py-1"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Award size={12} className="min-w-3 min-h-3" />
+                      <span>Week #{round.week_number}</span>
+                    </div>
+                    {contestRoundId === round.id && (
+                      <Check size={14} className="ml-auto text-purple-600" />
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    )
+  }
+
+  // For demo not in contest, show the "Add to Contest" button that opens popover
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={!canAddToContest || isUpdating}
+          className="bg-card text-card-foreground border-border h-7 text-xs px-2 justify-between gap-1"
+        >
+          <div className="flex items-center gap-1.5">
+            <Award size={12} className="min-w-3 min-h-3" />
+            <span>
+              {isUpdating && contestDemoId === submission.id
+                ? "Adding..."
+                : "Add to Contest"}
+            </span>
+          </div>
+          <ChevronDown
+            size={14}
+            className="text-muted-foreground/80 shrink-0"
+            aria-hidden="true"
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="bg-popover text-popover-foreground border-border w-[230px] p-0"
+        align="start"
+      >
+        <Command className="text-xs">
+          <CommandInput
+            placeholder="Search weeks..."
+            className="text-xs h-7 py-1"
+          />
+          <CommandList>
+            <CommandEmpty>No rounds found.</CommandEmpty>
+            <CommandGroup>
+              {allRounds.map((round) => (
+                <CommandItem
+                  key={round.id}
+                  value={round.id.toString()}
+                  onSelect={(value) => {
+                    onAddToContest(submission.id, Number(value))
+                    setOpen(false)
+                  }}
+                  className="cursor-pointer text-xs py-1"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Award size={12} className="min-w-3 min-h-3" />
+                    <span>
+                      Week #{round.week_number} (
+                      {new Date(round.start_at).toLocaleDateString()} -{" "}
+                      {new Date(round.end_at).toLocaleDateString()})
+                    </span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 const SubmissionsAdminPage: FC = () => {
   const isAdmin = useIsAdmin()
   const {
@@ -232,12 +422,20 @@ const SubmissionsAdminPage: FC = () => {
     editingDemo,
     editDemoName,
     editDemoSlug,
+    currentRound,
+    allRounds,
+    isCurrentRoundLoading,
+    isAllRoundsLoading,
+    contestRoundLoading,
+    isDeletingComponent,
+    componentToDelete,
     setFilter,
     setFeedback,
     setSelectedSubmission,
     setEditDemoName,
     setEditDemoSlug,
     setEditingDemo,
+    setComponentToDelete,
     fetchSubmissions,
     updateSubmissionStatus,
     updateDemoInfo,
@@ -245,7 +443,24 @@ const SubmissionsAdminPage: FC = () => {
     handleEditDemo,
     handleSetDefaultDemo,
     getStatusAsEnum,
+    addToContest,
+    getRoundById,
+    toggleComponentPublicStatus,
+    deleteComponent,
   } = useSubmissions(isAdmin)
+
+  const [contestDemoId, setContestDemoId] = useState<number | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  // Handle adding to a contest
+  const handleAddToContest = (demoId: number, roundId: number) => {
+    if (!roundId) {
+      toast.error("Please select a contest round")
+      return
+    }
+    setContestDemoId(demoId)
+    addToContest(demoId, roundId)
+  }
 
   // Non-admin placeholder
   if (!isAdmin) {
@@ -273,6 +488,7 @@ const SubmissionsAdminPage: FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="h-full"
       >
         <AdminHeader
           title="Component Submissions"
@@ -287,9 +503,9 @@ const SubmissionsAdminPage: FC = () => {
           />
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        {loading || isAllRoundsLoading ? (
+          <div className="py-10 flex justify-center items-center h-full">
+            <LoadingSpinner size="md" />
           </div>
         ) : (
           <div className="w-full overflow-auto">
@@ -308,8 +524,11 @@ const SubmissionsAdminPage: FC = () => {
                     </TableHead>
                     <TableHead>Author</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Visibility</TableHead>
                     <TableHead>Submitted</TableHead>
                     <TableHead>DB Links</TableHead>
+                    <TableHead>Contest</TableHead>
+                    <TableHead>Delete</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -318,6 +537,17 @@ const SubmissionsAdminPage: FC = () => {
                     const componentSupabaseUrl = `https://supabase.com/dashboard/project/vucvdpamtrjkzmubwlts/editor/29179?sort=created_at%3Adesc&filter=id%3Aeq%3A${submission.component_data.id}`
                     const demoSupabaseUrl = `https://supabase.com/dashboard/project/vucvdpamtrjkzmubwlts/editor/229472?sort=created_at:desc&filter=component_id:eq:${submission.component_data.id}`
                     const viewUrl = `/${submission.user_data.username}/${submission.component_data.component_slug}/${submission.demo_slug}`
+
+                    // Check if the submission is already in a contest - using the demo ID (submission.id)
+                    const isInContest = !!submission.contest_round_id
+                    // Whether this submission can be added to the current contest
+                    const canAddToContest =
+                      submission.submission_status === "posted" && !isInContest
+                    // Get round details if in a contest
+                    const contestRoundId = submission.contest_round_id ?? null
+                    const contestRound = isInContest
+                      ? getRoundById(contestRoundId)
+                      : null
 
                     return (
                       <TableRow
@@ -489,6 +719,45 @@ const SubmissionsAdminPage: FC = () => {
                           </TooltipProvider>
                         </TableCell>
 
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    toggleComponentPublicStatus(
+                                      submission.component_data.id,
+                                      submission.is_public || false,
+                                    )
+                                  }
+                                  className="h-8 w-8"
+                                >
+                                  {submission.is_public ? (
+                                    <Globe
+                                      size={16}
+                                      className="text-green-600"
+                                    />
+                                  ) : (
+                                    <Lock
+                                      size={16}
+                                      className="text-orange-600"
+                                    />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {submission.is_public
+                                    ? "Make Private"
+                                    : "Make Public"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+
                         <TableCell>
                           {new Date(submission.updated_at).toLocaleDateString()}
                         </TableCell>
@@ -546,6 +815,43 @@ const SubmissionsAdminPage: FC = () => {
                             </div>
                           </TooltipProvider>
                         </TableCell>
+
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <RoundToggle
+                            submission={submission}
+                            allRounds={allRounds}
+                            onAddToContest={handleAddToContest}
+                            isUpdating={contestRoundLoading}
+                            contestDemoId={contestDemoId}
+                            getRoundById={getRoundById}
+                          />
+                        </TableCell>
+
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setComponentToDelete(submission)
+                                    setShowDeleteDialog(true)
+                                  }}
+                                  className="h-8 w-8"
+                                >
+                                  <Trash
+                                    size={16}
+                                    className="text-destructive"
+                                  />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Delete Component</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
                       </TableRow>
                     )
                   })}
@@ -593,6 +899,21 @@ const SubmissionsAdminPage: FC = () => {
               setEditDemoSlug("")
             }}
             onSave={updateDemoInfo}
+          />
+        )}
+
+        {componentToDelete && (
+          <DeleteComponentDialog
+            isOpen={showDeleteDialog}
+            onClose={() => {
+              setShowDeleteDialog(false)
+              setComponentToDelete(null)
+            }}
+            onDelete={async (mode) => {
+              await deleteComponent(componentToDelete, mode)
+            }}
+            componentName={componentToDelete.component_data.name}
+            isDeleting={isDeletingComponent}
           />
         )}
       </motion.div>
