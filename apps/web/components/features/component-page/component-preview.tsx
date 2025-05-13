@@ -1,31 +1,26 @@
 "use client"
 
+import React, { useState, useRef, useEffect, useMemo } from "react"
+import { useAnimation, motion, AnimatePresence } from "motion/react"
 import { useAtom } from "jotai"
+import { useTheme } from "next-themes"
 import {
   CheckIcon,
-  ChevronDown,
-  CodeXml,
   CopyIcon,
-  Info,
   Pencil,
+  CodeXml,
+  Info,
+  ChevronDown,
 } from "lucide-react"
-import { AnimatePresence, motion, useAnimation } from "motion/react"
-import { useTheme } from "next-themes"
-import { useEffect, useMemo, useRef, useState } from "react"
 
-import {
-  SandpackPreview,
-  SandpackProvider as SandpackProviderUnstyled,
-} from "@codesandbox/sandpack-react/unstyled"
-
-import { Icons } from "@/components/icons"
-import {
-  isFullScreenAtom,
-  isShowCodeAtom,
-} from "../../../app/[username]/[component_slug]/page.client"
-import { CopyCodeButton } from "../../ui/copy-code-card-button"
-import { LoadingSpinner } from "../../ui/loading-spinner"
 import { ComponentPageInfo } from "./info-section"
+import { Icons } from "@/components/icons"
+import { LoadingSpinner } from "../../ui/loading-spinner"
+import { CopyCodeButton } from "../../ui/copy-code-card-button"
+import {
+  isShowCodeAtom,
+  isFullScreenAtom,
+} from "../../../app/[username]/[component_slug]/page.client"
 
 import {
   DropdownMenu,
@@ -37,29 +32,29 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TextMorph } from "@/components/ui/text-morph"
 
 import {
+  SandpackProvider,
+  SandpackLayout,
   SandpackCodeViewer,
   SandpackFileExplorer,
-  SandpackLayout,
-  SandpackProvider,
   SandpackProviderProps,
 } from "@codesandbox/sandpack-react"
 
-import { useCompileCss } from "@/hooks/use-compile-css"
 import { useDebugMode } from "@/hooks/use-debug-mode"
+import { useCompileCss } from "@/hooks/use-compile-css"
 import { useIsMobile } from "@/hooks/use-media-query"
 
-import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
-import { generateBundleFiles, generateSandpackFiles } from "@/lib/sandpack"
-import { cn, getPackageRunner } from "@/lib/utils"
-import { Component, Demo, Tag, User } from "@/types/global"
-import { useUser } from "@clerk/nextjs"
+import { Component, Tag, User, Demo } from "@/types/global"
+import { generateSandpackFiles } from "@/lib/sandpack"
+import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
+import { getPackageRunner, cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { useUser } from "@clerk/nextjs"
 
-import { useBundleDemo } from "@/hooks/use-bundle-demo"
-import { ComponentAccessState } from "@/hooks/use-component-access"
-import { FullScreenButton } from "../../ui/full-screen-button"
 import styles from "./component-preview.module.css"
 import { PayWall } from "./pay-wall"
+import { ComponentAccessState } from "@/hooks/use-component-access"
+import { LegacyFlowPreviewRenderer } from "./legacy-flow-preview-renderer"
+import { NewFlowPreviewRender } from "./new-flow-preview-render"
 
 export function ComponentPagePreview({
   component,
@@ -103,6 +98,8 @@ export function ComponentPagePreview({
   const [isShowCode, setIsShowCode] = useAtom(isShowCodeAtom)
   const isDebug = useDebugMode()
   const [isFullScreen] = useAtom(isFullScreenAtom)
+
+  const isNewFlowOfPiblishing = !!component.sandbox_id
 
   const effectiveAccessState = accessState
 
@@ -158,33 +155,6 @@ export function ComponentPagePreview({
     }),
   }
 
-  const bundleFiles = useMemo(
-    () => ({
-      ...registryDependencies,
-      ...generateBundleFiles({
-        demoComponentNames,
-        componentSlug: component.component_slug,
-        relativeImportPath: `/components/${component.registry}`,
-        code,
-        demoCode,
-        css: css || "",
-        customTailwindConfig: tailwindConfig,
-        customGlobalCss: globalCss,
-      }),
-    }),
-    [
-      registryDependencies,
-      demoComponentNames,
-      component.component_slug,
-      component.registry,
-      code,
-      demoCode,
-      css,
-      tailwindConfig,
-      globalCss,
-    ],
-  )
-
   const allDependencies = useMemo(
     () => ({
       "@radix-ui/react-select": "^1.0.0",
@@ -197,29 +167,6 @@ export function ComponentPagePreview({
     }),
     [dependencies, demoDependencies, npmDependenciesOfRegistryDependencies],
   )
-  const [previewError, setPreviewError] = useState(false)
-
-  const shouldBundle = !demo.bundle_html_url
-
-  const { bundle, error } = useBundleDemo({
-    files: bundleFiles,
-    dependencies: allDependencies,
-    component,
-    shellCode,
-    demoId: demo.id,
-    tailwindConfig,
-    globalCss,
-    shouldBundle,
-  })
-
-  useEffect(() => {
-    if (demo.bundle_html_url) {
-      return
-    }
-    if (error) {
-      setPreviewError(true)
-    }
-  }, [error])
 
   const mainComponentFile = Object.keys(files).find((file) =>
     file.endsWith(`${component.component_slug}.tsx`),
@@ -233,9 +180,7 @@ export function ComponentPagePreview({
     demoComponentFile ?? mainComponentFile ?? "",
   )
 
-  const [isLoading, setIsLoading] = useState(true)
-
-  if (!css && shouldBundle)
+  if (!css && !isNewFlowOfPiblishing)
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 w-full">
         <LoadingSpinner />
@@ -304,48 +249,29 @@ export function ComponentPagePreview({
         },
       }}
     >
-      <motion.div className="relative flex-grow h-full rounded-lg overflow-hidden">
-        <FullScreenButton />
-
-        {previewError && (
-          <SandpackProviderUnstyled {...providerProps}>
-            <SandpackPreview
-              showSandpackErrorOverlay={false}
-              showOpenInCodeSandbox={process.env.NODE_ENV === "development"}
-              showRefreshButton={false}
-              onLoad={() => setIsLoading(false)}
-              onError={() => {
-                setPreviewError(true)
-                setIsLoading(false)
-              }}
-            />
-          </SandpackProviderUnstyled>
-        )}
-
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center h-full gap-3">
-            <LoadingSpinner />
-          </div>
-        )}
-        {(demo.bundle_html_url ||
-          (bundle?.html && demo?.bundle_hash !== "0")) && (
-          <iframe
-            src={
-              !shouldBundle
-                ? `${demo.bundle_html_url}?theme=${resolvedTheme}`
-                : `${bundle?.html}${isDarkTheme ? "?dark=true" : ""}`
-            }
-            className="w-full h-full"
-            onLoad={() => {
-              setIsLoading(false)
-            }}
-            onError={() => {
-              setPreviewError(true)
-              setIsLoading(false)
-            }}
-          />
-        )}
-      </motion.div>
+      {isNewFlowOfPiblishing ? (
+        <NewFlowPreviewRender demo={demo} />
+      ) : (
+        <LegacyFlowPreviewRenderer
+          component={component}
+          code={code}
+          demoCode={demoCode}
+          dependencies={dependencies}
+          demoDependencies={demoDependencies}
+          demoComponentNames={demoComponentNames}
+          registryDependencies={registryDependencies}
+          npmDependenciesOfRegistryDependencies={
+            npmDependenciesOfRegistryDependencies
+          }
+          tailwindConfig={tailwindConfig}
+          globalCss={globalCss}
+          demo={demo}
+          providerProps={providerProps}
+          css={css}
+          shellCode={shellCode}
+          allDependencies={allDependencies}
+        />
+      )}
 
       <AnimatePresence mode="popLayout">
         {!isFullScreen && (
@@ -369,7 +295,7 @@ export function ComponentPagePreview({
               <div ref={sandpackRef} className="h-full w-full flex relative">
                 <SandpackLayout className="flex w-full flex-row gap-4">
                   <div
-                    className={`flex flex-col w-full h-full ${styles.customScroller}`}
+                    className={`flex flex-col w-full ${styles.customScroller}`}
                   >
                     <MobileControls
                       isShowCode={isShowCode}
