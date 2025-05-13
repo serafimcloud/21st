@@ -115,6 +115,7 @@
     "@types/react": "19.1.1",
     "@types/react-dom": "19.1.2",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/semver": "^7.7.0",
     "dotenv": "^16.4.5",
     "eslint": "^8",
     "eslint-config-next": "15.3.0",

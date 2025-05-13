@@ -26,6 +26,7 @@ interface SandboxHeaderProps {
   onNameChange?: (newName: string) => void
   customBackUrl?: string
   customBackLabel?: string
+  customBackAction?: () => void
   customNextUrl?: string
   customNextLabel?: string
   customNextIcon?: React.ReactNode
@@ -44,6 +45,7 @@ export function SandboxHeader({
   onNameChange,
   customBackUrl,
   customBackLabel,
+  customBackAction,
   customNextUrl,
   customNextLabel = "Continue",
   customNextIcon,
@@ -115,7 +117,9 @@ export function SandboxHeader({
   }
 
   const handleBackToStudio = () => {
-    if (customBackUrl) {
+    if (customBackAction) {
+      customBackAction()
+    } else if (customBackUrl) {
       router.push(customBackUrl)
     } else {
       router.push(`/studio/${params.username}`)

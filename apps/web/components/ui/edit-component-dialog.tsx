@@ -29,7 +29,7 @@ import { toast } from "sonner"
 import { useIsMobile } from "@/hooks/use-media-query"
 import { DemoDetailsForm } from "../features/publish/components/forms/demo-form"
 import { Button } from "@/components/ui/button"
-import { LoaderCircle } from "lucide-react"
+import { ExternalLink, LoaderCircle } from "lucide-react"
 import { EditCodeFileCard } from "../features/publish/components/edit-code-file-card"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
@@ -38,6 +38,10 @@ import { addVersionToUrl } from "@/lib/utils/url"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { atom, useAtom } from "jotai"
 import { useR2Upload } from "@/components/features/publish/hooks/use-r2-upload"
+import { useRouter } from "next/navigation"
+import ShortUUID from "short-uuid"
+import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
+import { useUser } from "@clerk/nextjs"
 
 // Helper function to safely fetch file content
 const safeFetchFile = async (url: string): Promise<string> => {
@@ -123,6 +127,8 @@ export function EditComponentDialog({
   const isDarkTheme = resolvedTheme === "dark"
   const componentData =
     "component" in component ? component.component : component
+  const router = useRouter()
+  const { user } = useUser()
 
   const [, setIsEditingCodeState] = useAtom(isEditingCodeAtom)
   const [isEditingCode, setIsEditingCode] = useState(false)
@@ -136,6 +142,29 @@ export function EditComponentDialog({
   const [isVideoUploading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isTagsUpdating, setIsTagsUpdating] = useState(false)
+
+  const handleOpenSandbox = () => {
+    if (componentData.sandbox_id) {
+      const shortSandboxId = ShortUUID().fromUUID(componentData.sandbox_id)
+      const username =
+        componentData.user.display_username || componentData.user.username
+
+      // Close the dialog before navigating
+      setIsOpen(false)
+
+      // Navigate with mode=edit parameter
+      router.push(`/studio/${username}/sandbox/${shortSandboxId}?mode=edit`)
+
+      trackEvent(AMPLITUDE_EVENTS.EDIT_COMPONENT, {
+        componentId: componentData.id,
+        componentName: componentData.name,
+        userId: user?.id,
+        sandboxId: componentData.sandbox_id,
+        shortSandboxId,
+        editType: "sandbox",
+      })
+    }
+  }
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -633,30 +662,43 @@ export function EditComponentDialog({
           }
           isFirstStep
         />
-        <EditCodeFileCard
-          iconSrc={isDarkTheme ? "/tsx-file-dark.svg" : "/tsx-file.svg"}
-          mainText={`${componentData.name} code`}
-          subText={`Component code`}
-          onEditClick={handleEditCode}
-        />
+
+        {componentData.sandbox_id ? (
+          <EditCodeFileCard
+            iconSrc={isDarkTheme ? "/tsx-file-dark.svg" : "/tsx-file.svg"}
+            mainText={`${componentData.name} code`}
+            subText={`Edit in Sandbox`}
+            onEditClick={handleOpenSandbox}
+          />
+        ) : (
+          <EditCodeFileCard
+            iconSrc={isDarkTheme ? "/tsx-file-dark.svg" : "/tsx-file.svg"}
+            mainText={`${componentData.name} code`}
+            subText={`Component code`}
+            onEditClick={handleEditCode}
+          />
+        )}
+
         <div className="mt-6">
           <DemoDetailsForm form={form} demoIndex={0} />
         </div>
 
-        <div className="space-y-3 mt-6">
-          <EditCodeFileCard
-            iconSrc={isDarkTheme ? "/demo-file-dark.svg" : "/demo-file.svg"}
-            mainText="Demo code"
-            subText={demo.name || "Demo code"}
-            onEditClick={handleEditDemo}
-          />
-          <EditCodeFileCard
-            iconSrc={isDarkTheme ? "/css-file-dark.svg" : "/css-file.svg"}
-            mainText="Custom styles"
-            subText="Tailwind config and globals.css"
-            onEditClick={handleEditStyles}
-          />
-        </div>
+        {!componentData.sandbox_id && (
+          <div className="space-y-3 mt-6">
+            <EditCodeFileCard
+              iconSrc={isDarkTheme ? "/demo-file-dark.svg" : "/demo-file.svg"}
+              mainText="Demo code"
+              subText={demo.name || "Demo code"}
+              onEditClick={handleEditDemo}
+            />
+            <EditCodeFileCard
+              iconSrc={isDarkTheme ? "/css-file-dark.svg" : "/css-file.svg"}
+              mainText="Custom styles"
+              subText="Tailwind config and globals.css"
+              onEditClick={handleEditStyles}
+            />
+          </div>
+        )}
       </div>
     </>
   )

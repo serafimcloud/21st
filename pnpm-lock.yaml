@@ -5,7 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  jotai: 2.8.0
   react-is: 19.1.0
   '@smithy/types': 4.2.0
   '@smithy/protocol-http': 5.1.0
@@ -398,6 +397,9 @@ importers:
       '@types/react-syntax-highlighter':
         specifier: ^15.5.13
         version: 15.5.13
+      '@types/semver':
+        specifier: ^7.7.0
+        version: 7.7.0
       dotenv:
         specifier: ^16.4.5
         version: 16.5.0
@@ -8280,7 +8282,7 @@ packages:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-easy-sort: 1.6.0(react-dom@18.3.1)(react@18.3.1)
-      tailwind-merge: 3.2.0
+      tailwind-merge: 3.3.0
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -12894,8 +12896,8 @@ packages:
     resolution: {integrity: sha512-P+Vu1qXfzediirmHOC3xKGAYeZtPcV9g76X+xg2FD4tYgR71ewMA35Y3sCz3zhiN/dwefRpJX0yBcgwi1fXNQA==}
     dev: false
 
-  /tailwind-merge@3.2.0:
-    resolution: {integrity: sha512-FQT/OVqCD+7edmmJpsgCsY820RTD5AkBryuG5IUqR5YQZSdj5xlH5nLgH7YPths7WsLPSpSBNneJdM8aS8aeFA==}
+  /tailwind-merge@3.3.0:
+    resolution: {integrity: sha512-fyW/pEfcQSiigd5SNn0nApUOxx0zB/dm6UDU/rEwc2c3sX2smWUNbapHv+QRqLGVp9GWX3THIa7MUGPo+YkDzQ==}
     dev: false
 
   /tailwindcss-animate@1.0.7(tailwindcss@3.4.17):

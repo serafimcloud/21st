@@ -552,29 +552,17 @@ export default function ComponentPage({
   }
 
   const handleEditClick = () => {
-    if (component.sandbox_id) {
-      const shortSandboxId = ShortUUID().fromUUID(component.sandbox_id)
-
-      const username =
-        component.user.display_username || component.user.username
-      router.push(`/studio/${username}/sandbox/${shortSandboxId}`)
-      trackEvent(AMPLITUDE_EVENTS.EDIT_COMPONENT, {
-        componentId: component.id,
-        componentName: component.name,
-        userId: user?.id,
-        sandboxId: component.sandbox_id,
-        shortSandboxId: shortSandboxId,
-        editType: "sandbox",
-      })
-    } else {
-      setIsEditDialogOpen(true)
-      trackEvent(AMPLITUDE_EVENTS.EDIT_COMPONENT, {
-        componentId: component.id,
-        componentName: component.name,
-        userId: user?.id,
-        editType: "dialog",
-      })
-    }
+    setIsEditDialogOpen(true)
+    trackEvent(AMPLITUDE_EVENTS.EDIT_COMPONENT, {
+      componentId: component.id,
+      componentName: component.name,
+      userId: user?.id,
+      editType: component.sandbox_id ? "sandbox" : "dialog",
+      hasSandbox: !!component.sandbox_id,
+      shortSandboxId: component.sandbox_id
+        ? ShortUUID().fromUUID(component.sandbox_id)
+        : undefined,
+    })
   }
 
   const handlePromptAction = async () => {
