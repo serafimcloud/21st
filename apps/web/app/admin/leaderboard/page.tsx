@@ -1,13 +1,17 @@
 "use client"
 
-import { FC, useState, useMemo } from "react"
+import { FC, useState, useMemo, useEffect } from "react"
 import { motion } from "motion/react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AdminHeader from "@/components/features/admin/AdminHeader"
 import NonAdminPlaceholder from "@/components/features/admin/NonAdminPlaceholder"
 import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { useRoundSubmissions, useToggleVote } from "@/lib/queries"
+import {
+  useRoundSubmissions,
+  useToggleVote,
+  useContestRounds,
+} from "@/lib/queries"
 import { Button } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
 import {
@@ -50,16 +54,19 @@ const AdminLeaderboardPage: FC = () => {
   const isAdmin = useIsAdmin()
   const [selectedCategory, setSelectedCategory] = useState<Category>("global")
   const [showAll, setShowAll] = useState(false)
+  const [selectedRoundId, setSelectedRoundId] = useState<number | null>(null)
   const ITEMS_LIMIT = 20
 
   const supabaseWithAdminAccess = useClerkSupabaseClient()
 
-  // Get current round info
+  // Fetch all rounds for dropdown
+  const { data: allRounds, isLoading: isRoundsLoading } = useContestRounds()
+
+  // Get current round info (for default selection and seasonal tag)
   const { data: roundData, isLoading: isRoundLoading } = useQuery({
     queryKey: ["admin-current-round"],
     queryFn: async () => {
       const now = new Date().toISOString()
-
       // First try to get active round
       const { data: activeRound } = await supabaseWithAdminAccess
         .from("component_hunt_rounds")
@@ -67,9 +74,7 @@ const AdminLeaderboardPage: FC = () => {
         .lte("start_at", now)
         .gte("end_at", now)
         .single()
-
       let round = activeRound as Round | null
-
       if (!round) {
         // If no active round, get the most recent past round
         const { data: pastRound } = await supabaseWithAdminAccess
@@ -79,10 +84,8 @@ const AdminLeaderboardPage: FC = () => {
           .order("start_at", { ascending: false })
           .limit(1)
           .single()
-
         round = pastRound as Round
       }
-
       // Get the seasonal tag for this round
       let seasonalTag: Tag | null = null
       if (round?.seasonal_tag_id) {
@@ -91,7 +94,6 @@ const AdminLeaderboardPage: FC = () => {
           .select("id, name, slug")
           .eq("id", round.seasonal_tag_id)
           .single()
-
         seasonalTag = tag
           ? {
               id: tag.id.toString(),
@@ -100,21 +102,31 @@ const AdminLeaderboardPage: FC = () => {
             }
           : null
       }
-
       return { round, seasonalTag }
     },
   })
 
-  const currentRound = roundData?.round || null
+  // Set default selected round to current round when loaded
+  useEffect(() => {
+    if (roundData?.round && selectedRoundId === null) {
+      setSelectedRoundId(roundData.round.id)
+    }
+  }, [roundData?.round, selectedRoundId])
+
+  // Find the selected round object
+  const selectedRound =
+    (allRounds?.find((r: Round) => r.id === selectedRoundId) as Round) ||
+    roundData?.round ||
+    null
   const seasonalTag = roundData?.seasonalTag || null
 
-  // Get submissions for the current round
+  // Get submissions for the selected round
   const {
     submissions = [],
     getFilteredSubmissions,
     isLoading: isSubmissionsLoading,
     error,
-  } = useRoundSubmissions(currentRound?.id || null)
+  } = useRoundSubmissions(selectedRoundId)
 
   const filteredRows = useMemo(() => {
     return getFilteredSubmissions(selectedCategory)
@@ -145,20 +157,41 @@ const AdminLeaderboardPage: FC = () => {
           subtitle="View complete leaderboard data including rankings, votes, and metrics"
         />
 
-        {isRoundLoading ? (
+        {isRoundLoading || isRoundsLoading ? (
           <div className="flex justify-center py-10">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
           </div>
         ) : (
           <>
-            <div className="mb-6 flex justify-between items-center">
+            <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h2 className="text-xl font-semibold">
-                  Week #{currentRound?.week_number} Leaderboard
+                  Week #{selectedRound?.week_number} Leaderboard
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   Showing complete data regardless of visibility policy
                 </p>
+              </div>
+              {/* Round selection dropdown */}
+              <div>
+                <label
+                  htmlFor="round-select"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Select round:
+                </label>
+                <select
+                  id="round-select"
+                  className="border rounded px-3 py-2 bg-background"
+                  value={selectedRoundId ?? ""}
+                  onChange={(e) => setSelectedRoundId(Number(e.target.value))}
+                >
+                  {allRounds?.map((round: Round) => (
+                    <option key={round.id} value={round.id}>
+                      {`Week #${round.week_number} (${new Date(round.start_at).toLocaleDateString()} - ${new Date(round.end_at).toLocaleDateString()})`}
+                    </option>
+                  ))}
+                </select>
               </div>
               <Button asChild>
                 <Link href="/contest/leaderboard">View Public Leaderboard</Link>
@@ -250,6 +283,7 @@ const AdminLeaderboardPage: FC = () => {
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="w-12">Rank</TableHead>
+                      <TableHead className="w-24">Component ID</TableHead>
                       <TableHead>Component</TableHead>
                       <TableHead>Creator</TableHead>
                       <TableHead>Views</TableHead>
@@ -269,6 +303,11 @@ const AdminLeaderboardPage: FC = () => {
                         <TableRow key={submission.id}>
                           <TableCell className="font-medium">
                             {index + 1}
+                          </TableCell>
+                          <TableCell>
+                            {submission.component_id ||
+                              submission.component?.id ||
+                              ""}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
