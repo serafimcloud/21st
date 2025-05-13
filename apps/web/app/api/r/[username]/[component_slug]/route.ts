@@ -128,6 +128,12 @@ export async function GET(
       withDemoDependencies: false,
     })
 
+    const registryDependencies = (
+      component.direct_registry_dependencies as string[]
+    ).map((fullSlug) => {
+      return `https://21st.dev/r/${fullSlug}`
+    })
+
     console.log("Resolved registry dependencies:", resolvedRegistryDependencies)
 
     if (resolvedRegistryDependencies.error) {
@@ -243,7 +249,7 @@ export async function GET(
       name: component_slug,
       type: getShadcnRegistrySlug(component.registry),
       dependencies: npmDependencies.length > 0 ? npmDependencies : undefined,
-      registryDependencies: component.direct_registry_dependencies,
+      registryDependencies,
       files,
       ...(cssVars ? { cssVars } : {}),
       ...(tailwindConfigObject
