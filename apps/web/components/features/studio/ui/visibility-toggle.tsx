@@ -96,7 +96,7 @@ export function VisibilityToggle({
           role="combobox"
           aria-expanded={open}
           disabled={disabled || isUpdating}
-          className="bg-card text-card-foreground border-border rounded-md w-[100px] h-7 focus:ring-0 text-xs px-2 justify-between"
+          className="bg-card text-card-foreground border-border rounded-md w-[100px] h-7 focus:ring-0 text-xs px-2 justify-between shadow-none"
         >
           <div
             className={cn(

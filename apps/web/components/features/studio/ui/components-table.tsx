@@ -83,10 +83,22 @@ const formatTextWithLinks = (text: string) => {
 const formatStatusText = (status: string | null | undefined): string => {
   if (!status) return "None"
 
-  return status
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
+  // Custom status display names
+  const statusDisplay: Record<string, string> = {
+    on_review: "On Review",
+    featured: "Featured",
+    posted: "Published",
+    rejected: "Rejected",
+    draft: "Draft",
+  }
+
+  return (
+    statusDisplay[status] ||
+    status
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  )
 }
 
 export function DemosTable({
@@ -206,9 +218,11 @@ export function DemosTable({
               )}
             </div>
             <div className="flex flex-col min-w-0">
-              <div className="font-medium truncate">{row.getValue("name")}</div>
-              <div className="text-sm text-muted-foreground truncate">
+              <div className="font-medium truncate">
                 {row.original.component?.name || "Unknown component"}
+              </div>
+              <div className="text-sm text-muted-foreground truncate">
+                {row.getValue("name")}
               </div>
             </div>
           </div>
@@ -224,7 +238,7 @@ export function DemosTable({
       cell: ({ row }) => {
         const status = row.original.submission_status || "featured"
         const feedback = row.original.moderators_feedback
-        const isRejected = status === "rejected"
+        const hasFeedback = !!feedback
         const [tooltipOpen, setTooltipOpen] = useState(false)
 
         return (
@@ -243,7 +257,7 @@ export function DemosTable({
               {formatStatusText(status)}
             </span>
 
-            {isRejected && feedback && (
+            {hasFeedback && status !== "featured" && (
               <TooltipProvider delayDuration={100}>
                 <Tooltip open={tooltipOpen} onOpenChange={setTooltipOpen}>
                   <TooltipTrigger asChild>
@@ -251,13 +265,19 @@ export function DemosTable({
                       variant="ghost"
                       size="icon"
                       className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground"
-                      onClick={() => setTooltipOpen(!tooltipOpen)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setTooltipOpen(!tooltipOpen)
+                      }}
                     >
                       <InfoIcon size={14} />
                       <span className="sr-only">Feedback</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-xs">
+                    <div className="font-medium mb-1 text-xs">
+                      Moderator feedback:
+                    </div>
                     <div className="font-light text-xs">
                       {formatTextWithLinks(feedback)}
                     </div>
@@ -286,6 +306,9 @@ export function DemosTable({
           // Don't allow setting draft components to public
           if (isDraft && !newIsPrivate) return
 
+          // Don't allow changing visibility if not featured
+          if (!isFeatured) return
+
           await onUpdateVisibility(row.original.component.id, newIsPrivate)
         }
 
@@ -293,7 +316,7 @@ export function DemosTable({
           <VisibilityToggle
             isPrivate={isDraft ? true : isPrivate}
             onToggle={
-              onUpdateVisibility && !isDraft
+              onUpdateVisibility && !isDraft && isFeatured
                 ? handleToggleVisibility
                 : undefined
             }
