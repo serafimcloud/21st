@@ -29,6 +29,11 @@ export const metadata: Metadata = {
       "Ship polished UIs faster with ready-to-use React Tailwind components inspired by shadcn/ui.",
   },
   keywords: BASE_KEYWORDS,
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+  },
 }
 
 export default function RootLayout({

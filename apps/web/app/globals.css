@@ -7,6 +7,30 @@ body {
   width: 100%;
 }
 
+/* Safe Area support for testing in browsers */
+@supports (padding: max(0px)) {
+  :root {
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+  }
+}
+
+body::before {
+  content: "Safe bottom: " var(--safe-area-bottom);
+  position: fixed;
+  bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  left: 10px;
+  z-index: 9999;
+  background: #fff;
+  color: #000;
+  padding: 5px;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+
 * {
   box-sizing: border-box;
   padding: 0;

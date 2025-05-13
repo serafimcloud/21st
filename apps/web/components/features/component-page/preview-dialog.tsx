@@ -664,11 +664,14 @@ export function ComponentPreviewDialog({
           <div
             className="flex flex-row items-center justify-between border-t text-sm px-4 space-y-0 flex-shrink-0"
             style={{
-              height: "calc(3.5rem + env(safe-area-inset-bottom, 0px))",
-              paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))",
+              paddingBottom:
+                "calc(0.5rem + var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)))",
+              paddingTop: "0.5rem",
+              height:
+                "calc(3.5rem + var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)))",
             }}
           >
-            <div className="flex items-center gap-3 min-w-0 max-w-[75%]">
+            <div className="flex items-center gap-3 min-w-0 max-w-[70%] overflow-hidden">
               <Button
                 variant="ghost"
                 size="icon"
