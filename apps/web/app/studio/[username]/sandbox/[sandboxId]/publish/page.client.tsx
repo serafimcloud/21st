@@ -35,6 +35,7 @@ import { editSandbox } from "@/components/features/studio/sandbox/api"
 import { useFileSystem } from "@/components/features/studio/sandbox/hooks/use-file-system"
 import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
 import { cn } from "@/lib/utils"
+import { useTheme } from "next-themes"
 
 type FormStep = "detailedForm"
 
@@ -62,6 +63,8 @@ const PublishPage = ({
     sandboxId,
   })
   const router = useRouter()
+
+  const { resolvedTheme } = useTheme()
 
   // Fetch component data if sandbox is linked to a component
   const { isLoading: isComponentDataLoading, formData: componentFormData } =
@@ -492,7 +495,12 @@ const PublishPage = ({
               </div>
             </div>
 
-            <iframe src={previewURL || ""} className="w-2/3 h-full" />
+            {previewURL && (
+              <iframe
+                src={`${previewURL}?theme=${resolvedTheme}` || ""}
+                className="w-2/3 h-full"
+              />
+            )}
           </div>
         </div>
       </Form>

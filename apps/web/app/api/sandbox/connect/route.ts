@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest, NextResponse } from "next/server"
-import { supabaseWithAdminAccess } from "@/lib/supabase"
+import { checkIsAdmin, supabaseWithAdminAccess } from "@/lib/supabase"
 import {
   codesandboxSdk,
   DEFAULT_HIBERNATION_TIMEOUT,
@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const isAdmin = await checkIsAdmin(userId)
+
     const { shortSandboxId } = await request.json()
 
     const sandboxId = ShortUUID().toUUID(shortSandboxId)
@@ -25,12 +27,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: sandbox, error } = await supabaseWithAdminAccess
+    let query = supabaseWithAdminAccess
       .from("sandboxes")
       .select("codesandbox_id, name, id, component_id")
       .eq("id", sandboxId)
-      .eq("user_id", userId)
-      .single()
+
+    if (!isAdmin) {
+      // non-admins can see only their own sandbox
+      query = query.eq("user_id", userId)
+    }
+
+    const { data: sandbox, error } = await query.single()
 
     if (error || !sandbox) {
       return NextResponse.json(

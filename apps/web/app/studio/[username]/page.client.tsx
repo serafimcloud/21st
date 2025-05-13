@@ -50,7 +50,7 @@ export function StudioUsernameClient({
   const handleCreateNewSandbox = async () => {
     try {
       setIsCreating(true)
-      const { sandboxId } = await createNewSandbox()
+      const { sandboxId } = await createNewSandbox(user.id)
       setShowCreateDialog(false)
       router.push(`${pathname}/sandbox/${sandboxId}`)
     } catch (error) {
@@ -63,13 +63,16 @@ export function StudioUsernameClient({
     router.push(`${pathname}/sandbox/${shortSandboxId}`)
   }
 
-  const handleUpdateVisibility = async (demoId: string, isPrivate: boolean) => {
+  const handleUpdateVisibility = async (
+    componentId: number,
+    isPrivate: boolean,
+  ) => {
     try {
       // Update in Supabase - change to use is_public (which is the inverse of isPrivate)
       const { error } = await supabase
         .from("components")
         .update({ is_public: !isPrivate } as any) // inverting the boolean
-        .eq("id", parseInt(demoId, 10))
+        .eq("id", componentId)
 
       if (error) {
         throw error
@@ -78,7 +81,7 @@ export function StudioUsernameClient({
       // Update local state
       setLocalDemos((prevDemos) =>
         prevDemos.map((demo) =>
-          String(demo.id) === demoId
+          demo?.component?.id === componentId
             ? { ...demo, is_private: isPrivate }
             : demo,
         ),

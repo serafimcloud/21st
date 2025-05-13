@@ -27,11 +27,17 @@ export const connectToSandbox = async (
   return null
 }
 
-export const createNewSandbox = async (): Promise<{
+export const createNewSandbox = async (
+  userId: string,
+): Promise<{
   sandboxId: string
 }> => {
   const res = await fetch("/api/sandbox/new", {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ userId }),
   })
 
   if (!res.ok) throw new Error(await res.text())

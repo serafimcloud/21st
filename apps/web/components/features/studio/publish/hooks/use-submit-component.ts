@@ -63,6 +63,7 @@ type SubmissionProcessState = {
   finalComponent: Tables<"components"> | null
   finalDemo: Tables<"demos"> | null
   demoSlug?: string
+  isNewComponent: boolean
 }
 
 export const useSubmitComponent = () => {
@@ -218,12 +219,15 @@ export const useSubmitComponent = () => {
 
     let componentIdToUse: number | null = null
     let existingDemoId: number | null = null
+    let isNewComponent = true
 
     if (
       sandboxData?.component_id !== null &&
       sandboxData?.component_id !== undefined
     ) {
       componentIdToUse = sandboxData.component_id
+      isNewComponent = false
+
       context.setPublishProgress(
         "Found existing component link. Preparing update...",
       )
@@ -253,6 +257,7 @@ export const useSubmitComponent = () => {
       componentIdToUse,
       existingDemoId,
       sandboxData,
+      isNewComponent,
     }
   }
 
@@ -469,7 +474,7 @@ export const useSubmitComponent = () => {
     }
 
     // Link sandbox to component if it's a new component
-    if (!state.finalComponent?.id) {
+    if (state.isNewComponent) {
       context.setPublishProgress("Linking sandbox to new component...")
       const { error: updateSandboxError } = await context.supabase
         .from("sandboxes")
@@ -486,7 +491,7 @@ export const useSubmitComponent = () => {
     if (
       !context.form.is_public &&
       typeof componentIdToUse === "number" &&
-      !state.finalComponent?.id
+      state.isNewComponent
     ) {
       context.setPublishProgress("Creating submission entry...")
       const { error: submissionError } = await context.supabase
@@ -698,6 +703,7 @@ export const useSubmitComponent = () => {
       existingDemoId: null,
       finalComponent: null,
       finalDemo: null,
+      isNewComponent: true,
     }
 
     try {

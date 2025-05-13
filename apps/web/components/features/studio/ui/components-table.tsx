@@ -55,7 +55,10 @@ interface DemosTableProps {
   demos: ExtendedDemoWithComponent[]
   onEdit?: (demo: ExtendedDemoWithComponent) => void
   onOpenSandbox?: (shortSandboxId: string) => void
-  onUpdateVisibility?: (demoId: string, isPrivate: boolean) => Promise<void>
+  onUpdateVisibility?: (
+    componentId: number,
+    isPrivate: boolean,
+  ) => Promise<void>
   isOwnProfile?: boolean
 }
 
@@ -275,6 +278,7 @@ export function DemosTable({
       cell: ({ row }) => {
         const isPrivate = Boolean(row.original.is_private)
         const isDraft = row.original.submission_status === "draft"
+        const isFeatured = row.original.submission_status === "featured"
 
         const handleToggleVisibility = async (newIsPrivate: boolean) => {
           if (!onUpdateVisibility) return
@@ -282,7 +286,7 @@ export function DemosTable({
           // Don't allow setting draft components to public
           if (isDraft && !newIsPrivate) return
 
-          await onUpdateVisibility(String(row.original.id), newIsPrivate)
+          await onUpdateVisibility(row.original.component.id, newIsPrivate)
         }
 
         return (
@@ -293,7 +297,7 @@ export function DemosTable({
                 ? handleToggleVisibility
                 : undefined
             }
-            readonly={!isOwnProfile || !onUpdateVisibility || isDraft}
+            readonly={!isOwnProfile || !onUpdateVisibility || !isFeatured}
           />
         )
       },

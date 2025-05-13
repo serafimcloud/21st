@@ -22,6 +22,7 @@ const ALWAYS_HIDDEN_FILES = [
   "scripts",
   "registry.json",
   "next",
+  "21st-registry.json",
 ]
 const ADVANCED_VIEW_HIDDEN_FILES = [
   "package.json",
@@ -36,6 +37,7 @@ export interface FileEntry {
   name: string
   isSymlink: boolean
   children?: FileEntry[]
+  isFromRegistry?: boolean
 }
 
 const normalizePath = (path: string) => {
@@ -48,17 +50,41 @@ const normalizePath = (path: string) => {
 const mapReaddirEntryToFileEntry = (
   entry: ReaddirEntry,
   parentPath: string,
-): FileEntry => ({
-  name: entry.name,
-  path: `${parentPath === ROOT_PATH ? "" : parentPath}/${entry.name}`,
-  type: entry.type === "directory" ? "dir" : "file",
-  isSymlink: entry.isSymlink,
-})
+  registryComponentPaths: string[],
+): FileEntry => {
+  const fullPath = `${parentPath === ROOT_PATH ? "" : parentPath}/${entry.name}`
+  // Check if the current entry's path (or any of its parent paths up to /src/components/ui/)
+  // matches a path derived from a registry component.
+  // A component from registry might be /src/components/ui/my-component.tsx
+  // or a directory /src/components/ui/my-component/
+  let isFromRegistry = false
+  if (fullPath.startsWith("/src/components/ui/")) {
+    isFromRegistry = registryComponentPaths.some((registryPath) => {
+      // A registry component path is like 'my-component'
+      // We need to check if fullPath is '/src/components/ui/my-component.tsx'
+      // or '/src/components/ui/my-component/...'
+      const baseRegistryPath = `/src/components/ui/${registryPath}`
+      return (
+        fullPath === `${baseRegistryPath}.tsx` || // for files like my-component.tsx
+        fullPath.startsWith(`${baseRegistryPath}/`) // for directories like my-component/
+      )
+    })
+  }
+
+  return {
+    name: entry.name,
+    path: fullPath,
+    type: entry.type === "directory" ? "dir" : "file",
+    isSymlink: entry.isSymlink,
+    isFromRegistry,
+  }
+}
 
 const loadDirectoryRecursively = async (
   sandbox: SandboxSession,
   path: string,
   showAdvancedView: boolean,
+  registryComponentPaths: string[],
 ): Promise<FileEntry[]> => {
   const entries = await sandbox.fs.readdir(normalizePath(path))
 
@@ -79,7 +105,7 @@ const loadDirectoryRecursively = async (
     return true
   })
   const fileEntries = filteredEntries.map((entry) =>
-    mapReaddirEntryToFileEntry(entry, path),
+    mapReaddirEntryToFileEntry(entry, path, registryComponentPaths),
   )
 
   for (const entry of fileEntries) {
@@ -88,7 +114,15 @@ const loadDirectoryRecursively = async (
         sandbox,
         entry.path,
         showAdvancedView,
+        registryComponentPaths,
       )
+      // If any child is from registry, the parent dir (if under /src/components/ui/) should also be considered as part of it for UI purposes
+      if (
+        entry.path.startsWith("/src/components/ui/") &&
+        entry.children?.some((child) => child.isFromRegistry)
+      ) {
+        entry.isFromRegistry = true
+      }
     }
   }
 
@@ -108,32 +142,63 @@ export const useFileSystem = ({
   const [isTreeLoading, setIsTreeLoading] = useState(false)
   const [isFileLoading, setIsFileLoading] = useState(false)
   const [advancedView, setAdvancedView] = useState(false)
+  const [registryComponents, setRegistryComponents] = useState<string[]>([])
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   const sbWrapper = async <T>(
     operation: (sandbox: SandboxSession) => Promise<T>,
   ): Promise<T | undefined> => {
-    if (!sandboxRef.current) return
+    if (!sandboxRef.current) {
+      setTimeout(() => {
+        sbWrapper(operation)
+      }, 400)
+      return
+    }
 
     try {
-      return await operation(sandboxRef.current)
+      // basic operation; will fail if we don't have connection
+      await sandboxRef.current?.fs.stat(normalizePath("/package.json"))
     } catch (error) {
-      try {
-        await reconnectSandbox()
-        if (!sandboxRef.current) throw new Error("Failed to reconnect sandbox")
-        return await operation(sandboxRef.current)
-      } catch (error) {
-        console.error("Failed to execute operation:", error)
-        throw error
-      }
+      console.error("Failed to read package.json:", error)
+      await reconnectSandbox()
     }
+
+    return await operation(sandboxRef?.current)
   }
 
   const loadRootDirectory = async () => {
     setIsTreeLoading(true)
+    let currentRegistryComponents: string[] = []
     try {
+      try {
+        const registryContent = await sbWrapper<string | null>((sandbox) => {
+          return sandbox.fs.readTextFile(normalizePath("/21st-registry.json"))
+        })
+        if (registryContent) {
+          const parsedRegistry = JSON.parse(registryContent)
+          if (Array.isArray(parsedRegistry)) {
+            currentRegistryComponents = parsedRegistry.map(
+              (item: any) => item.name,
+            )
+            setRegistryComponents(currentRegistryComponents)
+          } else {
+            setRegistryComponents([])
+          }
+        } else {
+          setRegistryComponents([])
+        }
+      } catch (error) {
+        console.error("Failed to read 21st-registry.json:", error)
+        setRegistryComponents([])
+      }
+
       const rootEntries = await sbWrapper((sandbox) =>
-        loadDirectoryRecursively(sandbox, ROOT_PATH, advancedView),
+        loadDirectoryRecursively(
+          sandbox,
+          ROOT_PATH,
+          advancedView,
+          currentRegistryComponents,
+        ),
       )
       if (rootEntries) setFiles(rootEntries)
     } catch (error) {
@@ -287,8 +352,10 @@ export const useFileSystem = ({
   // Helper function to run a task, wait for specific output, and execute a callback
   const _runTaskAndWaitForOutput = async <T>(
     taskName: string,
-    completionOutput: string,
-    onComplete: (shell: any, sandbox: SandboxSession) => Promise<T | undefined>,
+    completionMap: Record<
+      string,
+      (shell: any, sandbox: SandboxSession) => Promise<T | undefined> | void
+    >,
   ): Promise<T | undefined> => {
     // Guranties that the sandbox is connected
     if (!sandboxConnectionHash) {
@@ -297,7 +364,7 @@ export const useFileSystem = ({
         const interval = setInterval(() => {
           if (sandboxConnectionHash) {
             clearInterval(interval)
-            _runTaskAndWaitForOutput(taskName, completionOutput, onComplete)
+            _runTaskAndWaitForOutput(taskName, completionMap)
               .then(resolve)
               .catch(reject)
           }
@@ -361,35 +428,66 @@ export const useFileSystem = ({
 
           connectedShell.onOutput(async (data) => {
             // console.log(`${taskName} Output:`, data)
-            // listening for finsih word and not echo (to prevent return from first stateng)
-            //  eg: npm run build && echo "FINISH"
-            if (data.includes(completionOutput) && !data.includes("echo")) {
-              console.log(
-                `${taskName} finished, executing onComplete callback...`,
-              )
-              try {
-                if (!sandboxRef.current) {
-                  throw new Error("Sandbox disconnected before onComplete")
-                }
-                const result = await onComplete(
-                  connectedShell,
-                  sandboxRef.current,
+            // Iterate through the completion map keys and values to find a match
+            for (const [completionString, completionCallback] of Object.entries(
+              completionMap,
+            )) {
+              if (
+                Object.prototype.hasOwnProperty.call(
+                  completionMap,
+                  completionString,
                 )
-                console.log(`${taskName} onComplete finished successfully.`)
-                disposeShellAndClearTimeout()
-                resolve(result)
-              } catch (error) {
-                console.error(`Error during ${taskName} onComplete:`, error)
-                disposeShellAndClearTimeout()
-                reject(error)
+              ) {
+                // listening for finsih word and not echo (to prevent return from first stateng)
+                //  eg: npm run build && echo "FINISH"
+                if (data.includes(completionString) && !data.includes("echo")) {
+                  console.log(
+                    `${taskName} finished with output '${completionString}', executing callback...`,
+                  )
+                  try {
+                    if (!sandboxRef.current) {
+                      throw new Error("Sandbox disconnected before callback")
+                    }
+                    // Execute the callback and handle its potential return value
+                    const result = await completionCallback(
+                      connectedShell,
+                      sandboxRef.current,
+                    )
+                    console.log(
+                      `Callback for '${completionString}' finished successfully.`,
+                    )
+                    // Resolve with the result if the callback returned one
+                    // Dispose and clear timeout before resolving
+                    disposeShellAndClearTimeout()
+                    resolve(result as T | undefined) // Cast needed as void callbacks don't return T
+                    return // Stop processing further output and callbacks for this task
+                  } catch (error) {
+                    console.error(
+                      `Error during callback for '${completionString}':`,
+                      error,
+                    )
+                    // Dispose and clear timeout before rejecting
+                    disposeShellAndClearTimeout()
+                    reject(error)
+                    return // Stop processing further output
+                  }
+                }
               }
             }
           })
 
           outputTimeout = setTimeout(() => {
-            console.error(`Timeout waiting for '${completionOutput}' message.`)
+            console.error(
+              `Timeout waiting for any of the specified output patterns: ${Object.keys(
+                completionMap,
+              )
+                .map((str) => `'${str}'`)
+                .join(", ")}.`,
+            )
             disposeShellAndClearTimeout()
-            reject(new Error(`${taskName}: Timeout waiting for output`))
+            reject(
+              new Error(`${taskName}: Timeout waiting for specified output`),
+            )
           }, 120000) // Increased timeout to 120 seconds
 
           // Wrap resolve/reject to clear timeout
@@ -415,17 +513,19 @@ export const useFileSystem = ({
   }
 
   const bundleDemo = async (): Promise<string | undefined> => {
-    return _runTaskAndWaitForOutput<string>(
-      "build",
-      "built in",
-      async (shell, sandbox) => {
+    return _runTaskAndWaitForOutput<string>("build", {
+      "built in": async (shell, sandbox) => {
         const content = await getContentOfBundleIndexHTML(sandbox)
         if (!content) {
           throw new Error("Failed to read dist/index.html")
         }
         return content
       },
-    )
+      "error during build": (shell, sandbox) => {
+        console.error("Build failed with error during build output.")
+        throw new Error("Failed during build.")
+      },
+    })
   }
 
   // clean comments from component and demo
@@ -500,16 +600,21 @@ export const useFileSystem = ({
           demoRegistryJSON: string
         }
       | undefined
-    >("generate:registry", "FINISH", async (shell, sandbox) => {
-      const componentRegistryJSON = await getContentOfComponentRegistryJSON(
-        sandbox,
-        slug,
-      )
-      const demoRegistryJSON = await getContentOfDemoRegistryJSON(sandbox)
-      if (!componentRegistryJSON || !demoRegistryJSON) {
-        throw new Error("Failed to read generated registry files")
-      }
-      return { componentRegistryJSON, demoRegistryJSON }
+    >("generate:registry", {
+      FINISH: async (shell, sandbox) => {
+        const componentRegistryJSON = await getContentOfComponentRegistryJSON(
+          sandbox,
+          slug,
+        )
+        const demoRegistryJSON = await getContentOfDemoRegistryJSON(sandbox)
+        if (!componentRegistryJSON || !demoRegistryJSON) {
+          throw new Error("Failed to read generated registry files")
+        }
+        return { componentRegistryJSON, demoRegistryJSON }
+      },
+      "error during generate:registry": (shell, sandbox) => {
+        throw new Error("Failed to generate registry")
+      },
     })
   }
 
@@ -566,8 +671,10 @@ export const useFileSystem = ({
           const uiDirEntries = await sandbox.fs.readdir(
             normalizePath("src/components/ui"),
           )
-          const firstTsxFile = uiDirEntries.find((entry) =>
-            entry.name.endsWith(".tsx"),
+          const firstTsxFile = uiDirEntries.find(
+            (entry) =>
+              entry.name.endsWith(".tsx") &&
+              !registryComponents.includes(entry.name.replace(/\.tsx$/, "")),
           )
 
           if (firstTsxFile) {
@@ -576,9 +683,11 @@ export const useFileSystem = ({
             )
             console.log(`Using ${oldComponentPath} as the old component path.`)
           } else {
-            console.error("No .tsx files found in src/components/ui/")
+            console.error(
+              "No .tsx files found in src/components/ui/ that are not part of the registry",
+            )
             toast.error(
-              "No component file found to rename in src/components/ui/",
+              "No component file found to rename in src/components/ui/ (excluding registry components)",
             )
             return
           }
@@ -649,6 +758,52 @@ export const useFileSystem = ({
     await loadRootDirectory()
   }
 
+  const addFrom21Registry = async (jsonUrl: string) => {
+    await sbWrapper(async (sandbox) => {
+      const command = sandbox.shells.run(
+        `npx -y @21st-dev/cli@latest add "${jsonUrl}"`,
+      )
+      console.log("command", command)
+
+      return new Promise<void>((resolve, reject) => {
+        let outputTimeout: NodeJS.Timeout | null = null
+        const disposeShellAndClearTimeout = () => {
+          if (outputTimeout) clearTimeout(outputTimeout)
+          // It's good practice to dispose the command observer if the shell/command object has such a method
+          // Assuming 'command.dispose()' or similar might exist based on SDK patterns
+        }
+
+        command.onOutput((data) => {
+          console.log("21st.dev registry add output:", data)
+          const successMessage1 = "was already tracked in 21st-registry.json."
+          const successMessage2 =
+            "has been added/updated in 21st-registry.json."
+
+          if (
+            data.includes(successMessage1) ||
+            data.includes(successMessage2)
+          ) {
+            console.log("21st.dev registry add command completed successfully.")
+            disposeShellAndClearTimeout()
+            resolve()
+          }
+        })
+
+        outputTimeout = setTimeout(() => {
+          console.error(
+            "Timeout waiting for 21st.dev registry add command output.",
+          )
+          disposeShellAndClearTimeout()
+          reject(
+            new Error(
+              "Timeout waiting for 21st.dev registry add command output.",
+            ),
+          )
+        }, 120000) // 120 seconds timeout, similar to _runTaskAndWaitForOutput
+      })
+    })
+  }
+
   return {
     files,
     isTreeLoading,
@@ -671,5 +826,6 @@ export const useFileSystem = ({
     optimizeComponentAndDemo,
     // getContentOfComponentRegistryJSON, // Keep these private
     // getContentOfDemoRegistryJSON,
+    addFrom21Registry,
   }
 }

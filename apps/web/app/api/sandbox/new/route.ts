@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server"
-import { NextResponse } from "next/server"
-import { supabaseWithAdminAccess } from "@/lib/supabase"
+import { NextRequest, NextResponse } from "next/server"
+import { checkIsAdmin, supabaseWithAdminAccess } from "@/lib/supabase"
 import ShortUUID from "short-uuid"
 import {
   DEFAULT_HIBERNATION_TIMEOUT,
@@ -9,14 +9,19 @@ import {
   codesandboxSdk,
 } from "@/lib/codesandbox-sdk"
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth()
-
-    console.log("userId", userId)
+    let { userId } = await auth()
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const isAdmin = await checkIsAdmin(userId)
+
+    if (isAdmin && req.body) {
+      const body = await req.json()
+      userId = body.userId
     }
 
     console.log("Creating CodeSandbox instance...")
