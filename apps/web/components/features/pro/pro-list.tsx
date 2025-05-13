@@ -94,7 +94,12 @@ export function ProList({ className }: ProListProps) {
                 ""
               }
               size={32}
-              user={{ ...publisher, is_partner: false }}
+              user={{
+                ...publisher,
+                is_partner: false,
+                bundles_fee: 0,
+                stripe_id: null,
+              }}
               isClickable
             />
             <div className="flex items-center justify-between flex-grow min-w-0">

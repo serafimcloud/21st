@@ -77,6 +77,8 @@ interface UserProfile {
     | "entrepreneur"
     | null
   updated_at: string
+  bundles_fee: number
+  stripe_id: string
 }
 
 interface UserUsage {
