@@ -530,7 +530,7 @@ export const useSubmitComponent = () => {
       is_public: context.form.is_public,
       sandbox_id: context.sandboxId,
       registry_url: registryJsonUrl,
-      ...(indexCssUrl && { index_css_url: indexCssUrl }),
+      index_css_url: indexCssUrl || null,
     }
 
     let finalComponent: Tables<"components"> | null = null
@@ -628,8 +628,6 @@ export const useSubmitComponent = () => {
         console.error("Error fetching submission:", submissionFetchError)
         throw submissionFetchError
       }
-
-      console.log("existingSubmission", existingSubmission)
 
       if (!existingSubmission) {
         const { error: insertError } = await context.supabase
