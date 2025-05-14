@@ -25,6 +25,8 @@ type FileUploadResult = {
   previewImageR2Url: string | null
   videoR2Url: string | null
   bundleHtmlUrl: string
+  registryJsonUrl: string
+  indexCssUrl: string | null
 }
 
 type StepContext = {
@@ -64,6 +66,7 @@ type SubmissionProcessState = {
   finalDemo: Tables<"demos"> | null
   demoSlug?: string
   isNewComponent: boolean
+  componentRegistryJSON?: string
 }
 
 export const useSubmitComponent = () => {
@@ -183,7 +186,11 @@ export const useSubmitComponent = () => {
     }
 
     const parsedCode = await context.getParsedCode(resultOfGenerateRegistry)
-    return { ...state, parsedCodeData: parsedCode }
+    return {
+      ...state,
+      parsedCodeData: parsedCode,
+      componentRegistryJSON: resultOfGenerateRegistry.componentRegistryJSON,
+    }
   }
 
   async function _stepBundleDemo(
@@ -265,9 +272,8 @@ export const useSubmitComponent = () => {
     context: StepContext,
     state: SubmissionProcessState,
   ): Promise<SubmissionProcessState> {
-    if (!state.parsedCodeData) {
-      throw new Error("Missing parsed code data")
-    }
+    if (!state.parsedCodeData) throw new Error("Missing parsed code data")
+    if (!state.componentRegistryJSON) throw new Error("Missing registry JSON")
 
     context.setPublishProgress("Uploading component files...")
     const demo = context.form.demos[0]!
@@ -276,64 +282,158 @@ export const useSubmitComponent = () => {
 
     console.log("demo", demo)
 
-    const [codeUrl, demoCodeUrl, previewImageR2Url, videoR2Url, bundleHtmlUrl] =
-      await Promise.all([
-        uploadToR2({
-          file: {
-            name: "code.tsx",
-            type: "text/plain",
-            textContent: componentCode,
+    const generateIndexCss = (registryJson: string) => {
+      try {
+        const reg = JSON.parse(registryJson)
+        const { cssVars = {}, css = {} } = reg
+        const themeVars: Record<string, string> = cssVars.theme ?? {}
+        const lightVars: Record<string, string> = cssVars.light ?? {}
+        const darkVars: Record<string, string> = cssVars.dark ?? {}
+
+        const lines: string[] = []
+        lines.push('@import "tailwindcss";')
+        lines.push('@import "tw-animate-css";\n')
+
+        if (Object.keys(themeVars).length) {
+          lines.push("@theme inline {")
+          Object.entries(themeVars).forEach(([k, v]) =>
+            lines.push(`  ${k}: ${v};`),
+          )
+          lines.push("}\n")
+        }
+
+        const writeVarBlock = (
+          selector: string,
+          vars: Record<string, string>,
+        ) => {
+          if (!Object.keys(vars).length) return
+          lines.push(`${selector} {`)
+          Object.entries(vars).forEach(([k, v]) => lines.push(`  ${k}: ${v};`))
+          lines.push("}\n")
+        }
+
+        writeVarBlock(":root", lightVars)
+        writeVarBlock(".dark", darkVars)
+
+        Object.entries(css as Record<string, any>).forEach(
+          ([selector, steps]) => {
+            lines.push(`\n${selector} {`)
+            if (steps && typeof steps === "object") {
+              Object.entries(steps as Record<string, any>).forEach(
+                ([step, styles]) => {
+                  lines.push(`  ${step} {`)
+                  if (styles && typeof styles === "object") {
+                    Object.entries(styles as Record<string, any>).forEach(
+                      ([prop, val]) => {
+                        lines.push(`    ${prop}: ${val};`)
+                      },
+                    )
+                  }
+                  lines.push("  }")
+                },
+              )
+            }
+            lines.push("}")
           },
-          fileKey: `${baseFolder}/code.${Date.now()}.tsx`,
-          bucketName: "components-code",
-        }),
-        uploadToR2({
-          file: {
-            name: "demo.tsx",
-            type: "text/plain",
-            textContent: demoCode,
-          },
-          fileKey: `${baseFolder}/${demo.demo_slug}/code.demo.${Date.now()}.tsx`,
-          bucketName: "components-code",
-        }),
-        demo.preview_image_file &&
-        demo.preview_image_file.size > 0 &&
-        demo.preview_image_data_url
-          ? uploadToR2({
-              file: {
-                name: "preview.png",
-                type: demo.preview_image_file.type,
-                encodedContent: demo.preview_image_data_url.replace(
-                  /^data:image\/(png|jpeg|jpg);base64,/,
-                  "",
-                ),
-              },
-              fileKey: `${baseFolder}/${demo.demo_slug}/preview.${Date.now()}.png`,
-              bucketName: "components-code",
-              contentType: demo.preview_image_file.type,
-            })
-          : Promise.resolve(null),
-        demo.preview_video_file &&
-        demo.preview_video_file.size > 0 &&
-        demo.preview_video_data_url
-          ? context.uploadToR2ClientSide({
-              file: demo.preview_video_file,
-              fileKey: `${baseFolder}/${demo.demo_slug}/video.${Date.now()}.mp4`,
-              bucketName: "components-code",
-              contentType: "video/mp4",
-            })
-          : Promise.resolve(null),
-        uploadToR2({
-          file: {
-            name: "bundle.html",
-            type: "text/html",
-            textContent: state.contentOfHtml!,
-          },
-          fileKey: `${baseFolder}/${demo.demo_slug}/bundle.${Date.now()}.html`,
-          bucketName: "components-code",
-          contentType: "text/html",
-        }),
-      ])
+        )
+
+        return lines.join("\n")
+      } catch (e) {
+        console.error("Failed to generate index.css", e)
+        return ""
+      }
+    }
+
+    const indexCssContent = generateIndexCss(state.componentRegistryJSON)
+    const hasIndexCss = indexCssContent.trim().length > 0
+
+    const [
+      codeUrl,
+      demoCodeUrl,
+      previewImageR2Url,
+      videoR2Url,
+      bundleHtmlUrl,
+      registryJsonUrl,
+      indexCssUrl,
+    ] = await Promise.all([
+      uploadToR2({
+        file: {
+          name: "code.tsx",
+          type: "text/plain",
+          textContent: componentCode,
+        },
+        fileKey: `${baseFolder}/code.${Date.now()}.tsx`,
+        bucketName: "components-code",
+      }),
+      uploadToR2({
+        file: {
+          name: "demo.tsx",
+          type: "text/plain",
+          textContent: demoCode,
+        },
+        fileKey: `${baseFolder}/${demo.demo_slug}/code.demo.${Date.now()}.tsx`,
+        bucketName: "components-code",
+      }),
+      demo.preview_image_file &&
+      demo.preview_image_file.size > 0 &&
+      demo.preview_image_data_url
+        ? uploadToR2({
+            file: {
+              name: "preview.png",
+              type: demo.preview_image_file.type,
+              encodedContent: demo.preview_image_data_url.replace(
+                /^data:image\/(png|jpeg|jpg);base64,/,
+                "",
+              ),
+            },
+            fileKey: `${baseFolder}/${demo.demo_slug}/preview.${Date.now()}.png`,
+            bucketName: "components-code",
+            contentType: demo.preview_image_file.type,
+          })
+        : Promise.resolve(null),
+      demo.preview_video_file &&
+      demo.preview_video_file.size > 0 &&
+      demo.preview_video_data_url
+        ? context.uploadToR2ClientSide({
+            file: demo.preview_video_file,
+            fileKey: `${baseFolder}/${demo.demo_slug}/video.${Date.now()}.mp4`,
+            bucketName: "components-code",
+            contentType: "video/mp4",
+          })
+        : Promise.resolve(null),
+      uploadToR2({
+        file: {
+          name: "bundle.html",
+          type: "text/html",
+          textContent: state.contentOfHtml!,
+        },
+        fileKey: `${baseFolder}/${demo.demo_slug}/bundle.${Date.now()}.html`,
+        bucketName: "components-code",
+        contentType: "text/html",
+      }),
+      uploadToR2({
+        file: {
+          name: "registry.json",
+          type: "application/json",
+          textContent: state.componentRegistryJSON,
+        },
+        fileKey: `${baseFolder}/registry.${Date.now()}.json`,
+        bucketName: "components-code",
+        contentType: "application/json",
+      }),
+      hasIndexCss
+        ? uploadToR2({
+            file: {
+              name: "index.css",
+              type: "text/css",
+              textContent: indexCssContent,
+            },
+            fileKey: `${baseFolder}/index.${Date.now()}.css`,
+            bucketName: "components-code",
+            contentType: "text/css",
+          })
+        : Promise.resolve(null),
+    ])
 
     return {
       ...state,
@@ -343,6 +443,8 @@ export const useSubmitComponent = () => {
         previewImageR2Url,
         videoR2Url,
         bundleHtmlUrl,
+        registryJsonUrl,
+        indexCssUrl,
       },
     }
   }
@@ -356,7 +458,13 @@ export const useSubmitComponent = () => {
     }
 
     const { componentIdToUse } = state
-    const { codeUrl, previewImageR2Url, videoR2Url } = state.fileUploadResult
+    const {
+      codeUrl,
+      previewImageR2Url,
+      videoR2Url,
+      registryJsonUrl,
+      indexCssUrl,
+    } = state.fileUploadResult
     const { parsedCodeData } = state
 
     context.setPublishProgress(
@@ -384,7 +492,6 @@ export const useSubmitComponent = () => {
       | "hunter_username"
       | "payment_url"
       | "pro_preview_image_url"
-      | "registry_url"
     > = {
       name: context.form.name,
       component_names: parsedCodeData.componentNames,
@@ -396,8 +503,25 @@ export const useSubmitComponent = () => {
       user_id: context.publishAsUser.id,
       dependencies: parsedCodeData.dependencies || {},
       demo_dependencies: parsedCodeData.demoDependencies || {},
-      direct_registry_dependencies:
-        context.form.direct_registry_dependencies || [],
+      direct_registry_dependencies: (() => {
+        const initialDeps = context.form.direct_registry_dependencies || []
+        let registryDeps: string[] = []
+        try {
+          if (state.componentRegistryJSON) {
+            const parsed = JSON.parse(state.componentRegistryJSON) as {
+              registryDependencies?: string[]
+            }
+            if (Array.isArray(parsed.registryDependencies)) {
+              registryDeps = parsed.registryDependencies.map((d) =>
+                d.replace("https://21st.dev/r/", ""),
+              )
+            }
+          }
+        } catch (err) {
+          console.error("Failed to parse registryDependencies", err)
+        }
+        return Array.from(new Set([...initialDeps, ...registryDeps]))
+      })(),
       preview_url: previewImageR2Url || "",
       video_url: videoR2Url || "",
       registry: context.form.registry,
@@ -405,6 +529,8 @@ export const useSubmitComponent = () => {
       website_url: context.form.website_url || null,
       is_public: context.form.is_public,
       sandbox_id: context.sandboxId,
+      registry_url: registryJsonUrl,
+      ...(indexCssUrl && { index_css_url: indexCssUrl }),
     }
 
     let finalComponent: Tables<"components"> | null = null
