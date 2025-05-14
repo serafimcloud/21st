@@ -239,6 +239,20 @@ export async function GET(
         })
     }
 
+    // Early return for components backed by new flow
+    if (component.sandbox_id && component.registry_url) {
+      try {
+        const registryRes = await fetch(component.registry_url)
+        if (registryRes.ok) {
+          const registryJson = await registryRes.json()
+          return NextResponse.json(registryJson)
+        }
+      } catch (fetchErr) {
+        console.error("Failed to fetch registry_url content:", fetchErr)
+      }
+      // If fetch fails we continue with local fallback implementation
+    }
+
     const dependencies = component.dependencies as Record<string, string>
 
     const resolvedRegistryDependencies = await resolveRegistryDependencyTree({
