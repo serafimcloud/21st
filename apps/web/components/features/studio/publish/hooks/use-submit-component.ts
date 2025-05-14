@@ -613,23 +613,43 @@ export const useSubmitComponent = () => {
       }
     }
 
-    // Create submission entry for private components
-    if (
-      !context.form.is_public &&
-      typeof componentIdToUse === "number" &&
-      state.isNewComponent
-    ) {
-      context.setPublishProgress("Creating submission entry...")
-      const { error: submissionError } = await context.supabase
-        .from("submissions")
-        .insert({
-          component_id: componentIdToUse,
-          status: "on_review",
-        })
+    // Create or update submission entry for private components
+    if (!context.form.is_public && typeof componentIdToUse === "number") {
+      context.setPublishProgress("Ensuring submission status is on review…")
 
-      if (submissionError) {
-        console.error("Error inserting submission:", submissionError)
-        throw submissionError
+      const { data: existingSubmission, error: submissionFetchError } =
+        await context.supabase
+          .from("submissions")
+          .select("id,status")
+          .eq("component_id", componentIdToUse)
+          .maybeSingle()
+
+      if (submissionFetchError && submissionFetchError.code !== "PGRST116") {
+        console.error("Error fetching submission:", submissionFetchError)
+        throw submissionFetchError
+      }
+
+      console.log("existingSubmission", existingSubmission)
+
+      if (!existingSubmission) {
+        const { error: insertError } = await context.supabase
+          .from("submissions")
+          .insert({ component_id: componentIdToUse, status: "on_review" })
+
+        if (insertError) {
+          console.error("Error inserting submission:", insertError)
+          throw insertError
+        }
+      } else if (existingSubmission.status === "rejected") {
+        const { error: updateError } = await context.supabase
+          .from("submissions")
+          .update({ status: "on_review", moderators_feedback: null })
+          .eq("id", existingSubmission.id)
+
+        if (updateError) {
+          console.error("Error updating submission:", updateError)
+          throw updateError
+        }
       }
     }
 
