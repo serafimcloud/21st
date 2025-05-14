@@ -46,6 +46,12 @@ export function Footer({ className, isOpenSource = true }: FooterProps) {
           </div>
           <nav className="flex items-center justify-end gap-2 md:gap-4">
             <Link
+              href="/our-story"
+              className="text-sm text-muted-foreground hover:underline underline-offset-4"
+            >
+              Our Story
+            </Link>
+            <Link
               href="/api-access"
               className="text-sm text-muted-foreground hover:underline underline-offset-4"
             >
