@@ -22,8 +22,9 @@ type TailwindConfig = {
 
 // Represents CSS variables for light and dark themes
 type CssVars = {
-  light: Record<string, string> // e.g., { "--color-1": "0 100% 63%" }
-  dark: Record<string, string> // e.g., { "--color-1": "0 100% 63%" }
+  theme?: Record<string, string>
+  light?: Record<string, string>
+  dark?: Record<string, string>
 }
 
 // Represents the complete component response structure
@@ -37,6 +38,7 @@ export type ComponentRegistryResponse = {
     config: TailwindConfig
   }
   cssVars?: CssVars
+  css?: Record<string, any>
 }
 
 // Example usage:

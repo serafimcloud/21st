@@ -20,6 +20,125 @@ const getShadcnRegistrySlug = (registryName: string) => {
   return `registry:${registryName}`
 }
 
+// --- New tailwind config parsers ---
+// Tries to evaluate raw config string using Function constructor.
+// Falls back to legacy regex-based implementation on failure.
+const transformTailwindConfig = (raw: string): Record<string, any> => {
+  try {
+    const sanitized = raw.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "") // strip comments
+    const match = sanitized.match(/module\.exports\s*=\s*({[\s\S]*})/)
+    if (match?.[1]) {
+      const module: { exports: any } = { exports: {} }
+      // eslint-disable-next-line no-new-func
+      new Function("module", "exports", `module.exports = ${match[1]}`)(
+        module,
+        module.exports,
+      )
+      const cfg = module.exports
+      if (cfg && typeof cfg === "object") {
+        if (cfg.theme?.extend) return { theme: { extend: cfg.theme.extend } }
+        if (cfg.theme) return { theme: cfg.theme }
+        return cfg
+      }
+    }
+  } catch (_) {
+    // ignore and fallback
+  }
+  return legacyTransformTailwindConfig(raw)
+}
+
+// Previous regex-based parser kept for fallback compatibility
+const legacyTransformTailwindConfig = (
+  tailwindConfig: string,
+): Record<string, any> => {
+  try {
+    const configMatch = tailwindConfig.match(
+      /module\.exports\s*=\s*({[\s\S]*})/,
+    )
+    if (!configMatch?.[1]) return {}
+
+    const cleanConfig = configMatch[1]
+      .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "")
+      .replace(/(\w+):/g, '"$1":')
+      .replace(/'/g, '"')
+
+    const themeMatch = cleanConfig.match(/"theme"\s*:\s*({[^}]*(?:}[^}]*)*})/)
+    if (!themeMatch?.[1]) return {}
+
+    const extendMatch = themeMatch[1].match(
+      /"extend"\s*:\s*({[^}]*(?:}[^}]*)*})[^}]*$/,
+    )
+    if (!extendMatch?.[1]) return {}
+
+    let cleanThemeExtend = extendMatch[1]
+      .replace(/\s+/g, " ")
+      .replace(/,\s*,/g, ",")
+      .replace(/,\s*}/g, "}")
+      .replace(/}\s*,?\s*"plugins"[\s\S]*$/, "}")
+      .replace(/}\s*}/g, "}")
+      .replace(/}(?!}|$)/g, "},")
+      .replace(/,+/g, ",")
+      .replace(/`([^`]*)`/g, (_m, p1) => JSON.stringify(p1))
+      .replace(/([{,]\s*)(?!")([a-zA-Z0-9-]+):/g, '$1"$2":')
+      .replace(/,(\s*})/g, "$1")
+      .trim()
+
+    try {
+      const parsed = JSON.parse(cleanThemeExtend)
+      return { theme: { extend: parsed } }
+    } catch {
+      const simpleObject = {
+        backgroundImage: {
+          "grid-pattern":
+            tailwindConfig.match(/['"]grid-pattern['"]:\s*`([^`]*)`/)?.[1] ||
+            "",
+          "grid-pattern-light":
+            tailwindConfig.match(
+              /['"]grid-pattern-light['"]:\s*`([^`]*)`/,
+            )?.[1] || "",
+        },
+      }
+      return { theme: { extend: simpleObject } }
+    }
+  } catch {
+    return {}
+  }
+}
+
+// Generate cssVars.theme and css definitions from Tailwind config object
+const generateCssData = (
+  tailwindObj: Record<string, any>,
+): {
+  cssVars?: { theme: Record<string, string> }
+  css?: Record<string, any>
+} => {
+  if (!tailwindObj?.theme?.extend) return {}
+  const { animation, keyframes } = tailwindObj.theme.extend
+  const cssVarsTheme: Record<string, string> = {}
+  const css: Record<string, any> = {}
+
+  if (animation && typeof animation === "object") {
+    Object.entries(animation).forEach(([name, value]) => {
+      if (typeof value === "string") {
+        cssVarsTheme[`animate-${name}`] = value
+      }
+    })
+  }
+
+  if (keyframes && typeof keyframes === "object") {
+    Object.entries(keyframes).forEach(([name, frames]) => {
+      css[`@keyframes ${name}`] = frames
+    })
+  }
+
+  return {
+    cssVars: Object.keys(cssVarsTheme).length
+      ? { theme: cssVarsTheme }
+      : undefined,
+    css: Object.keys(css).length ? css : undefined,
+  }
+}
+
 export async function GET(
   request: NextRequest,
   props: { params: Promise<{ username: string; component_slug: string }> },
@@ -167,83 +286,25 @@ export async function GET(
 
     const [tailwindConfig, globalCss] = await Promise.all(cssPromises)
 
-    const cssVars = globalCss ? extractCssVars(globalCss) : null
+    console.log("tailwindConfig", tailwindConfig)
+    // console.log("globalCss", globalCss)
+
+    const cssVarsGlobal = globalCss ? extractCssVars(globalCss) : null
 
     const tailwindConfigObject = tailwindConfig
-      ? (() => {
-          try {
-            // First get the whole config object
-            const configMatch = tailwindConfig.match(
-              /module\.exports\s*=\s*({[\s\S]*})/,
-            )
-            if (!configMatch?.[1]) {
-              return {}
-            }
-
-            // First clean up the config string
-            const cleanConfig = configMatch[1]
-              .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "") // Remove comments
-              .replace(/(\w+):/g, '"$1":') // Add quotes to keys
-              .replace(/'/g, '"') // Normalize quotes
-
-            // First find the theme object
-            const themeMatch = cleanConfig.match(
-              /"theme"\s*:\s*({[^}]*(?:}[^}]*)*})/,
-            )
-            if (!themeMatch?.[1]) {
-              return {}
-            }
-
-            // Then find the extend object within theme
-            const extendMatch = themeMatch[1].match(
-              /"extend"\s*:\s*({[^}]*(?:}[^}]*)*})[^}]*$/,
-            )
-            if (!extendMatch?.[1]) {
-              return {}
-            }
-
-            let cleanThemeExtend = extendMatch[1]
-              .replace(/\s+/g, " ") // Normalize whitespace
-              .replace(/,\s*,/g, ",") // Remove double commas
-              .replace(/,\s*}/g, "}") // Remove trailing commas before closing braces
-              .replace(/}\s*,?\s*"plugins"[\s\S]*$/, "}") // Remove everything after the extend object
-              .replace(/}\s*}/g, "}") // Remove whitespace between closing braces
-              .replace(/}(?!}|$)/g, "},") // Add commas between objects where missing
-              .replace(/,+/g, ",") // Remove any remaining multiple commas
-              // Handle template literals with data URLs
-              .replace(/`([^`]*)`/g, function (match, p1) {
-                return JSON.stringify(p1)
-              })
-              // Quote unquoted property names, but skip already quoted ones
-              .replace(/([{,]\s*)(?!")([a-zA-Z0-9-]+):/g, '$1"$2":')
-              // Remove any remaining trailing commas
-              .replace(/,(\s*})/g, "$1")
-              .trim()
-
-            try {
-              const parsed = JSON.parse(cleanThemeExtend)
-              return { theme: { extend: parsed } }
-            } catch (error) {
-              // If parsing fails, try a simpler approach
-              const simpleObject = {
-                backgroundImage: {
-                  "grid-pattern":
-                    tailwindConfig.match(
-                      /['"]grid-pattern['"]:\s*`([^`]*)`/,
-                    )?.[1] || "",
-                  "grid-pattern-light":
-                    tailwindConfig.match(
-                      /['"]grid-pattern-light['"]:\s*`([^`]*)`/,
-                    )?.[1] || "",
-                },
-              }
-              return { theme: { extend: simpleObject } }
-            }
-          } catch (error) {
-            throw error
-          }
-        })()
+      ? transformTailwindConfig(tailwindConfig)
       : {}
+
+    const { cssVars: cssVarsTheme, css } = generateCssData(tailwindConfigObject)
+
+    const mergedCssVars = (() => {
+      if (!cssVarsGlobal && !cssVarsTheme) return undefined
+      const base: any = cssVarsGlobal ? { ...cssVarsGlobal } : {}
+      if (cssVarsTheme) {
+        base.theme = { ...(base.theme || {}), ...cssVarsTheme.theme }
+      }
+      return base
+    })()
 
     const responseData: ComponentRegistryResponse = {
       name: component_slug,
@@ -251,7 +312,8 @@ export async function GET(
       dependencies: npmDependencies.length > 0 ? npmDependencies : undefined,
       registryDependencies,
       files,
-      ...(cssVars ? { cssVars } : {}),
+      ...(mergedCssVars ? { cssVars: mergedCssVars } : {}),
+      ...(css ? { css } : {}),
       ...(tailwindConfigObject
         ? { tailwind: { config: tailwindConfigObject as any } }
         : {}),
