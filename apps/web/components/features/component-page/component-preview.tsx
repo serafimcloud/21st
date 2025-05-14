@@ -73,6 +73,7 @@ export function ComponentPagePreview({
   compiledCss,
   showPaywall,
   accessState,
+  tailwind4IndexCss,
 }: {
   component: Component & { user: User } & { tags: Tag[] }
   code: string
@@ -83,6 +84,7 @@ export function ComponentPagePreview({
   registryDependencies: Record<string, string>
   npmDependenciesOfRegistryDependencies: Record<string, string>
   tailwindConfig?: string
+  tailwind4IndexCss?: string
   globalCss?: string
   compiledCss?: string | null
   canEdit: boolean
@@ -141,6 +143,7 @@ export function ComponentPagePreview({
   )
 
   const files = {
+    ...(tailwind4IndexCss ? { "index.css": tailwind4IndexCss } : []),
     ...registryDependencies,
     ...generateSandpackFiles({
       demoComponentNames,
@@ -196,6 +199,7 @@ export function ComponentPagePreview({
   const visibleFiles = [
     demoComponentFile,
     mainComponentFile,
+    ...(tailwind4IndexCss ? ["index.css"] : []),
     ...(tailwindConfig ? ["tailwind.config.js"] : []),
     ...(globalCss ? ["globals.css"] : []),
     ...Object.keys(registryDependencies).filter(

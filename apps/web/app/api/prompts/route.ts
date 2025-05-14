@@ -106,12 +106,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const [demoCode, componentCode, tailwindConfig, globalCss] =
+    const [demoCode, componentCode, tailwindConfig, globalCss, indexCss] =
       await Promise.all([
         fetchCode(demo.demo_code),
         fetchCode(demo.component.code),
         fetchCode(demo.component.tailwind_config_extension),
         fetchCode(demo.component.global_css_extension),
+        fetchCode(demo.component.index_css_url),
       ])
 
     const resolvedComponentRegistryDependencies =
@@ -199,6 +200,7 @@ export async function POST(request: NextRequest) {
       tailwindConfig: tailwindConfig,
       // TODO: aggregate global css from all dependencies
       globalCss: globalCss,
+      indexCss: indexCss,
       userAdditionalContext: additional_context,
       ...(ruleData && {
         promptRule: {

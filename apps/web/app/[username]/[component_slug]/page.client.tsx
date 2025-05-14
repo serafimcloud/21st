@@ -347,6 +347,7 @@ type ComponentPageProps = {
   globalCss?: string
   compiledCss?: string
   submission?: Submission
+  tailwind4IndexCss?: string
   hasPurchased?: boolean
 }
 
@@ -366,6 +367,7 @@ export default function ComponentPage({
   componentDemos = [],
   submission,
   hasPurchased = false,
+  tailwind4IndexCss,
 }: ComponentPageProps) {
   const [component, setComponent] = useState(initialComponent)
   const demo = initialDemo ?? null
@@ -1152,6 +1154,7 @@ export default function ComponentPage({
         <ComponentPagePreview
           key={theme}
           component={component}
+          tailwind4IndexCss={tailwind4IndexCss}
           code={code}
           demoCode={demoCode}
           dependencies={dependencies}

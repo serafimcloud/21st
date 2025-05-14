@@ -180,6 +180,9 @@ export default async function ComponentPageServer(props: {
       demo.compiled_css
         ? fetchFileTextContent(demo.compiled_css)
         : Promise.resolve({ data: null, error: null }),
+      component.index_css_url
+        ? fetchFileTextContent(component.index_css_url)
+        : Promise.resolve({ data: null, error: null }),
     ]
 
     const demoRegistryDeps = Array.isArray(
@@ -196,6 +199,7 @@ export default async function ComponentPageServer(props: {
       tailwindConfigResult,
       globalCssResult,
       compiledCssResult,
+      indexCssResult,
       registryDependenciesResult,
     ] = await Promise.all([
       ...componentAndDemoCodePromises,
@@ -257,6 +261,7 @@ export default async function ComponentPageServer(props: {
           component={component}
           demo={demo}
           componentDemos={componentDemos}
+          tailwind4IndexCss={indexCssResult?.data as string}
           code={codeResult?.data as string}
           demoCode={demoResult?.data as string}
           dependencies={dependencies}

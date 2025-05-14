@@ -131,6 +131,7 @@ export const getComponentInstallPrompt = ({
   globalCss,
   promptRule,
   userAdditionalContext,
+  indexCss,
 }: {
   promptType: PromptType
   codeFileName: string
@@ -144,6 +145,7 @@ export const getComponentInstallPrompt = ({
   globalCss?: string
   promptRule?: PromptRule
   userAdditionalContext?: string
+  indexCss?: string
 }) => {
   const componentFileName = codeFileName.split("/").slice(-1)[0]
   const componentDemoFileName = demoCodeFileName.split("/").slice(-1)[0]
@@ -433,6 +435,18 @@ export const getComponentInstallPrompt = ({
         Extend existing tailwind.config.js with this code:
         \`\`\`js
         ${tailwindConfig}
+        \`\`\`
+      ` +
+      "\n"
+  }
+
+  if (indexCss) {
+    prompt +=
+      "\n" +
+      endent`
+        Extend existing Tailwind 4 index.css with this code (or if project uses Tailwind 3, extend tailwind.config.js or globals.css):
+        \`\`\`css
+        ${indexCss}
         \`\`\`
       ` +
       "\n"
