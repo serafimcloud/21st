@@ -833,20 +833,22 @@ export default function ComponentPage({
                           ))}
                         </CommandGroup>
                       </CommandList>
-                      <div className="border-t">
-                        <CommandGroup>
-                          <CommandItem
-                            onSelect={() =>
-                              router.push(
-                                `/publish/demo?componentId=${component.id}`,
-                              )
-                            }
-                          >
-                            <Plus size={16} className="mr-2" />
-                            Add new demo
-                          </CommandItem>
-                        </CommandGroup>
-                      </div>
+                      {!component.sandbox_id && (
+                        <div className="border-t">
+                          <CommandGroup>
+                            <CommandItem
+                              onSelect={() =>
+                                router.push(
+                                  `/publish/demo?componentId=${component.id}`,
+                                )
+                              }
+                            >
+                              <Plus size={16} className="mr-2" />
+                              Add new demo
+                            </CommandItem>
+                          </CommandGroup>
+                        </div>
+                      )}
                     </div>
                   </Command>
                 </PopoverContent>
