@@ -213,6 +213,23 @@ export function LeaderboardClient({
           </p>
         </div>
 
+        {/* Notice about pause after Week 3 */}
+        {currentRound.week_number === 3 && (
+          <div className="space-y-2">
+            <div className="rounded-lg border border-border p-4 bg-muted/20">
+              <div className="flex items-center gap-2 font-medium mb-2">
+                <span>⏸️</span>
+                <span>Important Notice</span>
+              </div>
+              <p className="text-sm">
+                After Week 3, we'll be taking a short pause to evaluate the
+                contest format and gather community feedback. Stay tuned for
+                announcements about the next phase of 21st.dev contests!
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="font-medium">Leaderboard</h2>

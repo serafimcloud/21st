@@ -16,6 +16,7 @@ import {
   LifeBuoy,
   Settings,
   Bug,
+  Mail,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -116,7 +117,11 @@ function ShortcutsList() {
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
       <ExternalLink href="https://discord.gg/Qx4rFunHfm" icon={LifeBuoy}>
-        Get Help
+        Community Support
+      </ExternalLink>
+
+      <ExternalLink href="mailto:support@21st.dev" icon={Mail}>
+        Support Email
       </ExternalLink>
 
       <ExternalLink

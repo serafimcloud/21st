@@ -52,12 +52,6 @@ export function Footer({ className, isOpenSource = true }: FooterProps) {
               Our Story
             </Link>
             <Link
-              href="/api-access"
-              className="text-sm text-muted-foreground hover:underline underline-offset-4"
-            >
-              API
-            </Link>
-            <Link
               href="https://discord.gg/Qx4rFunHfm"
               target="_blank"
               className="text-sm text-muted-foreground hover:underline underline-offset-4"

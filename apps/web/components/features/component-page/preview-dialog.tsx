@@ -92,6 +92,7 @@ export function ComponentPreviewDialog({
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light")
   const [isLoading, setIsLoading] = useState(true)
   const [isPromptLoading, setIsPromptLoading] = useState(false)
+  const [isOpening, setIsOpening] = useState(false)
   const [showUnlockDialog, setShowUnlockDialog] = useState(false)
   const accessState = useComponentAccess(demo.component, hasPurchased)
 
@@ -352,6 +353,7 @@ export function ComponentPreviewDialog({
   }
 
   const handleOpenComponentPage = () => {
+    setIsOpening(true)
     const componentUrl = `/${demo.component.user.display_username || demo.component.user.username}/${demo.component.component_slug}/${demo.demo_slug || "default"}`
     window.location.href = componentUrl
   }
@@ -564,11 +566,21 @@ export function ComponentPreviewDialog({
         onClick={handleOpenComponentPage}
         className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70"
         autoFocus
+        disabled={isOpening}
       >
-        <span>Open component</span>
-        <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100 flex">
-          <Icons.enter className="h-2.5 w-2.5" />
-        </kbd>
+        {isOpening ? (
+          <div className="flex items-center gap-2">
+            <Spinner size={16} color="#ffffff" />
+            <span>Opening...</span>
+          </div>
+        ) : (
+          <>
+            <span>Open component</span>
+            <kbd className="pointer-events-none h-5 select-none items-center gap-1 rounded border-muted-foreground/40 bg-muted-foreground/20 px-1.5 ml-1.5 font-sans text-[11px] text-kbd leading-none opacity-100 flex">
+              <Icons.enter className="h-2.5 w-2.5" />
+            </kbd>
+          </>
+        )}
       </Button>
     </>
   )
@@ -747,7 +759,14 @@ export function ComponentPreviewDialog({
                     Share component
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleOpenComponentPage}>
-                    Open component page
+                    {isOpening ? (
+                      <div className="flex items-center gap-2">
+                        <Spinner size={16} color="#ffffff" />
+                        <span>Opening...</span>
+                      </div>
+                    ) : (
+                      "Open component page"
+                    )}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
