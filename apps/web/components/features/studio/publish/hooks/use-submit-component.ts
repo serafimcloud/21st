@@ -282,13 +282,23 @@ export const useSubmitComponent = () => {
 
     console.log("demo", demo)
 
-    const generateIndexCss = (registryJson: string) => {
+    const generateIndexCss = (registryJson: string): string | undefined => {
       try {
         const reg = JSON.parse(registryJson)
         const { cssVars = {}, css = {} } = reg
         const themeVars: Record<string, string> = cssVars.theme ?? {}
         const lightVars: Record<string, string> = cssVars.light ?? {}
         const darkVars: Record<string, string> = cssVars.dark ?? {}
+
+        const hasCustomVars =
+          Object.keys(themeVars).length > 0 ||
+          Object.keys(lightVars).length > 0 ||
+          Object.keys(darkVars).length > 0
+        const hasCustomCss = Object.keys(css).length > 0
+
+        if (!hasCustomVars && !hasCustomCss) {
+          return undefined
+        }
 
         const lines: string[] = []
         lines.push('@import "tailwindcss";')
@@ -340,12 +350,14 @@ export const useSubmitComponent = () => {
         return lines.join("\n")
       } catch (e) {
         console.error("Failed to generate index.css", e)
-        return ""
+        return undefined
       }
     }
 
-    const indexCssContent = generateIndexCss(state.componentRegistryJSON)
-    const hasIndexCss = indexCssContent.trim().length > 0
+    const indexCssContent: string | undefined = generateIndexCss(
+      state.componentRegistryJSON,
+    )
+    const hasIndexCss = typeof indexCssContent === "string"
 
     const [
       codeUrl,
