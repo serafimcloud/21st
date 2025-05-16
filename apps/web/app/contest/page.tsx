@@ -310,12 +310,34 @@ export default async function Page() {
                   </TableBody>
                 </Table>
               </div>
-              <p className="text-base">
-                A new three-week roadmap will be announced on the Monday of Week{" "}
-                {safeRounds.length > 0 &&
-                safeRounds[safeRounds.length - 1]?.week_number
-                  ? safeRounds[safeRounds.length - 1]?.week_number
-                  : "..."}
+            </section>
+
+            <div className="h-px bg-border" />
+
+            <section className="space-y-4">
+              <h2 className="font-medium flex items-center gap-2">
+                ⏸️ Planned Pause After Week 3
+              </h2>
+              <div className="rounded-lg border p-4 bg-muted/20">
+                <p className="text-base leading-7">
+                  After Week 3, we'll be taking a short pause to evaluate the
+                  contest format and gather community feedback. During this
+                  time, we'll be planning improvements and considering new
+                  directions for future contests. Stay tuned for announcements
+                  about the next phase of 21st.dev contests!
+                </p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Have ideas for how we should evolve the contests? Share your
+                thoughts in our{" "}
+                <a
+                  href="https://discord.gg/Qx4rFunHfm"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Discord community
+                </a>
                 .
               </p>
             </section>
