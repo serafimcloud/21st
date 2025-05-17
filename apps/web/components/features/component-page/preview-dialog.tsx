@@ -14,8 +14,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
@@ -34,7 +32,6 @@ import {
   trackPageProperties,
 } from "@/lib/amplitude"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import { promptOptions } from "@/lib/prompts"
 import { useHasUserBookmarkedDemo } from "@/lib/queries"
 import { cn } from "@/lib/utils"
 import {
@@ -48,7 +45,6 @@ import { useAtom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 import {
   ArrowLeft,
-  ChevronDown,
   Copy,
   Lock,
   Maximize,
@@ -64,7 +60,7 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { PayWall } from "./pay-wall"
 
-const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
+const selectedPromptTypeAtom = atomWithStorage<PromptType>(
   "previewDialogSelectedPromptType",
   PROMPT_TYPES.EXTENDED,
 )
@@ -194,29 +190,6 @@ export function ComponentPreviewDialog({
   const handlePromptAction = async () => {
     if (accessState !== "UNLOCKED") {
       setShowUnlockDialog(true)
-      return
-    }
-
-    if (selectedPromptType === "v0-open") {
-      const formattedPrompt = encodeURIComponent(demo.component.name)
-      window.open(`https://v0.dev/?q=${formattedPrompt}`, "_blank")
-
-      trackEvent(AMPLITUDE_EVENTS.COPY_AI_PROMPT, {
-        componentId: demo.component.id,
-        componentName: demo.component.name,
-        promptType: selectedPromptType,
-        action: "open",
-        destination: "v0.dev",
-      })
-
-      if (capture) {
-        capture(
-          demo.component.id,
-          AnalyticsActivityType.COMPONENT_PROMPT_COPY,
-          user?.id,
-        )
-      }
-
       return
     }
 
@@ -376,8 +349,6 @@ export function ComponentPreviewDialog({
           variant="ghost"
           className={cn(
             "focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70",
-            // Only add rounded-none if not a single unlock button
-            !(accessState !== "UNLOCKED") && "first:rounded-s-lg rounded-none",
           )}
           disabled={isPromptLoading}
         >
@@ -394,13 +365,6 @@ export function ComponentPreviewDialog({
                     <Spinner size={16} />
                     <span>Generating...</span>
                   </>
-                ) : selectedPromptType === "v0-open" ? (
-                  <>
-                    <span className="mr-2">Open in</span>
-                    <div className="flex items-center justify-center w-[18px] h-[18px]">
-                      <Icons.v0Logo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
-                    </div>
-                  </>
                 ) : (
                   <>
                     <Copy size={16} />
@@ -414,85 +378,13 @@ export function ComponentPreviewDialog({
                 ? "Unlock component"
                 : isPromptLoading
                   ? "Generating prompt..."
-                  : selectedPromptType === "v0-open"
-                    ? "Open in v0"
-                    : "Copy prompt"}
+                  : "Copy prompt"}
               <kbd className="pointer-events-none h-5 text-muted-foreground select-none items-center gap-1 rounded border bg-muted px-1.5 opacity-100 flex text-[11px] leading-none font-sans">
                 ⌘X
               </kbd>
             </TooltipContent>
           </Tooltip>
         </Button>
-        {accessState === "UNLOCKED" && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                className="rounded-none shadow-none last:rounded-e-lg focus-visible:z-10"
-                size="icon"
-                variant="ghost"
-              >
-                <ChevronDown size={16} strokeWidth={2} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-64"
-              side="bottom"
-              sideOffset={4}
-              align="end"
-            >
-              <DropdownMenuRadioGroup
-                value={selectedPromptType}
-                onValueChange={(value) =>
-                  setSelectedPromptType(value as PromptType | "v0-open")
-                }
-              >
-                {(() => {
-                  const options = []
-
-                  const copyOption = promptOptions.find(
-                    (opt) =>
-                      opt.type === "option" && opt.id === PROMPT_TYPES.EXTENDED,
-                  )
-                  if (copyOption)
-                    options.push({
-                      ...copyOption,
-                      label: "Copy prompt",
-                    })
-
-                  const v0Option = promptOptions.find(
-                    (opt) => opt.id === "v0-open",
-                  )
-                  if (v0Option) options.push(v0Option)
-
-                  return options.map((option) => {
-                    if (option.type === "separator") return null
-                    return (
-                      <DropdownMenuRadioItem
-                        key={option.id}
-                        value={option.id}
-                        className="items-start [&>span]:pt-1"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="flex items-center justify-center w-[22px] h-[22px]">
-                            {option.icon}
-                          </div>
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-medium">
-                              {option.label}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {option.description}
-                            </span>
-                          </div>
-                        </div>
-                      </DropdownMenuRadioItem>
-                    )
-                  })
-                })()}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
       </div>
 
       <Tooltip>
@@ -747,9 +639,7 @@ export function ComponentPreviewDialog({
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem onClick={handlePromptAction}>
-                      {selectedPromptType === "v0-open"
-                        ? "Open in v0"
-                        : "Copy prompt"}
+                      "Copy prompt"
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={toggleTheme}>

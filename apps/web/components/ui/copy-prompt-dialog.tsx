@@ -1,11 +1,15 @@
 "use client"
 
-import React, { useId, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog"
-import { PromptType } from "@/types/global"
-import { promptOptions, type PromptOptionBase } from "@/lib/prompts"
+import { Icons } from "@/components/icons"
 import { usePromptRules } from "@/hooks/use-prompt-rules"
-import { Textarea } from "./textarea"
+import { promptOptions, type PromptOptionBase } from "@/lib/prompts"
+import { PromptType } from "@/types/global"
+import { Loader2, Plus } from "lucide-react"
+import Link from "next/link"
+import React, { useEffect, useId } from "react"
+import { toast } from "sonner"
+import { Button } from "./button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog"
 import { Label } from "./label"
 import {
   Select,
@@ -16,17 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./select"
-import { Button } from "./button"
-import { Loader2, Plus } from "lucide-react"
-import Link from "next/link"
-import { Icons } from "@/components/icons"
-import { toast } from "sonner"
+import { Textarea } from "./textarea"
 
 interface CopyPromptDialogProps {
   isOpen: boolean
   onClose: () => void
-  selectedPromptType: PromptType | "v0-open"
-  onPromptTypeChange: (value: PromptType | "v0-open") => void
+  selectedPromptType: PromptType
+  onPromptTypeChange: (value: PromptType) => void
   onCopyPrompt: (ruleId?: number, context?: string) => void
   demoId: string
 }
@@ -93,12 +93,10 @@ export function CopyPromptDialog({
     onClose()
   }
 
-  // Filter out v0-open from options and ensure they are PromptOptionBase
   const promptTypeOptions = React.useMemo(
     () =>
       promptOptions.filter(
-        (option): option is PromptOptionBase =>
-          option.type === "option" && option.id !== "v0-open",
+        (option): option is PromptOptionBase => option.type === "option",
       ),
     [],
   )

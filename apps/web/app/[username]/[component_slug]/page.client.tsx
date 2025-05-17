@@ -16,11 +16,7 @@ import {
   trackPageProperties,
 } from "@/lib/amplitude"
 import { useClerkSupabaseClient } from "@/lib/clerk"
-import {
-  formatV0Prompt,
-  promptOptions,
-  type PromptOptionBase,
-} from "@/lib/prompts"
+import { promptOptions, type PromptOptionBase } from "@/lib/prompts"
 import {
   addTagsToDemo,
   useHasUserBookmarkedDemo,
@@ -42,13 +38,6 @@ import { Icons } from "@/components/icons"
 import { BookmarkButton } from "@/components/ui/bookmark-button"
 import { Button } from "@/components/ui/button"
 import { CopyPromptDialog } from "@/components/ui/copy-prompt-dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Tooltip,
   TooltipContent,
@@ -92,7 +81,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 export const isShowCodeAtom = atom(true)
-const selectedPromptTypeAtom = atomWithStorage<PromptType | "v0-open">(
+const selectedPromptTypeAtom = atomWithStorage<PromptType>(
   "selectedPromptType",
   PROMPT_TYPES.EXTENDED,
 )
@@ -568,26 +557,6 @@ export default function ComponentPage({
   }
 
   const handlePromptAction = async () => {
-    if (selectedPromptType === "v0-open") {
-      const formattedPrompt = formatV0Prompt(component.name, code)
-      const encodedPrompt = encodeURIComponent(formattedPrompt)
-      window.open(`https://v0.dev/?q=${encodedPrompt}`, "_blank")
-
-      trackEvent(AMPLITUDE_EVENTS.COPY_AI_PROMPT, {
-        componentId: component.id,
-        componentName: component.name,
-        promptType: selectedPromptType,
-        action: "open",
-        destination: "v0.dev",
-      })
-      capture(
-        component.id,
-        AnalyticsActivityType.COMPONENT_PROMPT_COPY,
-        user?.id,
-      )
-      return
-    }
-
     // Open dialog for non-v0 prompt types
     setIsCopyPromptDialogOpen(true)
   }
@@ -1042,19 +1011,12 @@ export default function ComponentPage({
             <div className="inline-flex -space-x-px divide-x divide-primary-foreground/30 rounded-lg shadow-sm">
               <Button
                 onClick={!showPaywall ? handlePromptAction : undefined}
-                className="rounded-none shadow-none first:rounded-s-lg focus-visible:z-10"
+                className="shadow-none focus-visible:z-10"
                 disabled={showPaywall}
                 variant={showPaywall ? "secondary" : "default"}
               >
                 {showPaywall ? (
                   "Unlock to copy prompt"
-                ) : selectedPromptType === "v0-open" ? (
-                  <>
-                    <span className="mr-2">Open in</span>
-                    <div className="flex items-center justify-center w-[18px] h-[18px]">
-                      <Icons.v0Logo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
-                    </div>
-                  </>
                 ) : (
                   <div className="flex items-center gap-2">
                     <div className="flex items-center justify-center w-[22px] h-[22px]">
@@ -1070,84 +1032,6 @@ export default function ComponentPage({
                   </div>
                 )}
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    className="rounded-none shadow-none last:rounded-e-lg focus-visible:z-10"
-                    size="icon"
-                    disabled={showPaywall}
-                    variant={showPaywall ? "secondary" : "default"}
-                  >
-                    <ChevronDown size={16} strokeWidth={2} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-64"
-                  side="bottom"
-                  sideOffset={4}
-                  align="end"
-                >
-                  <DropdownMenuRadioGroup
-                    value={selectedPromptType}
-                    onValueChange={(value) =>
-                      setSelectedPromptType(value as PromptType | "v0-open")
-                    }
-                    key={selectedPromptType}
-                  >
-                    {(() => {
-                      const options = []
-
-                      // Add Copy prompt option
-                      const copyOption = promptOptions.find(
-                        (opt) =>
-                          opt.type === "option" &&
-                          opt.id === PROMPT_TYPES.EXTENDED,
-                      )
-                      if (copyOption)
-                        options.push({
-                          ...copyOption,
-                          label: "Copy prompt", // Override label for EXTENDED type
-                        })
-
-                      // Always add v0-open option
-                      const v0Option = promptOptions.find(
-                        (opt) => opt.id === "v0-open",
-                      )
-                      if (v0Option) options.push(v0Option)
-
-                      return options.map((option) => {
-                        if (option.type === "separator") return null
-                        return (
-                          <DropdownMenuRadioItem
-                            key={option.id}
-                            value={option.id}
-                            className="items-start [&>span]:pt-1"
-                            onSelect={() => {
-                              if (option.id === PROMPT_TYPES.EXTENDED) {
-                                setIsCopyPromptDialogOpen(true)
-                              }
-                            }}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="flex items-center justify-center w-[22px] h-[22px]">
-                                {option.icon}
-                              </div>
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-sm font-medium">
-                                  {option.label}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {option.description}
-                                </span>
-                              </div>
-                            </div>
-                          </DropdownMenuRadioItem>
-                        )
-                      })
-                    })()}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
         </div>
