@@ -184,18 +184,18 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
         targetSort: "recommended",
       },
       // Only add leaderboard if there are items
-      ...(randomizedLeaderboardItems && randomizedLeaderboardItems.length > 0
-        ? [
-            {
-              id: "leaderboard",
-              title: "Weekly Leaderboard",
-              items: randomizedLeaderboardItems,
-              isLoading: leaderboardDemosQuery.isLoading,
-              viewAllUrl: "/contest/leaderboard",
-              isLeaderboard: true,
-            },
-          ]
-        : []),
+      // ...(randomizedLeaderboardItems && randomizedLeaderboardItems.length > 0
+      //   ? [
+      //       {
+      //         id: "leaderboard",
+      //         title: "Weekly Leaderboard",
+      //         items: randomizedLeaderboardItems,
+      //         isLoading: leaderboardDemosQuery.isLoading,
+      //         viewAllUrl: "/contest/leaderboard",
+      //         isLeaderboard: true,
+      //       },
+      //     ]
+      //   : []),
       {
         id: "popular",
         title: "Popular",
