@@ -1,7 +1,14 @@
 import { Button } from "@/components/ui/button"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import { useState, useRef, useEffect } from "react"
-import { Loader2, CheckIcon, XIcon, ArrowLeftIcon } from "lucide-react"
+import {
+  Loader2,
+  CheckIcon,
+  XIcon,
+  ArrowLeftIcon,
+  BugIcon,
+  FlaskConical,
+} from "lucide-react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Logo } from "@/components/ui/logo"
@@ -34,6 +41,7 @@ interface SandboxHeaderProps {
   hideNext?: boolean
   isNextLoading?: boolean
   isBackLoading?: boolean
+  showBetaBadge?: boolean
 }
 
 export function SandboxHeader({
@@ -53,6 +61,7 @@ export function SandboxHeader({
   hideNext = false,
   isNextLoading = false,
   isBackLoading = false,
+  showBetaBadge = true,
 }: SandboxHeaderProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [name, setName] = useState(sandboxName)
@@ -264,7 +273,26 @@ export function SandboxHeader({
             )}
           </div>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+
+        <div className="ml-auto flex items-center gap-4">
+          {showBetaBadge && (
+            <div className="flex h-full h-[32px] items-center gap-2 p-1.5 pl-2 pr-3 bg-blue-50 border border-blue-200 rounded-md text-xs w-fit">
+              <FlaskConical className="h-3.5 w-3.5 text-blue-500" />
+              <span className="font-medium text-blue-700">Beta</span>
+              <span className="text-blue-600">
+                Encountered an issue?{" "}
+                <a
+                  href="https://discord.gg/Qx4rFunHfm"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline underline-offset-2 hover:text-blue-800 transition-colors"
+                >
+                  Report it on Discord
+                </a>
+              </span>
+            </div>
+          )}
+
           {customBackLabel && (
             <Button
               variant="outline"
