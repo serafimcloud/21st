@@ -31,10 +31,10 @@ export function VersionSelectorDialog({
 }: VersionSelectorDialogProps) {
   const router = useRouter()
 
-  const handleStableVersion = () => {
-    router.push("/publish")
-    onOpenChange(false)
-  }
+  // const handleStableVersion = () => {
+  //   router.push("/publish")
+  //   onOpenChange(false)
+  // }
 
   const handleBetaVersion = async () => {
     if (onCreateSandbox) {
@@ -62,19 +62,42 @@ export function VersionSelectorDialog({
     >
       <DialogContent
         hideCloseButton
-        className="sm:max-w-[650px] bg-background p-0 rounded-xl shadow-lg border-none"
+        className="sm:max-w-[400px] bg-background p-0 rounded-xl shadow-lg border-none"
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
-          {/* Beta Version - Dark Card */}
-          <div className="group p-1 pr-0 pb-4 bg-muted text-foreground rounded-l-xl">
+        <div className="grid grid-cols-1 gap-0">
+          {/* New Flow Card */}
+          <div className="group p-1 pb-4 bg-muted text-foreground rounded-xl">
             <div className="flex flex-col h-full">
-              <div className="flex-grow rounded-l-lg p-4 mb-4 border border-r-transparent border-muted-foreground/20">
+              <div className="flex-grow rounded-lg p-4 mb-4 border border-muted-foreground/20">
                 <div className="flex flex-col items-start gap-2 mb-4 pl-2">
                   <FlaskRound className="h-7 w-7 text-foreground" />
-                  <h3 className="font-semibold">Beta Version</h3>
+                  <h3 className="font-semibold">Publish 2.0 (Beta)</h3>
                 </div>
 
                 <ul className="space-y-0 divide-y divide-muted-foreground/20">
+                  <li className="flex items-center gap-2 py-2 px-2">
+                    <Check className="h-4 w-4 text-foreground/70 shrink-0" />
+                    <span className="text-sm">
+                      Dedicated sandbox per project
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2 py-2 px-2">
+                    <Check className="h-4 w-4 text-foreground/70 shrink-0" />
+                    <span className="text-sm">
+                      Add components from 21st registry
+                    </span>
+                  </li>
+
+                  <li className="flex items-center gap-2 py-2 px-2">
+                    <Check className="h-4 w-4 text-foreground/70 shrink-0" />
+                    <span className="text-sm">
+                      Developer-friendly experience
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2 py-2 px-2">
+                    <Check className="h-4 w-4 text-foreground/70 shrink-0" />
+                    <span className="text-sm">Built-in code editor</span>
+                  </li>
                   <li className="flex items-center gap-2 py-2 px-2">
                     <Check className="h-4 w-4 text-foreground/70 shrink-0" />
                     <span className="text-sm">Tailwind 4 support</span>
@@ -83,24 +106,14 @@ export function VersionSelectorDialog({
                     <Check className="h-4 w-4 text-foreground/70 shrink-0" />
                     <span className="text-sm">Draft mode</span>
                   </li>
-                  <li className="flex items-center gap-2 py-2 px-2">
-                    <Check className="h-4 w-4 text-foreground/70 shrink-0" />
-                    <span className="text-sm">Developer-friendly</span>
-                  </li>
                   <li className="flex items-start gap-2 py-2 px-2 text-amber-500">
                     <span className="shrink-0 mt-[-3] mx-1">•</span>
                     <span className="text-sm">May contain minor bugs</span>
                   </li>
-                  <li className="flex items-start gap-2 py-2 px-2 text-amber-500">
-                    <span className="shrink-0 mt-[-3] mx-1">•</span>
-                    <span className="text-sm">
-                      Doesn't support component dependencies
-                    </span>
-                  </li>
                 </ul>
               </div>
 
-              <div className="mt-auto pl-2 pr-3">
+              <div className="mt-auto px-3">
                 <Button
                   onClick={handleBetaVersion}
                   disabled={isCreating}
@@ -115,56 +128,8 @@ export function VersionSelectorDialog({
                       <span>Creating...</span>
                     </div>
                   ) : (
-                    <>Continue</>
+                    <>Create Component</>
                   )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Stable Version - Light Card */}
-          <div className="group p-1 pl-0 pb-4 bg-background text-foreground rounded-r-xl">
-            <div className="flex flex-col h-full">
-              <div className="flex-grow rounded-r-lg p-4 mb-4 border border-l-transparent border-foreground/10">
-                <div className="flex flex-col items-start gap-2 mb-4 pl-2">
-                  <Shield className="h-7 w-7 text-foreground" />
-                  <h3 className="font-semibold">Stable Version</h3>
-                </div>
-
-                <ul className="space-y-0 divide-y divide-foreground/10">
-                  <li className="flex items-center gap-2 py-2 px-2">
-                    <Check className="h-4 w-4 text-foreground/70 shrink-0" />
-                    <span className="text-sm">
-                      Supports component dependencies
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-2 py-2 px-2">
-                    <Check className="h-4 w-4 text-foreground/70 shrink-0" />
-                    <span className="text-sm">Support multiple demos</span>
-                  </li>
-                  <li className="flex items-center gap-2 py-2 px-2">
-                    <Check className="h-4 w-4 text-foreground/70 shrink-0" />
-                    <span className="text-sm">Non-developer friendly</span>
-                  </li>
-                  <li className="flex items-center gap-2 py-2 px-2 text-amber-500">
-                    <span className="shrink-0 mt-[-3] mx-1">•</span>
-                    <span className="text-sm">No Tailwind 4 support</span>
-                  </li>
-                  <li className="flex items-center gap-2 py-2 px-2 text-amber-500">
-                    <span className="shrink-0 mt-[-3] mx-1">•</span>
-                    <span className="text-sm">No draft mode</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="mt-auto pl-3 pr-2">
-                <Button
-                  onClick={handleStableVersion}
-                  variant="outline"
-                  className="w-full whitespace-nowrap bg-primary/10 text-primary hover:bg-primary/20 backdrop-blur-sm border border-primary/20"
-                  disabled={isCreating}
-                >
-                  <span>Continue</span>
                 </Button>
               </div>
             </div>
