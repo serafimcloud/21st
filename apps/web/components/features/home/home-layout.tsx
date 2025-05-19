@@ -183,6 +183,14 @@ export function HomeTabLayout({ sortBy = "recommended" }: HomeTabLayoutProps) {
         targetTab: "components",
         targetSort: "recommended",
       },
+      {
+        id: "newest",
+        title: "Newest",
+        items: latestDemosQuery.data || [],
+        isLoading: latestDemosQuery.isLoading,
+        targetTab: "components",
+        targetSort: "date",
+      },
       // Only add leaderboard if there are items
       // ...(randomizedLeaderboardItems && randomizedLeaderboardItems.length > 0
       //   ? [
