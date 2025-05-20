@@ -1,17 +1,17 @@
 "use client"
 
-import React, { useRef, useState, useEffect } from "react"
-import { ChevronLeft, ChevronRight, Link } from "lucide-react"
-import { cn, shouldHideLeaderboardRankings } from "@/lib/utils"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import { ComponentCard } from "@/components/features/list-card/card"
-import { DemoWithComponent } from "@/types/global"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { ComponentCardSkeleton } from "@/components/ui/skeletons"
 import { ComponentPreviewDialog } from "@/components/features/component-page/preview-dialog"
+import { ComponentCard } from "@/components/features/list-card/card"
+import { Button } from "@/components/ui/button"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { ComponentCardSkeleton } from "@/components/ui/skeletons"
+import { cn, shouldHideLeaderboardRankings } from "@/lib/utils"
+import { DemoWithComponent } from "@/types/global"
 import { useUser } from "@clerk/nextjs"
+import { ChevronLeft, ChevronRight, Link } from "lucide-react"
+import { useRouter } from "next/navigation"
+import React, { useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 interface HorizontalSliderProps {
   title: string
@@ -24,6 +24,9 @@ interface HorizontalSliderProps {
   totalCount?: number
   isLeaderboard?: boolean
   onVote?: (demoId: number) => Promise<void>
+  hideUser?: boolean
+  leftSide?: React.ReactNode
+  rightSide?: React.ReactNode
 }
 
 export function HorizontalSlider({
@@ -37,6 +40,9 @@ export function HorizontalSlider({
   totalCount,
   isLeaderboard = false,
   onVote,
+  hideUser,
+  rightSide,
+  leftSide,
 }: HorizontalSliderProps) {
   const router = useRouter()
   const { user } = useUser()
@@ -142,7 +148,12 @@ export function HorizontalSlider({
   return (
     <div className={cn("flex flex-col space-y-4", className)}>
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">{title}</h2>
+        {leftSide ? (
+          <div>{leftSide}</div>
+        ) : (
+          <h2 className="font-semibold">{title}</h2>
+        )}
+        <div>{rightSide}</div>
         {(viewAllLink || onViewAll || viewAllUrl) && (
           <Button
             variant="link"
@@ -209,6 +220,7 @@ export function HorizontalSlider({
                 >
                   <ComponentCard
                     demo={item}
+                    hideUser={hideUser}
                     onClick={() => handleCardClick(item)}
                     onCtrlClick={(url) => {
                       window.open(url, "_blank")

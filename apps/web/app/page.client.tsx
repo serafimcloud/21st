@@ -1,27 +1,30 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
-import { useAtom } from "jotai"
-import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
+import { useAtom } from "jotai"
+import { AnimatePresence, motion } from "motion/react"
+import React, { useEffect, useState } from "react"
 
-import { SortOption } from "@/types/global"
-import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
-import { magicBannerVisibleAtom } from "@/components/features/magic/magic-banner"
-import { ComponentsList } from "@/components/ui/items-list"
+import { BoltBanner } from "@/components/features/bolt/bolt-banner"
+import { BundlesLayout } from "@/components/features/bundles/bundles-layout"
 import { CategoriesList } from "@/components/features/categories/category-list"
-import { ComponentsHeader } from "@/components/features/main-page/main-page-header"
-import { FilterChips } from "@/components/features/main-page/filter-chips"
+import { CollectionsContainer } from "@/components/features/collections/collections-list"
 import { DesignEngineersList } from "@/components/features/design-engineers/design-engineers-list"
+import { HomeTabLayout } from "@/components/features/home/home-layout"
+import {
+  MagicBanner,
+  magicBannerVisibleAtom,
+} from "@/components/features/magic/magic-banner"
+import { FilterChips } from "@/components/features/main-page/filter-chips"
+import { sidebarOpenAtom } from "@/components/features/main-page/main-layout"
+import { ComponentsHeader } from "@/components/features/main-page/main-page-header"
 import { ProList } from "@/components/features/pro/pro-list"
 import { TemplatesContainer } from "@/components/features/templates/templates-list"
-import { MagicBanner } from "@/components/features/magic/magic-banner"
-import { CollectionsContainer } from "@/components/features/collections/collections-list"
-import { HomeTabLayout } from "@/components/features/home/home-layout"
-import { useNavigation } from "@/hooks/use-navigation"
+import { ComponentsList } from "@/components/ui/items-list"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useNavigation } from "@/hooks/use-navigation"
 import type { AppSection } from "@/lib/atoms"
-import { BoltBanner } from "@/components/features/bolt/bolt-banner"
+import { SortOption } from "@/types/global"
 
 const MainContent = React.memo(function MainContent({
   activeTab,
@@ -66,6 +69,8 @@ const MainContent = React.memo(function MainContent({
             </motion.div>
           </>
         )
+      case "bundles":
+        return <BundlesLayout />
       case "authors":
         return <DesignEngineersList />
       case "pro":

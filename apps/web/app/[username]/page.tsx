@@ -1,11 +1,11 @@
-import { UserPageClient } from "./page.client"
+import { Footer } from "@/components/ui/footer"
+import { BASE_KEYWORDS, SITE_NAME, SITE_SLOGAN } from "@/lib/constants"
 import { getUserData } from "@/lib/queries"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
-import { redirect } from "next/navigation"
-import { Footer } from "@/components/ui/footer"
 import { unstable_cache } from "next/cache"
-import { SITE_NAME, SITE_SLOGAN, BASE_KEYWORDS } from "@/lib/constants"
+import { redirect } from "next/navigation"
+import { UserPageClient } from "./page.client"
 const getCachedUser = unstable_cache(
   async (username: string) => {
     const { data: user } = await getUserData(supabaseWithAdminAccess, username)
@@ -22,12 +22,10 @@ async function getUser(username: string) {
   return getCachedUser(username)
 }
 
-export const generateMetadata = async (
-  props: {
-    params: Promise<{ username: string }>
-  }
-) => {
-  const params = await props.params;
+export const generateMetadata = async (props: {
+  params: Promise<{ username: string }>
+}) => {
+  const params = await props.params
   const user = await getUser(params.username)
 
   if (!user) {
@@ -71,14 +69,12 @@ export const generateMetadata = async (
   }
 }
 
-export default async function UserProfile(
-  props: {
-    params: Promise<{ username: string }>
-    searchParams: Promise<{ tab?: string }>
-  }
-) {
-  const searchParams = await props.searchParams;
-  const params = await props.params;
+export default async function UserProfile(props: {
+  params: Promise<{ username: string }>
+  searchParams: Promise<{ tab?: string }>
+}) {
+  const searchParams = await props.searchParams
+  const params = await props.params
   if (!validateRouteParams(params)) {
     redirect("/")
   }
@@ -89,15 +85,12 @@ export default async function UserProfile(
     redirect("/")
   }
 
-  const initialTab =
-    searchParams.tab === "bookmarks" ? "bookmarks" : "components"
-
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex-1">
         <UserPageClient
           user={user}
-          initialTab={initialTab}
+          initialTab={searchParams.tab || "components"}
         />
       </div>
       <Footer />

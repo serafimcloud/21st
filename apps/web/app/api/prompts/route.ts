@@ -1,11 +1,13 @@
-import { createClient } from "@supabase/supabase-js"
-import { NextRequest, NextResponse } from "next/server"
+import { hasUserPurchasedDemo } from "@/lib/api/server/demos"
 import { getComponentInstallPrompt } from "@/lib/prompts"
-import { PromptType } from "@/types/global"
 import {
   resolveRegistryDependenciesV2,
   transformToFlatDependencyTree,
 } from "@/lib/registry"
+import { PromptType } from "@/types/global"
+import { auth } from "@clerk/nextjs/server"
+import { createClient } from "@supabase/supabase-js"
+import { NextRequest, NextResponse } from "next/server"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,6 +52,15 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { prompt_type, demo_id, rule_id, additional_context } = body
+    const { userId } = await auth()
+
+    const hasPurchased = await hasUserPurchasedDemo(userId, demo_id)
+    if (!hasPurchased) {
+      return NextResponse.json(
+        { error: "Component not purchased" },
+        { status: 403 },
+      )
+    }
 
     console.log("Received request:", {
       prompt_type,

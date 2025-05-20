@@ -1,22 +1,26 @@
 "use client"
 
-import Link from "next/link"
-import { useAtom } from "jotai"
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { UserBundlesList } from "@/components/features/user-page/user-bunldes-list"
+import { UserItemsList } from "@/components/features/user-page/user-items-list"
+import {
+  USER_COMPONENTS_TABS,
+  UserComponentsHeader,
+  UserComponentsTab,
+  userTabAtom,
+} from "@/components/features/user-page/user-page-header"
+import { Icons } from "@/components/icons"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/ui/header.client"
-import { Icons } from "@/components/icons"
 import { UserAvatar } from "@/components/ui/user-avatar"
-import { UserComponentsHeader } from "@/components/features/user-page/user-page-header"
-import { UserItemsList } from "@/components/features/user-page/user-items-list"
+import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
 import { appendQueryParam } from "@/lib/utils"
-import { Globe, SquareArrowOutUpRight } from "lucide-react"
-import { trackEvent } from "@/lib/amplitude"
-import { useEffect } from "react"
-import { AMPLITUDE_EVENTS } from "@/lib/amplitude"
-import { userTabAtom } from "@/components/features/user-page/user-page-header"
 import { User } from "@/types/global"
 import { useUser } from "@clerk/nextjs"
+import { useAtom } from "jotai"
+import { Globe, SquareArrowOutUpRight } from "lucide-react"
+import Link from "next/link"
+import { useEffect } from "react"
 
 const useProfileAnalytics = ({
   username,
@@ -35,7 +39,7 @@ const useProfileAnalytics = ({
 
 interface UserPageClientProps {
   user: User
-  initialTab: "components" | "demos" | "bookmarks"
+  initialTab: UserComponentsTab | string
 }
 
 export function UserPageClient({ user, initialTab }: UserPageClientProps) {
@@ -44,8 +48,13 @@ export function UserPageClient({ user, initialTab }: UserPageClientProps) {
   const isOwnProfile = currentUser?.id === user.id
 
   useEffect(() => {
-    setTab(initialTab)
-  }, [initialTab, setTab])
+    if (
+      initialTab &&
+      USER_COMPONENTS_TABS.includes(initialTab as UserComponentsTab)
+    ) {
+      setTab(initialTab as UserComponentsTab)
+    }
+  }, [initialTab])
 
   useProfileAnalytics({
     username: user.display_username || user.username || "",
@@ -166,17 +175,21 @@ export function UserPageClient({ user, initialTab }: UserPageClientProps) {
               )}
             </div>
           </div>
-          <div className="w-full md:w-[80%]">
+          <div className="w-full md:w-[80%] min-w-0">
             <UserComponentsHeader
               username={user.display_username || user.username || ""}
               userId={user.id}
               isOwnProfile={isOwnProfile}
             />
-            <UserItemsList
-              userId={user.id}
-              tab={tab || initialTab}
-              isOwnProfile={isOwnProfile}
-            />
+            {tab === "purchased_bundles" && isOwnProfile ? (
+              <UserBundlesList userId={user.id} />
+            ) : (
+              <UserItemsList
+                userId={user.id}
+                tab={tab || initialTab}
+                isOwnProfile={isOwnProfile}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -1,9 +1,10 @@
 /* eslint-disable no-unused-vars */
+import { PostgrestFilterBuilder } from "@supabase/postgrest-js"
 import { Database } from "./supabase"
 
 export type Component = Database["public"]["Tables"]["components"]["Row"]
-export type Demo = Database["public"]["Tables"]["demos"]["Row"]
 export type User = Database["public"]["Tables"]["users"]["Row"]
+export type Demo = Database["public"]["Tables"]["demos"]["Row"]
 export type Tag = Database["public"]["Tables"]["tags"]["Row"]
 export type Submission = Database["public"]["Tables"]["submissions"]["Row"]
 export type Category = {
@@ -245,3 +246,17 @@ export interface CollectionWithUser {
   components_count: number
   user_data: User
 }
+
+export type Bundle = Database["public"]["Tables"]["bundles"]["Row"]
+export type BundlePlan = Database["public"]["Tables"]["bundle_plans"]["Row"]
+export type BundlePurchase =
+  Database["public"]["Tables"]["bundle_purchases"]["Row"]
+export type BundlePlanType =
+  Database["public"]["Tables"]["bundle_plans"]["Row"]["type"]
+export type BundlePaymentStatus =
+  Database["public"]["Tables"]["bundle_purchases"]["Row"]["status"]
+export type BundlesSelectQuery = PostgrestFilterBuilder<
+  Database["public"],
+  Bundle,
+  Bundle[]
+>

@@ -1,11 +1,11 @@
+import { Button } from "@/components/ui/button"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useNavigation } from "@/hooks/use-navigation"
+import { cn } from "@/lib/utils"
 import { atom } from "jotai"
 import { ArrowUpDown } from "lucide-react"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useEffect, useRef, useState } from "react"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { useNavigation } from "@/hooks/use-navigation"
 
 import {
   Select,
@@ -15,9 +15,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+import type { MainTabType } from "@/lib/atoms"
 import type { SortOption } from "@/types/global"
 import { SORT_OPTIONS } from "@/types/global"
-import type { MainTabType } from "@/lib/atoms"
 
 export const sortByAtom = atom<SortOption>("recommended")
 
@@ -29,6 +29,7 @@ const tabLabels = {
   authors: "Design Engineers",
   pro: "Premium Stores",
   collections: "Collections",
+  bundles: "Bundles",
 } as const
 
 interface ComponentsHeaderProps {
@@ -40,6 +41,7 @@ interface ComponentsHeaderProps {
     | "pro"
     | "templates"
     | "collections"
+    | "bundles"
   onTabChange: (
     tab:
       | "home"
@@ -48,7 +50,8 @@ interface ComponentsHeaderProps {
       | "authors"
       | "pro"
       | "templates"
-      | "collections",
+      | "collections"
+      | "bundles",
   ) => void
 }
 
@@ -195,7 +198,7 @@ export function ComponentsHeader({
               <SelectTrigger className="border-0 bg-transparent font-medium text-md shadow-none focus:ring-0 pl-0">
                 <SelectValue placeholder={tabLabels[activeTab]} />
               </SelectTrigger>
-              <SelectContent 
+              <SelectContent
                 side="bottom"
                 align="start"
                 alignOffset={-10}

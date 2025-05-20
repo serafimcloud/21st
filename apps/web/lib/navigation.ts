@@ -1,13 +1,14 @@
 import {
-  Dock,
-  Wand2,
-  Layers,
-  Users,
-  Crown,
-  Component,
   Bookmark,
+  Component,
+  Crown,
+  Dock,
   Group,
   Home,
+  Layers,
+  Package,
+  Users,
+  Wand2,
 } from "lucide-react"
 
 export type MainNavigationItem = {
@@ -32,6 +33,11 @@ export const mainNavigationItems: MainNavigationItem[] = [
     title: "Components",
     value: "components",
     icon: Component,
+  },
+  {
+    title: "Bundles",
+    value: "bundles",
+    icon: Package,
   },
   {
     title: "Templates",
