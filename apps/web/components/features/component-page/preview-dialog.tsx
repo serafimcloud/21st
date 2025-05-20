@@ -548,7 +548,7 @@ export function ComponentPreviewDialog({
             <>
               {isLoading && <PreviewSkeleton />}
               <iframe
-                src={`${bundleUrl}?theme=${resolvedTheme}${
+                src={`${bundleUrl}?theme=${previewTheme}${
                   previewTheme === "dark" ? "&dark=true" : ""
                 }`}
                 className={cn("w-full h-full border-0", isLoading && "hidden")}
