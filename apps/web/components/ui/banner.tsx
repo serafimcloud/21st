@@ -8,7 +8,7 @@ const bannerVariants = cva("relative w-full", {
   variants: {
     variant: {
       default: "bg-background border border-border",
-      muted: "dark bg-muted",
+      muted: "bg-muted",
       border: "border-b border-border",
     },
     size: {

@@ -31,7 +31,7 @@ const MagicBannerContent = memo(function MagicBannerContent() {
         right: "0",
       }}
     >
-      <Banner variant="muted" className="dark text-foreground">
+      <Banner variant="muted" className="text-foreground">
         <div className="flex w-full gap-2 md:items-center">
           <div className="flex grow gap-3 md:items-center">
             <div
