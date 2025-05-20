@@ -8,7 +8,7 @@ import text from "./bolt-text.png"
 const BoltBannerContent = memo(function BoltBannerContent() {
   return (
     <a
-      href="https://bolt.new"
+      href="https://hackathon.dev"
       target="_blank"
       className="h-[110px] rounded-lg z-50 border-b border-border bg-muted transition-[left] duration-200 ease-in-out"
     >
