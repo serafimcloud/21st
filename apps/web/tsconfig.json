@@ -10,6 +10,7 @@
       }
     ],
     "strictNullChecks": true,
+    "noImplicitAny": false,
     "lib": ["es2023", "dom"]
   },
   "include": [
