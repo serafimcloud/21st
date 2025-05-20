@@ -5,6 +5,7 @@ import { useAtom } from "jotai"
 import { AnimatePresence, motion } from "motion/react"
 import React, { useEffect, useState } from "react"
 
+import { BoltBanner } from "@/components/features/bolt/bolt-banner"
 import { BundlesLayout } from "@/components/features/bundles/bundles-layout"
 import { CategoriesList } from "@/components/features/categories/category-list"
 import { CollectionsContainer } from "@/components/features/collections/collections-list"
@@ -96,11 +97,39 @@ const MainContent = React.memo(function MainContent({
     }
   }
 
+  if (activeTab === "home" && isMobile) {
+    return (
+      <div className="flex flex-col pb-4 pt-20">
+        <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
+        <div className="mb-10">
+          <BoltBanner />
+        </div>
+        {renderContent()}
+      </div>
+    )
+  }
+
+  if (activeTab === "home") {
+    return (
+      <div className="flex flex-col pb-4 pt-[70px]">
+        {isMobile ? (
+          <ComponentsHeader
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        ) : (
+          <BoltBanner />
+        )}
+
+        <div className="mt-[25px]">{renderContent()}</div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col pb-4 pt-20">
-      {(activeTab !== "home" || isMobile) && (
-        <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
-      )}
+      <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
+      <BoltBanner />
       {renderContent()}
     </div>
   )
@@ -108,7 +137,7 @@ const MainContent = React.memo(function MainContent({
 
 export function HomePageClient() {
   const [sidebarOpen] = useAtom(sidebarOpenAtom)
-  const [isBannerVisible] = useAtom(magicBannerVisibleAtom)
+  const [magicBannerVisible] = useAtom(magicBannerVisibleAtom)
   const [shouldShowBanner, setShouldShowBanner] = useState(false)
   const [prevSidebarState, setPrevSidebarState] = useState(sidebarOpen)
   const isMobile = useIsMobile()
@@ -134,14 +163,13 @@ export function HomePageClient() {
     <main
       className={cn(
         "flex flex-1 flex-col",
-        isBannerVisible && shouldShowBanner && "mt-3 md:mt-4",
+        magicBannerVisible && shouldShowBanner && "mt-3 md:mt-4",
       )}
     >
       <div className="container">
         <AnimatePresence>
-          {isBannerVisible && shouldShowBanner && <MagicBanner />}
+          {magicBannerVisible && shouldShowBanner && <MagicBanner />}
         </AnimatePresence>
-
         <MainContent
           activeTab={activeTab}
           prevSidebarState={prevSidebarState}
