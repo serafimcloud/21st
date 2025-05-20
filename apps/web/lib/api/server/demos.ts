@@ -23,3 +23,23 @@ export const hasUserPurchasedDemo = async (
 
   return hasPurchasedComponent
 }
+
+export const getDemos = async (search?: string) => {
+  const demos = await prisma.demos.findMany({
+    where: {
+      components: {
+        is_public: true,
+        name: { contains: search, mode: "insensitive" },
+      },
+    },
+    include: {
+      components: {
+        include: {
+          users_components_user_idTousers: true,
+        },
+      },
+    },
+  })
+
+  return demos
+}

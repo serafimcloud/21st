@@ -1,3 +1,4 @@
+import { ComponentCard } from "@/components/features/list-card/card"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -8,14 +9,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
-import { DemoWithComponent, Component, User } from "@/types/global"
-import { ComponentCard } from "@/components/features/list-card/card"
-import { ComponentCardSkeleton } from "@/components/ui/skeletons"
-import { useQuery } from "@tanstack/react-query"
-import { useClerkSupabaseClient } from "@/lib/clerk"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { ComponentCardSkeleton } from "@/components/ui/skeletons"
+import { getDemosAction } from "@/lib/api/demos"
+import { useClerkSupabaseClient } from "@/lib/clerk"
 import { transformDemoResult } from "@/lib/utils/transformData"
+import { Component, DemoWithComponent, User } from "@/types/global"
+import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
 
 interface AddRegistryModalProps {
   isOpen: boolean
@@ -58,6 +59,20 @@ export function AddRegistryModal({
         return null
       }
       try {
+        let exactSearchResults = await getDemosAction({
+          searchQuery: searchTerm,
+        })
+
+        exactSearchResults = exactSearchResults.map((result) => {
+          return {
+            ...result,
+            component_data: result.components,
+            user_data: result.components?.users_components_user_idTousers,
+          }
+        })
+
+        console.log("exactSearchResults", exactSearchResults)
+
         const { data: searchResults, error } = await supabase.functions.invoke(
           "search_demos_ai_oai_extended",
           {
@@ -77,7 +92,8 @@ export function AddRegistryModal({
           return []
         }
 
-        const transformedResults = searchResults
+        const transformedResults = exactSearchResults
+          .concat(searchResults)
           .map((result: any) => {
             const componentData = result.component_data as Component
             const userData = result.user_data as User
@@ -161,13 +177,13 @@ export function AddRegistryModal({
       })
     : []
 
-  const sortedRegistryResults = registrySearchQuery.data
-    ? [...registrySearchQuery.data].sort((a, b) => {
-        const downloadsA = a.component?.likes_count || 0
-        const downloadsB = b.component?.likes_count || 0
-        return downloadsB - downloadsA
-      })
-    : []
+  const sortedRegistryResults = registrySearchQuery.data ?? []
+  // ? [...registrySearchQuery.data].sort((a, b) => {
+  //     const downloadsA = a.component?.likes_count || 0
+  //     const downloadsB = b.component?.likes_count || 0
+  //     return downloadsB - downloadsA
+  //   })
+  // : []
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
