@@ -171,7 +171,7 @@ export const getStripeId = async (userId: string): Promise<string> => {
     .from("users")
     .select("stripe_id, display_username, username, email")
     .eq("id", userId)
-    .maybeSingle()
+    .single()
 
   if (userError) {
     throw new Error(userError.message)
@@ -180,6 +180,7 @@ export const getStripeId = async (userId: string): Promise<string> => {
   let stripeId = userData?.stripe_id
   if (!stripeId) {
     const account = await stripe.accounts.create({
+      email: userData.email,
       business_profile: {
         url: `https://21st.dev/${userData?.display_username ?? userData?.username}`,
         product_description:

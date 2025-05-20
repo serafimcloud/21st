@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     const { data: userData, error: userError } = await supabaseWithAdminAccess
       .from("users")
-      .select("bundles_fee")
+      .select("bundles_fee, email")
       .eq("id", userId)
       .single()
 
@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
     // idempotencyKey: transfer_group,
 
     const session = await stripeV2.checkout.sessions.create({
+      customer_email: userData.email,
       line_items: [
         {
           price_data: {
