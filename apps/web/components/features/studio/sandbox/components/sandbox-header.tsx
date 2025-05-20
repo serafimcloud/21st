@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/tooltip"
 import { editSandbox } from "../api"
 import { useUser } from "@clerk/nextjs"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 interface SandboxHeaderProps {
   sandboxId: string | null | undefined
@@ -276,24 +277,24 @@ export function SandboxHeader({
 
         <div className="ml-auto flex items-center gap-4">
           {showBetaBadge && (
-            <div className="flex flex-row rounded-md overflow-hidden border border-blue-200 shadow-sm max-w-[400px]">
-              <div className="flex items-center gap-1.5 bg-blue-50 px-2.5 py-2">
+            <div className="flex flex-row rounded-md overflow-hidden border border-blue-200 dark:border-blue-800 shadow-sm max-w-[400px]">
+              <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950 px-2.5 py-2">
                 <a
                   href="https://www.loom.com/share/790ed2081db5476f84355e06dec878c4"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-blue-700 hover:underline transition-colors"
+                  className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-300 hover:underline transition-colors"
                 >
                   <Video className="h-4 w-4" aria-hidden="true" />
                   Watch Tutorial
                 </a>
               </div>
-              <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 bg-white">
+              <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-900">
                 <a
                   href="https://discord.gg/Qx4rFunHfm"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors"
                 >
                   <BugIcon className="h-4 w-4" aria-hidden="true" />
                   Report Issue

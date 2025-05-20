@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 function PublishClientPageContent({
   setServerSandbox,
@@ -423,7 +424,14 @@ function PublishClientPageContent({
       </ResizablePanelGroup>
 
       {/* Bottom right preview controls */}
-      <div className="fixed bottom-4 right-4 flex gap-2 z-10">
+      <div className="fixed top-[65px] right-4 flex gap-2 z-10">
+        <Button
+          variant="outline"
+          size="sm"
+          className="bg-background/80 backdrop-blur-sm shadow-sm border w-10"
+        >
+          <ThemeToggle fillIcon={false} />
+        </Button>
         {showPreview && (
           <Button
             variant="outline"
