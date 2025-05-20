@@ -1,67 +1,68 @@
 "use client"
 
-import * as React from "react"
-import {
-  categories as defaultCategories,
-  mainNavigationItems,
-  magicNavItem,
-} from "@/lib/navigation"
-import { useFilteredNavigation } from "@/lib/navigation-with-magic"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { SidebarHeader, useSidebar } from "@/components/ui/sidebar"
 import { Icons } from "@/components/icons"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { SidebarHeader, useSidebar } from "@/components/ui/sidebar"
 import {
   Tooltip,
-  TooltipTrigger,
   TooltipContent,
+  TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useNavigation } from "@/hooks/use-navigation"
+import { AppSection } from "@/lib/atoms"
+import {
+  categories as defaultCategories,
+  magicNavItem,
+  mainNavigationItems,
+} from "@/lib/navigation"
+import { useFilteredNavigation } from "@/lib/navigation-with-magic"
+import { userStateAtom } from "@/lib/store/user-store"
+import { cn } from "@/lib/utils"
+import { useUser } from "@clerk/nextjs"
+import { useAtom } from "jotai"
 import {
   ArrowUpRight,
-  ChevronRight,
+  Bookmark,
   Box,
-  Users,
+  ChevronRight,
+  Component,
   Crown,
   FolderKanban,
-  Component,
-  Bookmark,
   FolderOpen,
-  LayoutTemplate,
-  Sparkles,
   Group,
-  Presentation,
   Home,
+  LayoutTemplate,
+  Package,
+  Presentation,
+  Sparkles,
   Swords,
   Trophy,
+  Users,
 } from "lucide-react"
-import { useAtom } from "jotai"
-import { AppSection } from "@/lib/atoms"
-import { userStateAtom } from "@/lib/store/user-store"
+import { AnimatePresence, motion } from "motion/react"
+import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import * as React from "react"
 import { Help } from "./help"
-import { motion, AnimatePresence } from "motion/react"
-import { useNavigation } from "@/hooks/use-navigation"
-import { useUser } from "@clerk/nextjs"
 
 import {
   Sidebar,
   SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
 // Import types from navigation-with-magic.tsx
-import type {
-  NavigationItem,
-  NavigationCategory,
-} from "@/lib/navigation-with-magic"
 import { Button } from "@/components/ui/button"
 import { TextShimmer } from "@/components/ui/text-shimmer"
+import type {
+  NavigationCategory,
+  NavigationItem,
+} from "@/lib/navigation-with-magic"
 
 export function MainSidebar() {
   const { toggleSidebar } = useSidebar()
@@ -419,6 +420,26 @@ export function MainSidebar() {
                   <div className="flex items-center w-full">
                     <Bookmark className="mr-2 h-4 w-4" />
                     Bookmarks
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => {
+                    if (userState.profile?.display_username) {
+                      router.push(
+                        `/${userState.profile.display_username}?tab=purchased_bundles`,
+                      )
+                    } else if (clerkUser?.externalAccounts?.[0]?.username) {
+                      router.push(
+                        `/${clerkUser.externalAccounts[0].username}?tab=purchased_bundles`,
+                      )
+                    }
+                  }}
+                >
+                  <div className="flex items-center w-full">
+                    <Package className="mr-2 h-4 w-4" />
+                    Purchased Bundles
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>

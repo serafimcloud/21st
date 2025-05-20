@@ -1,13 +1,13 @@
-import { redirect } from "next/navigation"
-import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { auth } from "@clerk/nextjs/server"
 import { getUserData } from "@/lib/queries"
-import { StudioUsernameClient } from "./page.client"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
 import {
-  transformDemoResult,
   ExtendedDemoWithComponent,
+  transformDemoResult,
 } from "@/lib/utils/transformData"
+import { auth } from "@clerk/nextjs/server"
+import { redirect } from "next/navigation"
 import ShortUUID from "short-uuid"
+import { StudioUsernameClient } from "./page.client"
 
 // Get user data by username
 const getUser = async (username: string) => {

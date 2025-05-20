@@ -95,6 +95,41 @@ export async function getUserData(
   }
 }
 
+export const authUsername = async (
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  targetUsername: string,
+): Promise<{ user: User; isAdmin: boolean; isOwnProfile: boolean } | null> => {
+  // Get user data from Supabase
+  const { data: user } = await getUserData(supabase, targetUsername)
+
+  if (!user) {
+    console.error("User not found")
+    return null
+  }
+
+  // Verify user has access to this page (own profile or admin)
+  const { data: currentUser, error: currentUserError } = await supabase
+    .from("users")
+    .select("is_admin")
+    .eq("id", userId)
+    .single()
+
+  if (currentUserError) {
+    console.error("Error fetching current user", currentUserError)
+    return null
+  }
+
+  const isAdmin = currentUser?.is_admin || false
+  const isOwnProfile = userId === user.id
+
+  if (!isAdmin && !isOwnProfile) {
+    return null
+  }
+
+  return { user, isAdmin, isOwnProfile }
+}
+
 export async function addTagsToDemo(
   supabase: SupabaseClient<Database>,
   demoId: number,
@@ -855,23 +890,6 @@ export function usePurchaseComponent(): UseMutationResult<
       })
     },
   })
-}
-
-export async function hasUserPurchasedComponent(
-  supabase: SupabaseClient,
-  userId: string | null,
-  componentId: string,
-) {
-  if (!userId) return false
-
-  const { data } = await supabase
-    .from("components_purchases")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("component_id", componentId)
-    .single()
-
-  return !!data
 }
 
 // Hook for featured, popular and latest demos

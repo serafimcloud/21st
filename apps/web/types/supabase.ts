@@ -235,6 +235,13 @@ export type Database = {
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bundle_items_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
         ]
       }
       bundle_plans: {
@@ -280,27 +287,33 @@ export type Database = {
           bundle_id: number
           created_at: string
           fee: number
-          id: number
+          id: string
+          paid_to_user: boolean
           plan_id: number | null
           price: number
+          status: Database["public"]["Enums"]["payment_status"]
           user_id: string
         }
         Insert: {
           bundle_id: number
           created_at?: string
           fee: number
-          id?: number
+          id: string
+          paid_to_user?: boolean
           plan_id?: number | null
           price: number
+          status: Database["public"]["Enums"]["payment_status"]
           user_id: string
         }
         Update: {
           bundle_id?: number
           created_at?: string
           fee?: number
-          id?: number
+          id?: string
+          paid_to_user?: boolean
           plan_id?: number | null
           price?: number
+          status?: Database["public"]["Enums"]["payment_status"]
           user_id?: string
         }
         Relationships: [
@@ -506,6 +519,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "component_analytics_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
+          {
             foreignKeyName: "component_analytics_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -570,6 +590,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "component_dependencies_closure_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
+          {
             foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
             columns: ["dependency_component_id"]
             isOneToOne: false
@@ -596,6 +623,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
+            columns: ["dependency_component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
           },
         ]
       }
@@ -680,6 +714,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "component_likes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
+          {
             foreignKeyName: "component_likes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -738,6 +779,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "component_tags_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
+          {
             foreignKeyName: "component_tags_tag_id_fkey"
             columns: ["tag_id"]
             isOneToOne: false
@@ -764,6 +812,7 @@ export type Database = {
           global_css_extension: string | null
           hunter_username: string | null
           id: number
+          index_css_url: string | null
           is_public: boolean
           license: string
           likes_count: number
@@ -779,7 +828,6 @@ export type Database = {
           user_id: string
           video_url: string | null
           website_url: string | null
-          index_css_url: string | null
         }
         Insert: {
           code?: string
@@ -798,6 +846,7 @@ export type Database = {
           global_css_extension?: string | null
           hunter_username?: string | null
           id?: number
+          index_css_url?: string | null
           is_public?: boolean
           license?: string
           likes_count?: number
@@ -813,7 +862,6 @@ export type Database = {
           user_id: string
           video_url?: string | null
           website_url?: string | null
-          index_css_url?: string | null
         }
         Update: {
           code?: string
@@ -832,6 +880,7 @@ export type Database = {
           global_css_extension?: string | null
           hunter_username?: string | null
           id?: number
+          index_css_url?: string | null
           is_public?: boolean
           license?: string
           likes_count?: number
@@ -847,7 +896,6 @@ export type Database = {
           user_id?: string
           video_url?: string | null
           website_url?: string | null
-          index_css_url?: string | null
         }
         Relationships: [
           {
@@ -967,6 +1015,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "components_purchases_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
+          {
             foreignKeyName: "components_purchases_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -1034,6 +1089,13 @@ export type Database = {
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "components_to_collections_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
         ]
       }
       demo_bookmarks: {
@@ -1059,6 +1121,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "demos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_demo"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["demo_id"]
           },
         ]
       }
@@ -1100,6 +1169,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "demos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_scores_demo_id_fkey"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["demo_id"]
           },
           {
             foreignKeyName: "demo_hunt_scores_round_id_fkey"
@@ -1146,6 +1222,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "demos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_hunt_votes_demo_id_fkey"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["demo_id"]
           },
           {
             foreignKeyName: "demo_hunt_votes_round_id_fkey"
@@ -1214,6 +1297,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "demo_hunt_winners_demo_id_fkey"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["demo_id"]
+          },
+          {
             foreignKeyName: "demo_hunt_winners_round_id_fkey"
             columns: ["round_id"]
             isOneToOne: false
@@ -1255,6 +1345,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "demos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_tags_demo_id_fkey"
+            columns: ["demo_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["demo_id"]
           },
           {
             foreignKeyName: "demo_tags_tag_id_fkey"
@@ -1360,6 +1457,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demos_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
           },
           {
             foreignKeyName: "demos_user_id_fkey"
@@ -1495,6 +1599,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_component"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
           },
           {
             foreignKeyName: "fk_generation_request"
@@ -1792,6 +1903,13 @@ export type Database = {
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sandboxes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
         ]
       }
       submissions: {
@@ -1844,6 +1962,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: true
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
           },
         ]
       }
@@ -2240,6 +2365,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "component_dependencies_closure_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
+          {
             foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
             columns: ["dependency_component_id"]
             isOneToOne: false
@@ -2266,6 +2398,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
+            columns: ["dependency_component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
           },
           {
             foreignKeyName: "components_user_id_fkey"
@@ -2348,6 +2487,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "component_dependencies_closure_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
+          {
             foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
             columns: ["dependency_component_id"]
             isOneToOne: false
@@ -2374,6 +2520,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "component_dependencies_closure_dependency_component_id_fkey"
+            columns: ["dependency_component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
           },
           {
             foreignKeyName: "components_user_id_fkey"
@@ -2492,6 +2645,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "demo_hunt_scores_demo_id_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["demo_id"]
+          },
+          {
             foreignKeyName: "demo_hunt_scores_round_id_fkey"
             columns: ["round_id"]
             isOneToOne: false
@@ -2551,7 +2711,33 @@ export type Database = {
             referencedRelation: "components_with_username"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "component_analytics_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "mv_detailed_component_analytics"
+            referencedColumns: ["component_id"]
+          },
         ]
+      }
+      mv_detailed_component_analytics: {
+        Row: {
+          anon_cli_download_count: number | null
+          anon_total_installs: number | null
+          anon_view_count: number | null
+          auth_cli_download_count: number | null
+          auth_total_installs: number | null
+          auth_valid_code_copy_count: number | null
+          auth_valid_prompt_copy_count: number | null
+          auth_view_count: number | null
+          component_id: number | null
+          demo_id: number | null
+          total_cli_download_count: number | null
+          total_installs: number | null
+          total_view_count: number | null
+          weighted_auth_installs: number | null
+        }
+        Relationships: []
       }
       referral_analytics: {
         Row: {
@@ -3185,6 +3371,14 @@ export type Database = {
           usage_data: Json
         }[]
       }
+      process_next_round: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      process_single_round: {
+        Args: { p_round_id: number }
+        Returns: undefined
+      }
       purchase_component: {
         Args: { p_user_id: string; p_component_id: number }
         Returns: Json
@@ -3278,6 +3472,10 @@ export type Database = {
           usage_data: Json
         }[]
       }
+      update_all_hunt_scores: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_component_dependencies_closure: {
         Args: { p_component_id: number; p_demo_slug?: string }
         Returns: undefined
@@ -3319,6 +3517,24 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      update_single_demo_score: {
+        Args: { p_round_id: number; p_demo_id: number }
+        Returns: {
+          demo_id: number
+          demo_name: string
+          auth_views: number
+          anon_views: number
+          total_views: number
+          auth_installs: number
+          anon_installs: number
+          total_installs: number
+          votes_count: number
+          old_final_score: number
+          new_final_score: number
+          expected_score: number
+          calculation_details: string
+        }[]
+      }
       update_submission_as_admin: {
         Args: {
           p_component_id: number
@@ -3340,7 +3556,7 @@ export type Database = {
       api_plan: "free" | "pro" | "enterprise"
       bundle_plan_type: "individual" | "team" | "enterprise"
       demo_hunt_category: "marketing" | "ui" | "seasonal"
-      payment_status: "pending" | "paid" | "rejected"
+      payment_status: "pending" | "paid" | "rejected" | "refunded"
       submission_status: "on_review" | "featured" | "posted" | "rejected"
       user_role:
         | "designer"
@@ -3497,7 +3713,7 @@ export const Constants = {
       api_plan: ["free", "pro", "enterprise"],
       bundle_plan_type: ["individual", "team", "enterprise"],
       demo_hunt_category: ["marketing", "ui", "seasonal"],
-      payment_status: ["pending", "paid", "rejected"],
+      payment_status: ["pending", "paid", "rejected", "refunded"],
       submission_status: ["on_review", "featured", "posted", "rejected"],
       user_role: [
         "designer",

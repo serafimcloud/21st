@@ -1,26 +1,27 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useMemo } from "react"
-import { useAnimation, motion, AnimatePresence } from "motion/react"
 import { useAtom } from "jotai"
-import { useTheme } from "next-themes"
 import {
   CheckIcon,
-  CopyIcon,
-  Pencil,
-  CodeXml,
-  Info,
   ChevronDown,
+  CodeXml,
+  CopyIcon,
+  Info,
+  Pencil,
 } from "lucide-react"
+import { AnimatePresence, motion, useAnimation } from "motion/react"
+import { useTheme } from "next-themes"
+import { useEffect, useMemo, useRef, useState } from "react"
 
-import { ComponentPageInfo } from "./info-section"
 import { Icons } from "@/components/icons"
-import { LoadingSpinner } from "../../ui/loading-spinner"
-import { CopyCodeButton } from "../../ui/copy-code-card-button"
+import { TextShimmer } from "@/components/ui/text-shimmer"
 import {
-  isShowCodeAtom,
   isFullScreenAtom,
+  isShowCodeAtom,
 } from "../../../app/[username]/[component_slug]/page.client"
+import { CopyCodeButton } from "../../ui/copy-code-card-button"
+import { LoadingSpinner } from "../../ui/loading-spinner"
+import { ComponentPageInfo } from "./info-section"
 
 import {
   DropdownMenu,
@@ -32,29 +33,30 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TextMorph } from "@/components/ui/text-morph"
 
 import {
-  SandpackProvider,
-  SandpackLayout,
   SandpackCodeViewer,
   SandpackFileExplorer,
+  SandpackLayout,
+  SandpackProvider,
   SandpackProviderProps,
 } from "@codesandbox/sandpack-react"
 
-import { useDebugMode } from "@/hooks/use-debug-mode"
 import { useCompileCss } from "@/hooks/use-compile-css"
+import { useDebugMode } from "@/hooks/use-debug-mode"
 import { useIsMobile } from "@/hooks/use-media-query"
 
-import { Component, Tag, User, Demo } from "@/types/global"
+import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
 import { generateSandpackFiles } from "@/lib/sandpack"
-import { trackEvent, AMPLITUDE_EVENTS } from "@/lib/amplitude"
-import { getPackageRunner, cn } from "@/lib/utils"
+import { cn, getPackageRunner } from "@/lib/utils"
+import { Component, Demo, Tag, User } from "@/types/global"
+import { useAuth, useUser } from "@clerk/nextjs"
 import { toast } from "sonner"
-import { useUser } from "@clerk/nextjs"
 
-import styles from "./component-preview.module.css"
-import { PayWall } from "./pay-wall"
+import { Button } from "@/components/ui/button"
 import { ComponentAccessState } from "@/hooks/use-component-access"
+import styles from "./component-preview.module.css"
 import { LegacyFlowPreviewRenderer } from "./legacy-flow-preview-renderer"
 import { NewFlowPreviewRender } from "./new-flow-preview-render"
+import { PayWall } from "./pay-wall"
 
 export function ComponentPagePreview({
   component,
@@ -371,12 +373,32 @@ export function ComponentPagePreview({
   )
 }
 
+const useInstallUrl = (component: Component, user: User) => {
+  const auth = useAuth()
+  const [installUrl, setInstallUrl] = useState<string | undefined>()
+
+  useEffect(() => {
+    // TODO: Add custom template to make JWT live longer
+    auth.getToken().then((token) => {
+      const url = new URL(
+        `${process.env.NEXT_PUBLIC_APP_URL}/r/${user.username}/${component.component_slug}`,
+      )
+      if (token) {
+        url.searchParams.set("api_key", token)
+      }
+      setInstallUrl(url.toString())
+    })
+  }, [component.id, user.id])
+
+  return installUrl
+}
+
 function CopyCommandSection({
   component,
 }: {
   component: Component & { user: User }
 }) {
-  const installUrl = `${process.env.NEXT_PUBLIC_APP_URL}/r/${component.user.username}/${component.component_slug}`
+  const installUrl = useInstallUrl(component, component.user)
   const [copied, setCopied] = useState(false)
   const [selectedPackageManager, setSelectedPackageManager] = useState(() =>
     typeof window !== "undefined"
@@ -454,18 +476,25 @@ function CopyCommandSection({
           <Icons.terminal size={20} controls={controls} />
         </div>
         <div className="flex-grow overflow-scroll scrollbar-hide">
-          <code className="flex items-center whitespace-nowrap font-mono text-sm">
-            <span className="mr-2 text-white">
-              {getPackageRunner(selectedPackageManager)}
-            </span>
-            <span className="text-muted-foreground">
-              shadcn@latest add "{installUrl}"
-            </span>
-          </code>
+          {installUrl === undefined ? (
+            <TextShimmer className="font-mono text-sm">Loading...</TextShimmer>
+          ) : (
+            <code className="flex items-center whitespace-nowrap font-mono text-sm">
+              <span className="mr-2 text-white">
+                {getPackageRunner(selectedPackageManager)}
+              </span>
+              <span className="text-muted-foreground">
+                shadcn@latest add "{installUrl}"
+              </span>
+            </code>
+          )}
         </div>
-        <button
+        <Button
           onClick={copyCommand}
-          className="flex-shrink-0 ml-3 flex items-center justify-center p-1 hover:bg-zinc-800 text-white w-8 h-8 rounded-md relative"
+          size="icon"
+          variant="ghost"
+          disabled={installUrl === undefined}
+          className="relative shrink-0 ml-3 hover:bg-zinc-800"
         >
           <div
             className={cn(
@@ -483,7 +512,7 @@ function CopyCommandSection({
           >
             <CopyIcon size={16} />
           </div>
-        </button>
+        </Button>
       </div>
     </div>
   )

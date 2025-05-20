@@ -1,7 +1,8 @@
+import stripe, { getPlanByStripeId, stripeV2 } from "@/lib/stripe"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
+import { BundlePaymentStatus } from "@/types/global"
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
-import { supabaseWithAdminAccess } from "@/lib/supabase"
-import { stripeV2, getPlanByStripeId } from "@/lib/stripe"
 
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET_V2
 
@@ -231,6 +232,120 @@ async function handleFraudWarning(event: Stripe.Event) {
   }
 }
 
+async function handleCheckoutSession(
+  event:
+    | Stripe.PaymentIntentCanceledEvent
+    | Stripe.PaymentIntentPaymentFailedEvent
+    | Stripe.PaymentIntentProcessingEvent
+    | Stripe.PaymentIntentSucceededEvent,
+) {
+  let status: BundlePaymentStatus | null = null
+  switch (event.type) {
+    case "payment_intent.canceled":
+    case "payment_intent.payment_failed":
+      status = "rejected"
+      break
+    case "payment_intent.succeeded":
+      status = "paid"
+      break
+    case "payment_intent.processing":
+      status = "pending"
+      break
+  }
+
+  if (!status) {
+    throw new Error("No status got from event")
+  }
+
+  const paymentIntent = event.data.object
+  if (!paymentIntent.metadata) {
+    throw new Error("No metadata found in event")
+  }
+
+  const { userId, bundleId, planId, fee } = paymentIntent.metadata
+  const price = paymentIntent.amount
+
+  if (!userId || !bundleId || !planId || !price || !fee) {
+    throw new Error(
+      `Not enough data found in metadata: ${JSON.stringify(paymentIntent.metadata)}`,
+    )
+  }
+
+  const { data: existingBundlePurchase, error: existingBundlePurchaseError } =
+    await supabaseWithAdminAccess
+      .from("bundle_purchases")
+      .select("*")
+      .eq("id", paymentIntent.id)
+      .maybeSingle()
+
+  if (existingBundlePurchaseError) {
+    throw new Error(
+      `Failed to get bundle purchase: ${existingBundlePurchaseError}`,
+    )
+  }
+
+  const { data: lastBundlePurchase, error: lastBundlePurchaseError } =
+    await supabaseWithAdminAccess
+      .from("bundle_purchases")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("bundle_id", Number(bundleId))
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+  if (lastBundlePurchaseError) {
+    throw new Error(
+      `Failed to get last bundle purchase: ${lastBundlePurchaseError}`,
+    )
+  }
+
+  // Refund paid -> paid
+  if (
+    (lastBundlePurchase?.status === "paid" ||
+      lastBundlePurchase?.status === "pending") &&
+    status === "paid"
+  ) {
+    stripe.refunds.create({
+      payment_intent: paymentIntent.id,
+      reason: "duplicate",
+    })
+    return
+  }
+
+  // Prevent non-pending -> pending
+  if (
+    existingBundlePurchase?.status &&
+    existingBundlePurchase.status !== "pending" &&
+    status === "pending"
+  ) {
+    return
+  }
+
+  // Upsert only pending/undefined -> non-pending
+  if (
+    existingBundlePurchase?.status === undefined ||
+    existingBundlePurchase.status === "pending"
+  ) {
+    const { error: upsertError } = await supabaseWithAdminAccess
+      .from("bundle_purchases")
+      .upsert({
+        id: paymentIntent.id,
+        user_id: existingBundlePurchase?.user_id || userId,
+        bundle_id: existingBundlePurchase?.bundle_id || Number(bundleId),
+        plan_id: existingBundlePurchase?.plan_id || Number(planId),
+        price: existingBundlePurchase?.price || price,
+        status: status,
+        fee: existingBundlePurchase?.fee || Number(fee),
+        paid_to_user: existingBundlePurchase?.paid_to_user || false,
+      })
+
+    if (upsertError) {
+      throw new Error(`Failed to upsert bundle purchase: ${upsertError}`)
+    }
+  }
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const body = await req.text()
   const sig = req.headers.get("stripe-signature")
@@ -280,6 +395,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         break
       case "radar.early_fraud_warning.created":
         await handleFraudWarning(event)
+        break
+      case "payment_intent.canceled":
+      case "payment_intent.payment_failed":
+      case "payment_intent.processing":
+      case "payment_intent.succeeded":
+        await handleCheckoutSession(event)
         break
     }
 

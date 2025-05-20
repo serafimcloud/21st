@@ -1,20 +1,19 @@
-import React from "react"
-import { notFound, redirect } from "next/navigation"
 import ErrorPage from "@/components/ui/error-page"
+import { hasUserComponentAccess } from "@/lib/api/server/components"
+import { BASE_KEYWORDS, SITE_NAME, SITE_SLOGAN } from "@/lib/constants"
+import { extractDemoComponentNames } from "@/lib/parsers"
 import {
   getComponent,
   getComponentDemos,
   getComponentWithDemo,
   getUserData,
-  hasUserPurchasedComponent,
 } from "@/lib/queries"
 import { resolveRegistryDependencyTree } from "@/lib/queries.server"
-import { extractDemoComponentNames } from "@/lib/parsers"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { validateRouteParams } from "@/lib/utils/validateRouteParams"
-import ComponentPage from "./page.client"
 import { auth } from "@clerk/nextjs/server"
-import { SITE_NAME, SITE_SLOGAN, BASE_KEYWORDS } from "@/lib/constants"
+import { notFound, redirect } from "next/navigation"
+import ComponentPage from "./page.client"
 export const generateMetadata = async (props: {
   params: Promise<{ username: string; component_slug: string }>
 }) => {
@@ -152,12 +151,16 @@ export default async function ComponentPageServer(props: {
 
     const [{ data: componentDemos }, hasPurchased] = await Promise.all([
       getComponentDemos(supabaseWithAdminAccess, component.id),
-      hasUserPurchasedComponent(
-        supabaseWithAdminAccess,
-        userId,
-        component.id.toString(),
-      ),
+      userId ? hasUserComponentAccess(userId, component.id) : false,
     ])
+
+    if (!hasPurchased) {
+      component.code = ""
+      demo.demo_code = ""
+      componentDemos?.forEach((demo) => {
+        demo.demo_code = ""
+      })
+    }
 
     const dependencies = (component.dependencies ?? {}) as Record<
       string,
@@ -169,8 +172,12 @@ export default async function ComponentPageServer(props: {
     >
 
     const componentAndDemoCodePromises = [
-      fetchFileTextContent(component.code),
-      fetchFileTextContent(demo.demo_code),
+      hasPurchased
+        ? fetchFileTextContent(component.code)
+        : Promise.resolve({ data: "", error: null }),
+      hasPurchased
+        ? fetchFileTextContent(demo.demo_code)
+        : Promise.resolve({ data: "", error: null }),
       component.tailwind_config_extension
         ? fetchFileTextContent(component.tailwind_config_extension)
         : Promise.resolve({ data: null, error: null }),
@@ -262,8 +269,8 @@ export default async function ComponentPageServer(props: {
           demo={demo}
           componentDemos={componentDemos}
           tailwind4IndexCss={indexCssResult?.data as string}
-          code={codeResult?.data as string}
-          demoCode={demoResult?.data as string}
+          code={hasPurchased ? (codeResult?.data as string) : ""}
+          demoCode={hasPurchased ? (demoResult?.data as string) : ""}
           dependencies={dependencies}
           demoDependencies={demoDependencies}
           demoComponentNames={demoComponentNames}

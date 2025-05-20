@@ -1,28 +1,31 @@
 import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
-import { useClerkSupabaseClient } from "@/lib/clerk"
-import { componentAccessAtom, userStateAtom } from "@/lib/store/user-store"
+import { hasUserComponentAccessAction } from "@/lib/api/bundle_purchases"
 import { Component } from "@/types/global"
-import { useUser } from "@clerk/nextjs"
-import { useAtom } from "jotai"
+import { useEffect, useState } from "react"
 
 export type ComponentAccessState =
   | "UNLOCKED" // Component is accessible (free or purchased)
   | "REQUIRES_SUBSCRIPTION" // Subscription required for paid component
   | "REQUIRES_UNLOCK" // TODO: Reimplement logic // Has subscription and tokens but needs to unlock paid component
-  | "HIDDEN"
+  | "REQUIRES_BUNDLE"
+  | "UNDEFINED"
+  | "LOCKED"
 
 export function useComponentAccess(
   component: Component,
   initialHasPurchased: boolean = false,
 ) {
-  const [userState] = useAtom(userStateAtom)
-  const [componentAccess] = useAtom(componentAccessAtom)
-  const { subscription, balance } = userState
-  const { user, isSignedIn } = useUser()
-  const supabase = useClerkSupabaseClient()
+  const [componentAccess, setComponentAccess] =
+    useState<ComponentAccessState>("UNDEFINED")
   const isAdmin = useIsAdmin()
 
-  // Paywall logic goes here
+  useEffect(() => {
+    hasUserComponentAccessAction({ componentId: component.id }).then(
+      (hasPurchased) => {
+        setComponentAccess(hasPurchased ? "UNLOCKED" : "REQUIRES_BUNDLE")
+      },
+    )
+  }, [component.id])
 
-  return "UNLOCKED" as const
+  return componentAccess
 }

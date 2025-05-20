@@ -1,10 +1,8 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { userStateAtom } from "@/lib/store/user-store"
 import { useQuery } from "@tanstack/react-query"
 import { atom, useAtom } from "jotai"
-import { CreditCard } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef } from "react"
 import { toast } from "sonner"
@@ -13,7 +11,6 @@ import {
   PayoutStats,
   PayoutStatsChart,
 } from "@/components/features/studio/analytics/creator-stats-chart"
-import { PartnerProgramModal } from "@/components/features/studio/monetization/partner-program-modal"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
 // Create an atom for the partner modal state
@@ -101,39 +98,6 @@ export function AnalyticsClient({ userId }: { userId: string }) {
           isPartner={isPartner}
         />
       </div>
-      {/* Partner program section - only show if not a partner */}
-      {!isPartner && (
-        <div
-          ref={monetizationRef}
-          id="monetization"
-          className="bg-background rounded-lg border border-border overflow-hidden"
-        >
-          <div className="p-4">
-            <h3 className="text-sm font-medium text-primary">
-              Partner Program
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Join our partner program to earn revenue when your components are
-              viewed and used
-            </p>
-          </div>
-
-          <div className="bg-muted p-3 rounded-b-lg flex justify-end border-t">
-            <Button
-              variant="default"
-              size="sm"
-              className="h-8 text-xs gap-2"
-              onClick={() => setPartnerModalOpen(true)}
-              type="button"
-            >
-              <CreditCard className="h-3 w-3" />
-              Join Partner Program
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <PartnerProgramModal />
     </div>
   )
 }

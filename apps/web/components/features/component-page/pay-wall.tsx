@@ -1,5 +1,6 @@
 import { FeatureCards } from "@/components/features/component-page/feature-cards"
 import { Icons } from "@/components/icons"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -9,7 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ComponentAccessState } from "@/hooks/use-component-access"
+import { getComponentBundlesAction } from "@/lib/api/components"
 import {
   ATTRIBUTION_SOURCE,
   SOURCE_DETAIL,
@@ -18,16 +21,20 @@ import {
 import { PlanType } from "@/lib/config/subscription-plans"
 import { usePurchaseComponent } from "@/lib/queries"
 import { componentAccessAtom, userStateAtom } from "@/lib/store/user-store"
-import { cn } from "@/lib/utils"
+import { cn, formatPrice } from "@/lib/utils"
 import { Component } from "@/types/global"
 import { useUser } from "@clerk/nextjs"
+import { AvatarImage } from "@radix-ui/react-avatar"
+import { useQuery } from "@tanstack/react-query"
 import { useAtom } from "jotai"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useHotkeys } from "react-hotkeys-hook"
 import { toast } from "sonner"
+import PlansDialog from "../bundles/plans-dialog"
 
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 interface PayWallProps {
   accessState: ComponentAccessState
   component: Component
@@ -142,7 +149,11 @@ export function PayWall({ accessState, component }: PayWallProps) {
     { preventDefault: true },
   )
 
-  let paywall = <div className="my-auto">Component is unavailable</div>
+  let paywall = (
+    <div className="my-auto">
+      <LoadingSpinner />
+    </div>
+  )
   if (accessState === "REQUIRES_SUBSCRIPTION") {
     paywall = (
       <SubscriptionPaywall
@@ -160,6 +171,10 @@ export function PayWall({ accessState, component }: PayWallProps) {
         subscription={userState.subscription ?? undefined}
       />
     )
+  } else if (accessState === "REQUIRES_BUNDLE") {
+    paywall = <BundlePaywall accessState={accessState} component={component} />
+  } else if (accessState === "LOCKED") {
+    paywall = <div className="my-auto">Component is unavailable</div>
   }
 
   return (
@@ -263,7 +278,6 @@ function getTokenPrice(
   }
 }
 
-// TODO: Remove component.price here
 function UnlockPaywall({
   component,
   balance,
@@ -572,5 +586,81 @@ function SubscriptionPaywall({
 
       <FeatureCards title="What's included" features={features} />
     </div>
+  )
+}
+
+function BundlePaywall({ accessState, component }: PayWallProps) {
+  const [selectedBundleId, setSelectedBundleId] = useState<number | null>(null)
+
+  const { data: bundles, isLoading } = useQuery({
+    queryKey: ["bundles"],
+    queryFn: () => {
+      return getComponentBundlesAction({ componentId: component.id })
+    },
+  })
+
+  type Bundle = Awaited<ReturnType<typeof getComponentBundlesAction>>[number]
+
+  const handleBundleClick = (bundle: Bundle) => {
+    setSelectedBundleId(bundle.id)
+  }
+
+  return (
+    <>
+      <div className="flex flex-col gap-4 h-full w-full items-center justify-center p-8">
+        <div className="space-y-1 text-center">
+          <h3 className="text-xl font-semibold">Bundle Component</h3>
+          <p className="text-muted-foreground">
+            To access this component, you need to purchase one of the bundles
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 items-center">
+          {isLoading ? (
+            <Skeleton className="h-8 w-32 rounded-full bg-muted-foreground/20" />
+          ) : (
+            bundles?.map((bundle) => {
+              const smallestPrice = bundle.bundle_plans.sort(
+                (a, b) => a.price - b.price,
+              )[0]?.price
+              return (
+                <>
+                  <Button
+                    key={bundle.id}
+                    variant="outline"
+                    onClick={() => handleBundleClick(bundle)}
+                    className="gap-2 rounded-full w-fit"
+                  >
+                    <Avatar className="w-4 h-4">
+                      <AvatarImage
+                        src={
+                          bundle.users.image_url ??
+                          bundle.users.display_image_url ??
+                          ""
+                        }
+                      ></AvatarImage>
+                      <AvatarFallback>
+                        {bundle.users.name?.slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {bundle.name}
+                    {smallestPrice && (
+                      <span className="text-sm text-muted-foreground">
+                        from {formatPrice(smallestPrice / 100)}
+                      </span>
+                    )}
+                  </Button>
+                  <PlansDialog
+                    plans={bundle.bundle_plans}
+                    onClose={() => setSelectedBundleId(null)}
+                    initialOpen={selectedBundleId === bundle.id}
+                    initialSelectedPlan={null}
+                  />
+                </>
+              )
+            })
+          )}
+        </div>
+      </div>
+    </>
   )
 }

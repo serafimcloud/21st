@@ -1,18 +1,24 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-import { useAtom, atom } from "jotai"
-import { atomWithStorage } from "jotai/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import { CircleX } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
+import { atom, useAtom } from "jotai"
+import { atomWithStorage } from "jotai/utils"
+import { CircleX } from "lucide-react"
+import { useEffect, useRef } from "react"
 
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 
 export const userPageSearchAtom = atom("")
-export type UserComponentsTab = "components" | "demos" | "bookmarks"
+export const USER_COMPONENTS_TABS = [
+  "components",
+  "demos",
+  "bookmarks",
+  "purchased_bundles",
+] as const
+export type UserComponentsTab = (typeof USER_COMPONENTS_TABS)[number]
 
 export const userTabAtom = atomWithStorage<UserComponentsTab>(
   "user-components-tab",
@@ -103,11 +109,16 @@ export function UserComponentsHeader({
       components: "components",
       demos: "use cases",
       bookmarks: "bookmarks",
+      purchased_bundles: "purchased bundles",
     }
     return `${username}'s ${tabLabels[activeTab]}...`
   }
 
-  const tabs = [
+  const tabs: {
+    value: UserComponentsTab
+    label: string
+    count: number | undefined
+  }[] = [
     {
       value: "components" as const,
       label: "Components",
@@ -125,13 +136,25 @@ export function UserComponentsHeader({
     },
   ]
 
+  if (isOwnProfile) {
+    tabs.push({
+      value: "purchased_bundles" as const,
+      label: "Purchased Bundles",
+      count: undefined,
+    })
+  }
+
   useEffect(() => {
     if (!isLoading && counts) {
       const currentTabCount =
         counts[
           `${activeTab.replace("components", "published").replace("bookmarks", "liked")}_count` as keyof typeof counts
         ] ?? 0
-      if (currentTabCount === 0 && activeTab !== "components") {
+      if (
+        currentTabCount === 0 &&
+        activeTab !== "components" &&
+        activeTab !== "purchased_bundles"
+      ) {
         const firstAvailableTab = tabs.find((tab) => {
           if (tab.value === "components") return counts.published_count > 0
           if (tab.value === "bookmarks") return isOwnProfile
@@ -177,16 +200,17 @@ export function UserComponentsHeader({
                 >
                   <div className="flex items-center gap-2">
                     <span className="truncate">{label}</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {isLoading ? "-" : count}
-                    </span>
+                    {count !== undefined && (
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {isLoading ? "-" : count}
+                      </span>
+                    )}
                   </div>
                 </TabsTrigger>
               ))}
             </TabsList>
           </Tabs>
         </div>
-        
 
         <div className="flex items-center gap-2 md:w-auto min-w-0">
           <div className="relative flex-1 min-w-0 lg:min-w-[250px] md:min-w-[100px]">

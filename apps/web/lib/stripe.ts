@@ -1,6 +1,6 @@
-import Stripe from "stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { Database } from "@/types/supabase"
+import Stripe from "stripe"
 
 type Plan = Database["public"]["Tables"]["plans"]["Row"]
 
@@ -164,4 +164,57 @@ export async function getIdBySubscriptionPlanDetails(
   }
 
   return plan.stripe_plan_id
+}
+
+export const getStripeId = async (userId: string): Promise<string> => {
+  const { data: userData, error: userError } = await supabaseWithAdminAccess
+    .from("users")
+    .select("stripe_id, display_username, username, email")
+    .eq("id", userId)
+    .single()
+
+  if (userError) {
+    throw new Error(userError.message)
+  }
+
+  let stripeId = userData?.stripe_id
+  if (!stripeId) {
+    const account = await stripe.accounts.create({
+      email: userData.email,
+      business_profile: {
+        url: `https://21st.dev/${userData?.display_username ?? userData?.username}`,
+        product_description:
+          "Sell UI components (source code) for web developers",
+      },
+      controller: {
+        stripe_dashboard: {
+          type: "express",
+        },
+        fees: {
+          payer: "application",
+        },
+        losses: {
+          payments: "application",
+        },
+      },
+      // tos_acceptance: {
+      //   service_agreement: "recipient",
+      // },
+    })
+
+    const { error: updateError } = await supabaseWithAdminAccess
+      .from("users")
+      .update({
+        stripe_id: account.id,
+      })
+      .eq("id", userId)
+
+    if (updateError) {
+      throw new Error(updateError.message)
+    }
+
+    stripeId = account.id
+  }
+
+  return stripeId
 }

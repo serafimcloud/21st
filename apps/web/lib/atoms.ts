@@ -9,6 +9,7 @@ export type AppSection =
   | "pro"
   | "collections"
   | "magic"
+  | "bundles"
 
 export type MainTabType = Exclude<AppSection, "magic">
 

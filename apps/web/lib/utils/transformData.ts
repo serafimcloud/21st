@@ -1,4 +1,4 @@
-import { Component, DemoWithComponent, User, Tag } from "@/types/global"
+import { Component, DemoWithComponent, Tag, User } from "@/types/global"
 import ShortUUID from "short-uuid"
 
 // Define the extended type here
@@ -26,7 +26,7 @@ export const transformDemoResult = (result: any): ExtendedDemoWithComponent => {
     demo_dependencies: result.demo_dependencies,
     demo_direct_registry_dependencies: result.demo_direct_registry_dependencies,
     demo_slug: result.demo_slug,
-    component_id: result.component_id,
+    component_id: result.component_id ?? result.component_data.id,
     user_id: result.user_id || (result.user_data as User)?.id,
     pro_preview_image_url: result.pro_preview_image_url,
     created_at: result.created_at,

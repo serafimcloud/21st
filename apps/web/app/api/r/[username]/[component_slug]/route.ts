@@ -1,10 +1,13 @@
+import { isComponentPaid } from "@/lib/api/server/bundle_purchases"
+import { hasUserComponentAccess } from "@/lib/api/server/components"
+import { extractCssVars } from "@/lib/parsers"
+import { resolveRegistryDependencyTree } from "@/lib/queries.server"
+import { verifyJwtToken } from "@/lib/server/clerk"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
+import { AnalyticsActivityType } from "@/types/global"
+import { Tables } from "@/types/supabase"
 import { NextRequest, NextResponse } from "next/server"
 import { ComponentRegistryResponse } from "./types"
-import { resolveRegistryDependencyTree } from "@/lib/queries.server"
-import { Tables } from "@/types/supabase"
-import { extractCssVars } from "@/lib/parsers"
-import { AnalyticsActivityType } from "@/types/global"
 
 // registry:hooks in 21st.dev -> registry:hook in shadcn/ui
 const getShadcnRegistrySlug = (registryName: string) => {
@@ -148,6 +151,8 @@ export async function GET(
   console.log("🔍 Fetching component:", { username, component_slug })
 
   try {
+    const apiKey = request.nextUrl.searchParams.get("api_key")
+
     console.log("📊 Executing Supabase query...")
     const { data: user, error: userError } = await supabaseWithAdminAccess
       .from("users")
@@ -202,6 +207,35 @@ export async function GET(
         { error: "Component not found" },
         { status: 404 },
       )
+    }
+
+    // Check payment status
+    const isPaid = await isComponentPaid(component.id)
+    if (isPaid) {
+      if (!apiKey) {
+        return NextResponse.json(
+          { error: "No API key provided" },
+          { status: 403 },
+        )
+      }
+
+      let verifiedToken
+      try {
+        verifiedToken = await verifyJwtToken(apiKey)
+      } catch (error) {
+        return NextResponse.json({ error: "Invalid API key" }, { status: 403 })
+      }
+
+      const hasPurchased = await hasUserComponentAccess(
+        verifiedToken.sub,
+        component.id,
+      )
+      if (!hasPurchased) {
+        return NextResponse.json(
+          { error: "Component not purchased" },
+          { status: 403 },
+        )
+      }
     }
 
     const userAgent = request.headers.get("user-agent") || ""
