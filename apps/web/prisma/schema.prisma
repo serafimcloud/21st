@@ -1,5 +1,5 @@
 generator client {
-  provider        = "prisma-client"
+  provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions", "relationJoins"]
   output          = "./client"
   binaryTargets   = ["native"]
