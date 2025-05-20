@@ -124,7 +124,6 @@ const MainContent = React.memo(function MainContent({
   return (
     <div className="flex flex-col pb-4 pt-20">
       <ComponentsHeader activeTab={activeTab} onTabChange={handleTabChange} />
-      <BoltBanner />
       {renderContent()}
     </div>
   )
