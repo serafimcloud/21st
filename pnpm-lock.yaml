@@ -157,6 +157,9 @@ importers:
       '@prisma/client':
         specifier: ^6.8.2
         version: 6.8.2(typescript@5.8.3)
+      '@prisma/nextjs-monorepo-workaround-plugin':
+        specifier: ^6.8.2
+        version: 6.8.2
       '@radix-ui/react-accordion':
         specifier: ^1.2.1
         version: 1.2.10(@types/react-dom@19.1.2)(@types/react@19.1.1)(react-dom@19.1.0)(react@19.1.0)
@@ -2804,6 +2807,10 @@ packages:
         optional: true
     dependencies:
       typescript: 5.8.3
+    dev: false
+
+  /@prisma/nextjs-monorepo-workaround-plugin@6.8.2:
+    resolution: {integrity: sha512-F/Iq131HGEAlEP1V/XV0yB8GQ6e1AVekjaPtVmr7X8l17X19Ll34/lDzDMFM3DSnK5suC4X8bMxnCPbEHJ/siA==}
     dev: false
 
   /@radix-ui/number@1.1.1:

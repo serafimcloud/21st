@@ -1,3 +1,5 @@
+import { PrismaPlugin } from "@prisma/nextjs-monorepo-workaround-plugin"
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -16,6 +18,8 @@ const nextConfig = {
         ...config.resolve.fallback,
         fs: false,
       }
+    } else {
+      config.plugins = [...config.plugins, new PrismaPlugin()]
     }
     return config
   },
