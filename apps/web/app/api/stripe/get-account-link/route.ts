@@ -1,5 +1,4 @@
-import { getStripeId } from "@/app/api/stripe/account/route"
-import stripe from "@/lib/stripe"
+import stripe, { getStripeId } from "@/lib/stripe"
 import { supabaseWithAdminAccess } from "@/lib/supabase"
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest, NextResponse } from "next/server"
