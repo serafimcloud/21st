@@ -157,9 +157,6 @@ importers:
       '@prisma/client':
         specifier: ^6.8.2
         version: 6.8.2(typescript@5.8.3)
-      '@prisma/nextjs-monorepo-workaround-plugin':
-        specifier: ^6.8.2
-        version: 6.8.2
       '@radix-ui/react-accordion':
         specifier: ^1.2.1
         version: 1.2.10(@types/react-dom@19.1.2)(@types/react@19.1.1)(react-dom@19.1.0)(react@19.1.0)
@@ -389,6 +386,9 @@ importers:
         specifier: ^3.23.8
         version: 3.25.7
     devDependencies:
+      '@prisma/nextjs-monorepo-workaround-plugin':
+        specifier: ^6.7.0
+        version: 6.7.0
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -2809,9 +2809,9 @@ packages:
       typescript: 5.8.3
     dev: false
 
-  /@prisma/nextjs-monorepo-workaround-plugin@6.8.2:
-    resolution: {integrity: sha512-F/Iq131HGEAlEP1V/XV0yB8GQ6e1AVekjaPtVmr7X8l17X19Ll34/lDzDMFM3DSnK5suC4X8bMxnCPbEHJ/siA==}
-    dev: false
+  /@prisma/nextjs-monorepo-workaround-plugin@6.7.0:
+    resolution: {integrity: sha512-5rrgAAxhlmfZXNBkaussmCZe8y86L38B6QCbRgBIO/AaI4EkO+2OJolztpbAp+YRr9sOSPj4geinUVZol1drfg==}
+    dev: true
 
   /@radix-ui/number@1.1.1:
     resolution: {integrity: sha512-MkKCwxlXTgz6CFoJx3pCwn07GKp36+aZyu/u2Ln2VrA5DcdyCZkASEDBTd8x5whTQQL5CiYf4prXKLcgQdv29g==}
