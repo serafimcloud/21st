@@ -7,7 +7,7 @@ import {
   XIcon,
   ArrowLeftIcon,
   BugIcon,
-  FlaskConical,
+  Video,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
@@ -276,20 +276,29 @@ export function SandboxHeader({
 
         <div className="ml-auto flex items-center gap-4">
           {showBetaBadge && (
-            <div className="flex h-full h-[32px] items-center gap-2 p-1.5 pl-2 pr-3 bg-blue-50 border border-blue-200 rounded-md text-xs w-fit">
-              <FlaskConical className="h-3.5 w-3.5 text-blue-500" />
-              <span className="font-medium text-blue-700">Beta</span>
-              <span className="text-blue-600">
-                Encountered an issue?{" "}
+            <div className="flex flex-row rounded-md overflow-hidden border border-blue-200 shadow-sm max-w-[400px]">
+              <div className="flex items-center gap-1.5 bg-blue-50 px-2.5 py-2">
+                <a
+                  href="https://www.loom.com/share/790ed2081db5476f84355e06dec878c4"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-700 hover:underline transition-colors"
+                >
+                  <Video className="h-4 w-4" aria-hidden="true" />
+                  Watch Tutorial
+                </a>
+              </div>
+              <div className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 bg-white">
                 <a
                   href="https://discord.gg/Qx4rFunHfm"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium underline underline-offset-2 hover:text-blue-800 transition-colors"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                 >
-                  Report it on Discord
+                  <BugIcon className="h-4 w-4" aria-hidden="true" />
+                  Report Issue
                 </a>
-              </span>
+              </div>
             </div>
           )}
 
