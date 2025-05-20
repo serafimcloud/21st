@@ -1,20 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { UserAvatar } from "@/components/ui/user-avatar"
-import { User } from "@/types/global"
-import {
-  BarChartBig,
-  CreditCard,
-  Layers,
-  Home,
-  Settings,
-  ArrowLeft,
-} from "lucide-react"
-import { useAtom } from "jotai"
-import { userStateAtom } from "@/lib/store/user-store"
+import { partnerModalOpenAtom } from "@/app/studio/[username]/analytics/page.client"
 import {
   Sidebar,
   SidebarContent,
@@ -25,8 +11,22 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { UserAvatar } from "@/components/ui/user-avatar"
+import { userStateAtom } from "@/lib/store/user-store"
+import { cn } from "@/lib/utils"
+import { User } from "@/types/global"
+import { useAtom } from "jotai"
+import {
+  BarChartBig,
+  CreditCard,
+  Home,
+  Layers,
+  Package,
+  Settings,
+} from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { partnerModalOpenAtom } from "@/app/studio/[username]/analytics/page.client"
 
 interface StudioSidebarProps {
   user: User
@@ -35,7 +35,6 @@ interface StudioSidebarProps {
 export function StudioSidebar({ user }: StudioSidebarProps) {
   const pathname = usePathname()
   const [userState] = useAtom(userStateAtom)
-  const isPartner = userState?.profile?.is_partner || false
   const [currentHash, setCurrentHash] = useState("")
   const [, setPartnerModalOpen] = useAtom(partnerModalOpenAtom)
   const { open } = useSidebar()
@@ -62,19 +61,15 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
 
   // Check which item should be active
   const isComponentsActive = pathname === basePath
+  const isBundlesActive = pathname.includes("/bundles")
   const isAnalyticsActive = pathname.includes("/analytics")
   const isMonetizationActive = pathname.includes("/monetization")
 
-  // Handle click on Monetization menu item
-  const handleMonetizationClick = (e: React.MouseEvent) => {
-    if (!isPartner) {
-      // Only handle for non-partners
-      setPartnerModalOpen(true)
-    }
-  }
-
   return (
-    <Sidebar className="z-4 pt-14  bg-background border-r-transparent border-none" collapsible="icon">
+    <Sidebar
+      className="z-4 pt-14  bg-background border-r-transparent border-none"
+      collapsible="icon"
+    >
       <SidebarHeader className="border-b bg-background">
         <div className="flex flex-col items-center py-4">
           <UserAvatar
@@ -118,6 +113,18 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
 
           <SidebarMenuItem>
             <Link
+              href={`${basePath}/bundles`}
+              className="flex items-center gap-2"
+            >
+              <SidebarMenuButton isActive={isBundlesActive}>
+                <Package className="h-4 w-4" />
+                <span>Bundles</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+
+          <SidebarMenuItem>
+            <Link
               href={`${basePath}/analytics`}
               className="flex items-center gap-2"
             >
@@ -133,13 +140,8 @@ export function StudioSidebar({ user }: StudioSidebarProps) {
 
           <SidebarMenuItem>
             <Link
-              href={
-                isPartner
-                  ? `${basePath}/monetization`
-                  : `${basePath}/analytics#monetization`
-              }
+              href={`${basePath}/monetization`}
               className="flex items-center gap-2"
-              onClick={handleMonetizationClick}
             >
               <SidebarMenuButton
                 isActive={isMonetizationActive}

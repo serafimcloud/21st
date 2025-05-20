@@ -1,13 +1,12 @@
 "use client"
 
-import { Dispatch, SetStateAction } from "react"
-import { useSearchParams } from "next/navigation"
-import { User } from "@/types/global"
-import { ReactNode } from "react"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { VersionSelectorDialog } from "@/components/features/publish/version-selector-dialog"
-import { StudioSidebar } from "./ui/studio-sidebar"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { User } from "@/types/global"
+import { useSearchParams } from "next/navigation"
+import { Dispatch, ReactNode, SetStateAction } from "react"
 import { StudioHeader } from "./ui/studio-header"
+import { StudioSidebar } from "./ui/studio-sidebar"
 
 interface StudioLayoutProps {
   user: User
@@ -35,7 +34,7 @@ export function StudioLayout({
         <StudioHeader user={user} />
         <div className="flex w-full">
           <StudioSidebar user={user} />
-          <SidebarInset className="p-4 md:p-8 !pt-20 w-full max-w-full">
+          <SidebarInset className="overflow-hidden p-4 md:p-8 !pt-20 w-full max-w-full">
             {children}
           </SidebarInset>
         </div>

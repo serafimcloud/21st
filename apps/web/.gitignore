@@ -38,3 +38,5 @@ next-env.d.ts
 # css
 css/*
 .env*.local
+
+/prisma/client

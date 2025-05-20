@@ -667,7 +667,7 @@ export function ComponentPreviewDialog({
 
       {showUnlockDialog && (
         <Dialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
-          <DialogContent>
+          <DialogContent className="w-fit">
             <PayWall accessState={accessState} component={demo.component} />
           </DialogContent>
         </Dialog>

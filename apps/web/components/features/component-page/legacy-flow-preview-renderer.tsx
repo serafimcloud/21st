@@ -1,19 +1,19 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
-import { motion } from "motion/react"
 import {
-  SandpackProvider as SandpackProviderUnstyled,
   SandpackPreview,
   SandpackProviderProps,
+  SandpackProvider as SandpackProviderUnstyled,
 } from "@codesandbox/sandpack-react"
+import { motion } from "motion/react"
+import React, { useEffect, useMemo, useState } from "react"
 
-import { LoadingSpinner } from "../../ui/loading-spinner"
-import { FullScreenButton } from "../../ui/full-screen-button"
-import { Component, Demo, Tag, User } from "@/types/global"
-import { generateBundleFiles } from "@/lib/sandpack"
 import { useBundleDemo } from "@/hooks/use-bundle-demo"
+import { generateBundleFiles } from "@/lib/sandpack"
+import { Component, Demo, Tag, User } from "@/types/global"
 import { useTheme } from "next-themes"
+import { FullScreenButton } from "../../ui/full-screen-button"
+import { LoadingSpinner } from "../../ui/loading-spinner"
 
 interface LegacyFlowPreviewRendererProps {
   providerProps: SandpackProviderProps
@@ -103,6 +103,11 @@ export function LegacyFlowPreviewRenderer({
     demoId: demo.id,
     tailwindConfig,
     globalCss,
+    existingBundleUrls: demo.bundle_html_url
+      ? {
+          html: demo.bundle_html_url,
+        }
+      : null,
   })
 
   const demoBundleHash = demo?.bundle_hash

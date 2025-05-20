@@ -1,24 +1,23 @@
-import React from "react"
-import { useQuery } from "@tanstack/react-query"
-import { cn } from "@/lib/utils"
 import { ComponentCard } from "@/components/features/list-card/card"
-import { useClerkSupabaseClient } from "@/lib/clerk"
-import { DemoWithComponent } from "@/types/global"
-import { useAtom } from "jotai"
-import { userPageSearchAtom } from "./user-page-header"
-import { Search, Bookmark, Code, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
-import { useRouter } from "next/navigation"
-import { isMac } from "@/lib/utils"
-import { useHotkeys } from "react-hotkeys-hook"
+import { Button } from "@/components/ui/button"
 import {
   ComponentCardSkeleton,
   ProfileCardSkeleton,
 } from "@/components/ui/skeletons"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { cn, isMac } from "@/lib/utils"
 import { transformDemoResult } from "@/lib/utils/transformData"
+import { DemoWithComponent } from "@/types/global"
+import { useQuery } from "@tanstack/react-query"
+import { useAtom } from "jotai"
+import { Bookmark, Code, Plus, Search } from "lucide-react"
+import { useRouter } from "next/navigation"
+import React from "react"
+import { useHotkeys } from "react-hotkeys-hook"
+import { userPageSearchAtom } from "./user-page-header"
 
-type UserTab = "components" | "demos" | "bookmarks"
+type UserTab = "components" | "demos" | "bookmarks" | "purchased_bundles"
 
 interface UserItemsListProps {
   className?: string

@@ -1,0 +1,785 @@
+generator client {
+  provider        = "prisma-client"
+  previewFeatures = ["postgresqlExtensions", "relationJoins"]
+  output          = "./client"
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_DATABASE_URL")
+  extensions = [uuid_ossp(map: "uuid-ossp", schema: "extensions"), vector(schema: "extensions")]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ApiKey {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  key           String    @unique
+  userId        String    @map("user_id")
+  plan          ApiPlan?  @default(free)
+  requestsCount Int?      @default(0) @map("requests_count")
+  requestsLimit Int?      @default(1000) @map("requests_limit")
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastUsedAt    DateTime? @default(now()) @map("last_used_at") @db.Timestamptz(6)
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz(6)
+  isActive      Boolean?  @default(true) @map("is_active")
+  projectUrl    String?   @map("project_url")
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@index([userId])
+  @@map("api_keys")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AuthorPayout {
+  id            Int       @id(map: "mcp_author_payouts_pkey") @default(autoincrement())
+  authorId      String    @map("author_id")
+  periodStart   DateTime  @map("period_start") @db.Timestamptz(6)
+  periodEnd     DateTime  @map("period_end") @db.Timestamptz(6)
+  totalAmount   Decimal   @map("total_amount") @db.Decimal(10, 4)
+  totalUsage    Int       @map("total_usage")
+  paypalEmail   String    @map("paypal_email")
+  status        String    @default("pending")
+  transactionId String?   @map("transaction_id")
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  processedAt   DateTime? @map("processed_at") @db.Timestamptz(6)
+  user          User      @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_author")
+
+  @@unique([authorId, periodStart, periodEnd], map: "unique_author_period")
+  @@index([authorId], map: "idx_mcp_author_payouts_author_id")
+  @@index([periodStart, periodEnd], map: "idx_mcp_author_payouts_period")
+  @@index([status], map: "idx_mcp_author_payouts_status")
+  @@map("author_payouts")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model BackupCodeEmbedding {
+  id        String?                @db.Uuid
+  itemId    Int?                   @map("item_id")
+  itemType  String?                @map("item_type")
+  embedding Unsupported("vector")?
+  createdAt DateTime?              @map("created_at") @db.Timestamptz(6)
+  metadata  Json?
+
+  @@map("backup_code_embeddings")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model BackupUsageEmbedding {
+  id               String?                @db.Uuid
+  itemId           Int?                   @map("item_id")
+  itemType         String?                @map("item_type")
+  embedding        Unsupported("vector")?
+  usageDescription String?                @map("usage_description")
+  createdAt        DateTime?              @map("created_at") @db.Timestamptz(6)
+  metadata         Json?
+
+  @@map("backup_usage_embeddings")
+  @@ignore
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model BundleItem {
+  bundleId    Int       @map("bundle_id")
+  componentId Int       @map("component_id")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  id          Int       @id @unique @default(autoincrement())
+  bundle      Bundle    @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  @@map("bundle_items")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model BundlePlan {
+  id              Int              @id @default(autoincrement())
+  bundleId        Int              @map("bundle_id")
+  type            BundlePlanType
+  description     String
+  price           Int
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  features        String[]         @default([])
+  bundle          Bundle           @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  bundlePurchases BundlePurchase[]
+
+  @@map("bundle_plans")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model BundlePurchase {
+  userId     String        @map("user_id")
+  bundleId   Int           @map("bundle_id")
+  planId     Int?          @map("plan_id")
+  price      Int
+  fee        Float         @db.Real
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  status     PaymentStatus
+  id         String        @id
+  paidToUser Boolean       @default(false) @map("paid_to_user")
+  bundle     Bundle        @relation(fields: [bundleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bundlePlan BundlePlan?   @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      User          @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("bundle_purchases")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Bundle {
+  id              Int              @id @default(autoincrement())
+  name            String
+  userId          String           @map("user_id")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  isPublic        Boolean          @default(false) @map("is_public")
+  bundleItems     BundleItem[]
+  bundlePlans     BundlePlan[]
+  bundlePurchases BundlePurchase[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bundles")
+}
+
+model CodeEmbedding {
+  id        String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  itemId    Int                   @map("item_id")
+  itemType  String                @map("item_type")
+  embedding Unsupported("vector")
+  metadata  Json?
+  createdAt DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([embedding])
+  @@map("code_embeddings")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Collection {
+  id          String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  coverUrl    String?                  @map("cover_url")
+  userId      String                   @map("user_id")
+  createdAt   DateTime                 @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime                 @default(dbgenerated("timezone('utc'::text, now())")) @map("updated_at") @db.Timestamptz(6)
+  isPublic    Boolean                  @default(true) @map("is_public")
+  slug        String                   @unique
+  user        User                     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  components  ComponentsToCollection[]
+
+  @@index([slug])
+  @@map("collections")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ComponentAnalytic {
+  id           Int       @id @default(autoincrement())
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  componentId  Int       @map("component_id")
+  activityType String?   @map("activity_type") @db.VarChar
+  userId       String?   @map("user_id")
+  anonId       String?   @map("anon_id")
+  component    Component @relation(fields: [componentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([anonId])
+  @@map("component_analytics")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ComponentDependenciesClosure {
+  componentId           Int       @map("component_id")
+  dependencyComponentId Int       @map("dependency_component_id")
+  depth                 Int
+  isDemoDependency      Boolean   @default(false) @map("is_demo_dependency")
+  component             Component @relation("component_dependencies_closure_component_idTocomponents", fields: [componentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  dependencyComponent   Component @relation("component_dependencies_closure_dependency_component_idTocomponents", fields: [dependencyComponentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([componentId, dependencyComponentId])
+  @@index([componentId], map: "idx_component_dependencies_closure_component_id")
+  @@map("component_dependencies_closure")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ComponentHuntRound {
+  id              Int              @id @default(autoincrement())
+  weekNumber      Int              @map("week_number")
+  startAt         DateTime         @map("start_at") @db.Timestamptz(6)
+  endAt           DateTime         @map("end_at") @db.Timestamptz(6)
+  createdAt       DateTime?        @default(now()) @map("created_at") @db.Timestamptz(6)
+  seasonalTagId   Int?             @map("seasonal_tag_id")
+  tag             Tag?             @relation(fields: [seasonalTagId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  demoHuntScores  DemoHuntScore[]
+  demoHuntVotes   DemoHuntVote[]
+  demoHuntWinners DemoHuntWinner[]
+
+  @@map("component_hunt_rounds")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ComponentLike {
+  userId      String    @map("user_id")
+  componentId Int       @map("component_id")
+  likedAt     DateTime? @default(now()) @map("liked_at") @db.Timestamp(6)
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, componentId])
+  @@map("component_likes")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ComponentTag {
+  componentId Int       @default(autoincrement()) @map("component_id")
+  tagId       Int       @map("tag_id")
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([componentId, tagId])
+  @@map("component_tags")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Component {
+  id                             Int                            @id @default(autoincrement())
+  componentNames                 Json                           @map("component_names")
+  description                    String?
+  code                           String                         @default("N/A")
+  demoCode                       String?                        @map("demo_code")
+  createdAt                      DateTime                       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                      DateTime                       @default(now()) @map("updated_at") @db.Timestamp(6)
+  userId                         String                         @map("user_id")
+  dependencies                   Json?
+  isPublic                       Boolean                        @default(true) @map("is_public")
+  downloadsCount                 Int                            @default(0) @map("downloads_count")
+  likesCount                     Int                            @default(0) @map("likes_count")
+  componentSlug                  String                         @map("component_slug")
+  name                           String
+  demoDependencies               Json?                          @map("demo_dependencies")
+  previewUrl                     String                         @map("preview_url")
+  license                        String                         @default("mit")
+  fts                            Unsupported("tsvector")?
+  directRegistryDependencies     Json                           @default("[]") @map("direct_registry_dependencies")
+  registry                       String                         @default("ui")
+  demoDirectRegistryDependencies Json                           @default("[]") @map("demo_direct_registry_dependencies")
+  videoUrl                       String?                        @map("video_url")
+  websiteUrl                     String?                        @map("website_url")
+  tailwindConfigExtension        String?                        @map("tailwind_config_extension")
+  globalCssExtension             String?                        @map("global_css_extension")
+  compiledCss                    String?                        @map("compiled_css")
+  paymentUrl                     String?                        @map("payment_url")
+  proPreviewImageUrl             String?                        @map("pro_preview_image_url")
+  hunterUsername                 String?                        @map("hunter_username")
+  registryUrl                    String?                        @map("registry_url")
+  sandboxId                      String?                        @map("sandbox_id") @db.Uuid
+  indexCssUrl                    String?                        @map("index_css_url")
+  bundleItems                    BundleItem[]
+  componentAnalytics             ComponentAnalytic[]
+  dependenciesList               ComponentDependenciesClosure[] @relation("component_dependencies_closure_component_idTocomponents")
+  dependOnList                   ComponentDependenciesClosure[] @relation("component_dependencies_closure_dependency_component_idTocomponents")
+  componentLikes                 ComponentLike[]
+  componentTags                  ComponentTag[]
+  hunter                         User?                          @relation("components_hunter_usernameTousers", fields: [hunterUsername], references: [username], onDelete: NoAction, onUpdate: NoAction)
+  sandbox                        Sandbox?                       @relation("components_sandbox_idTosandboxes", fields: [sandboxId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sandboxReferences              Sandbox[]                      @relation("sandboxes_component_idTocomponents")
+  user                           User                           @relation("components_user_idTousers", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  componentsPurchases            ComponentsPurchase[]
+  componentsToCollections        ComponentsToCollection[]
+  demos                          Demo[]
+  mcpComponentUsages             McpComponentUsage[]
+  submission                     Submission?
+
+  @@unique([userId, componentSlug], map: "components_user_slug_key")
+  @@index([fts], type: Gin)
+  @@index([componentSlug], map: "idx_components_component_slug")
+  @@map("components")
+}
+
+model ComponentsPurchase {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String    @map("user_id")
+  componentId Int       @map("component_id")
+  pricePaid   Int       @map("price_paid")
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  component   Component @relation(fields: [componentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, componentId])
+  @@map("components_purchases")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ComponentsToCollection {
+  collectionId String     @map("collection_id") @db.Uuid
+  componentId  Int        @map("component_id")
+  createdAt    DateTime   @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  component    Component  @relation(fields: [componentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([collectionId, componentId])
+  @@map("components_to_collections")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model DemoBookmark {
+  demoId       Int       @map("demo_id")
+  userId       String    @map("user_id")
+  bookmarkedAt DateTime? @default(now()) @map("bookmarked_at") @db.Timestamptz(6)
+  demo         Demo      @relation(fields: [demoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_demo")
+
+  @@id([demoId, userId])
+  @@index([demoId], map: "idx_demo_bookmarks_demo_id")
+  @@index([userId], map: "idx_demo_bookmarks_user_id")
+  @@map("demo_bookmarks")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model DemoHuntScore {
+  id                 Int                @id @default(autoincrement())
+  roundId            Int                @map("round_id")
+  demoId             Int                @map("demo_id")
+  votes              Int                @default(0)
+  installs           Int                @default(0)
+  views              Int                @default(0)
+  finalScore         Decimal            @default(0) @map("final_score") @db.Decimal
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  demo               Demo               @relation(fields: [demoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  componentHuntRound ComponentHuntRound @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([demoId], map: "idx_demo_hunt_scores_demo")
+  @@index([roundId, finalScore(sort: Desc)], map: "idx_demo_hunt_scores_round_score")
+  @@map("demo_hunt_scores")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model DemoHuntVote {
+  id                 Int                @id @default(autoincrement())
+  roundId            Int                @map("round_id")
+  demoId             Int                @map("demo_id")
+  userId             String             @map("user_id")
+  votedAt            DateTime           @default(now()) @map("voted_at") @db.Timestamptz(6)
+  demo               Demo               @relation(fields: [demoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  componentHuntRound ComponentHuntRound @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([roundId, demoId, userId])
+  @@map("demo_hunt_votes")
+}
+
+model DemoHuntWinner {
+  id                 Int                @id @default(autoincrement())
+  roundId            Int                @map("round_id")
+  demoId             Int                @map("demo_id")
+  category           DemoHuntCategory?
+  prizeTier          Int                @map("prize_tier") @db.SmallInt
+  isGlobal           Boolean            @default(false) @map("is_global")
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  demo               Demo               @relation(fields: [demoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  componentHuntRound ComponentHuntRound @relation(fields: [roundId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([roundId, demoId, category, prizeTier, isGlobal])
+  @@map("demo_hunt_winners")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model DemoTag {
+  id        Int       @id @default(autoincrement())
+  demoId    Int       @map("demo_id")
+  tagId     Int       @map("tag_id")
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  demo      Demo      @relation(fields: [demoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tag       Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([demoId, tagId])
+  @@index([demoId], map: "idx_demo_tags_demo_id")
+  @@index([tagId], map: "idx_demo_tags_tag_id")
+  @@map("demo_tags")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Demo {
+  id                             Int                      @id @default(autoincrement())
+  componentId                    Int                      @map("component_id")
+  demoCode                       String                   @map("demo_code")
+  createdAt                      DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                      DateTime                 @default(now()) @map("updated_at") @db.Timestamptz(6)
+  demoDependencies               Json?                    @default("{}") @map("demo_dependencies")
+  previewUrl                     String?                  @map("preview_url")
+  videoUrl                       String?                  @map("video_url")
+  proPreviewImageUrl             String?                  @map("pro_preview_image_url")
+  compiledCss                    String?                  @map("compiled_css")
+  demoDirectRegistryDependencies Json?                    @default("[]") @map("demo_direct_registry_dependencies")
+  name                           String?
+  userId                         String                   @map("user_id")
+  fts                            Unsupported("tsvector")?
+  demoSlug                       String                   @default("default") @map("demo_slug")
+  embedding                      Unsupported("vector")?
+  embeddingOai                   Unsupported("vector")?   @map("embedding_oai")
+  bookmarksCount                 Int?                     @default(0) @map("bookmarks_count")
+  bundleHtmlUrl                  String?                  @map("bundle_html_url")
+  bundleHash                     String?                  @map("bundle_hash")
+  demoBookmarks                  DemoBookmark[]
+  demoHuntScores                 DemoHuntScore[]
+  demoHuntVotes                  DemoHuntVote[]
+  demoHuntWinners                DemoHuntWinner[]
+  demoTags                       DemoTag[]
+  component                      Component?               @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  user                           User                     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([componentId, demoSlug])
+  @@index([embedding])
+  @@index([embeddingOai])
+  @@index([fts], type: Gin)
+  @@index([componentId], map: "idx_demos_component_id")
+  @@index([demoSlug], map: "idx_demos_demo_slug")
+  @@map("demos")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id")
+  type      String
+  content   String
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  status    String?  @default("pending")
+  response  String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("feedback")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model McpComponentUsage {
+  id                   Int                  @id @default(autoincrement())
+  generationRequestId  Int                  @map("generation_request_id")
+  componentId          Int                  @map("component_id")
+  authorId             String               @map("author_id")
+  authorShare          Decimal              @map("author_share") @db.Decimal(10, 4)
+  payoutStatus         String               @default("pending") @map("payout_status")
+  payoutId             Int?                 @map("payout_id")
+  createdAt            DateTime?            @default(now()) @map("created_at") @db.Timestamptz(6)
+  user                 User                 @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_author")
+  component            Component            @relation(fields: [componentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_component")
+  mcpGenerationRequest McpGenerationRequest @relation(fields: [generationRequestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_generation_request")
+
+  @@index([authorId], map: "idx_mcp_component_usage_author_id")
+  @@index([componentId], map: "idx_mcp_component_usage_component_id")
+  @@index([payoutStatus], map: "idx_mcp_component_usage_payout_status")
+  @@map("mcp_component_usage")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model McpGenerationRequest {
+  id                 Int                 @id @default(autoincrement())
+  userId             String              @map("user_id")
+  apiKey             String              @map("api_key")
+  searchQuery        String              @map("search_query")
+  subscriptionPlan   String              @map("subscription_plan")
+  generationCost     Decimal             @map("generation_cost") @db.Decimal(10, 4)
+  createdAt          DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  mcpComponentUsages McpComponentUsage[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
+
+  @@index([createdAt], map: "idx_mcp_generation_requests_created_at")
+  @@index([userId], map: "idx_mcp_generation_requests_user_id")
+  @@map("mcp_generation_requests")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model PayoutRate {
+  id           Int       @id @default(autoincrement())
+  userId       String?   @map("user_id")
+  price        Float
+  activityType String    @map("activity_type") @db.VarChar
+  activeFrom   DateTime  @map("active_from") @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  activeTill   DateTime? @map("active_till") @db.Date
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payout_rates")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Plan {
+  id           Int           @id @default(autoincrement())
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  stripePlanId String?       @map("stripe_plan_id")
+  type         String?
+  price        Float?        @db.Real
+  env          String?
+  period       String?
+  addUsage     Int?          @map("add_usage")
+  version      Int           @default(1) @db.SmallInt
+  usersInfo    UsersToPlan[]
+
+  @@map("plans")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model PromptRule {
+  id                Int       @id @default(autoincrement())
+  userId            String    @map("user_id")
+  name              String
+  techStack         Json?     @default("[]") @map("tech_stack")
+  theme             Json?     @default("{}")
+  additionalContext String?   @map("additional_context")
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userId], map: "idx_prompt_rules_user_id")
+  @@map("prompt_rules")
+}
+
+model ReferralPayment {
+  id              Int           @id @default(autoincrement())
+  userId          String        @map("user_id")
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("USD")
+  paymentDate     DateTime      @map("payment_date") @db.Timestamptz(6)
+  status          PaymentStatus @default(paid)
+  referenceNumber String?       @map("reference_number")
+  notes           String?
+  createdAt       DateTime      @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @default(dbgenerated("timezone('utc'::text, now())")) @map("updated_at") @db.Timestamptz(6)
+  user            User          @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([paymentDate])
+  @@index([userId])
+  @@map("referral_payments")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Sandbox {
+  id                  String      @id(map: "sandbox_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt           DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime    @default(now()) @map("updated_at") @db.Timestamp(6)
+  userId              String      @map("user_id")
+  codesandboxId       String?     @map("codesandbox_id")
+  name                String      @default("Untitled")
+  status              String?     @default("draft")
+  componentId         Int?        @map("component_id")
+  user                User        @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "sandbox_user_id_fkey")
+  component           Component?  @relation("sandboxes_component_idTocomponents", fields: [componentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  componentReferences Component[] @relation("components_sandbox_idTosandboxes")
+
+  @@map("sandboxes")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Submission {
+  id                 Int              @id @default(autoincrement())
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  componentId        Int              @unique @map("component_id")
+  moderatorsFeedback String?          @map("moderators_feedback")
+  status             SubmissionStatus @default(on_review)
+  component          Component        @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  @@map("submissions")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Tag {
+  id                  Int                  @id @default(autoincrement())
+  name                String               @unique
+  slug                String               @unique
+  componentHuntRounds ComponentHuntRound[]
+  componentTags       ComponentTag[]
+  demoTags            DemoTag[]
+  templatesTags       TemplatesTag[]
+
+  @@map("tags")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Template {
+  id                Int            @id @default(autoincrement())
+  name              String
+  description       String?
+  previewUrl        String         @map("preview_url")
+  videoUrl          String?        @map("video_url")
+  websitePreviewUrl String         @map("website_preview_url")
+  price             Decimal        @default(0) @db.Decimal(10, 2)
+  paymentUrl        String?        @map("payment_url")
+  createdAt         DateTime       @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime       @default(dbgenerated("timezone('utc'::text, now())")) @map("updated_at") @db.Timestamptz(6)
+  userId            String         @map("user_id")
+  isPublic          Boolean?       @default(false) @map("is_public")
+  downloadsCount    Int?           @default(0) @map("downloads_count")
+  likesCount        Int?           @default(0) @map("likes_count")
+  templateSlug      String         @unique(map: "templates_template_slug_unique_idx") @map("template_slug")
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  templatesTags     TemplatesTag[]
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("templates")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model TemplatesTag {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  templateId Int       @map("template_id")
+  tagId      Int       @map("tag_id")
+  tag        Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  template   Template  @relation(fields: [templateId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([templateId, tagId])
+  @@map("templates_tags")
+}
+
+model UsageEmbedding {
+  id               String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  itemId           Int                   @map("item_id")
+  itemType         String                @map("item_type")
+  embedding        Unsupported("vector")
+  usageDescription String?               @map("usage_description")
+  metadata         Json?
+  createdAt        DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([itemId, itemType], map: "usage_embeddings_item_unique")
+  @@index([embedding])
+  @@map("usage_embeddings")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Usage {
+  id        Int      @id(map: "usage_pkey") @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  userId    String?  @unique @map("user_id")
+  limit     Int?     @default(0)
+  usage     Int?     @default(0)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "usage_user_id_fkey")
+
+  @@map("usages")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model User {
+  id                    String                 @id
+  createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime?              @default(now()) @map("updated_at") @db.Timestamptz(6)
+  imageUrl              String?                @map("image_url")
+  username              String?                @unique
+  name                  String?
+  email                 String                 @unique @default("")
+  manuallyAdded         Boolean                @default(false) @map("manually_added")
+  isAdmin               Boolean                @default(false) @map("is_admin")
+  twitterUrl            String?                @map("twitter_url")
+  bio                   String?
+  githubUrl             String?                @map("github_url")
+  proReferralUrl        String?                @map("pro_referral_url")
+  websiteUrl            String?                @map("website_url")
+  proBannerUrl          String?                @map("pro_banner_url")
+  displayName           String?                @map("display_name")
+  displayUsername       String?                @map("display_username")
+  displayImageUrl       String?                @map("display_image_url")
+  ref                   String?
+  paypalEmail           String?                @map("paypal_email")
+  role                  UserRole?
+  isPartner             Boolean?               @default(false) @map("is_partner")
+  bundlesFee            Float                  @default(0.3) @map("bundles_fee") @db.Real
+  stripeId              String?                @map("stripe_id")
+  apiKeys               ApiKey[]
+  authorPayouts         AuthorPayout[]
+  bundlePurchases       BundlePurchase[]
+  bundles               Bundle[]
+  collections           Collection[]
+  componentAnalytics    ComponentAnalytic[]
+  componentLikes        ComponentLike[]
+  huntedComponents      Component[]            @relation("components_hunter_usernameTousers")
+  components            Component[]            @relation("components_user_idTousers")
+  componentsPurchases   ComponentsPurchase[]
+  demoHuntVotes         DemoHuntVote[]
+  demos                 Demo[]
+  feedbacks             Feedback[]
+  mcpComponentUsages    McpComponentUsage[]
+  mcpGenerationRequests McpGenerationRequest[]
+  payoutRates           PayoutRate[]
+  referralPayments      ReferralPayment[]
+  sandboxes             Sandbox[]
+  templates             Template[]
+  usage                 Usage?
+  plansInfo             UsersToPlan?
+
+  @@index([displayUsername], map: "idx_users_display_username")
+  @@index([username], map: "idx_users_username")
+  @@map("users")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model UsersToPlan {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @default(now()) @map("updated_at") @db.Timestamp(6)
+  userId     String?   @unique @map("user_id")
+  planId     Int?      @map("plan_id")
+  status     String?
+  meta       Json?     @db.Json
+  lastPaidAt DateTime? @map("last_paid_at") @db.Timestamp(6)
+  plan       Plan?     @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user       User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("users_to_plans")
+}
+
+enum ApiPlan {
+  free
+  pro
+  enterprise
+
+  @@map("api_plan")
+}
+
+enum BundlePlanType {
+  individual
+  team
+  enterprise
+
+  @@map("bundle_plan_type")
+}
+
+enum DemoHuntCategory {
+  marketing
+  ui
+  seasonal
+
+  @@map("demo_hunt_category")
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  rejected
+  refunded
+
+  @@map("payment_status")
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum SubmissionStatus {
+  on_review
+  featured
+  posted
+  rejected
+
+  @@map("submission_status")
+}
+
+enum UserRole {
+  designer
+  frontend_developer
+  backend_developer
+  product_manager
+  entrepreneur
+
+  @@map("user_role")
+}

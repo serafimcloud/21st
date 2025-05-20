@@ -1,28 +1,28 @@
 import {
-  LucideProps,
-  Moon,
-  SunMedium,
-  Menu,
-  Search,
-  type LucideIcon,
-  CreditCardIcon,
   CalendarIcon,
-  Settings,
+  CreditCardIcon,
   Info,
   LayoutDashboard,
+  LucideProps,
+  Menu,
+  Moon,
+  Search,
+  Settings,
+  SunMedium,
+  type LucideIcon,
 } from "lucide-react"
-import { LovableLogo } from "./lovable"
-import { SitebrewLogo } from "./sitebrew"
-import { TerminalIcon } from "./terminal"
 import { ClapIcon } from "./clap"
-import { WorkflowIcon } from "./workslow"
-import { LogoutIcon } from "./logout-icon"
-import { MagicPatternsLogo } from "./magic-patterns"
-import { CursorLight } from "./cursor-light"
 import { CursorDark } from "./cursor-dark"
-import WindsurfTealLogo from "./WindsurfTealLogo"
-import { VSCodeLogo } from "./vscode"
+import { CursorLight } from "./cursor-light"
+import { LogoutIcon } from "./logout-icon"
+import { LovableLogo } from "./lovable"
+import { MagicPatternsLogo } from "./magic-patterns"
+import { SitebrewLogo } from "./sitebrew"
 import svgl from "./svgl"
+import { TerminalIcon } from "./terminal"
+import { VSCodeLogo } from "./vscode"
+import WindsurfTealLogo from "./WindsurfTealLogo"
+import { WorkflowIcon } from "./workslow"
 
 export type Icon = LucideIcon
 
@@ -160,7 +160,7 @@ export const Icons = {
   slash: (props: LucideProps) => (
     <svg
       data-testid="geist-icon"
-      stroke-linejoin="round"
+      strokeLinejoin="round"
       viewBox="0 0 16 16"
       width="16"
       height="16"
@@ -168,8 +168,8 @@ export const Icons = {
       {...props}
     >
       <path
-        fill-rule="evenodd"
-        clip-rule="evenodd"
+        fillRule="evenodd"
+        clipRule="evenodd"
         d="M11.9849 15.3939L11.6894 14.7046L5.68942 0.704556L5.39398 0.0151978L4.01526 0.606077L4.3107 1.29544L10.3107 15.2954L10.6061 15.9848L11.9849 15.3939Z"
         fill="currentColor"
       />
@@ -239,7 +239,7 @@ export const Icons = {
     <svg
       data-testid="geist-icon"
       height="16"
-      stroke-linejoin="round"
+      strokeLinejoin="round"
       viewBox="0 0 16 16"
       width="16"
       {...props}
@@ -257,7 +257,7 @@ export const Icons = {
     <svg
       data-testid="geist-icon"
       height="16"
-      stroke-linejoin="round"
+      strokeLinejoin="round"
       viewBox="0 0 16 16"
       width="16"
       {...props}
@@ -275,7 +275,7 @@ export const Icons = {
     <svg
       data-testid="geist-icon"
       height="16"
-      stroke-linejoin="round"
+      strokeLinejoin="round"
       viewBox="0 0 16 16"
       width="16"
       {...props}
@@ -283,7 +283,7 @@ export const Icons = {
       <path
         fillRule="evenodd"
         clipRule="evenodd"
-        d="M10.5 0.25V1V1.5H11L11.75 1.5V3H11H10.5V3.5V4.25H9V3.5V3H8.5H7.75V1.5H8.5H9V1V0.25H10.5ZM3.25514 2.75496C2.33413 3.53491 1.75 4.69972 1.75 6C1.75 8.34721 3.65279 10.25 6 10.25C7.30029 10.25 8.4651 9.66587 9.24505 8.74485C9.16377 8.74827 9.08207 8.74999 9 8.74999C5.82436 8.74999 3.25 6.17563 3.25 2.99999C3.25 2.91792 3.25172 2.83623 3.25514 2.75496ZM0.25 6C0.25 3.51072 1.83142 1.39271 4.042 0.592193L5.00256 1.55275C4.83933 2.00347 4.75 2.49047 4.75 2.99999C4.75 5.3472 6.65279 7.24999 9 7.24999C9.50953 7.24999 9.99653 7.16065 10.4473 6.99743L11.4078 7.95798C10.6073 10.1686 8.48929 11.75 6 11.75C2.82436 11.75 0.25 9.17564 0.25 6Z"
+        d="M10.5 0.25V1V1.5H11L11.75 1.5V3H11H10.5V3.5V4.25H9V3.5V3H8.5H7.75V1.5H8.5H9V1V0.25H10.5ZM3.25514 2.75496C2.33413 3.53491 1.75 4.69972 1.75 6C1.75 8.34721 3.65279 10.25 6 10.25C7.30029 10.25 8.4651 9.66587 9.24505 8.74485C9.16377 8.74827 9.08207 8.74999 9 8.74999C5.82436 8.74999 3.25 6.17563 3.25 2.99999C3.25 2.91792 3.25172 2.83623 3.25514 2.75496ZM0.25 6C0.25 3.51072 1.83142 1.39271 4.042 0.592193L5.00256 1.55275C4.83933 2.00347 4.75 2.49047 4.75 2.99999C4.75 5.3472 6.65279 7.24999 9 7.24999C9.50953 7.24999 9.99653 7.16065 10.4473 6.99743L10.4473 6.99743Z"
         fill="currentColor"
         transform="translate(2.25, 2.25)"
       />

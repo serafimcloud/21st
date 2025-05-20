@@ -1,10 +1,10 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import dynamic from "next/dynamic"
-const Lottie = dynamic(() => import("lottie-react"), { ssr: false })
-import { useEffect, useState, useRef } from "react"
 import { useTheme } from "next-themes"
+import dynamic from "next/dynamic"
+import { useEffect, useRef, useState } from "react"
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false })
 
 // Animation cache to prevent multiple fetches of the same file
 const animationCache = new Map<string, any>()
@@ -85,7 +85,7 @@ export const LoadingSpinner = ({
   return (
     <div
       className={cn(
-        "w-full h-full flex items-center justify-center bg-background",
+        "w-full h-full flex items-center justify-center",
         className,
       )}
     >
