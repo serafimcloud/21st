@@ -103,11 +103,6 @@ export function LegacyFlowPreviewRenderer({
     demoId: demo.id,
     tailwindConfig,
     globalCss,
-    existingBundleUrls: demo.bundle_html_url
-      ? {
-          html: demo.bundle_html_url,
-        }
-      : null,
   })
 
   const demoBundleHash = demo?.bundle_hash
