@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server"
-import { supabaseWithAdminAccess } from "@/lib/supabase"
-import crypto from "crypto"
-import { defaultTailwindConfig, defaultGlobalCss } from "@/lib/sandpack"
+import { hasUserPurchasedDemo } from "@/lib/api/server/demos"
 import {
   resolveRegistryDependenciesV2,
   transformToFlatDependencyTree,
 } from "@/lib/registry"
+import { defaultGlobalCss, defaultTailwindConfig } from "@/lib/sandpack"
+import { supabaseWithAdminAccess } from "@/lib/supabase"
+import { auth } from "@clerk/nextjs/server"
+import crypto from "crypto"
+import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   try {
@@ -93,12 +95,17 @@ export async function POST(request: Request) {
       )
       .digest("hex")
 
+    const { userId } = await auth()
+    const isPurchased = await hasUserPurchasedDemo(userId, demoId)
+
     // If we have a cached bundle with the same hash, return it
+    // Force cache if not purchased
     if (
-      !demoError &&
-      demo &&
-      demo.bundle_hash === contentHash &&
-      demo.bundle_html_url
+      (!demoError &&
+        demo &&
+        demo.bundle_hash === contentHash &&
+        demo.bundle_html_url) ||
+      !isPurchased
     ) {
       return NextResponse.json({
         html: demo.bundle_html_url,

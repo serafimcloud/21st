@@ -107,6 +107,18 @@ export function LegacyFlowPreviewRenderer({
 
   const demoBundleHash = demo?.bundle_hash
 
+  const urls = useMemo(() => {
+    if ((code === "" || demoCode === "") && demo.bundle_html_url) {
+      return {
+        html: demo.bundle_html_url,
+      }
+    }
+    if (bundle?.html) {
+      return bundle
+    }
+    return null
+  }, [bundle?.html, demo.bundle_html_url, code, demoCode])
+
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined
     const isPreviewDefinitelyUnavailable = !!(
@@ -168,12 +180,12 @@ export function LegacyFlowPreviewRenderer({
         </SandpackProviderUnstyled>
       </>
     )
-  } else if (bundle?.html && demoBundleHash !== "0") {
+  } else if (urls?.html && demoBundleHash !== "0") {
     displayContent = (
       <>
         {contentLoading && <LoadingOverlay text={getCurrentLoadingMessage()} />}
         <iframe
-          src={isDarkTheme ? `${bundle.html}?dark=true` : bundle.html}
+          src={isDarkTheme ? `${urls.html}?dark=true` : urls.html}
           className="w-full h-full"
           onLoad={() => setContentLoading(false)}
           onError={() => {
