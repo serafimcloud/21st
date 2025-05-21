@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ComponentAccessState } from "@/hooks/use-component-access"
 import { getComponentBundlesAction } from "@/lib/api/components"
@@ -28,13 +29,13 @@ import { AvatarImage } from "@radix-ui/react-avatar"
 import { useQuery } from "@tanstack/react-query"
 import { useAtom } from "jotai"
 import { Loader2 } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useHotkeys } from "react-hotkeys-hook"
 import { toast } from "sonner"
 import PlansDialog from "../bundles/plans-dialog"
 
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
 interface PayWallProps {
   accessState: ComponentAccessState
   component: Component
@@ -660,6 +661,12 @@ function BundlePaywall({ accessState, component }: PayWallProps) {
             })
           )}
         </div>
+        <Link
+          href={`${process.env.NEXT_PUBLIC_APP_URL}/?tab=bundles`}
+          className="underline"
+        >
+          View bundles
+        </Link>
       </div>
     </>
   )
