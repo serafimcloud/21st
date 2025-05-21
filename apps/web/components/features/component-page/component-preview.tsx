@@ -379,7 +379,7 @@ const useInstallUrl = (component: Component, user: User) => {
 
   useEffect(() => {
     // TODO: Add custom template to make JWT live longer
-    auth.getToken().then((token) => {
+    auth.getToken({ template: "long-token" }).then((token) => {
       const url = new URL(
         `${process.env.NEXT_PUBLIC_APP_URL}/r/${user.username}/${component.component_slug}`,
       )
