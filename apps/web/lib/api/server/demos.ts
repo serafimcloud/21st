@@ -29,7 +29,7 @@ export const getDemos = async (search?: string) => {
     where: {
       components: {
         is_public: true,
-        name: { contains: search, mode: "insensitive" },
+        name: search ? { contains: search, mode: "insensitive" } : undefined,
       },
     },
     include: {

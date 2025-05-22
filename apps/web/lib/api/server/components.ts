@@ -51,3 +51,37 @@ export const getComponentBundles = async (componentId: number) => {
 
   return bundles
 }
+
+export const transferOwnership = async (
+  componentId: number,
+  userId: string,
+) => {
+  const demos = await prisma.demos.findMany({
+    where: {
+      component_id: componentId,
+    },
+  })
+
+  const promises = []
+
+  promises.push(
+    prisma.components.update({
+      where: { id: componentId },
+      data: { user_id: userId },
+    }),
+  )
+
+  for (const demo of demos) {
+    promises.push(
+      prisma.demos.update({
+        where: { id: demo.id },
+        data: { user_id: userId },
+      }),
+    )
+  }
+
+  await Promise.all(promises).catch((err) => {
+    console.error(err)
+    throw new Error("Failed to transfer ownership")
+  })
+}

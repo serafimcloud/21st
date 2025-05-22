@@ -34,6 +34,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { transferOwnershipAction } from "@/lib/api/components"
 import { cn } from "@/lib/utils"
 import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
 import {
@@ -49,6 +50,8 @@ import {
 import { ChevronDown, ChevronUp, ExternalLink, InfoIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useId, useState } from "react"
+import { toast } from "sonner"
+import { UserPicker } from "../../admin/user-picker"
 import { VisibilityToggle } from "./visibility-toggle"
 
 interface DemosTableProps {
@@ -403,18 +406,32 @@ export function DemosTable({
 
   if (isAdmin) {
     columns.push({
-      header: "Links (Admin)",
-      id: "links",
+      header: "Admin",
+      id: "admin",
       cell: ({ row }) => {
-        let componentId = undefined
-        let demoId = undefined
-        if (row.original.submission_status !== "draft") {
-          componentId = row.original.component_id ?? row.original?.component?.id
-          demoId = row.original.id
-        }
-        return <DbLinks componentId={componentId} demoId={demoId} />
+        const componentId =
+          row.original.component_id ?? row.original.component?.id
+
+        return (
+          <div className="flex items-center gap-2">
+            <DbLinks componentId={componentId} demoId={row.original.id} />
+            <UserPicker
+              disabled={!componentId}
+              onSelect={(userId) => {
+                toast.promise(
+                  transferOwnershipAction({ componentId, userId }),
+                  {
+                    loading: "Transferring ownership...",
+                    success: "Ownership transferred successfully",
+                    error: "Failed to transfer ownership",
+                  },
+                )
+              }}
+            />
+          </div>
+        )
       },
-      size: 100,
+      size: 280,
     })
   }
 
@@ -616,7 +633,7 @@ export function DemosTable({
                             isLastColumn && "pr-6",
                           )}
                           onClick={
-                            ["is_private", "links"].includes(cell.column.id)
+                            ["is_private", "admin"].includes(cell.column.id)
                               ? (e) => e.stopPropagation()
                               : undefined
                           }
