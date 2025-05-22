@@ -12,32 +12,31 @@ import {
 } from "@/components/ui/context-menu"
 import { promptOptions } from "@/lib/prompts"
 import { PromptType } from "@/types/global"
-import { Bookmark, Eye, ThumbsUp, Video } from "lucide-react"
+import { Bookmark, Eye, Video } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
-import { useClerkSupabaseClient } from "@/lib/clerk"
-import { bookmarkDemo } from "@/lib/queries"
-import { Component, DemoWithComponent, User } from "@/types/global"
-import { useUser } from "@clerk/nextjs"
-import { ComponentCardSkeleton } from "../../ui/skeletons"
-import { UserAvatar } from "../../ui/user-avatar"
-import ComponentPreviewImage from "./card-image"
-import { ComponentVideoPreview } from "./card-video"
-import { shouldHideLeaderboardRankings } from "@/lib/utils"
-import { UpvoteIcon } from "../../icons/upvote-icon"
-import { motion } from "motion/react"
-import { useState } from "react"
-import { cn } from "@/lib/utils"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { AMPLITUDE_EVENTS, trackEvent } from "@/lib/amplitude"
+import { useClerkSupabaseClient } from "@/lib/clerk"
+import { bookmarkDemo } from "@/lib/queries"
+import { cn, shouldHideLeaderboardRankings } from "@/lib/utils"
+import { Component, DemoWithComponent, User } from "@/types/global"
+import { useUser } from "@clerk/nextjs"
 import NumberFlow from "@number-flow/react"
+import { motion } from "motion/react"
+import router from "next/router"
+import { UpvoteIcon } from "../../icons/upvote-icon"
+import { ComponentCardSkeleton } from "../../ui/skeletons"
+import { UserAvatar } from "../../ui/user-avatar"
+import ComponentPreviewImage from "./card-image"
+import { ComponentVideoPreview } from "./card-video"
 
 // Extended type to include leaderboard fields
 type LeaderboardDemoWithComponent = DemoWithComponent & {
@@ -77,6 +76,7 @@ export function ComponentCard({
   const componentSlug = isDemo
     ? demo.component?.component_slug
     : demo.component_slug
+  const isTouch = window.matchMedia("(pointer: coarse)").matches
 
   if (!userData || !username || !componentSlug) {
     console.warn("Missing required data:", {
@@ -249,9 +249,12 @@ export function ComponentCard({
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger className="block p-[1px]">
+      <ContextMenuTrigger
+        className="block p-[1px] select-none"
+        disabled={isTouch}
+      >
         <div
-          className="block"
+          className="block select-none"
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) {
               e.preventDefault()
@@ -265,7 +268,7 @@ export function ComponentCard({
               e.preventDefault()
               onClick()
             } else {
-              window.location.href = componentUrl
+              router.push(componentUrl)
             }
           }}
         >
