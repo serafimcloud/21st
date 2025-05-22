@@ -36,7 +36,7 @@ export async function resolveRegistryDependencyTree({
     })
     .join(",")
   const { data: dependencies, error } = await supabase
-    .from("component_dependencies_graph_view_v2")
+    .from("component_dependencies_graph_view_v3")
     .select("*")
     .or(filterConditions)
     .returns<
@@ -114,7 +114,7 @@ export async function resolveRegistryDependencyTree({
       if (stylesPromises.length > 0) {
         const responses = await Promise.all(stylesPromises)
         const texts = await Promise.all(responses.map((r) => r.text()))
-        
+
         styles = {
           tailwindConfig: tailwind_config_extension ? texts[0] : undefined,
           globalCss: global_css_extension ? texts[texts.length - 1] : undefined,
