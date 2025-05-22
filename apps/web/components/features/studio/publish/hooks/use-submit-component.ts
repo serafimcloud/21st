@@ -3,13 +3,11 @@ import { useR2Upload } from "@/components/features/publish/hooks/use-r2-upload"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { addTagsToDemo } from "@/lib/queries"
 import { uploadToR2 } from "@/lib/r2"
-import { addVersionToUrl } from "@/lib/utils/url"
 import { Tag } from "@/types/global"
 import { Tables } from "@/types/supabase"
 import { useState } from "react"
 import { toast } from "sonner"
 import { FormData } from "../config/utils"
-import { useFileSystem } from "@/components/features/studio/sandbox/hooks/use-file-system"
 
 type ParsedCodeData = {
   componentCode: string
@@ -626,7 +624,7 @@ export const useSubmitComponent = () => {
     }
 
     // Create or update submission entry for private components
-    if (!context.form.is_public && typeof componentIdToUse === "number") {
+    if (typeof componentIdToUse === "number") {
       context.setPublishProgress("Ensuring submission status is on review…")
 
       const { data: existingSubmission, error: submissionFetchError } =
@@ -650,7 +648,7 @@ export const useSubmitComponent = () => {
           console.error("Error inserting submission:", insertError)
           throw insertError
         }
-      } else if (existingSubmission.status === "rejected") {
+      } else {
         const { error: updateError } = await context.supabase
           .from("submissions")
           .update({ status: "on_review", moderators_feedback: null })

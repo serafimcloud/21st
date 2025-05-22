@@ -1,35 +1,34 @@
+import { Spinner } from "@/components/icons/spinner"
 import { Button } from "@/components/ui/button"
-import { useParams, usePathname, useRouter } from "next/navigation"
-import { useState, useRef, useEffect } from "react"
-import {
-  Loader2,
-  CheckIcon,
-  XIcon,
-  ArrowLeftIcon,
-  BugIcon,
-  Video,
-} from "lucide-react"
-import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Logo } from "@/components/ui/logo"
-import { UserAvatar } from "@/components/ui/user-avatar"
-import { cn } from "@/lib/utils"
-import { Spinner } from "@/components/icons/spinner"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { editSandbox } from "../api"
+import { UserAvatar } from "@/components/ui/user-avatar"
 import { useUser } from "@clerk/nextjs"
-import { ThemeToggle } from "@/components/ui/theme-toggle"
+import {
+  ArrowLeftIcon,
+  BugIcon,
+  CheckIcon,
+  Loader2,
+  Video,
+  XIcon,
+} from "lucide-react"
+import { useParams, usePathname, useRouter } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
+import { editSandbox } from "../api"
+import { SandboxStatus } from "../hooks/use-sandbox"
 
 interface SandboxHeaderProps {
   sandboxId: string | null | undefined
   sandboxName?: string
   username?: string
-  status?: "draft" | "edit" | "published"
+  status: SandboxStatus
   showEditName?: boolean
   onNameChange?: (newName: string) => void
   customBackUrl?: string
@@ -49,7 +48,7 @@ export function SandboxHeader({
   sandboxId,
   sandboxName = "...",
   username,
-  status = "draft",
+  status,
   showEditName = true,
   onNameChange,
   customBackUrl,
@@ -174,10 +173,15 @@ export function SandboxHeader({
           </div>
         )
       case "draft":
-      default:
         return (
           <div className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">
             Draft
+          </div>
+        )
+      default:
+        return (
+          <div className="text-xs bg-muted text-muted-foreground rounded-full px-2 py-0.5">
+            Loading...
           </div>
         )
     }

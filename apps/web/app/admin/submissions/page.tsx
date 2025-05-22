@@ -1,58 +1,16 @@
 "use client"
 
 import AdminHeader from "@/components/features/admin/AdminHeader"
+import { DbLinks } from "@/components/features/admin/db-links"
+import DeleteComponentDialog from "@/components/features/admin/DeleteComponentDialog"
 import EditDemoModal from "@/components/features/admin/EditDemoModal"
+import useSubmissions from "@/components/features/admin/hooks/useSubmissions"
 import ManageSubmissionModal from "@/components/features/admin/ManageSubmissionModal"
 import NonAdminPlaceholder from "@/components/features/admin/NonAdminPlaceholder"
 import SubmissionStatusFilter from "@/components/features/admin/SubmissionStatusFilter"
-import DeleteComponentDialog from "@/components/features/admin/DeleteComponentDialog"
-import useSubmissions from "@/components/features/admin/hooks/useSubmissions"
 import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
-import { motion } from "motion/react"
-import { FC, useRef, useCallback, useState, useEffect } from "react"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import {
-  Edit,
-  ExternalLink,
-  Settings,
-  Star,
-  Eye,
-  Video,
-  Award,
-  ChevronDown,
-  Check,
-  Trash,
-  Globe,
-  Lock,
-} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
 import {
   Command,
   CommandEmpty,
@@ -61,6 +19,45 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
+import {
+  Award,
+  Check,
+  ChevronDown,
+  Edit,
+  Globe,
+  Lock,
+  Star,
+  Trash,
+  Video,
+} from "lucide-react"
+import { motion } from "motion/react"
+import { FC, useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
 // VideoPreview component for hover video functionality
@@ -533,9 +530,6 @@ const SubmissionsAdminPage: FC = () => {
                 </TableHeader>
                 <TableBody>
                   {submissions.map((submission) => {
-                    // Supabase URLs
-                    const componentSupabaseUrl = `https://supabase.com/dashboard/project/vucvdpamtrjkzmubwlts/editor/29179?sort=created_at%3Adesc&filter=id%3Aeq%3A${submission.component_data.id}`
-                    const demoSupabaseUrl = `https://supabase.com/dashboard/project/vucvdpamtrjkzmubwlts/editor/229472?sort=created_at:desc&filter=component_id:eq:${submission.component_data.id}`
                     const viewUrl = `/${submission.user_data.username}/${submission.component_data.component_slug}/${submission.demo_slug}`
 
                     // Check if the submission is already in a contest - using the demo ID (submission.id)
@@ -763,57 +757,7 @@ const SubmissionsAdminPage: FC = () => {
                         </TableCell>
 
                         <TableCell onClick={(e) => e.stopPropagation()}>
-                          <TooltipProvider>
-                            <div className="flex items-center gap-1">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    asChild
-                                    className="h-8 w-8"
-                                  >
-                                    <Link
-                                      href={componentSupabaseUrl}
-                                      target="_blank"
-                                    >
-                                      <ExternalLink
-                                        size={16}
-                                        className="text-blue-600"
-                                      />
-                                    </Link>
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Open Component in Supabase</p>
-                                </TooltipContent>
-                              </Tooltip>
-
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    asChild
-                                    className="h-8 w-8"
-                                  >
-                                    <Link
-                                      href={demoSupabaseUrl}
-                                      target="_blank"
-                                    >
-                                      <ExternalLink
-                                        size={16}
-                                        className="text-green-600"
-                                      />
-                                    </Link>
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Open Demo in Supabase</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </TooltipProvider>
+                          <DbLinks componentId={submission.component_data.id} />
                         </TableCell>
 
                         <TableCell onClick={(e) => e.stopPropagation()}>

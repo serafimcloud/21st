@@ -1,14 +1,16 @@
+import { Tables } from "@/types/supabase"
 import { SandboxSession } from "@codesandbox/sdk"
 import { connectToSandbox as connectToCodeSandboxSDK } from "@codesandbox/sdk/browser"
 import { useEffect, useRef, useState } from "react"
 import { connectToSandbox } from "../api"
 import { getLatestPackageVersionFromError } from "../utils/dependencies"
-import { Tables } from "@/types/supabase"
 
 export type ServerSandbox = Pick<
   Tables<"sandboxes">,
   "codesandbox_id" | "name" | "id" | "component_id"
 > | null
+
+export type SandboxStatus = "draft" | "edit" | "published" | undefined
 
 export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
   const sandboxRef = useRef<SandboxSession | null>(null)
@@ -19,6 +21,7 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
   const [connectedShellId, setConnectedShellId] = useState<string>("")
   const [previewURL, setPreviewURL] = useState<string | null>(null)
   const [isSandboxLoading, setIsSandboxLoading] = useState(true)
+  const [sandboxStatus, setSandboxStatus] = useState<SandboxStatus>()
   const [missingDependencyInfo, setMissingDependencyInfo] = useState<{
     packageName: string
     latestVersion: string
@@ -144,6 +147,14 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
     setMissingDependencyInfo(null)
   }
 
+  useEffect(() => {
+    if (isSandboxLoading || !serverSandbox) {
+      setSandboxStatus(undefined)
+    } else {
+      setSandboxStatus(serverSandbox.component_id ? "edit" : "draft")
+    }
+  }, [serverSandbox?.component_id, isSandboxLoading])
+
   return {
     sandboxRef,
     sandboxId,
@@ -156,8 +167,8 @@ export const useSandbox = ({ sandboxId }: { sandboxId: string }) => {
     clearMissingDependencyInfo,
     // unique hash of a shell connection
     connectedShellId,
-
     // sandbox from the server containing metadata
     serverSandbox,
+    sandboxStatus,
   }
 }

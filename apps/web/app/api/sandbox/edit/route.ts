@@ -1,6 +1,6 @@
+import { checkIsAdmin, supabaseWithAdminAccess } from "@/lib/supabase"
 import { auth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
-import { supabaseWithAdminAccess } from "@/lib/supabase"
 import ShortUUID from "short-uuid"
 
 export async function PUT(request: Request) {
@@ -27,15 +27,20 @@ export async function PUT(request: Request) {
     }
 
     const sandboxId = ShortUUID().toUUID(shortSandboxId)
+    const isAdmin = await checkIsAdmin(userId)
 
-    const { data: sandbox, error } = await supabaseWithAdminAccess
+    let selectSandboxQuery = supabaseWithAdminAccess
       .from("sandboxes")
       .select("id")
       .eq("id", sandboxId)
-      .eq("user_id", userId)
-      .single()
 
-    if (error || !sandbox) {
+    if (!isAdmin) {
+      selectSandboxQuery = selectSandboxQuery.eq("user_id", userId)
+    }
+
+    const { data: sandbox, error } = await selectSandboxQuery
+
+    if (error || !sandbox || sandbox.length === 0) {
       return NextResponse.json(
         { error: "Sandbox not found or access denied" },
         { status: 404 },
@@ -46,7 +51,6 @@ export async function PUT(request: Request) {
       .from("sandboxes")
       .update(updateData)
       .eq("id", sandboxId)
-      .eq("user_id", userId)
 
     if (updateError) {
       return NextResponse.json(

@@ -1,9 +1,9 @@
 "use client"
 
-import { useParams } from "next/navigation"
-import { useState, useRef } from "react"
 import { SandboxHeader } from "@/components/features/studio/sandbox/components/sandbox-header"
 import { useSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
+import { useParams } from "next/navigation"
+import { useRef, useState } from "react"
 import PageClient from "./page.client"
 
 export default function Page() {
@@ -16,7 +16,7 @@ export default function Page() {
   const submitHandlerRef = useRef<(() => void) | null>(null)
 
   // Fetch sandbox metadata for header
-  const { serverSandbox } = useSandbox({ sandboxId })
+  const { serverSandbox, sandboxStatus } = useSandbox({ sandboxId })
 
   // const handleSubmitStatusChange = useCallback((isSubmitting: boolean) => {
   //   setIsNextLoading(isSubmitting)
@@ -34,7 +34,7 @@ export default function Page() {
         sandboxId={sandboxId}
         sandboxName={serverSandbox?.name}
         username={username}
-        status={serverSandbox?.component_id ? "edit" : "draft"}
+        status={sandboxStatus}
         showEditName={false}
         customBackLabel="Back to edit"
         customBackUrl={`/studio/${username}/sandbox/${sandboxId}`}
