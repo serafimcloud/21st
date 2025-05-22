@@ -151,7 +151,7 @@ export default async function ComponentPageServer(props: {
 
     const [{ data: componentDemos }, hasPurchased] = await Promise.all([
       getComponentDemos(supabaseWithAdminAccess, component.id),
-      userId ? hasUserComponentAccess(userId, component.id) : false,
+      hasUserComponentAccess(userId, component.id),
     ])
 
     if (!hasPurchased) {
