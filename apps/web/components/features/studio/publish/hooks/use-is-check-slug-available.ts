@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query"
 import { useClerkSupabaseClient } from "@/lib/clerk"
 import { SupabaseClient } from "@supabase/supabase-js"
+import { useQuery } from "@tanstack/react-query"
+import { SandboxStatus } from "../../sandbox/hooks/use-sandbox"
 
 export const makeSlugFromName = (name: string): string => {
   return name
@@ -59,16 +60,14 @@ export const generateUniqueSlug = async (
   baseName: string,
   type: SlugType,
   userId: string,
+  status: SandboxStatus,
   componentId?: number,
 ) => {
   let newSlug = makeSlugFromName(baseName)
-  let isUnique = await checkSlugUnique(
-    supabase,
-    newSlug,
-    type,
-    userId,
-    componentId,
-  )
+  let isUnique =
+    status === "draft"
+      ? await checkSlugUnique(supabase, newSlug, type, userId, componentId)
+      : true
 
   let suffix = 1
 

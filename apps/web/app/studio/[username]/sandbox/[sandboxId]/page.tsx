@@ -1,12 +1,16 @@
 "use client"
 
-import { useParams, useSearchParams } from "next/navigation"
 import { SandboxHeader } from "@/components/features/studio/sandbox/components/sandbox-header"
-import { useRouter, usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
 import { ServerSandbox } from "@/components/features/studio/sandbox/hooks/use-sandbox"
-import PageClient from "./page.client"
 import { ArrowRight } from "lucide-react"
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
+import { useState } from "react"
+import PageClient from "./page.client"
 
 export default function Page() {
   const { username, sandboxId } = useParams() as {
@@ -36,6 +40,7 @@ export default function Page() {
         sandboxId={sandboxId}
         sandboxName={serverSandbox?.name}
         username={username}
+        status={serverSandbox?.component_id ? "edit" : "draft"}
         customNextAction={handleNext}
         customNextIcon={<ArrowRight size={16} />}
         customNextLabel="Continue"

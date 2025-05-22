@@ -1,15 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { cn } from "@/lib/utils"
+import { DbLinks } from "@/components/features/admin/db-links"
+import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 import {
   Pagination,
   PaginationContent,
@@ -19,7 +13,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -27,6 +20,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
+import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
 import {
   ColumnDef,
   PaginationState,
@@ -37,19 +46,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ChevronDown, ChevronUp, InfoIcon, Lock, Globe } from "lucide-react"
-import { useId } from "react"
-import { Button } from "@/components/ui/button"
-import { ExtendedDemoWithComponent } from "@/lib/utils/transformData"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { VisibilityToggle } from "./visibility-toggle"
-import Link from "next/link"
+import { ChevronDown, ChevronUp, ExternalLink, InfoIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useEffect, useId, useState } from "react"
+import { VisibilityToggle } from "./visibility-toggle"
 
 interface DemosTableProps {
   demos: ExtendedDemoWithComponent[]
@@ -114,6 +114,7 @@ export function DemosTable({
     pageIndex: 0,
     pageSize: 20,
   })
+  const isAdmin = useIsAdmin()
   const [imageLoadStatus, setImageLoadStatus] = useState<
     Record<string, { loaded: boolean; error?: string; fixedUrl?: string }>
   >({})
@@ -172,37 +173,43 @@ export function DemosTable({
       accessorKey: "name",
       cell: ({ row }) => {
         const isDraft = row.original.submission_status === "draft"
-        const shouldOpenSandbox =
-          // if component has sandbox_id (short), use that
-          row.original.component?.sandbox_id ||
-          // if it's sandbox (no component) use the sandbox short id
-          (!row.original.component && row.original.id && onOpenSandbox)
+        const demo = row.original
+        const isComponentAvailable =
+          demo.demo_slug &&
+          demo.component?.component_slug &&
+          demo.user?.username
 
-        const handleRowClick = () => {
-          if (shouldOpenSandbox) {
-            // @ts-ignore
-            onOpenSandbox(row.original.component?.sandbox_id || row.original.id)
+        const handleRowClick = (e: React.MouseEvent) => {
+          if (isComponentAvailable) {
+            router.push(
+              `/${demo.user?.username}/${demo.component.component_slug}/${demo.demo_slug}`,
+            )
           }
-          // Optionally, add navigation for non-draft items here if needed
-          // else { router.push(`/component/${row.original.demo_slug}`) }
         }
 
         return (
-          <div
-            className={cn(
-              "flex items-center gap-3",
-              shouldOpenSandbox && "cursor-pointer", // Add cursor pointer for drafts
-            )}
-            onClick={handleRowClick}
-            onKeyDown={(e) => {
-              if (shouldOpenSandbox && (e.key === "Enter" || e.key === " ")) {
-                e.preventDefault()
-                handleRowClick()
-              }
-            }}
-            role={shouldOpenSandbox ? "button" : undefined}
-            tabIndex={shouldOpenSandbox ? 0 : undefined}
-          >
+          <div className={cn("flex items-center gap-3 pl-1")}>
+            <Tooltip>
+              <TooltipTrigger className="shrink-0" asChild>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={!isComponentAvailable}
+                    onClick={handleRowClick}
+                  >
+                    <ExternalLink size={16} className="text-blue-600" />
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isComponentAvailable ? (
+                  <p>Open component page</p>
+                ) : (
+                  <p>Component page is not available</p>
+                )}
+              </TooltipContent>
+            </Tooltip>
             <div className="h-12 w-20 overflow-hidden rounded-md border bg-muted shrink-0">
               {row.original.preview_url ? (
                 <div
@@ -394,6 +401,23 @@ export function DemosTable({
     },
   ]
 
+  if (isAdmin) {
+    columns.push({
+      header: "Links (Admin)",
+      id: "links",
+      cell: ({ row }) => {
+        let componentId = undefined
+        let demoId = undefined
+        if (row.original.submission_status !== "draft") {
+          componentId = row.original.component_id ?? row.original?.component?.id
+          demoId = row.original.id
+        }
+        return <DbLinks componentId={componentId} demoId={demoId} />
+      },
+      size: 100,
+    })
+  }
+
   // Adjust colSpan for the empty state
   const columnCount = columns.length
 
@@ -564,27 +588,14 @@ export function DemosTable({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
-                const isDraft = row.original.submission_status === "draft"
                 const demo = row.original
 
                 // Logic to determine where to navigate when clicking the row
                 const handleRowClick = () => {
-                  if (
-                    isDraft &&
-                    (demo.component?.sandbox_id || (demo.id && onOpenSandbox))
-                  ) {
-                    // For drafts, open in sandbox editor
+                  if (demo.component?.sandbox_id || String(demo.id)) {
                     onOpenSandbox?.(
                       demo.component?.sandbox_id || String(demo.id),
                     )
-                  } else if (demo.demo_slug && demo.component?.component_slug) {
-                    // For public components, navigate to their view page
-                    // Get username from the user object in the demo
-                    const username = demo.user?.username || "u"
-                    const componentSlug = demo.component.component_slug
-                    const demoSlug = demo.demo_slug
-
-                    router.push(`/${username}/${componentSlug}/${demoSlug}`)
                   }
                 }
 
@@ -605,7 +616,7 @@ export function DemosTable({
                             isLastColumn && "pr-6",
                           )}
                           onClick={
-                            cell.column.id === "is_private"
+                            ["is_private", "links"].includes(cell.column.id)
                               ? (e) => e.stopPropagation()
                               : undefined
                           }

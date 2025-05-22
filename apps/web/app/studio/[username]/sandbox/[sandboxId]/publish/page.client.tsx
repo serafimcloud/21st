@@ -52,6 +52,7 @@ const PublishPage = ({
 }) => {
   const params = useParams()
   const sandboxId = params.sandboxId as string
+  const urlUsername = params.username as string
   const {
     previewURL,
     sandboxRef,
@@ -59,6 +60,7 @@ const PublishPage = ({
     connectedShellId,
     sandboxConnectionHash,
     serverSandbox,
+    sandboxStatus,
   } = useSandbox({
     sandboxId,
   })
@@ -135,16 +137,9 @@ const PublishPage = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [componentFormData])
 
-  const publishAsUsername = form.watch("publish_as_username")
   const { user: publishAsUser, isLoading: isPublishAsLoading } = usePublishAs({
-    username: publishAsUsername ?? user?.username ?? "",
+    username: urlUsername,
   })
-
-  useEffect(() => {
-    if (form.getValues("publish_as_username") === undefined && user?.username) {
-      form.setValue("publish_as_username", user.username)
-    }
-  }, [user?.username, form])
 
   const {
     isSubmitting,
@@ -419,6 +414,7 @@ const PublishPage = ({
                         <div className="text-foreground">
                           <ComponentForm
                             form={form as any}
+                            status={sandboxStatus}
                             handleSubmit={handleSubmit}
                             isSubmitting={isSubmitting}
                             hotkeysEnabled={!isSuccessDialogOpen}
