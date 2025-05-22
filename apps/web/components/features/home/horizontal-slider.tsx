@@ -134,7 +134,8 @@ export function HorizontalSlider({
       demo?.bundle_url &&
       typeof demo.bundle_url === "object" &&
       "html" in demo.bundle_url &&
-      demo.bundle_url.html
+      demo.bundle_url.html &&
+      false // TODO: Temporary disable previews
     ) {
       setSelectedDemo(demo)
       setIsPreviewDialogOpen(true)

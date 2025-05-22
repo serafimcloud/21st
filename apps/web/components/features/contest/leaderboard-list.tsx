@@ -8,7 +8,7 @@ import { useUser } from "@clerk/nextjs"
 import { UseMutationResult } from "@tanstack/react-query"
 import { Trophy } from "lucide-react"
 import { useRouter } from "next/navigation"
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { LeaderboardCard } from "./leaderboard-card"
 
 export type Category = "global" | "marketing" | "ui" | "seasonal"
@@ -199,6 +199,12 @@ export function LeaderboardList({
   }
 
   const handleDemoClick = (submission: any) => {
+    // TODO: Temporary disable previews
+    router.push(
+      `/${submission.user_data.username}/${submission.component_data.component_slug}/${submission.demo_slug}`,
+    )
+    return
+
     if (!submission.bundle_url || typeof submission.bundle_url !== "object") {
       if (
         submission.user_data?.username &&

@@ -1,23 +1,22 @@
-import React from "react"
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
-import { cn } from "@/lib/utils"
-import { ComponentCard } from "../features/list-card/card"
-import { DemoWithComponent, User, Component, SortOption } from "@/types/global"
-import { useClerkSupabaseClient } from "@/lib/clerk"
-import { transformDemoResult } from "@/lib/utils/transformData"
-import { Database } from "@/types/supabase"
-import { Loader2, Search } from "lucide-react"
-import { useAtom } from "jotai"
-import { tagPageSearchAtom } from "../features/tag-page/tag-page-header"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { useHotkeys } from "react-hotkeys-hook"
-import { isMac } from "@/lib/utils"
 import { Icons } from "@/components/icons"
-import { ComponentCardSkeleton } from "./skeletons"
-import { ComponentPreviewDialog } from "../features/component-page/preview-dialog"
-import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { useClerkSupabaseClient } from "@/lib/clerk"
 import { useTagDemos } from "@/lib/queries"
+import { cn, isMac } from "@/lib/utils"
+import { transformDemoResult } from "@/lib/utils/transformData"
+import { Component, DemoWithComponent, SortOption, User } from "@/types/global"
+import { Database } from "@/types/supabase"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
+import { useAtom } from "jotai"
+import { Loader2, Search } from "lucide-react"
+import { useRouter } from "next/navigation"
+import React from "react"
+import { useHotkeys } from "react-hotkeys-hook"
+import { toast } from "sonner"
+import { ComponentPreviewDialog } from "../features/component-page/preview-dialog"
+import { ComponentCard } from "../features/list-card/card"
+import { tagPageSearchAtom } from "../features/tag-page/tag-page-header"
+import { ComponentCardSkeleton } from "./skeletons"
 
 type AdminLikedDemo =
   Database["public"]["Functions"]["get_admin_liked_demos_v1"]["Returns"][number]
@@ -624,7 +623,10 @@ export function ComponentsList({
                 key={`${component.id}-${component.updated_at}`}
                 demo={component}
                 onClick={() => {
-                  if (component.bundle_url?.html) {
+                  if (
+                    component.bundle_url?.html &&
+                    false // TODO: Temporary disable previews
+                  ) {
                     setSelectedDemo(component)
                     setIsPreviewDialogOpen(true)
                   } else {
