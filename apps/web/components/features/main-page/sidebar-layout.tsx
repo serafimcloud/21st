@@ -353,16 +353,7 @@ export function MainSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-sm font-semibold text-foreground">
-            <TextShimmer
-              className="font-medium [--base-color:hsl(var(--mono-gradient-start))] [--base-gradient-color:hsl(var(--mono-gradient-end))] dark:[--base-color:hsl(var(--mono-gradient-start))] dark:[--base-gradient-color:hsl(var(--mono-gradient-end))]"
-              duration={1.2}
-              spread={2}
-            >
-              $2000 Weekly Contest
-            </TextShimmer>
-            <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none font-normal text-[#000000]">
-              New
-            </span>
+            Contest
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

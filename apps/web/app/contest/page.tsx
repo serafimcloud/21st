@@ -92,7 +92,7 @@ export default async function Page() {
             <section className="space-y-4 w-full bg-background antialiased mt-14">
               <div className="flex justify-between items-center">
                 <h2 className="font-medium flex items-center gap-2">
-                  $2000 Weekly Contest
+                  Contest
                 </h2>
                 <Button asChild className="gap-2">
                   <Link href="/contest/leaderboard">View Leaderboard</Link>
@@ -276,41 +276,7 @@ export default async function Page() {
               </div>
             </section>
 
-            <div className="h-px bg-border" />
-
-            <section className="space-y-4">
-              <h2 className="font-medium flex items-center gap-2">
-                🎁 Bonus Category Roadmap (Extra Prizes)
-              </h2>
-              <div className="rounded-lg border border-border">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Week</TableHead>
-                      <TableHead>Dates (PT)</TableHead>
-                      <TableHead>Bonus Component Theme</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {safeRounds.map((round) => (
-                      <TableRow key={round.id}>
-                        <TableCell className="font-medium">
-                          {round.week_number}
-                        </TableCell>
-                        <TableCell>
-                          {round.start_at && round.end_at
-                            ? formatDateRange(round.start_at, round.end_at)
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {round.seasonalTag?.name || "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </section>
+            
 
             <div className="h-px bg-border" />
 

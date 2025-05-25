@@ -72,6 +72,14 @@ export function LeaderboardClient({
   // Flag to track if initial randomization is done
   const isRandomizationDoneRef = useRef<boolean>(false)
 
+  // Check if current round is active
+  const isCurrentRoundActive = useMemo(() => {
+    const now = new Date()
+    const startDate = new Date(currentRound.start_at)
+    const endDate = new Date(currentRound.end_at)
+    return now >= startDate && now <= endDate
+  }, [currentRound.start_at, currentRound.end_at])
+
   const {
     submissions = [],
     getFilteredSubmissions,
@@ -166,131 +174,142 @@ export function LeaderboardClient({
     <div className="h-full">
       <Header />
       <div className="space-y-8">
-        {/* Prize Information Section */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-medium flex items-center gap-2">
-              Weekly Prizes
-            </h3>
-            <Button size="sm">
-              <Link href="/publish">Publish your component</Link>
-            </Button>
-          </div>
-          <div className="rounded-lg border border-border">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Tier</TableHead>
-                  <TableHead>Prize</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">
-                    Global Awards (10)
-                  </TableCell>
-                  <TableCell>
-                    🥇 $700 • 🥈 $400 • 🥉 $250 • 4th-10th $50 each
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">
-                    Seasonal Awards (3)
-                  </TableCell>
-                  <TableCell>🥇 $150 • 🥈 $100 • 🥉 $50</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">
-                    Total Weekly Payout
-                  </TableCell>
-                  <TableCell className="font-bold">$2,000</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-          <p className="text-xs text-muted-foreground italic">
-            Overlap allowed: the same component can win in multiple categories
-          </p>
-        </div>
-
-        {/* Notice about pause after Week 3 */}
-        {currentRound.week_number === 3 && (
-          <div className="space-y-2">
-            <div className="rounded-lg border border-border p-4 bg-muted/20">
-              <div className="flex items-center gap-2 font-medium mb-2">
-                <span>⏸️</span>
-                <span>Important Notice</span>
+        {/* Only show current round sections if the round is active */}
+        {isCurrentRoundActive && (
+          <>
+            {/* Prize Information Section */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="font-medium flex items-center gap-2">
+                  Weekly Prizes
+                </h3>
+                <Button size="sm">
+                  <Link href="/publish">Publish your component</Link>
+                </Button>
               </div>
-              <p className="text-sm">
-                After Week 3, we'll be taking a short pause to evaluate the
-                contest format and gather community feedback. Stay tuned for
-                announcements about the next phase of 21st.dev contests!
+              <div className="rounded-lg border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Tier</TableHead>
+                      <TableHead>Prize</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        Global Awards (10)
+                      </TableCell>
+                      <TableCell>
+                        🥇 $700 • 🥈 $400 • 🥉 $250 • 4th-10th $50 each
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        Seasonal Awards (3)
+                      </TableCell>
+                      <TableCell>🥇 $150 • 🥈 $100 • 🥉 $50</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        Total Weekly Payout
+                      </TableCell>
+                      <TableCell className="font-bold">$2,000</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+              <p className="text-xs text-muted-foreground italic">
+                Overlap allowed: the same component can win in multiple
+                categories
               </p>
             </div>
-          </div>
+
+            {/* Notice about pause after Week 3 */}
+            {currentRound.week_number === 3 && (
+              <div className="space-y-2">
+                <div className="rounded-lg border border-border p-4 bg-muted/20">
+                  <div className="flex items-center gap-2 font-medium mb-2">
+                    <span>⏸️</span>
+                    <span>Important Notice</span>
+                  </div>
+                  <p className="text-sm">
+                    After Week 3, we'll be taking a short pause to evaluate the
+                    contest format and gather community feedback. Stay tuned for
+                    announcements about the next phase of 21st.dev contests!
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="font-medium">Leaderboard</h2>
+                <div className="text-sm">
+                  <span className="font-medium">
+                    Week #{currentRound.week_number}
+                  </span>{" "}
+                  -{" "}
+                  {formatDateRange(currentRound.start_at, currentRound.end_at)}
+                </div>
+              </div>
+              <div>
+                <Tabs
+                  value={selectedCategory}
+                  onValueChange={(value) =>
+                    setSelectedCategory(value as Category)
+                  }
+                  className="w-full"
+                >
+                  <TabsList className="w-full justify-start h-10 bg-muted/50 rounded-t-lg border border-border p-0">
+                    <TabsTrigger
+                      value="global"
+                      className="data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none h-10 px-4 !shadow-none"
+                    >
+                      Global
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="seasonal"
+                      className="data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none h-10 px-4 !shadow-none"
+                    >
+                      {seasonalTag?.name}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <LeaderboardList
+                submissions={displayRows}
+                roundId={currentRound.id}
+                toggleVote={toggleVote}
+                category={selectedCategory}
+                seasonalTheme={
+                  selectedCategory === "seasonal"
+                    ? seasonalTag?.name
+                    : undefined
+                }
+                isLoading={isLoading}
+              />
+
+              {filteredRows.length > ITEMS_LIMIT && (
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAll(!showAll)}
+                    className="mt-4"
+                  >
+                    {showAll ? "Show Less" : "Show More"}{" "}
+                    <ChevronDown
+                      className={`ml-2 h-4 w-4 ${showAll ? "rotate-180" : ""} transition-transform`}
+                    />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </>
         )}
-
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="font-medium">Leaderboard</h2>
-            <div className="text-sm">
-              <span className="font-medium">
-                Week #{currentRound.week_number}
-              </span>{" "}
-              - {formatDateRange(currentRound.start_at, currentRound.end_at)}
-            </div>
-          </div>
-          <div>
-            <Tabs
-              value={selectedCategory}
-              onValueChange={(value) => setSelectedCategory(value as Category)}
-              className="w-full"
-            >
-              <TabsList className="w-full justify-start h-10 bg-muted/50 rounded-t-lg border border-border p-0">
-                <TabsTrigger
-                  value="global"
-                  className="data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none h-10 px-4 !shadow-none"
-                >
-                  Global
-                </TabsTrigger>
-                <TabsTrigger
-                  value="seasonal"
-                  className="data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none h-10 px-4 !shadow-none"
-                >
-                  {seasonalTag?.name}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <LeaderboardList
-            submissions={displayRows}
-            roundId={currentRound.id}
-            toggleVote={toggleVote}
-            category={selectedCategory}
-            seasonalTheme={
-              selectedCategory === "seasonal" ? seasonalTag?.name : undefined
-            }
-            isLoading={isLoading}
-          />
-
-          {filteredRows.length > ITEMS_LIMIT && (
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setShowAll(!showAll)}
-                className="mt-4"
-              >
-                {showAll ? "Show Less" : "Show More"}{" "}
-                <ChevronDown
-                  className={`ml-2 h-4 w-4 ${showAll ? "rotate-180" : ""} transition-transform`}
-                />
-              </Button>
-            </div>
-          )}
-        </div>
 
         {/* Previous Weeks Results */}
         {previousRoundsData.length > 0 && (
