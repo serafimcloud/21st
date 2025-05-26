@@ -760,7 +760,7 @@ const SubmissionsAdminPage: FC = () => {
                           <DbLinks componentId={submission.component_data.id} />
                         </TableCell>
 
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                      {/*   <TableCell onClick={(e) => e.stopPropagation()}>
                           <RoundToggle
                             submission={submission}
                             allRounds={allRounds}
@@ -769,7 +769,7 @@ const SubmissionsAdminPage: FC = () => {
                             contestDemoId={contestDemoId}
                             getRoundById={getRoundById}
                           />
-                        </TableCell>
+                        </TableCell> */}
 
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <TooltipProvider>
