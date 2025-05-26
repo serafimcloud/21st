@@ -34,6 +34,12 @@ export const useSubmissions = (isAdmin: boolean) => {
     null,
   )
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(50)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+
   // Get current active round
   const { data: currentRound, isLoading: isCurrentRoundLoading } = useQuery({
     queryKey: ["current-contest-round"],
@@ -87,15 +93,24 @@ export const useSubmissions = (isAdmin: boolean) => {
     } else {
       setLoading(false)
     }
-  }, [filter, isAdmin])
+  }, [filter, isAdmin, currentPage, itemsPerPage])
+
+  // Reset to first page when filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filter])
 
   const fetchSubmissions = async () => {
     setLoading(true)
     try {
+      // Fetch a large batch to ensure we get all submissions for filtering
+      // In production, this should be handled server-side
+      const largeBatch = 1000 // Fetch a large number to get all submissions
+
       let query = supabase.rpc("get_demos_submissions", {
         p_sort_by: "date",
         p_offset: 0,
-        p_limit: 100,
+        p_limit: largeBatch,
         p_include_private: true,
       })
 
@@ -106,6 +121,8 @@ export const useSubmissions = (isAdmin: boolean) => {
       }
 
       let filteredData = data
+
+      // Apply status filter
       if (filter !== "all") {
         filteredData = data.filter((item: any) =>
           filter === "null"
@@ -114,9 +131,19 @@ export const useSubmissions = (isAdmin: boolean) => {
         )
       }
 
+      // Calculate total count for the current filter
+      const totalFilteredCount = filteredData.length
+      setTotalCount(totalFilteredCount)
+      setTotalPages(Math.ceil(totalFilteredCount / itemsPerPage))
+
+      // Apply pagination to filtered data
+      const startIndex = (currentPage - 1) * itemsPerPage
+      const endIndex = startIndex + itemsPerPage
+      const paginatedData = filteredData.slice(startIndex, endIndex)
+
       // Check contest participation status for each submission
       const enhancedData = await Promise.all(
-        filteredData.map(async (submission: any) => {
+        paginatedData.map(async (submission: any) => {
           const roundId = await checkContestParticipation(submission.id)
           const isPublic =
             submission.component_data &&
@@ -138,6 +165,30 @@ export const useSubmissions = (isAdmin: boolean) => {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page)
+    }
+  }
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const changeItemsPerPage = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage)
+    setCurrentPage(1) // Reset to first page when changing items per page
   }
 
   // Check if a demo is part of a contest round
@@ -600,6 +651,12 @@ export const useSubmissions = (isAdmin: boolean) => {
     contestRoundLoading,
     isDeletingComponent,
     componentToDelete,
+    // Pagination state
+    currentPage,
+    itemsPerPage,
+    totalCount,
+    totalPages,
+    // State setters
     setFilter,
     setFeedback,
     setSelectedSubmission,
@@ -607,6 +664,7 @@ export const useSubmissions = (isAdmin: boolean) => {
     setEditDemoSlug,
     setEditingDemo,
     setComponentToDelete,
+    // Functions
     fetchSubmissions,
     updateSubmissionStatus,
     updateDemoInfo,
@@ -620,6 +678,11 @@ export const useSubmissions = (isAdmin: boolean) => {
     checkIsPublic,
     toggleComponentPublicStatus,
     deleteComponent,
+    // Pagination handlers
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    changeItemsPerPage,
   }
 }
 

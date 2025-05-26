@@ -7,6 +7,7 @@ import EditDemoModal from "@/components/features/admin/EditDemoModal"
 import useSubmissions from "@/components/features/admin/hooks/useSubmissions"
 import ManageSubmissionModal from "@/components/features/admin/ManageSubmissionModal"
 import NonAdminPlaceholder from "@/components/features/admin/NonAdminPlaceholder"
+import PaginationControls from "@/components/features/admin/PaginationControls"
 import SubmissionStatusFilter from "@/components/features/admin/SubmissionStatusFilter"
 import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
 import { Spinner } from "@/components/icons/spinner"
@@ -553,6 +554,12 @@ const SubmissionsAdminPage: FC = () => {
     contestRoundLoading,
     isDeletingComponent,
     componentToDelete,
+    // Pagination state
+    currentPage,
+    itemsPerPage,
+    totalCount,
+    totalPages,
+    // State setters
     setFilter,
     setFeedback,
     setSelectedSubmission,
@@ -560,6 +567,7 @@ const SubmissionsAdminPage: FC = () => {
     setEditDemoSlug,
     setEditingDemo,
     setComponentToDelete,
+    // Functions
     fetchSubmissions,
     updateSubmissionStatus,
     updateDemoInfo,
@@ -571,6 +579,11 @@ const SubmissionsAdminPage: FC = () => {
     getRoundById,
     toggleComponentPublicStatus,
     deleteComponent,
+    // Pagination handlers
+    goToPage,
+    goToNextPage,
+    goToPreviousPage,
+    changeItemsPerPage,
   } = useSubmissions(isAdmin)
 
   const [contestDemoId, setContestDemoId] = useState<number | null>(null)
@@ -619,7 +632,10 @@ const SubmissionsAdminPage: FC = () => {
           subtitle="Manage submitted components from users"
         />
 
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-sm text-muted-foreground">
+            {totalCount > 0 && <>Total: {totalCount} submissions</>}
+          </div>
           <SubmissionStatusFilter
             value={filter}
             onChange={setFilter}
@@ -632,300 +648,318 @@ const SubmissionsAdminPage: FC = () => {
             <LoadingSpinner size="md" />
           </div>
         ) : (
-          <div className="w-full overflow-auto">
-            {submissions.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-gray-500">No submissions found</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Preview</TableHead>
-                    <TableHead>Component</TableHead>
-                    <TableHead className="min-w-[300px]">
-                      Demo & Actions
-                    </TableHead>
-                    <TableHead>Author</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Visibility</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead>DB Links</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Delete</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {submissions.map((submission) => {
-                    const viewUrl = `/${submission.user_data.username}/${submission.component_data.component_slug}/${submission.demo_slug}`
+          <>
+            <div className="w-full overflow-auto">
+              {submissions.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-gray-500">No submissions found</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Preview</TableHead>
+                      <TableHead>Component</TableHead>
+                      <TableHead className="min-w-[300px]">
+                        Demo & Actions
+                      </TableHead>
+                      <TableHead>Author</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Visibility</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>DB Links</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Delete</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {submissions.map((submission) => {
+                      const viewUrl = `/${submission.user_data.username}/${submission.component_data.component_slug}/${submission.demo_slug}`
 
-                    // Check if the submission is already in a contest - using the demo ID (submission.id)
-                    const isInContest = !!submission.contest_round_id
-                    // Whether this submission can be added to the current contest
-                    const canAddToContest =
-                      submission.submission_status === "posted" && !isInContest
-                    // Get round details if in a contest
-                    const contestRoundId = submission.contest_round_id ?? null
-                    const contestRound = isInContest
-                      ? getRoundById(contestRoundId)
-                      : null
+                      // Check if the submission is already in a contest - using the demo ID (submission.id)
+                      const isInContest = !!submission.contest_round_id
+                      // Whether this submission can be added to the current contest
+                      const canAddToContest =
+                        submission.submission_status === "posted" &&
+                        !isInContest
+                      // Get round details if in a contest
+                      const contestRoundId = submission.contest_round_id ?? null
+                      const contestRound = isInContest
+                        ? getRoundById(contestRoundId)
+                        : null
 
-                    return (
-                      <TableRow
-                        key={submission.id}
-                        className="group cursor-pointer hover:bg-muted/50"
-                        onClick={() => {
-                          window.open(viewUrl, "_blank")
-                        }}
-                      >
-                        <TableCell>
-                          <HoverCard>
-                            <HoverCardTrigger asChild>
-                              <div className="group relative w-24 h-16 rounded-lg overflow-hidden">
-                                <div className="absolute inset-0">
-                                  <img
-                                    src={
-                                      submission.preview_url ||
-                                      "/placeholder.svg"
-                                    }
-                                    alt={submission.name || "Preview"}
-                                    className="w-full h-full object-cover rounded-lg"
-                                  />
-                                </div>
-
-                                {submission.video_url && (
-                                  <VideoPreview
-                                    videoUrl={submission.video_url}
-                                    id={submission.id}
-                                  />
-                                )}
-
-                                <div className="absolute top-1 left-1 z-20">
-                                  {submission.video_url && (
-                                    <div
-                                      className="bg-background/70 backdrop-blur rounded-sm p-0.5"
-                                      data-video-icon={submission.id}
-                                    >
-                                      <Video
-                                        size={12}
-                                        className="text-foreground"
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </HoverCardTrigger>
-                            <HoverCardContent
-                              side="right"
-                              align="start"
-                              className="p-0 border-none shadow-2xl"
-                            >
-                              <PreviewHoverContent
-                                preview_url={
-                                  submission.preview_url || "/placeholder.svg"
-                                }
-                                video_url={submission.video_url}
-                                name={submission.name || "Preview"}
-                              />
-                            </HoverCardContent>
-                          </HoverCard>
-                        </TableCell>
-
-                        <TableCell className="font-medium">
-                          <div className="flex flex-col">
-                            <span>{submission.component_data.name}</span>
-                            <span className="text-xs text-gray-500 font-mono">
-                              ID: {submission.component_data.id}
-                            </span>
-                          </div>
-                        </TableCell>
-
-                        <TableCell>
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                              {/* Demo Info */}
-                              <div>
-                                {submission.name ? (
-                                  <div className="flex flex-col">
-                                    <span>{submission.name}</span>
-                                    <span className="text-xs text-gray-500 font-mono">
-                                      {submission.demo_slug || "—"}
-                                    </span>
+                      return (
+                        <TableRow
+                          key={submission.id}
+                          className="group cursor-pointer hover:bg-muted/50"
+                          onClick={() => {
+                            window.open(viewUrl, "_blank")
+                          }}
+                        >
+                          <TableCell>
+                            <HoverCard>
+                              <HoverCardTrigger asChild>
+                                <div className="group relative w-24 h-16 rounded-lg overflow-hidden">
+                                  <div className="absolute inset-0">
+                                    <img
+                                      src={
+                                        submission.preview_url ||
+                                        "/placeholder.svg"
+                                      }
+                                      alt={submission.name || "Preview"}
+                                      className="w-full h-full object-cover rounded-lg"
+                                    />
                                   </div>
-                                ) : (
-                                  <span className="text-gray-500">—</span>
-                                )}
-                              </div>
 
-                              {/* Demo Actions */}
-                              <TooltipProvider>
-                                <div
-                                  className="flex items-center gap-1"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() =>
-                                          handleEditDemo(submission)
-                                        }
-                                        className="h-7 w-7"
-                                      >
-                                        <Edit size={14} />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Edit Demo Info</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() =>
-                                          handleSetDefaultDemo(submission)
-                                        }
-                                        className="h-7 w-7"
-                                      >
-                                        <Star size={14} />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Set Default Demo</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </div>
-                              </TooltipProvider>
-                            </div>
-                          </div>
-                        </TableCell>
-
-                        <TableCell>
-                          {submission.user_data.display_name ||
-                            submission.user_data.username}
-                        </TableCell>
-
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="p-0 h-auto hover:bg-transparent"
-                                  onClick={() =>
-                                    handleSelectSubmission(submission)
-                                  }
-                                >
-                                  <Badge
-                                    className={cn(
-                                      getStatusBadgeClass(
-                                        submission.submission_status,
-                                      ),
-                                      "cursor-pointer hover:opacity-80",
-                                    )}
-                                  >
-                                    {submission.submission_status ||
-                                      "No Status"}
-                                  </Badge>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Click to manage submission</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
-
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() =>
-                                    toggleComponentPublicStatus(
-                                      submission.component_data.id,
-                                      submission.is_public || false,
-                                    )
-                                  }
-                                  className="h-8 w-8"
-                                >
-                                  {submission.is_public ? (
-                                    <Globe
-                                      size={16}
-                                      className="text-green-600"
-                                    />
-                                  ) : (
-                                    <Lock
-                                      size={16}
-                                      className="text-orange-600"
+                                  {submission.video_url && (
+                                    <VideoPreview
+                                      videoUrl={submission.video_url}
+                                      id={submission.id}
                                     />
                                   )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {submission.is_public
-                                    ? "Make Private"
-                                    : "Make Public"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
 
-                        <TableCell>
-                          {new Date(submission.updated_at).toLocaleDateString()}
-                        </TableCell>
+                                  <div className="absolute top-1 left-1 z-20">
+                                    {submission.video_url && (
+                                      <div
+                                        className="bg-background/70 backdrop-blur rounded-sm p-0.5"
+                                        data-video-icon={submission.id}
+                                      >
+                                        <Video
+                                          size={12}
+                                          className="text-foreground"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </HoverCardTrigger>
+                              <HoverCardContent
+                                side="right"
+                                align="start"
+                                className="p-0 border-none shadow-2xl"
+                              >
+                                <PreviewHoverContent
+                                  preview_url={
+                                    submission.preview_url || "/placeholder.svg"
+                                  }
+                                  video_url={submission.video_url}
+                                  name={submission.name || "Preview"}
+                                />
+                              </HoverCardContent>
+                            </HoverCard>
+                          </TableCell>
 
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <DbLinks componentId={submission.component_data.id} />
-                        </TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex flex-col">
+                              <span>{submission.component_data.name}</span>
+                              <span className="text-xs text-gray-500 font-mono">
+                                ID: {submission.component_data.id}
+                              </span>
+                            </div>
+                          </TableCell>
 
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <UserPickerPopover
-                            componentId={submission.component_data.id}
-                            disabled={!submission.component_data.id}
-                          />
-                        </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                {/* Demo Info */}
+                                <div>
+                                  {submission.name ? (
+                                    <div className="flex flex-col">
+                                      <span>{submission.name}</span>
+                                      <span className="text-xs text-gray-500 font-mono">
+                                        {submission.demo_slug || "—"}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-500">—</span>
+                                  )}
+                                </div>
 
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setComponentToDelete(submission)
-                                    setShowDeleteDialog(true)
-                                  }}
-                                  className="h-8 w-8"
-                                >
-                                  <Trash
-                                    size={16}
-                                    className="text-destructive"
-                                  />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Delete Component</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </div>
+                                {/* Demo Actions */}
+                                <TooltipProvider>
+                                  <div
+                                    className="flex items-center gap-1"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() =>
+                                            handleEditDemo(submission)
+                                          }
+                                          className="h-7 w-7"
+                                        >
+                                          <Edit size={14} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Edit Demo Info</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() =>
+                                            handleSetDefaultDemo(submission)
+                                          }
+                                          className="h-7 w-7"
+                                        >
+                                          <Star size={14} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Set Default Demo</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                </TooltipProvider>
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            {submission.user_data.display_name ||
+                              submission.user_data.username}
+                          </TableCell>
+
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    className="p-0 h-auto hover:bg-transparent"
+                                    onClick={() =>
+                                      handleSelectSubmission(submission)
+                                    }
+                                  >
+                                    <Badge
+                                      className={cn(
+                                        getStatusBadgeClass(
+                                          submission.submission_status,
+                                        ),
+                                        "cursor-pointer hover:opacity-80",
+                                      )}
+                                    >
+                                      {submission.submission_status ||
+                                        "No Status"}
+                                    </Badge>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Click to manage submission</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      toggleComponentPublicStatus(
+                                        submission.component_data.id,
+                                        submission.is_public || false,
+                                      )
+                                    }
+                                    className="h-8 w-8"
+                                  >
+                                    {submission.is_public ? (
+                                      <Globe
+                                        size={16}
+                                        className="text-green-600"
+                                      />
+                                    ) : (
+                                      <Lock
+                                        size={16}
+                                        className="text-orange-600"
+                                      />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {submission.is_public
+                                      ? "Make Private"
+                                      : "Make Public"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+
+                          <TableCell>
+                            {new Date(
+                              submission.updated_at,
+                            ).toLocaleDateString()}
+                          </TableCell>
+
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <DbLinks
+                              componentId={submission.component_data.id}
+                            />
+                          </TableCell>
+
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <UserPickerPopover
+                              componentId={submission.component_data.id}
+                              disabled={!submission.component_data.id}
+                            />
+                          </TableCell>
+
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setComponentToDelete(submission)
+                                      setShowDeleteDialog(true)
+                                    }}
+                                    className="h-8 w-8"
+                                  >
+                                    <Trash
+                                      size={16}
+                                      className="text-destructive"
+                                    />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Delete Component</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              itemsPerPage={itemsPerPage}
+              onPageChange={goToPage}
+              onItemsPerPageChange={changeItemsPerPage}
+              loading={loading}
+            />
+          </>
         )}
 
         {/* Modals */}
