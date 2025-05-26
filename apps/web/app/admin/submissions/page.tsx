@@ -9,6 +9,8 @@ import ManageSubmissionModal from "@/components/features/admin/ManageSubmissionM
 import NonAdminPlaceholder from "@/components/features/admin/NonAdminPlaceholder"
 import SubmissionStatusFilter from "@/components/features/admin/SubmissionStatusFilter"
 import { useIsAdmin } from "@/components/features/publish/hooks/use-is-admin"
+import { Spinner } from "@/components/icons/spinner"
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -44,7 +46,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useDebouncedState } from "@/hooks/use-debounced-state"
+import { transferOwnershipAction } from "@/lib/api/components"
+import { getUsersAction } from "@/lib/api/users"
 import { cn } from "@/lib/utils"
+import { useQuery } from "@tanstack/react-query"
+import { CommandLoading } from "cmdk"
 import {
   Award,
   Check,
@@ -54,10 +61,11 @@ import {
   Lock,
   Star,
   Trash,
+  UserCheck,
   Video,
 } from "lucide-react"
 import { motion } from "motion/react"
-import { FC, useCallback, useRef, useState } from "react"
+import { FC, useCallback, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
 // VideoPreview component for hover video functionality
@@ -408,6 +416,125 @@ const RoundToggle = ({
   )
 }
 
+// UserPicker component for transferring ownership
+const UserPickerPopover = ({
+  componentId,
+  disabled,
+}: {
+  componentId: number
+  disabled?: boolean
+}) => {
+  const [open, setOpen] = useState(false)
+  const [search, debouncedSearch, setSearch] = useDebouncedState<string>(
+    "",
+    1000,
+  )
+
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["users", debouncedSearch],
+    queryFn: async () => {
+      if (debouncedSearch.length === 0) {
+        return []
+      }
+      return await getUsersAction({
+        searchQuery: debouncedSearch,
+      })
+    },
+  })
+
+  const options = useMemo(() => {
+    return (
+      users?.map((user) => ({
+        value: user.id,
+        user,
+      })) ?? []
+    )
+  }, [users])
+
+  const handleUserSelect = async (userId: string) => {
+    toast.promise(transferOwnershipAction({ componentId, userId }), {
+      loading: "Transferring ownership...",
+      success: "Ownership transferred successfully",
+      error: "Failed to transfer ownership",
+    })
+    setOpen(false)
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={disabled}
+                className="h-8 w-8"
+              >
+                <UserCheck size={16} className="text-blue-600" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="p-0 w-[300px]">
+              <Command shouldFilter={false} className="max-h-[200px]">
+                <CommandInput
+                  placeholder="Search users..."
+                  value={search}
+                  onValueChange={(value) => setSearch(value)}
+                />
+                <CommandList>
+                  {!isLoading && (
+                    <CommandEmpty>No users or empty search</CommandEmpty>
+                  )}
+                  {isLoading && (
+                    <CommandLoading className="flex items-center justify-center p-4">
+                      <Spinner size={16} />
+                    </CommandLoading>
+                  )}
+                  <CommandGroup>
+                    {options.map((option) => {
+                      return (
+                        <CommandItem
+                          key={option.value}
+                          value={option.value}
+                          onSelect={(value) => {
+                            handleUserSelect(value)
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage
+                                src={
+                                  option.user.display_image_url ??
+                                  option.user.image_url ??
+                                  ""
+                                }
+                              />
+                            </Avatar>
+                            <div className="flex flex-row gap-2">
+                              <p>{option.user.username}</p>
+                              <p className="text-muted-foreground">
+                                {option.user.display_username}
+                              </p>
+                            </div>
+                          </div>
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Transfer Ownership</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
 const SubmissionsAdminPage: FC = () => {
   const isAdmin = useIsAdmin()
   const {
@@ -524,7 +651,7 @@ const SubmissionsAdminPage: FC = () => {
                     <TableHead>Visibility</TableHead>
                     <TableHead>Submitted</TableHead>
                     <TableHead>DB Links</TableHead>
-                    <TableHead>Contest</TableHead>
+                    <TableHead>Owner</TableHead>
                     <TableHead>Delete</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -760,16 +887,12 @@ const SubmissionsAdminPage: FC = () => {
                           <DbLinks componentId={submission.component_data.id} />
                         </TableCell>
 
-                      {/*   <TableCell onClick={(e) => e.stopPropagation()}>
-                          <RoundToggle
-                            submission={submission}
-                            allRounds={allRounds}
-                            onAddToContest={handleAddToContest}
-                            isUpdating={contestRoundLoading}
-                            contestDemoId={contestDemoId}
-                            getRoundById={getRoundById}
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <UserPickerPopover
+                            componentId={submission.component_data.id}
+                            disabled={!submission.component_data.id}
                           />
-                        </TableCell> */}
+                        </TableCell>
 
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <TooltipProvider>
