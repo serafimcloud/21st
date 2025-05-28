@@ -24,20 +24,47 @@ type PromptOption = PromptOptionBase | PromptSeparator
 export const promptOptions: PromptOption[] = [
   {
     type: "option",
-    id: PROMPT_TYPES.EXTENDED,
-    label: "For most AI code editors",
-    description: "Optimized for most AI code editors",
+    id: PROMPT_TYPES.BOLT,
+    label: "Bolt.new (Partnership)",
+    description: "Optimized for Bolt.new",
     action: "copy",
     icon: (
-      <Sparkles
-        size={16}
-        className="min-h-[16px] min-w-[16px] max-h-[16px] max-w-[16px]"
-      />
+      <Icons.boltLogo className="min-h-[22px] min-w-[22px] max-h-[22px] max-w-[22px]" />
     ),
   },
   {
     id: "separator1",
     type: "separator",
+  },
+  {
+    type: "option",
+    id: PROMPT_TYPES.EXTENDED,
+    label: "Cursor (or any AI IDE)",
+    description: "Works with any AI IDE",
+    action: "copy",
+    icon: (
+      <Icons.cursorIcon className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
+    ),
+  },
+  {
+    type: "option",
+    id: PROMPT_TYPES.LOVABLE,
+    label: "Lovable",
+    description: "Optimized for Lovable.dev",
+    action: "copy",
+    icon: (
+      <Icons.lovableLogo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
+    ),
+  },
+  {
+    type: "option",
+    id: PROMPT_TYPES.V0,
+    label: "v0 by Vercel",
+    description: "Optimized for v0.dev",
+    action: "copy",
+    icon: (
+      <Icons.v0Logo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
+    ),
   },
   {
     type: "option",
@@ -61,36 +88,6 @@ export const promptOptions: PromptOption[] = [
   },
   {
     type: "option",
-    id: PROMPT_TYPES.V0,
-    label: "v0 by Vercel",
-    description: "Optimized for v0.dev",
-    action: "copy",
-    icon: (
-      <Icons.v0Logo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
-    ),
-  },
-  {
-    type: "option",
-    id: PROMPT_TYPES.LOVABLE,
-    label: "Lovable",
-    description: "Optimized for Lovable.dev",
-    action: "copy",
-    icon: (
-      <Icons.lovableLogo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
-    ),
-  },
-  {
-    type: "option",
-    id: PROMPT_TYPES.BOLT,
-    label: "Bolt.new",
-    description: "Optimized for Bolt.new",
-    action: "copy",
-    icon: (
-      <Icons.boltLogo className="min-h-[22px] min-w-[22px] max-h-[22px] max-w-[22px]" />
-    ),
-  },
-  {
-    type: "option",
     id: PROMPT_TYPES.SITEBREW,
     label: "sitebrew.ai",
     description: "Optimized for sitebrew.ai",
@@ -98,10 +95,6 @@ export const promptOptions: PromptOption[] = [
     icon: (
       <Icons.sitebrewLogo className="min-h-[18px] min-w-[18px] max-h-[18px] max-w-[18px]" />
     ),
-  },
-  {
-    id: "separator2",
-    type: "separator",
   },
 ]
 

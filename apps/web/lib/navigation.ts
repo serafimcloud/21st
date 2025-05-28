@@ -61,15 +61,15 @@ export const mainNavigationItems: MainNavigationItem[] = [
   },
 ]
 
-// This is a separate navigation item for Magic MCP that will only be used for the sidebar
+// This is a separate navigation item for AI Component Builder that will only be used for the sidebar
 // and won't be part of the tab navigation
 export const magicNavItem = {
-  title: "Magic MCP",
+  title: "AI UI Builder",
   icon: Wand2,
   isNew: true,
   subitems: [
     {
-      title: "About",
+      title: "About Magic MCP",
       href: "/magic",
       externalLink: true,
     },
@@ -80,6 +80,10 @@ export const magicNavItem = {
     {
       title: "Console",
       href: "/magic/console",
+    },
+    {
+      title: "Pricing",
+      href: "/pricing",
     },
   ],
 }

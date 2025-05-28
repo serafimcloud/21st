@@ -471,7 +471,7 @@ export function Hero() {
               >
                 <div className="relative w-full h-full group">
                   <img
-                    src="/magic-preview.png"
+                    src="/magic-preview.webp"
                     alt="Magic Agent Demo"
                     className="object-cover object-center"
                   />

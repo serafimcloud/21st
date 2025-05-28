@@ -15,6 +15,7 @@ export interface Submission {
     likes_count: number
     license: string
     registry: string
+    website_url: string | null
   }
   user_data: {
     id: string

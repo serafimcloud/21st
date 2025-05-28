@@ -53,6 +53,27 @@ export const Icons = {
       />
     </div>
   ),
+  cursorIcon: (props: LucideProps) => (
+    <div className="pointer-events-none relative size-5 mix-blend-multiply dark:mix-blend-lighten">
+      <img
+        alt=""
+        width="20"
+        height="20"
+        decoding="async"
+        className="absolute transition-opacity duration-500"
+        src="https://cursor.com/assets/videos/logo/placeholder-logo.webp"
+      />
+      <video
+        width="20"
+        height="20"
+        playsInline
+        preload="auto"
+        aria-label="Cursor video logo animation"
+        src="https://cursor.com/assets/videos/logo/logo-black.mp4"
+        poster="https://cursor.com/assets/videos/logo/placeholder-logo.webp"
+      />
+    </div>
+  ),
   cursorLogo: (props: LucideProps) => (
     <svg
       fill="currentColor"

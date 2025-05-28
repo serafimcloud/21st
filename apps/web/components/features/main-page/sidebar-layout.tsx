@@ -100,7 +100,7 @@ export function MainSidebar() {
     )
   }
 
-  // Toggle item expansion (like Magic MCP)
+  // Toggle item expansion (like AI Component Builder)
   const toggleExpandItem = (id: string) => {
     setExpandedItems((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
@@ -207,7 +207,7 @@ export function MainSidebar() {
                   </SidebarMenuItem>
                 ))}
 
-              {/* Magic MCP collapsible menu */}
+              {/* AI Component Builder collapsible menu */}
               <SidebarMenuItem className="group/menu-item relative">
                 <SidebarMenuButton
                   isActive={false}

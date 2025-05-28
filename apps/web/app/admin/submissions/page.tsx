@@ -664,6 +664,7 @@ const SubmissionsAdminPage: FC = () => {
                         Demo & Actions
                       </TableHead>
                       <TableHead>Author</TableHead>
+                      <TableHead>Website</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Visibility</TableHead>
                       <TableHead>Submitted</TableHead>
@@ -825,6 +826,25 @@ const SubmissionsAdminPage: FC = () => {
                           <TableCell>
                             {submission.user_data.display_name ||
                               submission.user_data.username}
+                          </TableCell>
+
+                          <TableCell>
+                            {submission.component_data.website_url ? (
+                              <a
+                                href={submission.component_data.website_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 underline text-sm"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {submission.component_data.website_url.length >
+                                30
+                                  ? `${submission.component_data.website_url.substring(0, 30)}...`
+                                  : submission.component_data.website_url}
+                              </a>
+                            ) : (
+                              <span className="text-gray-400 text-sm">—</span>
+                            )}
                           </TableCell>
 
                           <TableCell onClick={(e) => e.stopPropagation()}>

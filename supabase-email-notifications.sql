@@ -85,7 +85,8 @@ BEGIN
         'downloads_count', COALESCE(a.total_usage, 0),
         'likes_count', c.likes_count,
         'license', c.license,
-        'registry', c.registry
+        'registry', c.registry,
+        'website_url', c.website_url
       ) as component_data,
       jsonb_build_object(
         'id', du.id,
