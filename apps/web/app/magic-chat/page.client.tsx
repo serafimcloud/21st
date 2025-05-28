@@ -8,6 +8,7 @@ import { Footer } from "@/components/ui/footer"
 import { MagicHeader } from "@/components/features/magic/magic-header"
 import { Mockup, MockupFrame } from "@/components/ui/mockup"
 import { Icons } from "@/components/icons"
+import { Spinner } from "@/components/icons/spinner"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import {
@@ -369,9 +370,19 @@ export function MagicChatPageClient() {
                     <Button
                       onClick={handleSubscribe}
                       disabled={isLoading || !email}
-                      className="whitespace-nowrap bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border-none"
+                      className={cn(
+                        "whitespace-nowrap bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border-none",
+                        isLoading ? "" : "",
+                      )}
                     >
-                      {isLoading ? "Subscribing..." : "Join Waitlist"}
+                      {isLoading ? (
+                        <div className="flex items-center gap-2">
+                          <Spinner size={16} color="white" />
+                          Joining...
+                        </div>
+                      ) : (
+                        "Join Waitlist"
+                      )}
                     </Button>
                   </div>
                   {error && (
