@@ -217,11 +217,7 @@ export function MainSidebar() {
                     <div className="flex items-center">
                       <Sparkles className="mr-2 h-4 w-4" />
                       {magicNavItem.title}
-                      {magicNavItem.isNew && (
-                        <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
-                          New
-                        </span>
-                      )}
+
                     </div>
                     <ChevronRight
                       className={cn(
@@ -302,7 +298,14 @@ export function MainSidebar() {
                                         : undefined
                                     }
                                   >
-                                    <span>{subitem.title}</span>
+                                    <span className="flex items-center">
+                                      {subitem.title}
+                                      {subitem.isNew && (
+                                        <span className="ml-2 rounded-md bg-[#adfa1d] px-1.5 py-0.5 text-xs leading-none text-[#000000]">
+                                          New
+                                        </span>
+                                      )}
+                                    </span>
                                     {subitem.externalLink && (
                                       <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
                                     )}

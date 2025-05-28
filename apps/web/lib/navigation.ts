@@ -20,6 +20,7 @@ export type MainNavigationItem = {
     title: string
     href: string
     externalLink?: boolean
+    isNew?: boolean
   }[]
 }
 
@@ -66,10 +67,14 @@ export const mainNavigationItems: MainNavigationItem[] = [
 export const magicNavItem = {
   title: "AI UI Builder",
   icon: Wand2,
-  isNew: true,
   subitems: [
     {
-      title: "About Magic MCP",
+      title: "Magic Chat Waitlist",
+      href: "/magic-chat",
+      isNew: true,
+    },
+    {
+      title: "Magic MCP",
       href: "/magic",
       externalLink: true,
     },

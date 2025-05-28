@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 const AUDIENCES = {
   MAGIC_WAITLIST: process.env.MAGIC_WAITLIST_AUDIENCE ?? "",
   NEWSLETTER: process.env.NEWSLETTER_AUDIENCE ?? "",
+  MAGIC_CHAT_WAITLIST: process.env.MAGIC_CHAT_WAITING_AUDIENCE ?? "",
 } as const
 
 export async function POST(request: Request) {
@@ -18,12 +19,13 @@ export async function POST(request: Request) {
 
     if (
       !process.env.MAGIC_WAITLIST_AUDIENCE ||
-      !process.env.NEWSLETTER_AUDIENCE
+      !process.env.NEWSLETTER_AUDIENCE ||
+      !process.env.MAGIC_CHAT_WAITING_AUDIENCE
     ) {
       return NextResponse.json(
         {
           error:
-            "MAGIC_WAITLIST_AUDIENCE or NEWSLETTER_AUDIENCE is not set in environment variables",
+            "MAGIC_WAITLIST_AUDIENCE, NEWSLETTER_AUDIENCE, or MAGIC_CHAT_WAITING_AUDIENCE is not set in environment variables",
         },
         { status: 500 },
       )
@@ -36,7 +38,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
 
-    if (!type || !["newsletter", "magic-waitlist"].includes(type)) {
+    if (
+      !type ||
+      !["newsletter", "magic-waitlist", "magic-chat"].includes(type)
+    ) {
       return NextResponse.json(
         { error: "Invalid subscription type" },
         { status: 400 },
@@ -44,7 +49,11 @@ export async function POST(request: Request) {
     }
 
     const audienceId =
-      type === "newsletter" ? AUDIENCES.NEWSLETTER : AUDIENCES.MAGIC_WAITLIST
+      type === "newsletter"
+        ? AUDIENCES.NEWSLETTER
+        : type === "magic-waitlist"
+          ? AUDIENCES.MAGIC_WAITLIST
+          : AUDIENCES.MAGIC_CHAT_WAITLIST
 
     if (!audienceId) {
       return NextResponse.json(
